@@ -157,7 +157,12 @@ export default function OfDetail() {
           <Button onClick={handleStartOf} className="h-12 px-6"><Play className="h-4 w-4 mr-2" /> Démarrer</Button>
         )}
         {of.statut === "en_cours" && (
-          <Button onClick={handleFinishOf} variant="outline" className="h-12 px-6"><CheckCircle className="h-4 w-4 mr-2" /> Terminer</Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setModeDialogOpen(true)} variant="outline" size="sm">
+              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Changer mode
+            </Button>
+            <Button onClick={handleFinishOf} variant="outline" className="h-12 px-6"><CheckCircle className="h-4 w-4 mr-2" /> Terminer</Button>
+          </div>
         )}
       </div>
 

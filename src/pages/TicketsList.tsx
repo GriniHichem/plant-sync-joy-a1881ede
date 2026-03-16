@@ -160,6 +160,8 @@ export default function TicketsList() {
             </div>
           </DialogContent>
         </Dialog>
+          )}
+        </div>
       </div>
 
       <Card>

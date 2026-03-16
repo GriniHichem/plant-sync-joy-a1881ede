@@ -1,0 +1,226 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StatusBadge } from "@/components/gmao/StatusBadge";
+import { Plus, Search, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+
+export default function TicketsList() {
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [machines, setMachines] = useState<any[]>([]);
+  const [panneTypes, setPanneTypes] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // New ticket form state
+  const [newMachineId, setNewMachineId] = useState("");
+  const [newPanneTypeId, setNewPanneTypeId] = useState("");
+  const [newPriorite, setNewPriorite] = useState<string>("normale");
+  const [newDescription, setNewDescription] = useState("");
+
+  const loadTickets = async () => {
+    const { data } = await supabase
+      .from("tickets")
+      .select("*, machines(designation, code)")
+      .order("created_at", { ascending: false });
+    setTickets(data || []);
+  };
+
+  useEffect(() => {
+    loadTickets();
+    supabase.from("machines").select("id, code, designation").eq("is_active", true).order("code").then(({ data }) => setMachines(data || []));
+    supabase.from("panne_types").select("*").eq("is_active", true).then(({ data }) => setPanneTypes(data || []));
+  }, []);
+
+  const handleCreate = async () => {
+    if (!newMachineId || !newDescription) {
+      toast({ title: "Erreur", description: "Machine et description obligatoires", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.from("tickets").insert({
+      machine_id: newMachineId,
+      panne_type_id: newPanneTypeId || null,
+      priorite: newPriorite as any,
+      description: newDescription,
+      declarant_id: user?.id,
+      numero: "",
+    });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Ticket créé" });
+      setDialogOpen(false);
+      setNewDescription("");
+      setNewMachineId("");
+      setNewPanneTypeId("");
+      setNewPriorite("normale");
+      loadTickets();
+    }
+  };
+
+  const filtered = tickets.filter((t) => {
+    const matchSearch = search === "" || t.numero?.toLowerCase().includes(search.toLowerCase()) || t.machines?.designation?.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "all" || t.statut === statusFilter;
+    const matchPriority = priorityFilter === "all" || t.priorite === priorityFilter;
+    return matchSearch && matchStatus && matchPriority;
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Tickets Maintenance</h1>
+          <p className="text-muted-foreground">{tickets.length} tickets</p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="h-12 px-6">
+              <Plus className="h-4 w-4 mr-2" /> Nouveau ticket
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Nouveau ticket maintenance</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Machine *</Label>
+                <Select value={newMachineId} onValueChange={setNewMachineId}>
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner une machine" /></SelectTrigger>
+                  <SelectContent>
+                    {machines.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.code} — {m.designation}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Type de panne</Label>
+                <Select value={newPanneTypeId} onValueChange={setNewPanneTypeId}>
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner (optionnel)" /></SelectTrigger>
+                  <SelectContent>
+                    {panneTypes.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Priorité</Label>
+                <Select value={newPriorite} onValueChange={setNewPriorite}>
+                  <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basse">Basse</SelectItem>
+                    <SelectItem value="normale">Normale</SelectItem>
+                    <SelectItem value="haute">Haute</SelectItem>
+                    <SelectItem value="critique">Critique</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Description *</Label>
+                <Textarea
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Décrivez le problème..."
+                  className="min-h-[100px]"
+                />
+              </div>
+              <Button onClick={handleCreate} className="w-full h-12">Créer le ticket</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-11" />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px] h-11"><SelectValue placeholder="Statut" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value="ouvert">Ouvert</SelectItem>
+                <SelectItem value="pris_en_charge">Pris en charge</SelectItem>
+                <SelectItem value="en_cours">En cours</SelectItem>
+                <SelectItem value="resolu">Résolu</SelectItem>
+                <SelectItem value="cloture">Clôturé</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-[140px] h-11"><SelectValue placeholder="Priorité" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes</SelectItem>
+                <SelectItem value="critique">Critique</SelectItem>
+                <SelectItem value="haute">Haute</SelectItem>
+                <SelectItem value="normale">Normale</SelectItem>
+                <SelectItem value="basse">Basse</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>N°</TableHead>
+                <TableHead>Machine</TableHead>
+                <TableHead>Priorité</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="hidden md:table-cell">Date</TableHead>
+                <TableHead className="hidden md:table-cell">Temps arrêt</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    Aucun ticket trouvé
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filtered.map((t) => (
+                  <TableRow key={t.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/tickets/${t.id}`)}>
+                    <TableCell className="font-mono font-medium">{t.numero}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-sm">{t.machines?.designation || "—"}</p>
+                        <p className="text-xs text-muted-foreground">{t.machines?.code}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell><StatusBadge type="priority" value={t.priorite} /></TableCell>
+                    <TableCell><StatusBadge type="ticket" value={t.statut} /></TableCell>
+                    <TableCell className="hidden md:table-cell tabular-nums text-muted-foreground">
+                      {new Date(t.heure_declaration).toLocaleDateString("fr-FR")}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell tabular-nums">
+                      {t.temps_arret_minutes ? `${t.temps_arret_minutes} min` : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

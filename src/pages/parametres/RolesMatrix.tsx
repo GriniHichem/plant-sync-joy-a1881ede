@@ -20,6 +20,7 @@ const MODULES = [
   { key: "recettes", label: "Recettes" },
   { key: "arrets", label: "Arrêts" },
   { key: "consommations", label: "Consommations" },
+  { key: "analytiques", label: "Analytiques & KPI" },
   { key: "utilisateurs", label: "Utilisateurs" },
   { key: "parametres", label: "Paramètres" },
 ];
@@ -32,6 +33,7 @@ const ROLES: { key: string; label: string }[] = [
   { key: "chef_ligne", label: "Chef ligne" },
   { key: "operateur", label: "Opérateur" },
   { key: "gestionnaire_magasin", label: "Gest. Magasin" },
+  { key: "bureau_methode", label: "Bureau Méthode" },
 ];
 
 const ACTIONS = [

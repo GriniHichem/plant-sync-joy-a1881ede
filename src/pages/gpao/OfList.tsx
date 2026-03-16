@@ -46,6 +46,11 @@ export default function OfList() {
     supabase.from("products").select("*").eq("is_active", true).order("code").then(({ data }) => setProducts(data || []));
     supabase.from("production_lines").select("*").eq("is_active", true).order("code").then(({ data }) => setLines(data || []));
     supabase.from("recipes").select("*").eq("is_active", true).then(({ data }) => setRecipes(data || []));
+    supabase.from("shift_modes").select("*").eq("is_active", true).order("code").then(({ data }) => {
+      setShiftModes(data || []);
+      const def = (data || []).find((m: any) => m.is_default);
+      if (def) setNewShiftModeId(def.id);
+    });
   }, []);
 
   const handleCreate = async () => {

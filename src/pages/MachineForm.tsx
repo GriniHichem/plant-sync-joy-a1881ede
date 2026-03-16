@@ -89,7 +89,7 @@ export default function MachineForm() {
       localisation: form.localisation.trim() || null,
       criticite: form.criticite as any,
       statut: form.statut as any,
-      family_id: form.family_id || null,
+      family_id: form.family_id && form.family_id !== "__none__" ? form.family_id : null,
       date_mise_en_service: form.date_mise_en_service || null,
     };
 

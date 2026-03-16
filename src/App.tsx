@@ -26,6 +26,7 @@ import ArticlesList from "@/pages/gpao/ArticlesList";
 import ShiftScreen from "@/pages/gpao/ShiftScreen";
 import ConsumptionPage from "@/pages/gpao/ConsumptionPage";
 import StopsPage from "@/pages/gpao/StopsPage";
+import RecipesPage from "@/pages/gpao/RecipesPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import NotFound from "@/pages/NotFound";
 
@@ -80,6 +81,7 @@ const App = () => (
               <Route path="/gpao/shift" element={<ShiftScreen />} />
               <Route path="/gpao/consommations" element={<ConsumptionPage />} />
               <Route path="/gpao/arrets" element={<StopsPage />} />
+              <Route path="/gpao/recettes" element={<RecipesPage />} />
               {/* Admin */}
               <Route path="/parametres" element={<Parametres />} />
               <Route path="/parametres/users" element={<UsersAdmin />} />

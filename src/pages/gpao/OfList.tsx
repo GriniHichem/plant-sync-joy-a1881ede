@@ -187,6 +187,7 @@ export default function OfList() {
                 <TableHead>Qté prévue</TableHead>
                 <TableHead>Qté produite</TableHead>
                 <TableHead>Rebuts</TableHead>
+                <TableHead>Mode</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="hidden md:table-cell">Dates</TableHead>
               </TableRow>

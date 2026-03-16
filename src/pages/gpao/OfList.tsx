@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OfStatusBadge } from "./GpaoDashboard";
-import { Plus, Search, ClipboardList } from "lucide-react";
+import { Plus, Search, ClipboardList, Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
+import { exportToCsv } from "@/lib/exportCsv";
 
 export default function OfList() {
   const [ofs, setOfs] = useState<any[]>([]);

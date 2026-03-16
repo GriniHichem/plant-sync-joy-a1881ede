@@ -105,7 +105,7 @@ export default function RolesMatrix() {
     setSaving(true);
     const rows = perms.map(({ id, ...rest }) => ({
       ...rest,
-      role: rest.role as "admin" | "chef_ligne" | "gestionnaire_magasin" | "maintenancier" | "operateur" | "resp_maintenance" | "resp_production",
+      role: rest.role as "admin" | "chef_ligne" | "gestionnaire_magasin" | "maintenancier" | "operateur" | "resp_maintenance" | "resp_production" | "bureau_methode",
     }));
     
     const { error: delErr } = await supabase.from("role_permissions").delete().neq("id", "00000000-0000-0000-0000-000000000000");

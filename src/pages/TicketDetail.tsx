@@ -4,27 +4,39 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
-import { ArrowLeft, Clock, User, Wrench, Factory } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Clock, User, Wrench, Factory, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
+  const { canEdit, canDelete } = usePermissions();
   const [ticket, setTicket] = useState<any>(null);
   const [interventions, setInterventions] = useState<any[]>([]);
   const [causeRacine, setCauseRacine] = useState("");
   const [solution, setSolution] = useState("");
 
+  // PDR used in closure
+  const [pdrList, setPdrList] = useState<any[]>([]);
+  const [selectedPdr, setSelectedPdr] = useState<{ pdr_id: string; quantite: number }[]>([]);
+  const [newPdrId, setNewPdrId] = useState("");
+  const [newPdrQte, setNewPdrQte] = useState("1");
+
   const loadTicket = async () => {
     if (!id) return;
     const { data } = await supabase
       .from("tickets")
-      .select("*, machines(code, designation), ordres_fabrication(numero), production_lines(code, designation)")
+      .select("*, machines(code, designation), ordres_fabrication(numero), production_lines(code, designation), panne_types(name)")
       .eq("id", id)
       .single();
     setTicket(data);
@@ -41,7 +53,10 @@ export default function TicketDetail() {
     setInterventions(intData || []);
   };
 
-  useEffect(() => { loadTicket(); }, [id]);
+  useEffect(() => {
+    loadTicket();
+    supabase.from("pdr").select("id, reference, designation, stock_actuel").eq("is_active", true).order("reference").then(({ data }) => setPdrList(data || []));
+  }, [id]);
 
   const handleTakeCharge = async () => {
     const now = new Date().toISOString();
@@ -62,12 +77,28 @@ export default function TicketDetail() {
     loadTicket();
   };
 
+  const addPdr = () => {
+    if (!newPdrId) return;
+    setSelectedPdr((prev) => {
+      const exists = prev.find((p) => p.pdr_id === newPdrId);
+      if (exists) return prev;
+      return [...prev, { pdr_id: newPdrId, quantite: parseInt(newPdrQte) || 1 }];
+    });
+    setNewPdrId("");
+    setNewPdrQte("1");
+  };
+
+  const removePdr = (pdrId: string) => {
+    setSelectedPdr((prev) => prev.filter((p) => p.pdr_id !== pdrId));
+  };
+
   const handleResolve = async () => {
     if (!causeRacine || !solution) {
       toast({ title: "Erreur", description: "Cause racine et solution obligatoires", variant: "destructive" });
       return;
     }
     const now = new Date().toISOString();
+    // Auto-calculate times
     const tempsArret = ticket?.heure_declaration
       ? Math.round((new Date(now).getTime() - new Date(ticket.heure_declaration).getTime()) / 60000)
       : null;
@@ -84,13 +115,36 @@ export default function TicketDetail() {
       temps_intervention_minutes: tempsIntervention,
     }).eq("id", id!);
 
-    // Close intervention
-    await supabase.from("interventions")
-      .update({ statut: "terminee" as any, date_fin: now })
-      .eq("ticket_id", id!)
-      .eq("statut", "en_cours" as any);
+    // Close intervention and save PDR used
+    const activeIntervention = interventions.find((i) => i.statut === "en_cours");
+    if (activeIntervention) {
+      await supabase.from("interventions")
+        .update({ statut: "terminee" as any, date_fin: now })
+        .eq("id", activeIntervention.id);
+
+      // Save PDR used
+      if (selectedPdr.length > 0) {
+        const pdrRows = selectedPdr.map((p) => ({
+          intervention_id: activeIntervention.id,
+          pdr_id: p.pdr_id,
+          quantite: p.quantite,
+        }));
+        await supabase.from("intervention_pdr").insert(pdrRows);
+
+        // Decrease PDR stock
+        for (const p of selectedPdr) {
+          const pdrItem = pdrList.find((x) => x.id === p.pdr_id);
+          if (pdrItem) {
+            await supabase.from("pdr").update({
+              stock_actuel: Math.max(0, pdrItem.stock_actuel - p.quantite),
+            }).eq("id", p.pdr_id);
+          }
+        }
+      }
+    }
 
     toast({ title: "Ticket résolu" });
+    setSelectedPdr([]);
     loadTicket();
   };
 
@@ -107,7 +161,7 @@ export default function TicketDetail() {
 
   const canTakeCharge = ticket.statut === "ouvert" && (hasRole("maintenancier") || hasRole("resp_maintenance") || hasRole("admin"));
   const canResolve = (ticket.statut === "pris_en_charge" || ticket.statut === "en_cours") && (ticket.assignee_id === user?.id || hasRole("admin"));
-  const canClose = ticket.statut === "resolu" && (hasRole("resp_maintenance") || hasRole("admin"));
+  const canCloseTicket = ticket.statut === "resolu" && (hasRole("resp_maintenance") || hasRole("admin"));
 
   return (
     <div className="space-y-4 max-w-3xl">
@@ -115,15 +169,24 @@ export default function TicketDetail() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/tickets")} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold">{ticket.numero}</h1>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <StatusBadge type="ticket" value={ticket.statut} />
             <StatusBadge type="priority" value={ticket.priorite} />
+            {ticket.is_from_gpao && (
+              <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-300">
+                <Factory className="h-3 w-3 mr-1" /> Depuis GPAO
+              </Badge>
+            )}
+            {ticket.panne_types?.name && (
+              <Badge variant="secondary" className="text-xs">{ticket.panne_types.name}</Badge>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Info card */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Informations</CardTitle>
@@ -137,6 +200,18 @@ export default function TicketDetail() {
             <p className="text-xs text-muted-foreground">Description</p>
             <p className="text-sm">{ticket.description}</p>
           </div>
+          {ticket.ordres_fabrication?.numero && (
+            <div>
+              <p className="text-xs text-muted-foreground">OF lié</p>
+              <p className="text-sm font-mono">{ticket.ordres_fabrication.numero}</p>
+            </div>
+          )}
+          {ticket.production_lines?.designation && (
+            <div>
+              <p className="text-xs text-muted-foreground">Ligne</p>
+              <p className="text-sm">{ticket.production_lines.code} — {ticket.production_lines.designation}</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Déclaration</p>
             <p className="text-sm tabular-nums">{new Date(ticket.heure_declaration).toLocaleString("fr-FR")}</p>
@@ -153,13 +228,19 @@ export default function TicketDetail() {
               <p className="text-sm tabular-nums">{new Date(ticket.heure_resolution).toLocaleString("fr-FR")}</p>
             </div>
           )}
-          {ticket.temps_arret_minutes && (
+          {ticket.heure_cloture && (
+            <div>
+              <p className="text-xs text-muted-foreground">Clôture</p>
+              <p className="text-sm tabular-nums">{new Date(ticket.heure_cloture).toLocaleString("fr-FR")}</p>
+            </div>
+          )}
+          {ticket.temps_arret_minutes != null && (
             <div>
               <p className="text-xs text-muted-foreground">Temps d'arrêt</p>
               <p className="text-sm font-bold tabular-nums text-destructive">{ticket.temps_arret_minutes} min</p>
             </div>
           )}
-          {ticket.temps_intervention_minutes && (
+          {ticket.temps_intervention_minutes != null && (
             <div>
               <p className="text-xs text-muted-foreground">Temps d'intervention</p>
               <p className="text-sm font-bold tabular-nums">{ticket.temps_intervention_minutes} min</p>
@@ -181,7 +262,7 @@ export default function TicketDetail() {
       </Card>
 
       {/* Actions */}
-      {canTakeCharge && (
+      {canTakeCharge && canEdit("tickets") && (
         <Card>
           <CardContent className="p-5">
             <Button onClick={handleTakeCharge} className="w-full h-12 text-base">
@@ -191,10 +272,10 @@ export default function TicketDetail() {
         </Card>
       )}
 
-      {canResolve && (
+      {canResolve && canEdit("tickets") && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Résolution</CardTitle>
+            <CardTitle className="text-base">Résolution & Clôture</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -205,12 +286,48 @@ export default function TicketDetail() {
               <Label>Solution *</Label>
               <Textarea value={solution} onChange={(e) => setSolution(e.target.value)} placeholder="Action corrective effectuée..." />
             </div>
+
+            {/* PDR used */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Package className="h-3.5 w-3.5" /> Pièces utilisées (optionnel)
+              </Label>
+              <div className="flex gap-2">
+                <Select value={newPdrId} onValueChange={setNewPdrId}>
+                  <SelectTrigger className="h-10 flex-1"><SelectValue placeholder="Sélectionner une pièce" /></SelectTrigger>
+                  <SelectContent>
+                    {pdrList.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.reference} — {p.designation} (stock: {p.stock_actuel})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input type="number" value={newPdrQte} onChange={(e) => setNewPdrQte(e.target.value)} className="h-10 w-20" min="1" placeholder="Qté" />
+                <Button variant="outline" size="sm" className="h-10" onClick={addPdr} disabled={!newPdrId}>+</Button>
+              </div>
+              {selectedPdr.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {selectedPdr.map((sp) => {
+                    const pdr = pdrList.find((p) => p.id === sp.pdr_id);
+                    return (
+                      <div key={sp.pdr_id} className="flex items-center justify-between text-sm py-1.5 px-3 rounded bg-muted/50">
+                        <span>{pdr?.reference} — {pdr?.designation}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="tabular-nums font-medium">×{sp.quantite}</span>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => removePdr(sp.pdr_id)}>×</Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <Button onClick={handleResolve} className="w-full h-12 text-base">Résoudre</Button>
           </CardContent>
         </Card>
       )}
 
-      {canClose && (
+      {canCloseTicket && (
         <Card>
           <CardContent className="p-5">
             <Button onClick={handleClose} variant="outline" className="w-full h-12 text-base">
@@ -229,16 +346,36 @@ export default function TicketDetail() {
           <CardContent>
             <div className="space-y-3">
               {interventions.map((i) => (
-                <div key={i.id} className="flex gap-3 p-3 rounded-lg border">
-                  <div className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">{i.description}</p>
-                    <p className="text-xs text-muted-foreground tabular-nums">
-                      {new Date(i.date_debut).toLocaleString("fr-FR")}
-                      {i.date_fin && ` → ${new Date(i.date_fin).toLocaleString("fr-FR")}`}
-                    </p>
-                    <StatusBadge type="ticket" value={i.statut === "en_cours" ? "en_cours" : i.statut === "terminee" ? "resolu" : "cloture"} className="mt-1" />
+                <div key={i.id} className="p-3 rounded-lg border space-y-2">
+                  <div className="flex items-start gap-3">
+                    <div className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{i.description}</p>
+                      <p className="text-xs text-muted-foreground tabular-nums">
+                        {new Date(i.date_debut).toLocaleString("fr-FR")}
+                        {i.date_fin && ` → ${new Date(i.date_fin).toLocaleString("fr-FR")}`}
+                      </p>
+                      {i.date_fin && i.date_debut && (
+                        <p className="text-xs font-medium tabular-nums mt-0.5">
+                          Durée: {Math.round((new Date(i.date_fin).getTime() - new Date(i.date_debut).getTime()) / 60000)} min
+                        </p>
+                      )}
+                      <StatusBadge type="ticket" value={i.statut === "en_cours" ? "en_cours" : i.statut === "terminee" ? "resolu" : "cloture"} className="mt-1" />
+                    </div>
                   </div>
+                  {/* PDR used in this intervention */}
+                  {i.intervention_pdr && i.intervention_pdr.length > 0 && (
+                    <div className="ml-5 pl-3 border-l-2 border-muted">
+                      <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                        <Package className="h-3 w-3" /> Pièces utilisées
+                      </p>
+                      {i.intervention_pdr.map((ip: any) => (
+                        <p key={ip.id} className="text-xs">
+                          {ip.pdr?.reference} — {ip.pdr?.designation} <span className="tabular-nums font-medium">×{ip.quantite}</span>
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

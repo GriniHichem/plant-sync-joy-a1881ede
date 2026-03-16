@@ -59,6 +59,14 @@ export default function OfDetail() {
     setStops(stopRes.data || []);
     setTickets(tickRes.data || []);
     setShiftHistory(shiftsRes.data || []);
+
+    // Load shift modes and mode history
+    const [modesRes, modeHistRes] = await Promise.all([
+      supabase.from("shift_modes").select("*").eq("is_active", true).order("code"),
+      supabase.from("of_mode_history").select("*, old_mode:shift_modes!of_mode_history_old_mode_id_fkey(label, code), new_mode:shift_modes!of_mode_history_new_mode_id_fkey(label, code)").eq("of_id", id).order("created_at", { ascending: false }),
+    ]);
+    setShiftModes(modesRes.data || []);
+    setModeHistory(modeHistRes.data || []);
   };
 
   useEffect(() => { load(); }, [id]);

@@ -26,6 +26,7 @@ import ArticlesList from "@/pages/gpao/ArticlesList";
 import ShiftScreen from "@/pages/gpao/ShiftScreen";
 import ConsumptionPage from "@/pages/gpao/ConsumptionPage";
 import StopsPage from "@/pages/gpao/StopsPage";
+import RecipesPage from "@/pages/gpao/RecipesPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import NotFound from "@/pages/NotFound";
 

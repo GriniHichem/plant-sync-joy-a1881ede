@@ -9,6 +9,7 @@ import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import MachinesList from "@/pages/MachinesList";
 import MachineDetail from "@/pages/MachineDetail";
+import MachineForm from "@/pages/MachineForm";
 import PdrList from "@/pages/PdrList";
 import TicketsList from "@/pages/TicketsList";
 import TicketDetail from "@/pages/TicketDetail";

@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OfStatusBadge } from "./GpaoDashboard";
-import { ArrowLeft, Play, CheckCircle, BarChart3, Package, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle, BarChart3, Package, AlertTriangle, Clock, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
 export default function OfDetail() {
   const { id } = useParams();
@@ -22,21 +24,31 @@ export default function OfDetail() {
   const [consumptions, setConsumptions] = useState<any[]>([]);
   const [stops, setStops] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
+  const [shiftHistory, setShiftHistory] = useState<any[]>([]);
+
+  // Detail dialog
+  const [detailShift, setDetailShift] = useState<any>(null);
+  const [detailDeclarations, setDetailDeclarations] = useState<any[]>([]);
+  const [detailConsumptions, setDetailConsumptions] = useState<any[]>([]);
+  const [detailTickets, setDetailTickets] = useState<any[]>([]);
+  const [detailStops, setDetailStops] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
-    const [ofRes, declRes, consRes, stopRes, tickRes] = await Promise.all([
+    const [ofRes, declRes, consRes, stopRes, tickRes, shiftsRes] = await Promise.all([
       supabase.from("ordres_fabrication").select("*, products(code, designation, unite), production_lines(code, designation), recipes(name)").eq("id", id).single(),
       supabase.from("production_declarations").select("*").eq("of_id", id).order("heure_production", { ascending: false }),
       supabase.from("consumptions").select("*, articles(code, designation, unite)").eq("of_id", id).order("created_at", { ascending: false }),
       supabase.from("production_stops").select("*, production_lines(designation)").eq("of_id", id).order("heure_debut", { ascending: false }),
       supabase.from("tickets").select("*, machines(code, designation)").eq("of_id", id).order("created_at", { ascending: false }),
+      supabase.from("shifts").select("*, shift_teams(name, code, color), production_lines(designation)").eq("of_id", id).order("date_shift", { ascending: false }),
     ]);
     setOf(ofRes.data);
     setDeclarations(declRes.data || []);
     setConsumptions(consRes.data || []);
     setStops(stopRes.data || []);
     setTickets(tickRes.data || []);
+    setShiftHistory(shiftsRes.data || []);
   };
 
   useEffect(() => { load(); }, [id]);
@@ -53,13 +65,42 @@ export default function OfDetail() {
     load();
   };
 
+  const openShiftDetail = async (shift: any) => {
+    setDetailShift(shift);
+    const [dRes, cRes, tRes, sRes] = await Promise.all([
+      supabase.from("production_declarations").select("*").eq("of_id", id!).eq("shift_id", shift.id).order("heure_production"),
+      supabase.from("consumptions").select("*, articles(code, designation, unite)").eq("of_id", id!).eq("shift_id", shift.id),
+      supabase.from("tickets").select("*, machines(code, designation)").eq("of_id", id!).eq("shift_id", shift.id),
+      supabase.from("production_stops").select("*").eq("of_id", id!).eq("shift_id", shift.id),
+    ]);
+    setDetailDeclarations(dRes.data || []);
+    setDetailConsumptions(cRes.data || []);
+    setDetailTickets(tRes.data || []);
+    setDetailStops(sRes.data || []);
+  };
+
   if (!of) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
 
   const progress = of.quantite_prevue > 0 ? Math.round((of.quantite_produite / of.quantite_prevue) * 100) : 0;
   const totalStopMin = stops.reduce((s, st) => s + (st.duree_minutes || 0), 0);
 
+  // Compute per-shift stats from declarations
+  function getShiftStats(shiftId: string) {
+    const shiftDecls = declarations.filter((d) => d.shift_id === shiftId);
+    const qte = shiftDecls.reduce((s, d) => s + (d.quantite_produite || 0), 0);
+    const rebut = shiftDecls.reduce((s, d) => s + (d.quantite_rebut || 0), 0);
+    const shiftCons = consumptions.filter((c) => c.shift_id === shiftId);
+    const shiftTick = tickets.filter((t) => t.shift_id === shiftId);
+    const shiftStops = stops.filter((st) => st.shift_id === shiftId);
+    const stopMin = shiftStops.reduce((s, st) => s + (st.duree_minutes || 0), 0);
+    return { qte, rebut, consCount: shiftCons.length, ticketCount: shiftTick.length, stopMin };
+  }
+
+  const formatTime = (ts: string | null) => ts ? new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—";
+  const formatDate = (ts: string | null) => ts ? new Date(ts).toLocaleDateString("fr-FR") : "—";
+
   return (
-    <div className="space-y-4 max-w-4xl">
+    <div className="space-y-4 max-w-5xl">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/gpao/of")} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
@@ -110,14 +151,79 @@ export default function OfDetail() {
         ))}
       </div>
 
-      <Tabs defaultValue="declarations" className="space-y-4">
-        <TabsList className="h-11">
+      <Tabs defaultValue="shifts" className="space-y-4">
+        <TabsList className="h-11 flex-wrap">
+          <TabsTrigger value="shifts" className="h-9"><Users className="h-3.5 w-3.5 mr-1" /> Historique Shifts</TabsTrigger>
           <TabsTrigger value="declarations" className="h-9"><BarChart3 className="h-3.5 w-3.5 mr-1" /> Production</TabsTrigger>
           <TabsTrigger value="consumptions" className="h-9"><Package className="h-3.5 w-3.5 mr-1" /> Consommations</TabsTrigger>
           <TabsTrigger value="stops" className="h-9"><AlertTriangle className="h-3.5 w-3.5 mr-1" /> Arrêts</TabsTrigger>
           <TabsTrigger value="tickets" className="h-9">Tickets</TabsTrigger>
         </TabsList>
 
+        {/* === HISTORIQUE SHIFTS === */}
+        <TabsContent value="shifts">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Équipe</TableHead>
+                    <TableHead>Plage horaire</TableHead>
+                    <TableHead>Qté produite</TableHead>
+                    <TableHead>Rebuts</TableHead>
+                    <TableHead>Conso.</TableHead>
+                    <TableHead>Tickets</TableHead>
+                    <TableHead>Arrêts</TableHead>
+                    <TableHead>Statut</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {shiftHistory.length === 0 ? (
+                    <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Aucun shift enregistré</TableCell></TableRow>
+                  ) : shiftHistory.map((s) => {
+                    const stats = getShiftStats(s.id);
+                    const teamColor = s.shift_teams?.color || "#888";
+                    return (
+                      <TableRow
+                        key={s.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => openShiftDetail(s)}
+                      >
+                        <TableCell className="tabular-nums">{formatDate(s.date_shift)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: teamColor }} />
+                            <span className="text-sm">{s.shift_teams?.name || s.shift_type}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="tabular-nums text-sm">
+                          {formatTime(s.heure_debut)} – {formatTime(s.heure_fin)}
+                        </TableCell>
+                        <TableCell className="tabular-nums font-medium">{stats.qte}</TableCell>
+                        <TableCell className="tabular-nums text-destructive">{stats.rebut || 0}</TableCell>
+                        <TableCell className="tabular-nums">{stats.consCount}</TableCell>
+                        <TableCell>
+                          {stats.ticketCount > 0 ? (
+                            <Badge variant="destructive" className="text-xs">{stats.ticketCount}</Badge>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="tabular-nums">{stats.stopMin > 0 ? `${stats.stopMin} min` : "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={s.statut === "termine" ? "secondary" : "default"} className="text-xs capitalize">
+                            {(s.statut || "en_cours").replace("_", " ")}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === PRODUCTION === */}
         <TabsContent value="declarations">
           <Card>
             <CardContent className="p-0">
@@ -147,6 +253,7 @@ export default function OfDetail() {
           </Card>
         </TabsContent>
 
+        {/* === CONSOMMATIONS === */}
         <TabsContent value="consumptions">
           <Card>
             <CardContent className="p-0">
@@ -176,6 +283,7 @@ export default function OfDetail() {
           </Card>
         </TabsContent>
 
+        {/* === ARRÊTS === */}
         <TabsContent value="stops">
           <Card>
             <CardContent className="p-0">
@@ -207,6 +315,7 @@ export default function OfDetail() {
           </Card>
         </TabsContent>
 
+        {/* === TICKETS === */}
         <TabsContent value="tickets">
           <Card>
             <CardContent className="p-0">
@@ -236,6 +345,115 @@ export default function OfDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Shift Detail Dialog */}
+      <Dialog open={!!detailShift} onOpenChange={(open) => !open && setDetailShift(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Détail shift — {formatDate(detailShift?.date_shift)}
+              {detailShift?.shift_teams && (
+                <Badge style={{ backgroundColor: detailShift.shift_teams.color, color: "#fff" }}>
+                  {detailShift.shift_teams.name}
+                </Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {detailShift && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <Card><CardContent className="p-3">
+                  <p className="text-xs text-muted-foreground">Plage horaire</p>
+                  <p className="text-sm font-medium">{formatTime(detailShift.heure_debut)} – {formatTime(detailShift.heure_fin)}</p>
+                </CardContent></Card>
+                <Card><CardContent className="p-3">
+                  <p className="text-xs text-muted-foreground">Type</p>
+                  <p className="text-sm font-medium capitalize">{detailShift.shift_type?.replace("_", " ")}</p>
+                </CardContent></Card>
+                <Card><CardContent className="p-3">
+                  <p className="text-xs text-muted-foreground">Statut</p>
+                  <Badge variant="secondary" className="capitalize">{(detailShift.statut || "en_cours").replace("_", " ")}</Badge>
+                </CardContent></Card>
+              </div>
+
+              {detailShift.observations && (
+                <Card>
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Observations</p>
+                    <p className="text-sm">{detailShift.observations}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Déclarations horaires */}
+              <div>
+                <p className="text-sm font-medium mb-2">Déclarations horaires ({detailDeclarations.length})</p>
+                {detailDeclarations.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Aucune déclaration</p>
+                ) : (
+                  <div className="space-y-1">
+                    {detailDeclarations.map((d) => (
+                      <div key={d.id} className="flex justify-between text-xs py-1.5 px-3 rounded bg-muted/30">
+                        <span className="tabular-nums">{new Date(d.heure_production).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span className="tabular-nums font-medium">{d.quantite_produite} {of.unite}</span>
+                        {d.quantite_rebut > 0 && <span className="text-destructive tabular-nums">rebut: {d.quantite_rebut}</span>}
+                        <span className="text-muted-foreground truncate max-w-[120px]">{d.notes || ""}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Consommations */}
+              {detailConsumptions.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Consommations ({detailConsumptions.length})</p>
+                  <div className="space-y-1">
+                    {detailConsumptions.map((c) => (
+                      <div key={c.id} className="flex justify-between text-xs py-1.5 px-3 rounded bg-muted/30">
+                        <span>{c.articles?.code} — {c.articles?.designation}</span>
+                        <span className="tabular-nums font-medium">{c.quantite} {c.unite}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tickets */}
+              {detailTickets.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Tickets maintenance ({detailTickets.length})</p>
+                  <div className="space-y-1">
+                    {detailTickets.map((t) => (
+                      <div key={t.id} className="flex justify-between text-xs py-1.5 px-3 rounded bg-destructive/10 cursor-pointer" onClick={() => navigate(`/tickets/${t.id}`)}>
+                        <span className="font-mono">{t.numero}</span>
+                        <span>{t.machines?.designation}</span>
+                        <StatusBadge type="ticket" value={t.statut} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Arrêts */}
+              {detailStops.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Arrêts ({detailStops.length})</p>
+                  <div className="space-y-1">
+                    {detailStops.map((s) => (
+                      <div key={s.id} className="flex justify-between text-xs py-1.5 px-3 rounded bg-amber-50 dark:bg-amber-900/20">
+                        <span className="capitalize">{s.type.replace("_", " ")}</span>
+                        <span className="tabular-nums">{s.duree_minutes ? `${s.duree_minutes} min` : "en cours"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

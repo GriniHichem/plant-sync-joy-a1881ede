@@ -6,7 +6,12 @@ import {
   AlertTriangle,
   CalendarCheck,
   LogOut,
-  ChevronLeft,
+  Factory,
+  ClipboardList,
+  BarChart3,
+  Boxes,
+  Timer,
+  ChevronDown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -17,23 +22,33 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const mainItems = [
+const gmaoItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Machines", url: "/machines", icon: Cog },
   { title: "Pièces (PDR)", url: "/pdr", icon: Package },
   { title: "Tickets", url: "/tickets", icon: AlertTriangle },
   { title: "Préventif", url: "/preventif", icon: CalendarCheck },
-  { title: "Paramètres", url: "/parametres", icon: Wrench },
+];
+
+const gpaoItems = [
+  { title: "Dashboard", url: "/gpao", icon: BarChart3 },
+  { title: "Ordres de fab.", url: "/gpao/of", icon: ClipboardList },
+  { title: "Produits", url: "/gpao/produits", icon: Boxes },
+  { title: "Articles", url: "/gpao/articles", icon: Package },
+  { title: "Shift", url: "/gpao/shift", icon: Timer },
+  { title: "Consommations", url: "/gpao/consommations", icon: Boxes },
+  { title: "Arrêts", url: "/gpao/arrets", icon: AlertTriangle },
 ];
 
 export function AppSidebar() {
@@ -44,6 +59,9 @@ export function AppSidebar() {
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+
+  const isGmaoActive = gmaoItems.some((i) => isActive(i.url));
+  const isGpaoActive = gpaoItems.some((i) => isActive(i.url));
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"
@@ -56,12 +74,12 @@ export function AppSidebar() {
       <SidebarHeader className="p-3">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <Wrench className="h-5 w-5" />
+            <Factory className="h-5 w-5" />
           </div>
           {!collapsed && (
             <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold text-sidebar-foreground">GMAO</span>
-              <span className="text-[11px] text-sidebar-foreground/60">Maintenance</span>
+              <span className="text-sm font-semibold text-sidebar-foreground">GMAO / GPAO</span>
+              <span className="text-[11px] text-sidebar-foreground/60">Industriel</span>
             </div>
           )}
         </div>
@@ -70,28 +88,76 @@ export function AppSidebar() {
       <Separator className="bg-sidebar-border mx-2 w-auto" />
 
       <SidebarContent className="pt-2">
+        {/* GMAO */}
+        <SidebarGroup>
+          <Collapsible defaultOpen={isGmaoActive || !isGpaoActive}>
+            <CollapsibleTrigger className="w-full">
+              <SidebarGroupLabel className="cursor-pointer hover:text-sidebar-foreground">
+                <Wrench className="h-3.5 w-3.5 mr-1.5" />
+                {!collapsed && "GMAO — Maintenance"}
+                {!collapsed && <ChevronDown className="h-3 w-3 ml-auto" />}
+              </SidebarGroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {gmaoItems.map((item) => (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                        <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                          <item.icon className="h-4.5 w-4.5 shrink-0" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarGroup>
+
+        {/* GPAO */}
+        <SidebarGroup>
+          <Collapsible defaultOpen={isGpaoActive}>
+            <CollapsibleTrigger className="w-full">
+              <SidebarGroupLabel className="cursor-pointer hover:text-sidebar-foreground">
+                <Factory className="h-3.5 w-3.5 mr-1.5" />
+                {!collapsed && "GPAO — Production"}
+                {!collapsed && <ChevronDown className="h-3 w-3 ml-auto" />}
+              </SidebarGroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {gpaoItems.map((item) => (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                        <NavLink to={item.url} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                          <item.icon className="h-4.5 w-4.5 shrink-0" />
+                          {!collapsed && <span>{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarGroup>
+
+        {/* Paramètres */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    tooltip={item.title}
-                  >
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="hover:bg-sidebar-accent/50"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive("/parametres")} tooltip="Paramètres">
+                  <NavLink to="/parametres" className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                    <Wrench className="h-4.5 w-4.5 shrink-0" />
+                    {!collapsed && <span>Paramètres</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

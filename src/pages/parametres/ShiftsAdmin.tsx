@@ -24,6 +24,8 @@ export default function ShiftsAdmin() {
   const [timeSlots, setTimeSlots] = useState<any[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
   const [rotation, setRotation] = useState<any[]>([]);
+  const [shiftModes, setShiftModes] = useState<any[]>([]);
+  const [modeSlots, setModeSlots] = useState<any[]>([]);
 
   // Team dialog
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);

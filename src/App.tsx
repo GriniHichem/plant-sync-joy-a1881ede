@@ -70,6 +70,7 @@ const App = () => (
               <Route path="/tickets" element={<TicketsList />} />
               <Route path="/tickets/:id" element={<TicketDetail />} />
               <Route path="/preventif" element={<PreventifList />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
               {/* GPAO */}
               <Route path="/gpao" element={<GpaoDashboard />} />
               <Route path="/gpao/of" element={<OfList />} />

@@ -47,14 +47,18 @@ export default function ShiftsAdmin() {
   useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
-    const [teamsRes, slotsRes, settingsRes] = await Promise.all([
+    const [teamsRes, slotsRes, settingsRes, modesRes, modeSlotsRes] = await Promise.all([
       supabase.from("shift_teams").select("*").order("code"),
       supabase.from("shift_time_slots").select("*").order("sort_order"),
       supabase.from("shift_settings").select("*").order("key"),
+      supabase.from("shift_modes").select("*").order("code"),
+      supabase.from("shift_mode_slots").select("*, shift_modes(label, code)").order("sort_order"),
     ]);
     setTeams(teamsRes.data || []);
     setTimeSlots(slotsRes.data || []);
     setSettings(settingsRes.data || []);
+    setShiftModes(modesRes.data || []);
+    setModeSlots(modeSlotsRes.data || []);
   }
 
   async function loadRotation(startDate: string) {

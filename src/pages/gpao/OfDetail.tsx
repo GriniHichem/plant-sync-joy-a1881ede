@@ -149,6 +149,7 @@ export default function OfDetail() {
           <h1 className="text-2xl font-bold">{of.numero}</h1>
           <div className="flex items-center gap-2 mt-1">
             <OfStatusBadge value={of.statut} />
+            <Badge variant="outline" className="text-xs">{(of as any).shift_modes?.label || "3x8"}</Badge>
             <span className="text-sm text-muted-foreground">{of.products?.designation}</span>
           </div>
         </div>

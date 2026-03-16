@@ -374,6 +374,14 @@ export default function ShiftScreen() {
 
   const handleCloseShift = async () => {
     if (!activeShift) return;
+    if (!allProductionDeclared) {
+      toast({ title: "Impossible", description: "Toutes les heures de production doivent être saisies avant la clôture.", variant: "destructive" });
+      return;
+    }
+    if (!consumptionsSaved) {
+      toast({ title: "Impossible", description: "Les consommations matières doivent être déclarées selon la recette avant la clôture.", variant: "destructive" });
+      return;
+    }
     await supabase.from("shifts").update({
       statut: "termine",
       heure_fin_reelle: new Date().toISOString(),

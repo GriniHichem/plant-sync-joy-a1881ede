@@ -9,6 +9,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
 
 export default function PdrList() {
+  const { canCreate } = usePermissions();
   const [pdrList, setPdrList] = useState<any[]>([]);
   const [search, setSearch] = useState("");
 

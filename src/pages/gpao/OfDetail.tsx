@@ -392,7 +392,6 @@ export default function OfDetail() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
 
         {/* === HISTORIQUE MODE === */}
         <TabsContent value="mode_history">

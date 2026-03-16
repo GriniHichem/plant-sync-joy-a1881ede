@@ -149,13 +149,67 @@ export default function ShiftsAdmin() {
         </div>
       </div>
 
-      <Tabs defaultValue="teams" className="space-y-4">
-        <TabsList className="h-11">
+      <Tabs defaultValue="modes" className="space-y-4">
+        <TabsList className="h-11 flex-wrap">
+          <TabsTrigger value="modes" className="h-9"><Layers className="h-3.5 w-3.5 mr-1" /> Modes</TabsTrigger>
           <TabsTrigger value="teams" className="h-9"><Users className="h-3.5 w-3.5 mr-1" /> Équipes</TabsTrigger>
           <TabsTrigger value="slots" className="h-9"><Clock className="h-3.5 w-3.5 mr-1" /> Créneaux</TabsTrigger>
           <TabsTrigger value="rotation" className="h-9"><CalendarDays className="h-3.5 w-3.5 mr-1" /> Rotation</TabsTrigger>
           <TabsTrigger value="settings" className="h-9"><Settings className="h-3.5 w-3.5 mr-1" /> Règles</TabsTrigger>
         </TabsList>
+
+        {/* === MODES DE CRÉNEAU === */}
+        <TabsContent value="modes">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Types de créneaux</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {shiftModes.map((mode) => {
+                const slots = modeSlots.filter((s: any) => s.shift_mode_id === mode.id);
+                return (
+                  <div key={mode.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="font-medium">{mode.label}</p>
+                          <p className="text-xs text-muted-foreground">{mode.description}</p>
+                        </div>
+                        {mode.is_default && <Badge variant="outline" className="text-xs">Par défaut</Badge>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={mode.is_active ? "default" : "secondary"}>{mode.is_active ? "Actif" : "Inactif"}</Badge>
+                        <Switch checked={mode.is_active} onCheckedChange={async () => {
+                          await supabase.from("shift_modes").update({ is_active: !mode.is_active } as any).eq("id", mode.id);
+                          loadAll();
+                        }} />
+                      </div>
+                    </div>
+                    <div className="pl-4 border-l-2 border-muted space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Créneaux horaires ({slots.length})</p>
+                      {slots.map((slot: any) => (
+                        <div key={slot.id} className="flex items-center gap-3 text-sm">
+                          <span className="font-medium min-w-[100px]">{slot.label}</span>
+                          <Input type="time" value={slot.heure_debut} className="w-28 h-8"
+                            onChange={async (e) => {
+                              await supabase.from("shift_mode_slots").update({ heure_debut: e.target.value } as any).eq("id", slot.id);
+                              loadAll();
+                            }} />
+                          <span className="text-muted-foreground">→</span>
+                          <Input type="time" value={slot.heure_fin} className="w-28 h-8"
+                            onChange={async (e) => {
+                              await supabase.from("shift_mode_slots").update({ heure_fin: e.target.value } as any).eq("id", slot.id);
+                              loadAll();
+                            }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* === ÉQUIPES === */}
         <TabsContent value="teams">

@@ -89,12 +89,25 @@ export default function TicketsList() {
           <h1 className="text-2xl font-bold">Tickets Maintenance</h1>
           <p className="text-muted-foreground">{tickets.length} tickets</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="h-12 px-6">
-              <Plus className="h-4 w-4 mr-2" /> Nouveau ticket
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, [
+            { key: "numero", label: "N°" },
+            { key: "machines.designation", label: "Machine" },
+            { key: "priorite", label: "Priorité" },
+            { key: "statut", label: "Statut" },
+            { key: "description", label: "Description" },
+            { key: "heure_declaration", label: "Date", format: (v) => v ? new Date(v).toLocaleString("fr-FR") : "" },
+            { key: "temps_arret_minutes", label: "Temps arrêt (min)" },
+          ], "tickets")}>
+            <Download className="h-4 w-4 mr-1" /> CSV
+          </Button>
+          {canCreate("tickets") && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="h-12 px-6">
+                  <Plus className="h-4 w-4 mr-2" /> Nouveau ticket
+                </Button>
+              </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Nouveau ticket maintenance</DialogTitle>

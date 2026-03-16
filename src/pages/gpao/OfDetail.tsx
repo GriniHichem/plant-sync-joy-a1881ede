@@ -181,10 +181,11 @@ export default function OfDetail() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
           ["Ligne", of.production_lines?.designation || "—"],
           ["Recette", of.recipes?.name || "—"],
+          ["Mode", (of as any).shift_modes?.label || "3x8"],
           ["Début prévu", of.date_debut_prevue ? new Date(of.date_debut_prevue).toLocaleDateString("fr-FR") : "—"],
           ["Arrêts", totalStopMin > 0 ? `${totalStopMin} min` : "0 min"],
         ].map(([label, val]) => (

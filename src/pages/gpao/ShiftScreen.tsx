@@ -820,9 +820,17 @@ export default function ShiftScreen() {
                 <Button variant="outline" onClick={handleSaveObservations} className="flex-1">
                   Enregistrer
                 </Button>
-                <Button variant="destructive" onClick={handleCloseShift}>
+                <Button variant="destructive" onClick={handleCloseShift} disabled={!canCloseShift}
+                  title={!canCloseShift ? "Saisissez toutes les heures de production et les consommations matières avant de clôturer" : ""}>
                   Clôturer le shift
+                  {!canCloseShift && <Lock className="h-3 w-3 ml-1" />}
                 </Button>
+                {!canCloseShift && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {!allProductionDeclared ? "⚠ Production : toutes les heures doivent être saisies. " : ""}
+                    {!consumptionsSaved ? "⚠ Consommations matières non déclarées." : ""}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

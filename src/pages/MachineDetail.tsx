@@ -101,9 +101,28 @@ export default function MachineDetail() {
 
         <TabsContent value="documents">
           <Card>
-            <CardContent className="p-5 text-center text-muted-foreground">
-              <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              Aucun document attaché
+            <CardContent className="p-5">
+              {documents.length === 0 ? (
+                <div className="text-center text-muted-foreground py-4">
+                  <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  Aucun document — <button onClick={() => navigate(`/machines/${id}/edit`)} className="underline text-primary">ajouter des documents</button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {documents.map((doc) => (
+                    <a key={doc.id} href={doc.file_url} target="_blank" rel="noopener" className="rounded-lg border p-3 hover:border-primary/30 transition-colors">
+                      {doc.file_type === "image" ? (
+                        <img src={doc.file_url} alt={doc.name} className="h-20 w-full rounded object-cover mb-2" />
+                      ) : (
+                        <div className="h-20 w-full rounded bg-muted flex items-center justify-center mb-2">
+                          <FileText className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
+                      <p className="text-xs truncate">{doc.name}</p>
+                    </a>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

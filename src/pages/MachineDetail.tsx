@@ -15,6 +15,7 @@ export default function MachineDetail() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [pdrList, setPdrList] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
 
   useEffect(() => {
     if (!id) return;

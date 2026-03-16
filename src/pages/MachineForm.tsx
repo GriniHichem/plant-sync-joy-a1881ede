@@ -211,7 +211,7 @@ export default function MachineForm() {
                 <Select value={form.family_id} onValueChange={(v) => handleChange("family_id", v)}>
                   <SelectTrigger className="h-12"><SelectValue placeholder="Aucune" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucune</SelectItem>
+                    <SelectItem value="__none__">Aucune</SelectItem>
                     {families.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
                   </SelectContent>
                 </Select>

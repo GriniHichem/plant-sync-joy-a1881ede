@@ -26,6 +26,7 @@ export default function OfList() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { canCreate } = usePermissions();
 
   const [newProductId, setNewProductId] = useState("");
   const [newLineId, setNewLineId] = useState("");

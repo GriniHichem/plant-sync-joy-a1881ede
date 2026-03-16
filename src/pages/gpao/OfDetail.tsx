@@ -83,6 +83,28 @@ export default function OfDetail() {
     load();
   };
 
+  const handleChangeMode = async () => {
+    if (!newModeId || !modeChangeReason.trim()) {
+      toast({ title: "Erreur", description: "Mode et motif obligatoires", variant: "destructive" });
+      return;
+    }
+    // Insert history
+    await supabase.from("of_mode_history").insert({
+      of_id: id,
+      old_mode_id: of.shift_mode_id || null,
+      new_mode_id: newModeId,
+      changed_by: user?.id,
+      reason: modeChangeReason,
+    } as any);
+    // Update OF
+    await supabase.from("ordres_fabrication").update({ shift_mode_id: newModeId } as any).eq("id", id!);
+    toast({ title: "Type de créneau modifié" });
+    setModeDialogOpen(false);
+    setNewModeId("");
+    setModeChangeReason("");
+    load();
+  };
+
   const openShiftDetail = async (shift: any) => {
     setDetailShift(shift);
     const [dRes, cRes, tRes, sRes] = await Promise.all([

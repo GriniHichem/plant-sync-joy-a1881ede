@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Save, Users, Clock, CalendarDays, Settings, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Save, Users, Clock, CalendarDays, Settings, Trash2, Layers } from "lucide-react";
 
 export default function ShiftsAdmin() {
   const { hasRole } = useAuth();

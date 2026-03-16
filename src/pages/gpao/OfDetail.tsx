@@ -28,6 +28,13 @@ export default function OfDetail() {
   const [stops, setStops] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [shiftHistory, setShiftHistory] = useState<any[]>([]);
+  const [shiftModes, setShiftModes] = useState<any[]>([]);
+  const [modeHistory, setModeHistory] = useState<any[]>([]);
+
+  // Mode change dialog
+  const [modeDialogOpen, setModeDialogOpen] = useState(false);
+  const [newModeId, setNewModeId] = useState("");
+  const [modeChangeReason, setModeChangeReason] = useState("");
 
   // Detail dialog
   const [detailShift, setDetailShift] = useState<any>(null);

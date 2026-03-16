@@ -24,7 +24,7 @@ export default function TicketDetail() {
     if (!id) return;
     const { data } = await supabase
       .from("tickets")
-      .select("*, machines(code, designation)")
+      .select("*, machines(code, designation), ordres_fabrication(numero), production_lines(code, designation)")
       .eq("id", id)
       .single();
     setTicket(data);

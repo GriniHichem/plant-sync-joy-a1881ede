@@ -46,9 +46,25 @@ export default function MachinesList() {
           <h1 className="text-2xl font-bold">Machines</h1>
           <p className="text-muted-foreground">Parc machine — {machines.length} équipements</p>
         </div>
-        <Button onClick={() => navigate("/machines/new")} className="h-12 px-6">
-          <Plus className="h-4 w-4 mr-2" /> Ajouter
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, [
+            { key: "code", label: "Code" },
+            { key: "designation", label: "Désignation" },
+            { key: "machine_families.name", label: "Famille" },
+            { key: "criticite", label: "Criticité" },
+            { key: "statut", label: "Statut" },
+            { key: "localisation", label: "Localisation" },
+            { key: "marque", label: "Marque" },
+            { key: "modele", label: "Modèle" },
+          ], "machines")}>
+            <Download className="h-4 w-4 mr-1" /> CSV
+          </Button>
+          {canCreate("machines") && (
+            <Button onClick={() => navigate("/machines/new")} className="h-12 px-6">
+              <Plus className="h-4 w-4 mr-2" /> Ajouter
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

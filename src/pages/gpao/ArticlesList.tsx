@@ -30,7 +30,22 @@ export default function ArticlesList() {
             {lowStock > 0 && <span className="text-destructive ml-2 inline-flex items-center gap-1"><AlertCircle className="h-3.5 w-3.5" /> {lowStock} en stock critique</span>}
           </p>
         </div>
-        <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Ajouter</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, [
+            { key: "code", label: "Code" },
+            { key: "designation", label: "Désignation" },
+            { key: "stock_actuel", label: "Stock" },
+            { key: "stock_min", label: "Stock min" },
+            { key: "unite", label: "Unité" },
+            { key: "prix_unitaire", label: "Prix unit." },
+            { key: "fournisseur", label: "Fournisseur" },
+          ], "articles")}>
+            <Download className="h-4 w-4 mr-1" /> CSV
+          </Button>
+          {canCreate("articles") && (
+            <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Ajouter</Button>
+          )}
+        </div>
       </div>
       <Card>
         <CardHeader className="pb-3">

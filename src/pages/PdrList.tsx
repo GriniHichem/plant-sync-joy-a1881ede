@@ -45,9 +45,24 @@ export default function PdrList() {
             )}
           </p>
         </div>
-        <Button className="h-12 px-6">
-          <Plus className="h-4 w-4 mr-2" /> Ajouter
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, [
+            { key: "reference", label: "Référence" },
+            { key: "designation", label: "Désignation" },
+            { key: "stock_actuel", label: "Stock actuel" },
+            { key: "stock_min", label: "Stock min" },
+            { key: "prix_unitaire", label: "Prix unit." },
+            { key: "fournisseur", label: "Fournisseur" },
+            { key: "emplacement", label: "Emplacement" },
+          ], "pieces_rechange")}>
+            <Download className="h-4 w-4 mr-1" /> CSV
+          </Button>
+          {canCreate("pdr") && (
+            <Button className="h-12 px-6">
+              <Plus className="h-4 w-4 mr-2" /> Ajouter
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

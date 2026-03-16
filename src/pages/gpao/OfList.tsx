@@ -139,6 +139,8 @@ export default function OfList() {
             </div>
           </DialogContent>
         </Dialog>
+          )}
+        </div>
       </div>
 
       <Card>

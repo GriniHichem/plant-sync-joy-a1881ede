@@ -14,6 +14,14 @@ import TicketsList from "@/pages/TicketsList";
 import TicketDetail from "@/pages/TicketDetail";
 import PreventifList from "@/pages/PreventifList";
 import Parametres from "@/pages/Parametres";
+import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
+import OfList from "@/pages/gpao/OfList";
+import OfDetail from "@/pages/gpao/OfDetail";
+import ProductsList from "@/pages/gpao/ProductsList";
+import ArticlesList from "@/pages/gpao/ArticlesList";
+import ShiftScreen from "@/pages/gpao/ShiftScreen";
+import ConsumptionPage from "@/pages/gpao/ConsumptionPage";
+import StopsPage from "@/pages/gpao/StopsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,9 +42,7 @@ function ProtectedRoutes() {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  return (
-    <AppLayout />
-  );
+  return <AppLayout />;
 }
 
 const App = () => (
@@ -49,6 +55,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route element={<ProtectedRoutes />}>
+              {/* GMAO */}
               <Route path="/" element={<Dashboard />} />
               <Route path="/machines" element={<MachinesList />} />
               <Route path="/machines/:id" element={<MachineDetail />} />
@@ -56,6 +63,16 @@ const App = () => (
               <Route path="/tickets" element={<TicketsList />} />
               <Route path="/tickets/:id" element={<TicketDetail />} />
               <Route path="/preventif" element={<PreventifList />} />
+              {/* GPAO */}
+              <Route path="/gpao" element={<GpaoDashboard />} />
+              <Route path="/gpao/of" element={<OfList />} />
+              <Route path="/gpao/of/:id" element={<OfDetail />} />
+              <Route path="/gpao/produits" element={<ProductsList />} />
+              <Route path="/gpao/articles" element={<ArticlesList />} />
+              <Route path="/gpao/shift" element={<ShiftScreen />} />
+              <Route path="/gpao/consommations" element={<ConsumptionPage />} />
+              <Route path="/gpao/arrets" element={<StopsPage />} />
+              {/* Admin */}
               <Route path="/parametres" element={<Parametres />} />
               <Route path="/parametres/*" element={<Parametres />} />
             </Route>

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
-import { ArrowLeft, Clock, User, Wrench } from "lucide-react";
+import { ArrowLeft, Clock, User, Wrench, Factory } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,7 +24,7 @@ export default function TicketDetail() {
     if (!id) return;
     const { data } = await supabase
       .from("tickets")
-      .select("*, machines(code, designation)")
+      .select("*, machines(code, designation), ordres_fabrication(numero), production_lines(code, designation)")
       .eq("id", id)
       .single();
     setTicket(data);

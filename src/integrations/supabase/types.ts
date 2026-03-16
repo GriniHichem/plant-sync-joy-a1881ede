@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          designation: string
+          fournisseur: string | null
+          id: string
+          is_active: boolean
+          prix_unitaire: number | null
+          stock_actuel: number
+          stock_min: number
+          unite: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          designation: string
+          fournisseur?: string | null
+          id?: string
+          is_active?: boolean
+          prix_unitaire?: number | null
+          stock_actuel?: number
+          stock_min?: number
+          unite?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          designation?: string
+          fournisseur?: string | null
+          id?: string
+          is_active?: boolean
+          prix_unitaire?: number | null
+          stock_actuel?: number
+          stock_min?: number
+          unite?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -46,6 +91,64 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      consumptions: {
+        Row: {
+          article_id: string
+          created_at: string
+          declared_by: string | null
+          id: string
+          notes: string | null
+          of_id: string
+          quantite: number
+          shift_id: string | null
+          unite: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          declared_by?: string | null
+          id?: string
+          notes?: string | null
+          of_id: string
+          quantite?: number
+          shift_id?: string | null
+          unite?: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          declared_by?: string | null
+          id?: string
+          notes?: string | null
+          of_id?: string
+          quantite?: number
+          shift_id?: string | null
+          unite?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consumptions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumptions_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumptions_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       intervention_pdr: {
         Row: {
@@ -313,6 +416,91 @@ export type Database = {
           },
         ]
       }
+      ordres_fabrication: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date_debut_prevue: string | null
+          date_debut_reelle: string | null
+          date_fin_prevue: string | null
+          date_fin_reelle: string | null
+          id: string
+          is_active: boolean
+          line_id: string | null
+          numero: string
+          product_id: string
+          quantite_prevue: number
+          quantite_produite: number
+          quantite_rebut: number
+          recipe_id: string | null
+          statut: Database["public"]["Enums"]["of_statut"]
+          unite: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date_debut_prevue?: string | null
+          date_debut_reelle?: string | null
+          date_fin_prevue?: string | null
+          date_fin_reelle?: string | null
+          id?: string
+          is_active?: boolean
+          line_id?: string | null
+          numero: string
+          product_id: string
+          quantite_prevue?: number
+          quantite_produite?: number
+          quantite_rebut?: number
+          recipe_id?: string | null
+          statut?: Database["public"]["Enums"]["of_statut"]
+          unite?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date_debut_prevue?: string | null
+          date_debut_reelle?: string | null
+          date_fin_prevue?: string | null
+          date_fin_reelle?: string | null
+          id?: string
+          is_active?: boolean
+          line_id?: string | null
+          numero?: string
+          product_id?: string
+          quantite_prevue?: number
+          quantite_produite?: number
+          quantite_rebut?: number
+          recipe_id?: string | null
+          statut?: Database["public"]["Enums"]["of_statut"]
+          unite?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordres_fabrication_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordres_fabrication_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordres_fabrication_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       panne_types: {
         Row: {
           created_at: string
@@ -473,6 +661,218 @@ export type Database = {
           },
         ]
       }
+      production_declarations: {
+        Row: {
+          created_at: string
+          declared_by: string | null
+          heure_production: string
+          id: string
+          notes: string | null
+          of_id: string
+          quantite_produite: number
+          quantite_rebut: number
+          shift_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          declared_by?: string | null
+          heure_production: string
+          id?: string
+          notes?: string | null
+          of_id: string
+          quantite_produite?: number
+          quantite_rebut?: number
+          shift_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          declared_by?: string | null
+          heure_production?: string
+          id?: string
+          notes?: string | null
+          of_id?: string
+          quantite_produite?: number
+          quantite_rebut?: number
+          shift_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_declarations_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_declarations_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_lines: {
+        Row: {
+          code: string
+          created_at: string
+          designation: string
+          id: string
+          is_active: boolean
+          machine_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          designation: string
+          id?: string
+          is_active?: boolean
+          machine_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          designation?: string
+          id?: string
+          is_active?: boolean
+          machine_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_lines_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_stops: {
+        Row: {
+          created_at: string
+          declared_by: string | null
+          description: string | null
+          duree_minutes: number | null
+          heure_debut: string
+          heure_fin: string | null
+          id: string
+          line_id: string | null
+          machine_id: string | null
+          of_id: string
+          shift_id: string
+          ticket_id: string | null
+          type: Database["public"]["Enums"]["arret_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          declared_by?: string | null
+          description?: string | null
+          duree_minutes?: number | null
+          heure_debut?: string
+          heure_fin?: string | null
+          id?: string
+          line_id?: string | null
+          machine_id?: string | null
+          of_id: string
+          shift_id: string
+          ticket_id?: string | null
+          type?: Database["public"]["Enums"]["arret_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          declared_by?: string | null
+          description?: string | null
+          duree_minutes?: number | null
+          heure_debut?: string
+          heure_fin?: string | null
+          id?: string
+          line_id?: string | null
+          machine_id?: string | null
+          of_id?: string
+          shift_id?: string
+          ticket_id?: string | null
+          type?: Database["public"]["Enums"]["arret_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_stops_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_stops_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_stops_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_stops_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_stops_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          designation: string
+          id: string
+          is_active: boolean
+          unite: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          designation: string
+          id?: string
+          is_active?: boolean
+          unite?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          designation?: string
+          id?: string
+          is_active?: boolean
+          unite?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -508,6 +908,143 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      recipe_lines: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          quantite: number
+          recipe_id: string
+          unite: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          quantite?: number
+          recipe_id: string
+          unite?: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          quantite?: number
+          recipe_id?: string
+          unite?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_lines_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_lines_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          product_id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          product_id: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          product_id?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shifts: {
+        Row: {
+          chef_ligne_id: string | null
+          created_at: string
+          date_shift: string
+          heure_debut: string
+          heure_fin: string
+          id: string
+          is_active: boolean
+          line_id: string
+          of_id: string
+          shift_type: Database["public"]["Enums"]["shift_type"]
+          updated_at: string
+        }
+        Insert: {
+          chef_ligne_id?: string | null
+          created_at?: string
+          date_shift: string
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          is_active?: boolean
+          line_id: string
+          of_id: string
+          shift_type: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Update: {
+          chef_ligne_id?: string | null
+          created_at?: string
+          date_shift?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          is_active?: boolean
+          line_id?: string
+          of_id?: string
+          shift_type?: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tickets: {
         Row: {
@@ -587,6 +1124,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "tickets_ligne_id_fkey"
+            columns: ["ligne_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_machine_id_fkey"
             columns: ["machine_id"]
             isOneToOne: false
@@ -594,10 +1138,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tickets_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tickets_panne_type_id_fkey"
             columns: ["panne_type_id"]
             isOneToOne: false
             referencedRelation: "panne_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
             referencedColumns: ["id"]
           },
         ]
@@ -645,6 +1203,14 @@ export type Database = {
         | "chef_ligne"
         | "operateur"
         | "gestionnaire_magasin"
+      arret_type:
+        | "panne"
+        | "changement_serie"
+        | "pause"
+        | "nettoyage"
+        | "attente_matiere"
+        | "qualite"
+        | "autre"
       criticite: "A" | "B" | "C"
       frequence_preventif:
         | "quotidien"
@@ -655,6 +1221,8 @@ export type Database = {
         | "annuel"
       intervention_statut: "en_cours" | "terminee" | "annulee"
       machine_statut: "en_marche" | "arret" | "maintenance"
+      of_statut: "planifie" | "en_cours" | "termine" | "annule"
+      shift_type: "matin" | "apres_midi" | "nuit"
       ticket_priorite: "critique" | "haute" | "normale" | "basse"
       ticket_statut:
         | "ouvert"
@@ -798,6 +1366,15 @@ export const Constants = {
         "operateur",
         "gestionnaire_magasin",
       ],
+      arret_type: [
+        "panne",
+        "changement_serie",
+        "pause",
+        "nettoyage",
+        "attente_matiere",
+        "qualite",
+        "autre",
+      ],
       criticite: ["A", "B", "C"],
       frequence_preventif: [
         "quotidien",
@@ -809,6 +1386,8 @@ export const Constants = {
       ],
       intervention_statut: ["en_cours", "terminee", "annulee"],
       machine_statut: ["en_marche", "arret", "maintenance"],
+      of_statut: ["planifie", "en_cours", "termine", "annule"],
+      shift_type: ["matin", "apres_midi", "nuit"],
       ticket_priorite: ["critique", "haute", "normale", "basse"],
       ticket_statut: [
         "ouvert",

@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FolderTree, AlertTriangle, Wrench } from "lucide-react";
+import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const sections = [
   { title: "Utilisateurs", description: "Gérer les comptes et rôles", icon: Users, url: "/parametres/users" },
+  { title: "Matrice des rôles", description: "Permissions détaillées par rôle", icon: ShieldCheck, url: "/parametres/roles" },
   { title: "Familles machines", description: "Catégories et sous-familles", icon: FolderTree, url: "/parametres/familles" },
   { title: "Types de panne", description: "Référentiel des types de panne", icon: AlertTriangle, url: "/parametres/pannes" },
   { title: "Général", description: "Paramètres de l'application", icon: Wrench, url: "/parametres/general" },

@@ -18,6 +18,7 @@ import Parametres from "@/pages/Parametres";
 import UsersAdmin from "@/pages/parametres/UsersAdmin";
 import FamillesAdmin from "@/pages/parametres/FamillesAdmin";
 import PannesAdmin from "@/pages/parametres/PannesAdmin";
+import RolesMatrix from "@/pages/parametres/RolesMatrix";
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";
 import OfDetail from "@/pages/gpao/OfDetail";

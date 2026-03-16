@@ -300,8 +300,17 @@ export default function ShiftScreen() {
     }
   };
 
-  // --- Consumption ---
+  // --- Completion checks ---
   const allProductionDeclared = hourlySlots.length > 0 && hourlySlots.every((slot) => getSlotDeclaration(slot));
+
+  const consumptionsSaved = recipeLines.length > 0
+    ? recipeLines.every((rl: any) => {
+        const qte = consumptionEntries[rl.article_id];
+        return qte !== undefined && qte !== "" && parseFloat(qte) >= 0;
+      }) && existingConsumptions.length > 0
+    : existingConsumptions.length > 0;
+
+  const canCloseShift = allProductionDeclared && consumptionsSaved;
 
   const totalProduced = declarations.reduce((sum, d) => sum + (d.quantite_produite || 0), 0);
 
@@ -365,6 +374,14 @@ export default function ShiftScreen() {
 
   const handleCloseShift = async () => {
     if (!activeShift) return;
+    if (!allProductionDeclared) {
+      toast({ title: "Impossible", description: "Toutes les heures de production doivent être saisies avant la clôture.", variant: "destructive" });
+      return;
+    }
+    if (!consumptionsSaved) {
+      toast({ title: "Impossible", description: "Les consommations matières doivent être déclarées selon la recette avant la clôture.", variant: "destructive" });
+      return;
+    }
     await supabase.from("shifts").update({
       statut: "termine",
       heure_fin_reelle: new Date().toISOString(),
@@ -803,9 +820,17 @@ export default function ShiftScreen() {
                 <Button variant="outline" onClick={handleSaveObservations} className="flex-1">
                   Enregistrer
                 </Button>
-                <Button variant="destructive" onClick={handleCloseShift}>
+                <Button variant="destructive" onClick={handleCloseShift} disabled={!canCloseShift}
+                  title={!canCloseShift ? "Saisissez toutes les heures de production et les consommations matières avant de clôturer" : ""}>
                   Clôturer le shift
+                  {!canCloseShift && <Lock className="h-3 w-3 ml-1" />}
                 </Button>
+                {!canCloseShift && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {!allProductionDeclared ? "⚠ Production : toutes les heures doivent être saisies. " : ""}
+                    {!consumptionsSaved ? "⚠ Consommations matières non déclarées." : ""}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -22,6 +22,7 @@ import PannesAdmin from "@/pages/parametres/PannesAdmin";
 import RolesMatrix from "@/pages/parametres/RolesMatrix";
 import ShiftsAdmin from "@/pages/parametres/ShiftsAdmin";
 import LignesAdmin from "@/pages/parametres/LignesAdmin";
+import GeneralSettings from "@/pages/parametres/GeneralSettings";
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";
 import OfDetail from "@/pages/gpao/OfDetail";
@@ -111,6 +112,7 @@ const App = () => (
               <Route path="/parametres/roles" element={<RolesMatrix />} />
               <Route path="/parametres/shifts" element={<ShiftsAdmin />} />
               <Route path="/parametres/lignes" element={<LignesAdmin />} />
+              <Route path="/parametres/general" element={<GeneralSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

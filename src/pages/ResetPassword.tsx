@@ -97,7 +97,6 @@ export default function ResetPassword() {
               {loading ? "Mise à jour..." : "Mettre à jour le mot de passe"}
             </Button>
           </form>
-        </DialogContent>
         </CardContent>
       </Card>
     </div>

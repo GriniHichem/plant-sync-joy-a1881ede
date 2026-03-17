@@ -150,6 +150,109 @@ export type Database = {
           },
         ]
       }
+      equipements: {
+        Row: {
+          code: string
+          created_at: string
+          criticite: Database["public"]["Enums"]["criticite"]
+          criticite_maintenance:
+            | Database["public"]["Enums"]["criticite_maintenance"]
+            | null
+          date_mise_en_service: string | null
+          description: string | null
+          designation: string
+          family_id: string | null
+          id: string
+          is_active: boolean
+          line_id: string | null
+          localisation: string | null
+          machine_id: string | null
+          marque: string | null
+          modele: string | null
+          numero_serie: string | null
+          role_fonctionnel:
+            | Database["public"]["Enums"]["role_fonctionnel"]
+            | null
+          statut: Database["public"]["Enums"]["equipement_statut"]
+          type: Database["public"]["Enums"]["equipement_type"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          criticite?: Database["public"]["Enums"]["criticite"]
+          criticite_maintenance?:
+            | Database["public"]["Enums"]["criticite_maintenance"]
+            | null
+          date_mise_en_service?: string | null
+          description?: string | null
+          designation: string
+          family_id?: string | null
+          id?: string
+          is_active?: boolean
+          line_id?: string | null
+          localisation?: string | null
+          machine_id?: string | null
+          marque?: string | null
+          modele?: string | null
+          numero_serie?: string | null
+          role_fonctionnel?:
+            | Database["public"]["Enums"]["role_fonctionnel"]
+            | null
+          statut?: Database["public"]["Enums"]["equipement_statut"]
+          type?: Database["public"]["Enums"]["equipement_type"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          criticite?: Database["public"]["Enums"]["criticite"]
+          criticite_maintenance?:
+            | Database["public"]["Enums"]["criticite_maintenance"]
+            | null
+          date_mise_en_service?: string | null
+          description?: string | null
+          designation?: string
+          family_id?: string | null
+          id?: string
+          is_active?: boolean
+          line_id?: string | null
+          localisation?: string | null
+          machine_id?: string | null
+          marque?: string | null
+          modele?: string | null
+          numero_serie?: string | null
+          role_fonctionnel?:
+            | Database["public"]["Enums"]["role_fonctionnel"]
+            | null
+          statut?: Database["public"]["Enums"]["equipement_statut"]
+          type?: Database["public"]["Enums"]["equipement_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipements_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "machine_families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipements_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipements_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intervention_pdr: {
         Row: {
           created_at: string
@@ -1626,6 +1729,20 @@ export type Database = {
       criticite: "A" | "B" | "C"
       criticite_maintenance: "faible" | "moyenne" | "elevee" | "critique"
       disponibilite_pdr: "disponible" | "partiel" | "indisponible"
+      equipement_statut:
+        | "en_service"
+        | "hors_service"
+        | "en_maintenance"
+        | "reforme"
+      equipement_type:
+        | "capteur"
+        | "actionneur"
+        | "convoyeur"
+        | "peripherique"
+        | "utilite"
+        | "sous_ensemble"
+        | "instrument"
+        | "autre"
       frequence_preventif:
         | "quotidien"
         | "hebdomadaire"
@@ -1805,6 +1922,22 @@ export const Constants = {
       criticite: ["A", "B", "C"],
       criticite_maintenance: ["faible", "moyenne", "elevee", "critique"],
       disponibilite_pdr: ["disponible", "partiel", "indisponible"],
+      equipement_statut: [
+        "en_service",
+        "hors_service",
+        "en_maintenance",
+        "reforme",
+      ],
+      equipement_type: [
+        "capteur",
+        "actionneur",
+        "convoyeur",
+        "peripherique",
+        "utilite",
+        "sous_ensemble",
+        "instrument",
+        "autre",
+      ],
       frequence_preventif: [
         "quotidien",
         "hebdomadaire",

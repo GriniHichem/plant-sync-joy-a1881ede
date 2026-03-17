@@ -38,10 +38,14 @@ export default function UsersAdmin() {
   const [selRole, setSelRole] = useState("");
 
   const load = async () => {
-    const { data: p } = await supabase.from("profiles").select("*").order("last_name");
-    setProfiles(p || []);
-    const { data: r } = await supabase.from("user_roles").select("*");
-    setRoles(r || []);
+    const [pRes, rRes, imgRes] = await Promise.all([
+      supabase.from("profiles").select("*").order("last_name"),
+      supabase.from("user_roles").select("*"),
+      supabase.from("entity_images").select("*").eq("entity_type", "user").eq("is_primary", true),
+    ]);
+    setProfiles(pRes.data || []);
+    setRoles(rRes.data || []);
+    setEntityImages(imgRes.data || []);
   };
 
   useEffect(() => { load(); }, []);

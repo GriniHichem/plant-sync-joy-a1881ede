@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Shield, Trash2, Users, Camera } from "lucide-react";
+import { ArrowLeft, Plus, Shield, Trash2, Users, Camera, Pencil, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Constants } from "@/integrations/supabase/types";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
@@ -36,12 +36,30 @@ export default function UsersAdmin() {
   const [roles, setRoles] = useState<any[]>([]);
   const [entityImages, setEntityImages] = useState<any[]>([]);
   const [search, setSearch] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Role dialog
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selUserId, setSelUserId] = useState("");
   const [selRole, setSelRole] = useState("");
-  const [photoUserId, setPhotoUserId] = useState<string | null>(null);
 
+  // Photo dialog
+  const [photoUserId, setPhotoUserId] = useState<string | null>(null);
   const userImages = useEntityImages("user", photoUserId || undefined);
+
+  // Edit profile dialog
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editProfile, setEditProfile] = useState<any>(null);
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editPoste, setEditPoste] = useState("");
+
+  // Create user dialog
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const load = async () => {
     const [pRes, rRes, imgRes] = await Promise.all([
@@ -56,11 +74,8 @@ export default function UsersAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  // Reload thumbnails when photo dialog closes
   useEffect(() => {
-    if (!photoUserId) {
-      load();
-    }
+    if (!photoUserId) load();
   }, [photoUserId]);
 
   const getUserRoles = (userId: string) => roles.filter((r) => r.user_id === userId);
@@ -77,7 +92,7 @@ export default function UsersAdmin() {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Rôle ajouté" });
-      setDialogOpen(false);
+      setRoleDialogOpen(false);
       setSelUserId("");
       setSelRole("");
       load();
@@ -91,6 +106,65 @@ export default function UsersAdmin() {
     } else {
       toast({ title: "Rôle retiré" });
       load();
+    }
+  };
+
+  const openEditDialog = (profile: any) => {
+    setEditProfile(profile);
+    setEditFirstName(profile.first_name || "");
+    setEditLastName(profile.last_name || "");
+    setEditPoste(profile.poste || "");
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!editProfile) return;
+    const { error } = await supabase.from("profiles").update({
+      first_name: editFirstName,
+      last_name: editLastName,
+      poste: editPoste,
+    }).eq("user_id", editProfile.user_id);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Profil mis à jour" });
+      setEditDialogOpen(false);
+      setEditProfile(null);
+      load();
+    }
+  };
+
+  const handleCreateUser = async () => {
+    if (!newEmail || !newPassword || !newFirstName || !newLastName) {
+      toast({ title: "Veuillez remplir tous les champs", variant: "destructive" });
+      return;
+    }
+    setCreating(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: newEmail,
+        password: newPassword,
+        options: {
+          data: { first_name: newFirstName, last_name: newLastName },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      toast({
+        title: "Utilisateur créé",
+        description: "Un email de confirmation a été envoyé à " + newEmail,
+      });
+      setCreateDialogOpen(false);
+      setNewEmail("");
+      setNewPassword("");
+      setNewFirstName("");
+      setNewLastName("");
+      // Reload after a short delay to allow trigger to create profile
+      setTimeout(load, 2000);
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -117,39 +191,79 @@ export default function UsersAdmin() {
           <h1 className="text-2xl font-bold">Utilisateurs & Rôles</h1>
           <p className="text-muted-foreground">{profiles.length} utilisateur(s)</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Attribuer un rôle</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Attribuer un rôle</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Utilisateur *</Label>
-                <Select value={selUserId} onValueChange={setSelUserId}>
-                  <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>
-                    {profiles.map((p) => (
-                      <SelectItem key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <div className="flex gap-2">
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="h-12 px-6"><UserPlus className="h-4 w-4 mr-2" /> Créer un utilisateur</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Créer un utilisateur</DialogTitle>
+                <DialogDescription>Le nouvel utilisateur recevra un email de confirmation.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Prénom *</Label>
+                    <Input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} className="h-12" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nom *</Label>
+                    <Input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} className="h-12" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Email *</Label>
+                  <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="h-12" placeholder="nom@entreprise.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mot de passe *</Label>
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-12" minLength={6} placeholder="Min. 6 caractères" />
+                </div>
+                <Button onClick={handleCreateUser} disabled={creating} className="w-full h-12">
+                  {creating ? "Création..." : "Créer l'utilisateur"}
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Rôle *</Label>
-                <Select value={selRole} onValueChange={setSelRole}>
-                  <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>
-                    {Constants.public.Enums.app_role.map((r) => (
-                      <SelectItem key={r} value={r}>{ROLE_LABELS[r] || r}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Attribuer un rôle</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Attribuer un rôle</DialogTitle>
+                <DialogDescription>Sélectionnez un utilisateur et le rôle à attribuer.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Utilisateur *</Label>
+                  <Select value={selUserId} onValueChange={setSelUserId}>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((p) => (
+                        <SelectItem key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Rôle *</Label>
+                  <Select value={selRole} onValueChange={setSelRole}>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>
+                      {Constants.public.Enums.app_role.map((r) => (
+                        <SelectItem key={r} value={r}>{ROLE_LABELS[r] || r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleAddRole} className="w-full h-12">Attribuer</Button>
               </div>
-              <Button onClick={handleAddRole} className="w-full h-12">Attribuer</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Input placeholder="Rechercher un utilisateur…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-12 max-w-md" />
@@ -163,7 +277,7 @@ export default function UsersAdmin() {
                 <TableHead>Nom</TableHead>
                 <TableHead>Poste</TableHead>
                 <TableHead>Rôles</TableHead>
-                <TableHead className="w-20" />
+                <TableHead className="w-20">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -197,7 +311,11 @@ export default function UsersAdmin() {
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell />
+                    <TableCell>
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)} title="Modifier le profil">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -206,11 +324,39 @@ export default function UsersAdmin() {
         </CardContent>
       </Card>
 
+      {/* Edit profile dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier le profil</DialogTitle>
+            <DialogDescription>Modifiez les informations de l'utilisateur.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Prénom</Label>
+                <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>Nom</Label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="h-12" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Poste</Label>
+              <Input value={editPoste} onChange={(e) => setEditPoste(e.target.value)} className="h-12" placeholder="Ex: Technicien maintenance" />
+            </div>
+            <Button onClick={handleUpdateProfile} className="w-full h-12">Enregistrer</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Photo upload dialog */}
       <Dialog open={!!photoUserId} onOpenChange={(open) => { if (!open) setPhotoUserId(null); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Photo de profil</DialogTitle>
+            <DialogDescription>Ajoutez ou modifiez la photo de profil.</DialogDescription>
           </DialogHeader>
           {photoUserId && (
             <EntityImageUploader

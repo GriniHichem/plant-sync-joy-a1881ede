@@ -304,7 +304,7 @@ export default function MachineForm() {
               </div>
               <div className="space-y-2">
                 <Label>Famille</Label>
-                <Select value={form.family_id} onValueChange={(v) => handleChange("family_id", v)}>
+                <Select value={form.family_id || "__none__"} onValueChange={(v) => handleChange("family_id", v)}>
                   <SelectTrigger className="h-12"><SelectValue placeholder="Aucune" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Aucune</SelectItem>

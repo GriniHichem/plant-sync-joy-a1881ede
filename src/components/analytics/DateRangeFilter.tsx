@@ -92,7 +92,6 @@ export function DateRangeFilter({
                 mode="single"
                 selected={tempFrom}
                 onSelect={setTempFrom}
-                locale={fr}
                 className="p-0 pointer-events-auto"
               />
             </div>

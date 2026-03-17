@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, FileText, Package, Wrench, CalendarCheck, Clock, Factory } from "lucide-react";
+import { ArrowLeft, Edit, FileText, Package, Wrench, CalendarCheck, Clock, Factory, Component } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { usePermissions } from "@/hooks/usePermissions";
 

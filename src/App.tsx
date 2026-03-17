@@ -78,6 +78,10 @@ const App = () => (
               <Route path="/tickets/:id" element={<TicketDetail />} />
               <Route path="/preventif" element={<PreventifList />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/equipements" element={<EquipmentsList />} />
+              <Route path="/equipements/new" element={<EquipmentForm />} />
+              <Route path="/equipements/:id" element={<EquipmentDetail />} />
+              <Route path="/equipements/:id/edit" element={<EquipmentForm />} />
               {/* GPAO */}
               <Route path="/gpao" element={<GpaoDashboard />} />
               <Route path="/gpao/of" element={<OfList />} />

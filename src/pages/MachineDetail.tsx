@@ -40,7 +40,7 @@ export default function MachineDetail() {
   const [interventions, setInterventions] = useState<any[]>([]);
   const [lineAssignments, setLineAssignments] = useState<any[]>([]);
   const [linkedEquipments, setLinkedEquipments] = useState<any[]>([]);
-
+  const entityImages = useEntityImages("machine", id);
   useEffect(() => {
     if (!id) return;
     const load = async () => {

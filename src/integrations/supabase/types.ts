@@ -425,6 +425,7 @@ export type Database = {
           line_id: string
           machine_id: string
           priority: number
+          sort_order: number
         }
         Insert: {
           created_at?: string
@@ -432,6 +433,7 @@ export type Database = {
           line_id: string
           machine_id: string
           priority?: number
+          sort_order?: number
         }
         Update: {
           created_at?: string
@@ -439,6 +441,7 @@ export type Database = {
           line_id?: string
           machine_id?: string
           priority?: number
+          sort_order?: number
         }
         Relationships: [
           {

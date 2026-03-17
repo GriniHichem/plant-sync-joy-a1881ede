@@ -11,6 +11,7 @@ import MachinesList from "@/pages/MachinesList";
 import MachineDetail from "@/pages/MachineDetail";
 import MachineForm from "@/pages/MachineForm";
 import PdrList from "@/pages/PdrList";
+import PdrDetail from "@/pages/PdrDetail";
 import TicketsList from "@/pages/TicketsList";
 import TicketDetail from "@/pages/TicketDetail";
 import PreventifList from "@/pages/PreventifList";

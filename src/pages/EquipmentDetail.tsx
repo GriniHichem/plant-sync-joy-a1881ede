@@ -83,8 +83,23 @@ export default function EquipmentDetail() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
+          <CardHeader><CardTitle className="text-base">Photo</CardTitle></CardHeader>
+          <CardContent>
+            <EntityImageUploader
+              images={entityImages.images}
+              primaryImage={entityImages.primaryImage}
+              uploading={entityImages.uploading}
+              onUpload={entityImages.uploadImage}
+              onDelete={entityImages.deleteImage}
+              onSetPrimary={entityImages.setPrimary}
+              canEdit={canEdit("machines")}
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
           <CardHeader><CardTitle className="text-base">Informations générales</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
             {[
@@ -110,6 +125,7 @@ export default function EquipmentDetail() {
             )}
           </CardContent>
         </Card>
+      </div>
 
         <Card>
           <CardHeader><CardTitle className="text-base">Classification & Process</CardTitle></CardHeader>

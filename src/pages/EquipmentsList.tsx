@@ -149,7 +149,8 @@ export default function EquipmentsList() {
                     <StatusBadge type="criticite" value={e.criticite} />
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

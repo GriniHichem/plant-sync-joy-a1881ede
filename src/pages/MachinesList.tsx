@@ -142,8 +142,8 @@ export default function MachinesList() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"></TableHead>
                 <TableHead>Code</TableHead>
-                <TableHead>Désignation</TableHead>
                 <TableHead className="hidden md:table-cell">Famille</TableHead>
                 <TableHead className="hidden lg:table-cell">Ligne(s)</TableHead>
                 <TableHead>Criticité</TableHead>

@@ -125,6 +125,9 @@ export default function MachineDetail() {
           <TabsTrigger value="preventif" className="h-9">
             <CalendarCheck className="h-3.5 w-3.5 mr-1" /> Préventif
           </TabsTrigger>
+          <TabsTrigger value="equipements" className="h-9">
+            <Component className="h-3.5 w-3.5 mr-1" /> Équipements ({linkedEquipments.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="info">

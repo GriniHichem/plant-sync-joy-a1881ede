@@ -8,8 +8,10 @@ import { Plus, Search, Package, AlertCircle, Download } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
+import { useNavigate } from "react-router-dom";
 
 export default function PdrList() {
+  const navigate = useNavigate();
   const { canCreate } = usePermissions();
   const [pdrList, setPdrList] = useState<any[]>([]);
   const [entityImages, setEntityImages] = useState<any[]>([]);
@@ -108,7 +110,7 @@ export default function PdrList() {
                 filtered.map((p) => {
                   const img = entityImages.find((i: any) => i.entity_id === p.id);
                   return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/pdr/${p.id}`)}>
                     <TableCell className="w-10 pr-0">
                       <EntityThumbnail imageUrl={img?.image_url} alt={p.designation} size="sm" rounded="md" />
                     </TableCell>

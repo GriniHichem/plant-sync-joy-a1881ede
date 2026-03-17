@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save } from "lucide-react";
+import { useEntityImages } from "@/hooks/useEntityImages";
+import { EntityImageUploader } from "@/components/images/EntityImageUploader";
 
 const TYPE_OPTIONS = [
   { value: "capteur", label: "Capteur" },
@@ -82,6 +84,7 @@ export default function EquipmentForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isEdit = !!id;
+  const entityImages = useEntityImages("equipement", isEdit ? id : undefined);
   const [form, setForm] = useState<FormState>(INITIAL);
   const [families, setFamilies] = useState<any[]>([]);
   const [machines, setMachines] = useState<any[]>([]);
@@ -178,6 +181,23 @@ export default function EquipmentForm() {
         </Button>
         <h1 className="text-2xl font-bold">{isEdit ? "Modifier" : "Nouvel"} équipement</h1>
       </div>
+
+      {/* Image uploader for existing equipments */}
+      {isEdit && id && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Photo de l'équipement</CardTitle></CardHeader>
+          <CardContent>
+            <EntityImageUploader
+              images={entityImages.images}
+              primaryImage={entityImages.primaryImage}
+              uploading={entityImages.uploading}
+              onUpload={entityImages.uploadImage}
+              onDelete={entityImages.deleteImage}
+              onSetPrimary={entityImages.setPrimary}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>

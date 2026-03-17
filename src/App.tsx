@@ -11,6 +11,7 @@ import MachinesList from "@/pages/MachinesList";
 import MachineDetail from "@/pages/MachineDetail";
 import MachineForm from "@/pages/MachineForm";
 import PdrList from "@/pages/PdrList";
+import PdrDetail from "@/pages/PdrDetail";
 import TicketsList from "@/pages/TicketsList";
 import TicketDetail from "@/pages/TicketDetail";
 import PreventifList from "@/pages/PreventifList";
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/machines/:id" element={<MachineDetail />} />
               <Route path="/machines/:id/edit" element={<MachineForm />} />
               <Route path="/pdr" element={<PdrList />} />
+              <Route path="/pdr/:id" element={<PdrDetail />} />
               <Route path="/tickets" element={<TicketsList />} />
               <Route path="/tickets/:id" element={<TicketDetail />} />
               <Route path="/preventif" element={<PreventifList />} />

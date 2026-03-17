@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Shield, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Plus, Shield, Trash2, Users, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Constants } from "@/integrations/supabase/types";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
+import { useEntityImages } from "@/hooks/useEntityImages";
+import { EntityImageUploader } from "@/components/images/EntityImageUploader";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrateur",
@@ -23,6 +25,7 @@ const ROLE_LABELS: Record<string, string> = {
   chef_ligne: "Chef de ligne",
   operateur: "Opérateur",
   gestionnaire_magasin: "Gest. Magasin",
+  bureau_methode: "Bureau Méthode",
 };
 
 export default function UsersAdmin() {
@@ -36,6 +39,9 @@ export default function UsersAdmin() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selUserId, setSelUserId] = useState("");
   const [selRole, setSelRole] = useState("");
+  const [photoUserId, setPhotoUserId] = useState<string | null>(null);
+
+  const userImages = useEntityImages("user", photoUserId || undefined);
 
   const load = async () => {
     const [pRes, rRes, imgRes] = await Promise.all([
@@ -49,6 +55,13 @@ export default function UsersAdmin() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Reload thumbnails when photo dialog closes
+  useEffect(() => {
+    if (!photoUserId) {
+      load();
+    }
+  }, [photoUserId]);
 
   const getUserRoles = (userId: string) => roles.filter((r) => r.user_id === userId);
 
@@ -155,14 +168,19 @@ export default function UsersAdmin() {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground"><Users className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun utilisateur</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground"><Users className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun utilisateur</TableCell></TableRow>
               ) : filtered.map((p) => {
                 const userRoles = getUserRoles(p.user_id);
                 const img = entityImages.find((i: any) => i.entity_id === p.user_id);
                 return (
                   <TableRow key={p.id}>
                     <TableCell className="w-10 pr-0">
-                      <EntityThumbnail imageUrl={img?.image_url} alt={`${p.first_name} ${p.last_name}`} size="sm" rounded="full" />
+                      <button onClick={() => setPhotoUserId(p.user_id)} className="relative group">
+                        <EntityThumbnail imageUrl={img?.image_url} alt={`${p.first_name} ${p.last_name}`} size="sm" rounded="full" />
+                        <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <Camera className="h-3 w-3 text-white" />
+                        </div>
+                      </button>
                     </TableCell>
                     <TableCell className="font-medium">{p.first_name} {p.last_name}</TableCell>
                     <TableCell className="text-muted-foreground">{p.poste || "—"}</TableCell>
@@ -187,6 +205,27 @@ export default function UsersAdmin() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Photo upload dialog */}
+      <Dialog open={!!photoUserId} onOpenChange={(open) => { if (!open) setPhotoUserId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Photo de profil</DialogTitle>
+          </DialogHeader>
+          {photoUserId && (
+            <EntityImageUploader
+              images={userImages.images}
+              primaryImage={userImages.primaryImage}
+              uploading={userImages.uploading}
+              onUpload={userImages.uploadImage}
+              onDelete={userImages.deleteImage}
+              onSetPrimary={userImages.setPrimary}
+              canEdit={true}
+              maxImages={1}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

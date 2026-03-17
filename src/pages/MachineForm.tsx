@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Save, Upload, Trash2, FileText, Plus, X } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 import { Badge } from "@/components/ui/badge";
+import { useEntityImages } from "@/hooks/useEntityImages";
+import { EntityImageUploader } from "@/components/images/EntityImageUploader";
 
 const ROLE_OPTIONS = [
   { value: "alimentation", label: "Alimentation" },

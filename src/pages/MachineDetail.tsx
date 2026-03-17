@@ -37,6 +37,7 @@ export default function MachineDetail() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [interventions, setInterventions] = useState<any[]>([]);
   const [lineAssignments, setLineAssignments] = useState<any[]>([]);
+  const [linkedEquipments, setLinkedEquipments] = useState<any[]>([]);
 
   useEffect(() => {
     if (!id) return;

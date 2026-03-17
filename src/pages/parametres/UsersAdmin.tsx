@@ -146,8 +146,8 @@ export default function UsersAdmin() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"></TableHead>
                 <TableHead>Nom</TableHead>
-                <TableHead>Poste</TableHead>
                 <TableHead>Rôles</TableHead>
                 <TableHead className="w-20" />
               </TableRow>

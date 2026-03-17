@@ -39,10 +39,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 const gmaoItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Machines", url: "/machines", icon: Cog },
+  { title: "Équipements", url: "/equipements", icon: Component },
+  { title: "Lignes", url: "/lignes", icon: Factory },
   { title: "Pièces (PDR)", url: "/pdr", icon: Package },
   { title: "Tickets", url: "/tickets", icon: AlertTriangle },
   { title: "Préventif", url: "/preventif", icon: CalendarCheck },
-  { title: "Équipements", url: "/equipements", icon: Component },
   { title: "Analyse & KPI", url: "/analytics", icon: Activity },
 ];
 

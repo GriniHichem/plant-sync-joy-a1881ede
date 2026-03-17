@@ -272,6 +272,23 @@ export default function MachineForm() {
         </Button>
       </div>
 
+      {/* Image uploader for existing machines */}
+      {!isNew && id && (
+        <Card>
+          <CardHeader><CardTitle>Photo de la machine</CardTitle></CardHeader>
+          <CardContent>
+            <EntityImageUploader
+              images={entityImages.images}
+              primaryImage={entityImages.primaryImage}
+              uploading={entityImages.uploading}
+              onUpload={entityImages.uploadImage}
+              onDelete={entityImages.deleteImage}
+              onSetPrimary={entityImages.setPrimary}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Main form */}
         <Card className="lg:col-span-2">

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Package, Plus, AlertCircle, Download } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 
 export default function ArticlesList() {
   const { canCreate } = usePermissions();

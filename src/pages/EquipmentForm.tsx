@@ -84,6 +84,7 @@ export default function EquipmentForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isEdit = !!id;
+  const entityImages = useEntityImages("equipement", isEdit ? id : undefined);
   const [form, setForm] = useState<FormState>(INITIAL);
   const [families, setFamilies] = useState<any[]>([]);
   const [machines, setMachines] = useState<any[]>([]);

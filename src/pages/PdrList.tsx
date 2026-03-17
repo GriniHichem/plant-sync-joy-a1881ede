@@ -123,8 +123,8 @@ export default function PdrList() {
                     <TableCell className="hidden md:table-cell text-muted-foreground">{p.fournisseur || "—"}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{p.emplacement || "—"}</TableCell>
                   </TableRow>
-                ))
-              )}
+                  );
+                })
             </TableBody>
           </Table>
         </CardContent>

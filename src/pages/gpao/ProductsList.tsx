@@ -67,7 +67,8 @@ export default function ProductsList() {
                   <TableCell>{p.unite}</TableCell>
                   <TableCell className="text-muted-foreground">{p.description || "—"}</TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

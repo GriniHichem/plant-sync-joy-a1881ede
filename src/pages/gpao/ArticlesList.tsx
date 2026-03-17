@@ -99,7 +99,8 @@ export default function ArticlesList() {
                   <TableCell className="hidden md:table-cell tabular-nums">{a.prix_unitaire ? `${a.prix_unitaire} €` : "—"}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">{a.fournisseur || "—"}</TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

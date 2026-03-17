@@ -157,8 +157,12 @@ export default function UsersAdmin() {
                 <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground"><Users className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun utilisateur</TableCell></TableRow>
               ) : filtered.map((p) => {
                 const userRoles = getUserRoles(p.user_id);
+                const img = entityImages.find((i: any) => i.entity_id === p.user_id);
                 return (
                   <TableRow key={p.id}>
+                    <TableCell className="w-10 pr-0">
+                      <EntityThumbnail imageUrl={img?.image_url} alt={`${p.first_name} ${p.last_name}`} size="sm" rounded="full" />
+                    </TableCell>
                     <TableCell className="font-medium">{p.first_name} {p.last_name}</TableCell>
                     <TableCell className="text-muted-foreground">{p.poste || "—"}</TableCell>
                     <TableCell>

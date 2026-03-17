@@ -108,7 +108,7 @@ export default function PdrList() {
                 filtered.map((p) => {
                   const img = entityImages.find((i: any) => i.entity_id === p.id);
                   return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/pdr/${p.id}`)}>
                     <TableCell className="w-10 pr-0">
                       <EntityThumbnail imageUrl={img?.image_url} alt={p.designation} size="sm" rounded="md" />
                     </TableCell>

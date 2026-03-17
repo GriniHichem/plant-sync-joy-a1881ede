@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
 import { Badge } from "@/components/ui/badge";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 
 export default function MachinesList() {
   const [machines, setMachines] = useState<any[]>([]);

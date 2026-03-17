@@ -315,6 +315,45 @@ export type Database = {
           },
         ]
       }
+      machine_line_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          line_id: string
+          machine_id: string
+          priority: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_id: string
+          machine_id: string
+          priority?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_id?: string
+          machine_id?: string
+          priority?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_line_assignments_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "machine_line_assignments_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       machine_pdr: {
         Row: {
           created_at: string
@@ -359,16 +398,26 @@ export type Database = {
           code: string
           created_at: string
           criticite: Database["public"]["Enums"]["criticite"]
+          criticite_maintenance:
+            | Database["public"]["Enums"]["criticite_maintenance"]
+            | null
           date_mise_en_service: string | null
           description: string | null
           designation: string
+          disponibilite_pdr:
+            | Database["public"]["Enums"]["disponibilite_pdr"]
+            | null
           family_id: string | null
           id: string
+          impact_ligne: Database["public"]["Enums"]["impact_ligne"] | null
           is_active: boolean
           localisation: string | null
           marque: string | null
           modele: string | null
           numero_serie: string | null
+          role_fonctionnel:
+            | Database["public"]["Enums"]["role_fonctionnel"]
+            | null
           statut: Database["public"]["Enums"]["machine_statut"]
           updated_at: string
         }
@@ -376,16 +425,26 @@ export type Database = {
           code: string
           created_at?: string
           criticite?: Database["public"]["Enums"]["criticite"]
+          criticite_maintenance?:
+            | Database["public"]["Enums"]["criticite_maintenance"]
+            | null
           date_mise_en_service?: string | null
           description?: string | null
           designation: string
+          disponibilite_pdr?:
+            | Database["public"]["Enums"]["disponibilite_pdr"]
+            | null
           family_id?: string | null
           id?: string
+          impact_ligne?: Database["public"]["Enums"]["impact_ligne"] | null
           is_active?: boolean
           localisation?: string | null
           marque?: string | null
           modele?: string | null
           numero_serie?: string | null
+          role_fonctionnel?:
+            | Database["public"]["Enums"]["role_fonctionnel"]
+            | null
           statut?: Database["public"]["Enums"]["machine_statut"]
           updated_at?: string
         }
@@ -393,16 +452,26 @@ export type Database = {
           code?: string
           created_at?: string
           criticite?: Database["public"]["Enums"]["criticite"]
+          criticite_maintenance?:
+            | Database["public"]["Enums"]["criticite_maintenance"]
+            | null
           date_mise_en_service?: string | null
           description?: string | null
           designation?: string
+          disponibilite_pdr?:
+            | Database["public"]["Enums"]["disponibilite_pdr"]
+            | null
           family_id?: string | null
           id?: string
+          impact_ligne?: Database["public"]["Enums"]["impact_ligne"] | null
           is_active?: boolean
           localisation?: string | null
           marque?: string | null
           modele?: string | null
           numero_serie?: string | null
+          role_fonctionnel?:
+            | Database["public"]["Enums"]["role_fonctionnel"]
+            | null
           statut?: Database["public"]["Enums"]["machine_statut"]
           updated_at?: string
         }
@@ -779,8 +848,10 @@ export type Database = {
       }
       production_lines: {
         Row: {
+          atelier: string | null
           code: string
           created_at: string
+          description: string | null
           designation: string
           id: string
           is_active: boolean
@@ -788,8 +859,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          atelier?: string | null
           code: string
           created_at?: string
+          description?: string | null
           designation: string
           id?: string
           is_active?: boolean
@@ -797,8 +870,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          atelier?: string | null
           code?: string
           created_at?: string
+          description?: string | null
           designation?: string
           id?: string
           is_active?: boolean
@@ -1549,6 +1624,8 @@ export type Database = {
         | "qualite"
         | "autre"
       criticite: "A" | "B" | "C"
+      criticite_maintenance: "faible" | "moyenne" | "elevee" | "critique"
+      disponibilite_pdr: "disponible" | "partiel" | "indisponible"
       frequence_preventif:
         | "quotidien"
         | "hebdomadaire"
@@ -1556,9 +1633,21 @@ export type Database = {
         | "trimestriel"
         | "semestriel"
         | "annuel"
+      impact_ligne: "arret_complet" | "arret_partiel" | "degradation" | "aucun"
       intervention_statut: "en_cours" | "terminee" | "annulee"
       machine_statut: "en_marche" | "arret" | "maintenance"
       of_statut: "planifie" | "en_cours" | "termine" | "annule"
+      role_fonctionnel:
+        | "alimentation"
+        | "transformation"
+        | "dosage"
+        | "melange"
+        | "convoyage"
+        | "conditionnement"
+        | "controle"
+        | "evacuation"
+        | "utilite"
+        | "autre"
       shift_type: "matin" | "apres_midi" | "nuit"
       ticket_priorite: "critique" | "haute" | "normale" | "basse"
       ticket_statut:
@@ -1714,6 +1803,8 @@ export const Constants = {
         "autre",
       ],
       criticite: ["A", "B", "C"],
+      criticite_maintenance: ["faible", "moyenne", "elevee", "critique"],
+      disponibilite_pdr: ["disponible", "partiel", "indisponible"],
       frequence_preventif: [
         "quotidien",
         "hebdomadaire",
@@ -1722,9 +1813,22 @@ export const Constants = {
         "semestriel",
         "annuel",
       ],
+      impact_ligne: ["arret_complet", "arret_partiel", "degradation", "aucun"],
       intervention_statut: ["en_cours", "terminee", "annulee"],
       machine_statut: ["en_marche", "arret", "maintenance"],
       of_statut: ["planifie", "en_cours", "termine", "annule"],
+      role_fonctionnel: [
+        "alimentation",
+        "transformation",
+        "dosage",
+        "melange",
+        "convoyage",
+        "conditionnement",
+        "controle",
+        "evacuation",
+        "utilite",
+        "autre",
+      ],
       shift_type: ["matin", "apres_midi", "nuit"],
       ticket_priorite: ["critique", "haute", "normale", "basse"],
       ticket_statut: [

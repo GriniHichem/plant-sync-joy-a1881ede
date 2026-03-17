@@ -92,6 +92,7 @@ const App = () => (
               <Route path="/parametres/pannes" element={<PannesAdmin />} />
               <Route path="/parametres/roles" element={<RolesMatrix />} />
               <Route path="/parametres/shifts" element={<ShiftsAdmin />} />
+              <Route path="/parametres/lignes" element={<LignesAdmin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -19,7 +19,6 @@ export default function MachinesList() {
   const [lines, setLines] = useState<any[]>([]);
   const [lineAssignments, setLineAssignments] = useState<any[]>([]);
   const [entityImages, setEntityImages] = useState<any[]>([]);
-  const [lineAssignments, setLineAssignments] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [familyFilter, setFamilyFilter] = useState<string>("all");

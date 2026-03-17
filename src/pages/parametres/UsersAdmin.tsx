@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Shield, Trash2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Constants } from "@/integrations/supabase/types";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrateur",

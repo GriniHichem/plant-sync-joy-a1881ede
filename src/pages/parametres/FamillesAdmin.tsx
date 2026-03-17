@@ -46,7 +46,7 @@ export default function FamillesAdmin() {
       toast({ title: "Le nom est obligatoire", variant: "destructive" });
       return;
     }
-    const payload = { name: name.trim(), description: description.trim() || null, parent_id: parentId || null };
+    const payload = { name: name.trim(), description: description.trim() || null, parent_id: parentId && parentId !== "__none__" ? parentId : null };
     const { error } = editId
       ? await supabase.from("machine_families").update(payload).eq("id", editId)
       : await supabase.from("machine_families").insert(payload);

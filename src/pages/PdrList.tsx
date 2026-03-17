@@ -125,6 +125,7 @@ export default function PdrList() {
                   </TableRow>
                   );
                 })
+              )}
             </TableBody>
           </Table>
         </CardContent>

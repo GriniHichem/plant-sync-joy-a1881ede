@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Package, AlertCircle, Download } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 
 export default function PdrList() {
   const { canCreate } = usePermissions();

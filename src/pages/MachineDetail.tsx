@@ -414,7 +414,48 @@ export default function MachineDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="equipements">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Désignation</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Statut</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {linkedEquipments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <Component className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                        Aucun équipement rattaché
+                      </TableCell>
+                    </TableRow>
+                  ) : linkedEquipments.map((eq: any) => (
+                    <TableRow key={eq.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/equipements/${eq.id}`)}>
+                      <TableCell className="font-mono font-medium">{eq.code}</TableCell>
+                      <TableCell>{eq.designation}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-xs capitalize">{eq.type?.replace("_", " ")}</Badge></TableCell>
+                      <TableCell>
+                        <Badge variant={eq.statut === "en_service" ? "default" : eq.statut === "hors_service" ? "destructive" : "secondary"} className="text-xs">
+                          {eq.statut?.replace("_", " ")}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
     </div>
   );
 }

@@ -55,8 +55,13 @@ export default function ProductsList() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground"><Package className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun produit</TableCell></TableRow>
-              ) : filtered.map((p) => (
+              ) : filtered.map((p) => {
+                const img = entityImages.find((i: any) => i.entity_id === p.id);
+                return (
                 <TableRow key={p.id}>
+                  <TableCell className="w-10 pr-0">
+                    <EntityThumbnail imageUrl={img?.image_url} alt={p.designation} size="sm" rounded="md" />
+                  </TableCell>
                   <TableCell className="font-mono font-medium">{p.code}</TableCell>
                   <TableCell>{p.designation}</TableCell>
                   <TableCell>{p.unite}</TableCell>

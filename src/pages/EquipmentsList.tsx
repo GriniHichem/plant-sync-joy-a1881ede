@@ -31,7 +31,7 @@ export default function EquipmentsList() {
   const { canCreate } = usePermissions();
   const [equipments, setEquipments] = useState<any[]>([]);
   const [lines, setLines] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
+  const [entityImages, setEntityImages] = useState<any[]>([]);
   const [lineFilter, setLineFilter] = useState("__all__");
   const [typeFilter, setTypeFilter] = useState("__all__");
 

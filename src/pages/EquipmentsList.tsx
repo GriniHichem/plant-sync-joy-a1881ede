@@ -122,8 +122,13 @@ export default function EquipmentsList() {
                     Aucun équipement trouvé
                   </TableCell>
                 </TableRow>
-              ) : filtered.map((e) => (
+              ) : filtered.map((e) => {
+                const img = entityImages.find((i: any) => i.entity_id === e.id);
+                return (
                 <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/equipements/${e.id}`)}>
+                  <TableCell className="w-10 pr-0">
+                    <EntityThumbnail imageUrl={img?.image_url} alt={e.designation} size="sm" rounded="md" />
+                  </TableCell>
                   <TableCell className="font-mono font-medium">{e.code}</TableCell>
                   <TableCell>{e.designation}</TableCell>
                   <TableCell>

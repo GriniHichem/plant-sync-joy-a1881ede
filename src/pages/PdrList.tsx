@@ -104,8 +104,13 @@ export default function PdrList() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((p) => (
+                filtered.map((p) => {
+                  const img = entityImages.find((i: any) => i.entity_id === p.id);
+                  return (
                   <TableRow key={p.id}>
+                    <TableCell className="w-10 pr-0">
+                      <EntityThumbnail imageUrl={img?.image_url} alt={p.designation} size="sm" rounded="md" />
+                    </TableCell>
                     <TableCell className="font-mono font-medium">{p.reference}</TableCell>
                     <TableCell>{p.designation}</TableCell>
                     <TableCell className="tabular-nums">

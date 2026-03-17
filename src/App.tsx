@@ -85,6 +85,10 @@ const App = () => (
               <Route path="/equipements/new" element={<EquipmentForm />} />
               <Route path="/equipements/:id" element={<EquipmentDetail />} />
               <Route path="/equipements/:id/edit" element={<EquipmentForm />} />
+              {/* Lignes synoptique */}
+              <Route path="/lignes" element={<LinesList />} />
+              <Route path="/lignes/:id" element={<LineSynoptic />} />
+              <Route path="/lignes/:id/config" element={<LineConfig />} />
               {/* GPAO */}
               <Route path="/gpao" element={<GpaoDashboard />} />
               <Route path="/gpao/of" element={<OfList />} />

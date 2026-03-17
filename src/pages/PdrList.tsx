@@ -12,6 +12,7 @@ import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 export default function PdrList() {
   const { canCreate } = usePermissions();
   const [pdrList, setPdrList] = useState<any[]>([]);
+  const [entityImages, setEntityImages] = useState<any[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {

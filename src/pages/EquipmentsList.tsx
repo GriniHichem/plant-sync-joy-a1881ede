@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 
 const TYPE_LABELS: Record<string, string> = {
   capteur: "Capteur", actionneur: "Actionneur", convoyeur: "Convoyeur",

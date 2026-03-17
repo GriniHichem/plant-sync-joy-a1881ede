@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Package, Plus } from "lucide-react";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 
 export default function ProductsList() {
   const [products, setProducts] = useState<any[]>([]);

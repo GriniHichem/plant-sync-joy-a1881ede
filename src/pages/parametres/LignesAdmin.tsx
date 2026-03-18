@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Factory, Plus, Shield } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Edit, Factory, Plus, Shield, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function LignesAdmin() {
@@ -25,12 +26,44 @@ export default function LignesAdmin() {
   const [description, setDescription] = useState("");
   const [atelier, setAtelier] = useState("");
 
+  // Line-products
+  const [productsDialogOpen, setProductsDialogOpen] = useState(false);
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [lineProducts, setLineProducts] = useState<any[]>([]);
+
   const load = async () => {
-    const { data } = await supabase.from("production_lines").select("*").order("code");
-    setLines(data || []);
+    const [lRes, pRes] = await Promise.all([
+      supabase.from("production_lines").select("*").order("code"),
+      supabase.from("products").select("id, code, designation").eq("is_active", true).order("code"),
+    ]);
+    setLines(lRes.data || []);
+    setAllProducts(pRes.data || []);
   };
 
   useEffect(() => { load(); }, []);
+
+  const loadLineProducts = async (lineId: string) => {
+    const { data } = await supabase.from("line_products").select("*").eq("line_id", lineId);
+    setLineProducts(data || []);
+  };
+
+  const openProducts = (lineId: string) => {
+    setSelectedLineId(lineId);
+    loadLineProducts(lineId);
+    setProductsDialogOpen(true);
+  };
+
+  const toggleProduct = async (productId: string) => {
+    if (!selectedLineId) return;
+    const existing = lineProducts.find((lp: any) => lp.product_id === productId);
+    if (existing) {
+      await supabase.from("line_products").delete().eq("id", existing.id);
+    } else {
+      await supabase.from("line_products").insert({ line_id: selectedLineId, product_id: productId } as any);
+    }
+    loadLineProducts(selectedLineId);
+  };
 
   const resetForm = () => {
     setEditId(null);
@@ -126,6 +159,35 @@ export default function LignesAdmin() {
         </Dialog>
       </div>
 
+      {/* Products association dialog */}
+      <Dialog open={productsDialogOpen} onOpenChange={setProductsDialogOpen}>
+        <DialogContent className="max-w-md max-h-[70vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Produits autorisés
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Sélectionnez les produits autorisés pour cette ligne. Si aucun n'est coché, tous les produits seront disponibles.
+          </p>
+          <div className="space-y-2 mt-2">
+            {allProducts.map((p) => {
+              const isLinked = lineProducts.some((lp: any) => lp.product_id === p.id);
+              return (
+                <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
+                  <Checkbox checked={isLinked} onCheckedChange={() => toggleProduct(p.id)} />
+                  <div>
+                    <p className="text-sm font-medium">{p.code}</p>
+                    <p className="text-xs text-muted-foreground">{p.designation}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -136,7 +198,7 @@ export default function LignesAdmin() {
                 <TableHead className="hidden md:table-cell">Atelier</TableHead>
                 <TableHead className="hidden md:table-cell">Description</TableHead>
                 <TableHead>Statut</TableHead>
-                <TableHead className="w-24" />
+                <TableHead className="w-32" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -159,9 +221,14 @@ export default function LignesAdmin() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(l)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openProducts(l.id)} title="Produits autorisés">
+                        <Package className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(l)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

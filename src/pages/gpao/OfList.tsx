@@ -20,6 +20,7 @@ export default function OfList() {
   const [products, setProducts] = useState<any[]>([]);
   const [lines, setLines] = useState<any[]>([]);
   const [recipes, setRecipes] = useState<any[]>([]);
+  const [lineProducts, setLineProducts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -46,12 +47,32 @@ export default function OfList() {
     supabase.from("products").select("*").eq("is_active", true).order("code").then(({ data }) => setProducts(data || []));
     supabase.from("production_lines").select("*").eq("is_active", true).order("code").then(({ data }) => setLines(data || []));
     supabase.from("recipes").select("*").eq("is_active", true).then(({ data }) => setRecipes(data || []));
+    supabase.from("line_products").select("*").then(({ data }) => setLineProducts(data || []));
     supabase.from("shift_modes").select("*").eq("is_active", true).order("code").then(({ data }) => {
       setShiftModes(data || []);
       const def = (data || []).find((m: any) => m.is_default);
       if (def) setNewShiftModeId(def.id);
     });
   }, []);
+
+  // Filter products by selected line
+  const getFilteredProducts = () => {
+    if (!newLineId) return products;
+    const linkedProductIds = lineProducts.filter((lp: any) => lp.line_id === newLineId).map((lp: any) => lp.product_id);
+    if (linkedProductIds.length === 0) return products; // No restrictions = show all
+    return products.filter((p) => linkedProductIds.includes(p.id));
+  };
+
+  // Reset product when line changes and product not available
+  const handleLineChange = (lineId: string) => {
+    setNewLineId(lineId);
+    if (lineId) {
+      const linkedIds = lineProducts.filter((lp: any) => lp.line_id === lineId).map((lp: any) => lp.product_id);
+      if (linkedIds.length > 0 && newProductId && !linkedIds.includes(newProductId)) {
+        setNewProductId("");
+      }
+    }
+  };
 
   const handleCreate = async () => {
     if (!newProductId || !newQte) {
@@ -86,6 +107,8 @@ export default function OfList() {
     return matchSearch && matchStatus;
   });
 
+  const availableProducts = getFilteredProducts();
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -116,17 +139,20 @@ export default function OfList() {
             <DialogHeader><DialogTitle>Nouvel ordre de fabrication</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
+                <Label>Ligne de production</Label>
+                <Select value={newLineId} onValueChange={handleLineChange}>
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner (optionnel)" /></SelectTrigger>
+                  <SelectContent>{lines.map((l) => <SelectItem key={l.id} value={l.id}>{l.code} — {l.designation}</SelectItem>)}</SelectContent>
+                </Select>
+                {newLineId && availableProducts.length < products.length && (
+                  <p className="text-xs text-muted-foreground">{availableProducts.length} produit(s) autorisé(s) pour cette ligne</p>
+                )}
+              </div>
+              <div className="space-y-2">
                 <Label>Produit *</Label>
                 <Select value={newProductId} onValueChange={setNewProductId}>
                   <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.designation}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Ligne de production</Label>
-                <Select value={newLineId} onValueChange={setNewLineId}>
-                  <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner (optionnel)" /></SelectTrigger>
-                  <SelectContent>{lines.map((l) => <SelectItem key={l.id} value={l.id}>{l.code} — {l.designation}</SelectItem>)}</SelectContent>
+                  <SelectContent>{availableProducts.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.designation}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
@@ -194,7 +220,7 @@ export default function OfList() {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground"><ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun OF</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground"><ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun OF</TableCell></TableRow>
               ) : filtered.map((of) => {
                 const progress = of.quantite_prevue > 0 ? Math.round((of.quantite_produite / of.quantite_prevue) * 100) : 0;
                 return (

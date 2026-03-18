@@ -321,6 +321,7 @@ export default function OfDetail() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10"></TableHead>
                     <TableHead>Article</TableHead>
                     <TableHead>Quantité</TableHead>
                     <TableHead>Unité</TableHead>

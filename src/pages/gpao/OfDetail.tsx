@@ -141,12 +141,23 @@ export default function OfDetail() {
   const formatTime = (ts: string | null) => ts ? new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—";
   const formatDate = (ts: string | null) => ts ? new Date(ts).toLocaleDateString("fr-FR") : "—";
 
+  const productImageMap = useEntityPrimaryImages("produit", of ? [of.product_id] : []);
+  const articleIds = consumptions.map((c) => c.article_id).filter(Boolean);
+  const articleImageMap = useEntityPrimaryImages("article", articleIds);
+
   return (
     <div className="space-y-4 max-w-5xl">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/gpao/of")} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
+        <EntityThumbnail
+          imageUrl={productImageMap[of.product_id]}
+          alt={of.products?.designation}
+          size="lg"
+          rounded="lg"
+          enableLightbox
+        />
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{of.numero}</h1>
           <div className="flex items-center gap-2 mt-1">

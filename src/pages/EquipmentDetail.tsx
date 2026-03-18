@@ -9,6 +9,7 @@ import { ArrowLeft, Edit, Cog, Factory } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 
 const TYPE_LABELS: Record<string, string> = {
   capteur: "Capteur", actionneur: "Actionneur", convoyeur: "Convoyeur",

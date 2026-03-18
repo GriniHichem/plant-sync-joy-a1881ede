@@ -10,6 +10,7 @@ const sections = [
   { title: "Types de panne", description: "Référentiel des types de panne", icon: AlertTriangle, url: "/parametres/pannes" },
   { title: "Lignes de production", description: "Gérer les lignes et ateliers", icon: Factory, url: "/parametres/lignes" },
   { title: "Shifts & Rotation", description: "Équipes, créneaux, planning et règles", icon: Clock, url: "/parametres/shifts" },
+  { title: "Photos & Images", description: "Taille max des photos par entité", icon: ImageIcon, url: "/parametres/images" },
   { title: "Général", description: "Paramètres de l'application", icon: Wrench, url: "/parametres/general" },
 ];
 

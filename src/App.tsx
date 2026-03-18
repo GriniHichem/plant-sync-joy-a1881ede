@@ -119,6 +119,7 @@ const App = () => (
               <Route path="/parametres/shifts" element={<ShiftsAdmin />} />
               <Route path="/parametres/lignes" element={<LignesAdmin />} />
               <Route path="/parametres/familles-produits" element={<ProductFamiliesAdmin />} />
+              <Route path="/parametres/images" element={<ImageSettings />} />
               <Route path="/parametres/general" element={<GeneralSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />

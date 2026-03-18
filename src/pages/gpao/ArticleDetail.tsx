@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Save } from "lucide-react";
 import { PackagingConfig } from "@/components/gpao/PackagingConfig";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { useEntityImages } from "@/hooks/useEntityImages";
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>();

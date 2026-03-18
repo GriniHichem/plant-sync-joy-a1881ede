@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, Package, Factory } from "lucide-react";
 import { PackagingConfig } from "@/components/gpao/PackagingConfig";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { useEntityImages } from "@/hooks/useEntityImages";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();

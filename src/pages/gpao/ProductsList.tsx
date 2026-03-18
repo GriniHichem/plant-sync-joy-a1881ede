@@ -67,7 +67,7 @@ export default function ProductsList() {
       unite,
       unite_base: uniteBase,
       code_erp: codeErp.trim() || null,
-      poids_unitaire: parseFloat(poidsUnitaire) || 0,
+      poids_unitaire: parseFloat(poidsUnitaire.replace(",", ".")) || 0,
       family_id: familyId || null,
     } as any);
     if (error) {

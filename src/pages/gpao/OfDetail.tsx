@@ -121,12 +121,15 @@ export default function OfDetail() {
     setDetailStops(sRes.data || []);
   };
 
+  const productImageMap = useEntityPrimaryImages("produit", of ? [of.product_id] : []);
+  const articleIds = consumptions.map((c) => c.article_id).filter(Boolean);
+  const articleImageMap = useEntityPrimaryImages("article", articleIds);
+
   if (!of) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
 
   const progress = of.quantite_prevue > 0 ? Math.round((of.quantite_produite / of.quantite_prevue) * 100) : 0;
   const totalStopMin = stops.reduce((s, st) => s + (st.duree_minutes || 0), 0);
 
-  // Compute per-shift stats from declarations
   function getShiftStats(shiftId: string) {
     const shiftDecls = declarations.filter((d) => d.shift_id === shiftId);
     const qte = shiftDecls.reduce((s, d) => s + (d.quantite_produite || 0), 0);
@@ -140,10 +143,6 @@ export default function OfDetail() {
 
   const formatTime = (ts: string | null) => ts ? new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—";
   const formatDate = (ts: string | null) => ts ? new Date(ts).toLocaleDateString("fr-FR") : "—";
-
-  const productImageMap = useEntityPrimaryImages("produit", of ? [of.product_id] : []);
-  const articleIds = consumptions.map((c) => c.article_id).filter(Boolean);
-  const articleImageMap = useEntityPrimaryImages("article", articleIds);
 
   return (
     <div className="space-y-4 max-w-5xl">

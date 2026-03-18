@@ -188,6 +188,7 @@ export default function ConsumptionPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>OF</TableHead>
+                  <TableHead className="w-10"></TableHead>
                   <TableHead>Article</TableHead>
                   <TableHead>Quantité</TableHead>
                   <TableHead>Unité</TableHead>

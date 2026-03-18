@@ -168,7 +168,10 @@ export default function ConsumptionPage() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-sm">{c.articles?.code} — {c.articles?.designation}</p>
+                  <div className="flex items-center gap-2">
+                    <EntityThumbnail imageUrl={articleImageMap[c.article_id]} alt={c.articles?.designation} size="sm" rounded="md" />
+                    <p className="text-sm">{c.articles?.code} — {c.articles?.designation}</p>
+                  </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="tabular-nums font-medium">{c.quantite} {c.unite}</span>
                     <span className="text-muted-foreground tabular-nums">

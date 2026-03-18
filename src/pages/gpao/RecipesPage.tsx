@@ -302,7 +302,7 @@ export default function RecipesPage() {
                     {isProductExpanded
                       ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
                       : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
-                    <BookOpen className="h-5 w-5 shrink-0 text-primary" />
+                    <EntityThumbnail imageUrl={productImageMap[prodId]} alt={group.product?.designation} size="md" rounded="lg" />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold">{group.product?.code} — {group.product?.designation}</p>
                       <p className="text-sm text-muted-foreground">

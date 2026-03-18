@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useImageMaxSize } from "@/hooks/useImageMaxSize";
 
 export interface EntityImage {
   id: string;
@@ -17,10 +18,18 @@ export interface EntityImage {
   uploaded_by: string | null;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_DIMENSION = 1920;
 const QUALITY = 0.82;
+
+const ENTITY_LABELS: Record<string, string> = {
+  machine: "les machines",
+  pdr: "les PDR",
+  equipement: "les équipements",
+  produit: "les produits",
+  article: "les articles",
+  user: "les utilisateurs",
+};
 
 async function compressImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -53,6 +62,7 @@ async function compressImage(file: File): Promise<Blob> {
 export function useEntityImages(entityType: string, entityId: string | undefined) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { maxSizeBytes, maxSizeMb } = useImageMaxSize(entityType);
   const [images, setImages] = useState<EntityImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -78,7 +88,10 @@ export function useEntityImages(entityType: string, entityId: string | undefined
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) return "Format non supporté. Utilisez JPG, PNG, WebP ou GIF.";
-    if (file.size > MAX_FILE_SIZE) return "Fichier trop volumineux (max 5 Mo).";
+    if (file.size > maxSizeBytes) {
+      const label = ENTITY_LABELS[entityType] || entityType;
+      return `Fichier trop volumineux (max ${maxSizeMb} Mo pour ${label}).`;
+    }
     return null;
   };
 
@@ -101,7 +114,6 @@ export function useEntityImages(entityType: string, entityId: string | undefined
 
       const { data: urlData } = supabase.storage.from("entity-images").getPublicUrl(path);
 
-      // If setting as primary, unset existing primary
       if (isPrimary) {
         await supabase
           .from("entity_images")
@@ -144,7 +156,6 @@ export function useEntityImages(entityType: string, entityId: string | undefined
     await supabase.storage.from("entity-images").remove([image.storage_path]);
     await supabase.from("entity_images").delete().eq("id", image.id);
 
-    // If was primary, promote next image
     if (image.is_primary) {
       const remaining = images.filter((i) => i.id !== image.id);
       if (remaining.length > 0) {
@@ -181,5 +192,6 @@ export function useEntityImages(entityType: string, entityId: string | undefined
     deleteImage,
     setPrimary,
     reload: load,
+    maxSizeMb,
   };
 }

@@ -83,13 +83,17 @@ export function AppSidebar() {
         <div className="flex items-center gap-2.5">
           <img
             src={logoEntreprise}
-            alt="Conserverie du Maghreb"
+            alt="Entreprise"
             className={`object-contain rounded-md shrink-0 ${collapsed ? "h-9 w-9" : "h-10"}`}
           />
           {!collapsed && (
             <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-sm font-bold text-sidebar-foreground truncate">Conserverie du Maghreb</span>
-              <span className="text-[11px] text-sidebar-foreground/60">GMAO / GPAO</span>
+              <span className="text-[13px] font-extrabold tracking-wider uppercase text-sidebar-primary">
+                PROD IN TIME
+              </span>
+              <span className="text-[10px] font-medium tracking-wide text-sidebar-foreground/50 uppercase">
+                GMAO · GPAO
+              </span>
             </div>
           )}
         </div>

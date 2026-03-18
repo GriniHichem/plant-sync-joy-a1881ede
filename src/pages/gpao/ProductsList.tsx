@@ -143,8 +143,8 @@ export default function ProductsList() {
                       <Input value={uniteBase} onChange={(e) => setUniteBase(e.target.value)} className="h-12" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Poids unit.</Label>
-                      <Input type="number" value={poidsUnitaire} onChange={(e) => setPoidsUnitaire(e.target.value)} className="h-12" placeholder="0" />
+                      <Label>Poids unit. (g)</Label>
+                      <Input value={poidsUnitaire} onChange={(e) => { const v = e.target.value; if (/^[0-9]*[,.]?[0-9]{0,4}$/.test(v) || v === "") setPoidsUnitaire(v); }} className="h-12" placeholder="0" inputMode="decimal" />
                     </div>
                   </div>
                   <div className="space-y-2">

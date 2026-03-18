@@ -147,7 +147,7 @@ export default function ProductDetail() {
                 </div>
                 <div className="space-y-2">
                   <Label>Poids unitaire ({uniteBase})</Label>
-                  <Input type="number" value={poidsUnitaire} onChange={(e) => setPoidsUnitaire(Number(e.target.value))} className="h-12" />
+                  <Input value={String(poidsUnitaire).replace(".", ",")} onChange={(e) => { const v = e.target.value; if (/^[0-9]*[,.]?[0-9]{0,4}$/.test(v) || v === "") setPoidsUnitaire(Number(v.replace(",", "."))); }} className="h-12" inputMode="decimal" />
                 </div>
               </div>
               <div className="space-y-2">

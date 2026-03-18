@@ -51,7 +51,7 @@ export default function ProductsList() {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setCode(""); setDesignation(""); setDescription(""); setUnite("kg"); setUniteBase("kg");
+    setCode(""); setDesignation(""); setDescription(""); setUnite("g"); setUniteBase("g");
     setCodeErp(""); setPoidsUnitaire(""); setFamilyId("");
   };
 

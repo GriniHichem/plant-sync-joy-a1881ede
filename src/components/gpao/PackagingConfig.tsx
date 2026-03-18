@@ -146,11 +146,10 @@ export function PackagingConfig({ entityType, entityId, poidsUnitaire = 0, unite
                         Coefficient ({i === 0 ? `× unité de base` : `× ${levels[i - 1]?.unite_name || "niveau " + i}`})
                       </Label>
                       <Input
-                        type="number"
-                        min="1"
-                        value={level.coefficient}
-                        onChange={(e) => updateLevel(i, "coefficient", Number(e.target.value))}
+                        value={String(level.coefficient).replace(".", ",")}
+                        onChange={(e) => { const v = e.target.value; if (/^[0-9]*[,.]?[0-9]{0,4}$/.test(v) || v === "") updateLevel(i, "coefficient", Number(v.replace(",", ".")) || 0); }}
                         className="h-9 text-sm"
+                        inputMode="decimal"
                       />
                     </div>
                   </div>

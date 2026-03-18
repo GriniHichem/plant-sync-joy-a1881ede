@@ -31,7 +31,7 @@ export default function ArticlesList() {
   const [code, setCode] = useState("");
   const [designation, setDesignation] = useState("");
   const [description, setDescription] = useState("");
-  const [unite, setUnite] = useState("kg");
+  const [unite, setUnite] = useState("g");
   const [codeErp, setCodeErp] = useState("");
   const [familyId, setFamilyId] = useState("");
   const [stockMin, setStockMin] = useState("");

@@ -19,6 +19,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import logoEntreprise from "@/assets/logo-entreprise.jpg";
 import {
   Sidebar,
   SidebarContent,
@@ -79,14 +80,16 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <Factory className="h-5 w-5" />
-          </div>
+        <div className="flex items-center gap-2.5">
+          <img
+            src={logoEntreprise}
+            alt="Conserverie du Maghreb"
+            className={`object-contain rounded-md shrink-0 ${collapsed ? "h-9 w-9" : "h-10"}`}
+          />
           {!collapsed && (
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold text-sidebar-foreground">GMAO / GPAO</span>
-              <span className="text-[11px] text-sidebar-foreground/60">Industriel</span>
+            <div className="flex flex-col leading-tight min-w-0">
+              <span className="text-sm font-bold text-sidebar-foreground truncate">Conserverie du Maghreb</span>
+              <span className="text-[11px] text-sidebar-foreground/60">GMAO / GPAO</span>
             </div>
           )}
         </div>

@@ -61,6 +61,11 @@ export default function RecipesPage() {
 
   useEffect(() => { load(); }, []);
 
+  const productIds = products.map((p) => p.id);
+  const articleIds = articles.map((a) => a.id);
+  const productImageMap = useEntityPrimaryImages("produit", productIds);
+  const articleImageMap = useEntityPrimaryImages("article", articleIds);
+
   // Group recipes by product_id (recette mère = produit)
   const recipesByProduct = useMemo(() => {
     const map: Record<string, { product: any; versions: any[] }> = {};

@@ -23,6 +23,7 @@ import RolesMatrix from "@/pages/parametres/RolesMatrix";
 import ShiftsAdmin from "@/pages/parametres/ShiftsAdmin";
 import LignesAdmin from "@/pages/parametres/LignesAdmin";
 import GeneralSettings from "@/pages/parametres/GeneralSettings";
+import ImageSettings from "@/pages/parametres/ImageSettings";
 import ProductFamiliesAdmin from "@/pages/parametres/ProductFamiliesAdmin";
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";
@@ -118,6 +119,7 @@ const App = () => (
               <Route path="/parametres/shifts" element={<ShiftsAdmin />} />
               <Route path="/parametres/lignes" element={<LignesAdmin />} />
               <Route path="/parametres/familles-produits" element={<ProductFamiliesAdmin />} />
+              <Route path="/parametres/images" element={<ImageSettings />} />
               <Route path="/parametres/general" element={<GeneralSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />

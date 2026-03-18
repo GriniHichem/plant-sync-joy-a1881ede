@@ -21,7 +21,7 @@ export default function ArticleDetail() {
   const [article, setArticle] = useState<any>(null);
   const [families, setFamilies] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
-  const entityImages = useEntityImages(id || "", "article");
+  const entityImages = useEntityImages("article", id);
 
   const [code, setCode] = useState("");
   const [designation, setDesignation] = useState("");
@@ -181,6 +181,7 @@ export default function ArticleDetail() {
                 onUpload={entityImages.uploadImage}
                 onDelete={entityImages.deleteImage}
                 onSetPrimary={entityImages.setPrimary}
+                maxSizeMb={entityImages.maxSizeMb}
               />
             </CardContent>
           </Card>

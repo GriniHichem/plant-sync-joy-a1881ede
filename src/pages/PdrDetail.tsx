@@ -126,6 +126,7 @@ export default function PdrDetail() {
               onDelete={entityImages.deleteImage}
               onSetPrimary={entityImages.setPrimary}
               canEdit={canEdit("pdr")}
+              maxSizeMb={entityImages.maxSizeMb}
             />
           </CardContent>
         </Card>

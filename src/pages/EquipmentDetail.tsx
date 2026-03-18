@@ -95,6 +95,7 @@ export default function EquipmentDetail() {
               onDelete={entityImages.deleteImage}
               onSetPrimary={entityImages.setPrimary}
               canEdit={canEdit("machines")}
+              maxSizeMb={entityImages.maxSizeMb}
             />
           </CardContent>
         </Card>

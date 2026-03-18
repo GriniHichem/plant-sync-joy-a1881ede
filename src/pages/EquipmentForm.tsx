@@ -182,9 +182,8 @@ export default function EquipmentForm() {
         <h1 className="text-2xl font-bold">{isEdit ? "Modifier" : "Nouvel"} équipement</h1>
       </div>
 
-      {/* Image uploader for existing equipments */}
       {isEdit && id && (
-        <Card>
+        <Card className="max-w-md">
           <CardHeader><CardTitle className="text-base">Photo de l'équipement</CardTitle></CardHeader>
           <CardContent>
             <EntityImageUploader
@@ -194,6 +193,7 @@ export default function EquipmentForm() {
               onUpload={entityImages.uploadImage}
               onDelete={entityImages.deleteImage}
               onSetPrimary={entityImages.setPrimary}
+              maxSizeMb={entityImages.maxSizeMb}
             />
           </CardContent>
         </Card>

@@ -25,7 +25,7 @@ export default function ProductDetail() {
   const [lineProducts, setLineProducts] = useState<any[]>([]);
   const [allLines, setAllLines] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
-  const entityImages = useEntityImages(id || "", "produit");
+  const entityImages = useEntityImages("produit", id);
   // Form
   const [code, setCode] = useState("");
   const [designation, setDesignation] = useState("");
@@ -219,6 +219,7 @@ export default function ProductDetail() {
                 onUpload={entityImages.uploadImage}
                 onDelete={entityImages.deleteImage}
                 onSetPrimary={entityImages.setPrimary}
+                maxSizeMb={entityImages.maxSizeMb}
               />
             </CardContent>
           </Card>

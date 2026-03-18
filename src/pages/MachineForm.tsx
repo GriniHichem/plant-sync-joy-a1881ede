@@ -274,7 +274,7 @@ export default function MachineForm() {
 
       {/* Image uploader for existing machines */}
       {!isNew && id && (
-        <Card>
+        <Card className="max-w-md">
           <CardHeader><CardTitle>Photo de la machine</CardTitle></CardHeader>
           <CardContent>
             <EntityImageUploader
@@ -284,6 +284,7 @@ export default function MachineForm() {
               onUpload={entityImages.uploadImage}
               onDelete={entityImages.deleteImage}
               onSetPrimary={entityImages.setPrimary}
+              maxSizeMb={entityImages.maxSizeMb}
             />
           </CardContent>
         </Card>

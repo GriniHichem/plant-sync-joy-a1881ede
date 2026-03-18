@@ -22,7 +22,7 @@ interface PackagingConfigProps {
   uniteBase?: string;
 }
 
-export function PackagingConfig({ entityType, entityId, poidsUnitaire = 0, uniteBase = "kg" }: PackagingConfigProps) {
+export function PackagingConfig({ entityType, entityId, poidsUnitaire = 0, uniteBase = "g" }: PackagingConfigProps) {
   const { toast } = useToast();
   const [levels, setLevels] = useState<PackagingLevel[]>([]);
   const [saving, setSaving] = useState(false);

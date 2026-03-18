@@ -57,6 +57,9 @@ export default function ConsumptionPage() {
     return true;
   });
 
+  const articleIds = consumptions.map((c) => c.article_id).filter(Boolean);
+  const articleImageMap = useEntityPrimaryImages("article", articleIds);
+
   const openEdit = (c: any) => {
     setEditItem(c);
     setEditQte(String(c.quantite));

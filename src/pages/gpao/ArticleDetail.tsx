@@ -174,7 +174,14 @@ export default function ArticleDetail() {
         <TabsContent value="images">
           <Card>
             <CardContent className="p-6">
-              <EntityImageUploader entityId={id!} entityType="article" />
+              <EntityImageUploader
+                images={entityImages.images}
+                primaryImage={entityImages.primaryImage}
+                uploading={entityImages.uploading}
+                onUpload={entityImages.uploadImage}
+                onDelete={entityImages.deleteImage}
+                onSetPrimary={entityImages.setPrimary}
+              />
             </CardContent>
           </Card>
         </TabsContent>

@@ -212,7 +212,14 @@ export default function ProductDetail() {
         <TabsContent value="images">
           <Card>
             <CardContent className="p-6">
-              <EntityImageUploader entityId={id!} entityType="produit" />
+              <EntityImageUploader
+                images={entityImages.images}
+                primaryImage={entityImages.primaryImage}
+                uploading={entityImages.uploading}
+                onUpload={entityImages.uploadImage}
+                onDelete={entityImages.deleteImage}
+                onSetPrimary={entityImages.setPrimary}
+              />
             </CardContent>
           </Card>
         </TabsContent>

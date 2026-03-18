@@ -102,7 +102,9 @@ const App = () => (
               <Route path="/gpao/of" element={<OfList />} />
               <Route path="/gpao/of/:id" element={<OfDetail />} />
               <Route path="/gpao/produits" element={<ProductsList />} />
+              <Route path="/gpao/produits/:id" element={<ProductDetail />} />
               <Route path="/gpao/articles" element={<ArticlesList />} />
+              <Route path="/gpao/articles/:id" element={<ArticleDetail />} />
               <Route path="/gpao/shift" element={<ShiftScreen />} />
               <Route path="/gpao/consommations" element={<ConsumptionPage />} />
               <Route path="/gpao/arrets" element={<StopsPage />} />

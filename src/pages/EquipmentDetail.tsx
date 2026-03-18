@@ -9,6 +9,7 @@ import { ArrowLeft, Edit, Cog, Factory } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 
 const TYPE_LABELS: Record<string, string> = {
   capteur: "Capteur", actionneur: "Actionneur", convoyeur: "Convoyeur",
@@ -56,6 +57,9 @@ export default function EquipmentDetail() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/equipements")} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
+        {entityImages.primaryImage && (
+          <EntityThumbnail imageUrl={entityImages.primaryImage.image_url} alt={equip.designation} size="lg" rounded="lg" enableLightbox />
+        )}
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{equip.code} — {equip.designation}</h1>
           <div className="flex items-center gap-2 mt-1 flex-wrap">

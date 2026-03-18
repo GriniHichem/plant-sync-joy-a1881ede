@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, FileText, Package, Wrench, CalendarCheck, Clock, Factory, Component } from "lucide-react";
+import { ArrowLeft, Edit, FileText, Package, Wrench, CalendarCheck, Clock, Factory, Component, ImageIcon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
+import { EntityImageUploader } from "@/components/images/EntityImageUploader";
 
 const ROLE_LABELS: Record<string, string> = {
   alimentation: "Alimentation", transformation: "Transformation", dosage: "Dosage",
@@ -115,6 +116,9 @@ export default function MachineDetail() {
       <Tabs defaultValue="info" className="space-y-4">
         <TabsList className="h-11">
           <TabsTrigger value="info" className="h-9">Infos</TabsTrigger>
+          <TabsTrigger value="images" className="h-9">
+            <ImageIcon className="h-3.5 w-3.5 mr-1" /> Photos
+          </TabsTrigger>
           <TabsTrigger value="documents" className="h-9">
             <FileText className="h-3.5 w-3.5 mr-1" /> Documents
           </TabsTrigger>
@@ -206,6 +210,24 @@ export default function MachineDetail() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="images">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Photos de la machine</CardTitle></CardHeader>
+            <CardContent>
+              <EntityImageUploader
+                images={entityImages.images}
+                primaryImage={entityImages.primaryImage}
+                uploading={entityImages.uploading}
+                onUpload={entityImages.uploadImage}
+                onDelete={entityImages.deleteImage}
+                onSetPrimary={entityImages.setPrimary}
+                canEdit={canEdit("machines")}
+                maxSizeMb={entityImages.maxSizeMb}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="documents">

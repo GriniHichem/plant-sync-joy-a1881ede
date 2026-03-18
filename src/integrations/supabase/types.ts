@@ -50,9 +50,11 @@ export type Database = {
       articles: {
         Row: {
           code: string
+          code_erp: string | null
           created_at: string
           description: string | null
           designation: string
+          family_id: string | null
           fournisseur: string | null
           id: string
           is_active: boolean
@@ -64,9 +66,11 @@ export type Database = {
         }
         Insert: {
           code: string
+          code_erp?: string | null
           created_at?: string
           description?: string | null
           designation: string
+          family_id?: string | null
           fournisseur?: string | null
           id?: string
           is_active?: boolean
@@ -78,9 +82,11 @@ export type Database = {
         }
         Update: {
           code?: string
+          code_erp?: string | null
           created_at?: string
           description?: string | null
           designation?: string
+          family_id?: string | null
           fournisseur?: string | null
           id?: string
           is_active?: boolean
@@ -90,7 +96,15 @@ export type Database = {
           unite?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "articles_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "product_families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -410,6 +424,42 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      line_products: {
+        Row: {
+          created_at: string
+          id: string
+          line_id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_id: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_products_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -813,6 +863,39 @@ export type Database = {
           },
         ]
       }
+      packaging_levels: {
+        Row: {
+          coefficient: number
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          level_order: number
+          poids: number | null
+          unite_name: string
+        }
+        Insert: {
+          coefficient?: number
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          level_order?: number
+          poids?: number | null
+          unite_name: string
+        }
+        Update: {
+          coefficient?: number
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          level_order?: number
+          poids?: number | null
+          unite_name?: string
+        }
+        Relationships: []
+      }
       panne_types: {
         Row: {
           created_at: string
@@ -969,6 +1052,44 @@ export type Database = {
             columns: ["machine_id"]
             isOneToOne: false
             referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_families: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_families_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_families"
             referencedColumns: ["id"]
           },
         ]
@@ -1161,35 +1282,55 @@ export type Database = {
       products: {
         Row: {
           code: string
+          code_erp: string | null
           created_at: string
           description: string | null
           designation: string
+          family_id: string | null
           id: string
           is_active: boolean
+          poids_unitaire: number | null
           unite: string
+          unite_base: string | null
           updated_at: string
         }
         Insert: {
           code: string
+          code_erp?: string | null
           created_at?: string
           description?: string | null
           designation: string
+          family_id?: string | null
           id?: string
           is_active?: boolean
+          poids_unitaire?: number | null
           unite?: string
+          unite_base?: string | null
           updated_at?: string
         }
         Update: {
           code?: string
+          code_erp?: string | null
           created_at?: string
           description?: string | null
           designation?: string
+          family_id?: string | null
           id?: string
           is_active?: boolean
+          poids_unitaire?: number | null
           unite?: string
+          unite_base?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "product_families"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

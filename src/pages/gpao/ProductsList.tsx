@@ -31,8 +31,8 @@ export default function ProductsList() {
   const [code, setCode] = useState("");
   const [designation, setDesignation] = useState("");
   const [description, setDescription] = useState("");
-  const [unite, setUnite] = useState("kg");
-  const [uniteBase, setUniteBase] = useState("kg");
+  const [unite, setUnite] = useState("g");
+  const [uniteBase, setUniteBase] = useState("g");
   const [codeErp, setCodeErp] = useState("");
   const [poidsUnitaire, setPoidsUnitaire] = useState("");
   const [familyId, setFamilyId] = useState("");

@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Upload, FileText, Image, Trash2, Filter, Eye } from "lucide-react";
+import { Upload, FileText, Image, Trash2, Filter, Eye, Download, ShieldAlert } from "lucide-react";
 import { useEntityDocuments } from "@/hooks/useEntityDocuments";
+import { useDocumentPermissions } from "@/hooks/useDocumentPermissions";
 import { DocumentViewer } from "@/components/documents/DocumentViewer";
 import { useToast } from "@/hooks/use-toast";
 
@@ -37,11 +38,13 @@ function isAllowedFile(file: File): boolean {
 interface Props {
   entityType: string;
   entityId: string;
+  /** @deprecated Use document permissions instead */
   canEdit?: boolean;
 }
 
-export function EntityDocumentManager({ entityType, entityId, canEdit = true }: Props) {
+export function EntityDocumentManager({ entityType, entityId }: Props) {
   const { documents, categories, loading, uploading, uploadDocument, deleteDocument } = useEntityDocuments(entityType, entityId);
+  const docPerms = useDocumentPermissions(entityType);
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -76,6 +79,8 @@ export function EntityDocumentManager({ entityType, entityId, canEdit = true }: 
       return;
     }
     await uploadDocument(selectedFile, categoryId, description);
+    // Audit log
+    docPerms.logAction("upload", entityId, null, selectedFile.name);
     setSelectedFile(null);
     setCategoryId("");
     setDescription("");
@@ -83,24 +88,45 @@ export function EntityDocumentManager({ entityType, entityId, canEdit = true }: 
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const handleDelete = async (doc: any) => {
+    await deleteDocument(doc);
+    docPerms.logAction("delete", entityId, doc.id, doc.file_name);
+  };
+
+  const handleView = (idx: number) => {
+    setViewerIndex(idx);
+    setViewerOpen(true);
+    const doc = filtered[idx];
+    if (doc) docPerms.logAction("view", entityId, doc.id, doc.file_name);
+  };
+
+  const handleDownload = (doc: any) => {
+    docPerms.logAction("download", entityId, doc.id, doc.file_name);
+    window.open(doc.file_url, "_blank");
+  };
+
   const filtered = filterCategory === "__all__"
     ? documents
     : documents.filter((d: any) => d.category_id === filterCategory);
 
-  // Viewable documents for navigation
   const viewableDocs = filtered.map((d: any) => ({
     file_url: d.file_url,
     file_name: d.file_name,
     file_type: d.file_type || "",
   }));
 
-  const openViewer = (idx: number) => {
-    setViewerIndex(idx);
-    setViewerOpen(true);
-  };
-
-  if (loading) {
+  if (loading || docPerms.loading) {
     return <div className="flex justify-center p-8"><div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  }
+
+  // No view permission → show nothing
+  if (!docPerms.can_view) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <ShieldAlert className="h-10 w-10 mx-auto mb-2 opacity-40" />
+        <p className="text-sm">Vous n'avez pas les droits pour consulter les documents de cette entité.</p>
+      </div>
+    );
   }
 
   return (
@@ -122,7 +148,7 @@ export function EntityDocumentManager({ entityType, entityId, canEdit = true }: 
           <Badge variant="secondary" className="text-xs">{filtered.length} document{filtered.length > 1 ? "s" : ""}</Badge>
         </div>
 
-        {canEdit && (
+        {docPerms.can_upload && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button className="h-9">
@@ -179,7 +205,7 @@ export function EntityDocumentManager({ entityType, entityId, canEdit = true }: 
             <Card key={doc.id} className="hover:border-primary/20 transition-colors">
               <CardContent className="p-3 flex items-center gap-3">
                 {/* Clickable thumbnail */}
-                <button onClick={() => openViewer(idx)} className="shrink-0 focus:outline-none focus:ring-2 focus:ring-primary rounded">
+                <button onClick={() => handleView(idx)} className="shrink-0 focus:outline-none focus:ring-2 focus:ring-primary rounded">
                   {doc.file_type?.startsWith("image/") ? (
                     <img src={doc.file_url} alt={doc.file_name} className="h-10 w-10 rounded object-cover" />
                   ) : (
@@ -189,7 +215,7 @@ export function EntityDocumentManager({ entityType, entityId, canEdit = true }: 
                   )}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <button onClick={() => openViewer(idx)} className="text-left w-full focus:outline-none">
+                  <button onClick={() => handleView(idx)} className="text-left w-full focus:outline-none">
                     <p className="text-sm font-medium truncate hover:text-primary transition-colors">{doc.file_name}</p>
                   </button>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -202,11 +228,16 @@ export function EntityDocumentManager({ entityType, entityId, canEdit = true }: 
                   {doc.description && <p className="text-xs text-muted-foreground mt-0.5 truncate">{doc.description}</p>}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openViewer(idx)} title="Visualiser">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleView(idx)} title="Visualiser">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  {canEdit && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteDocument(doc)}>
+                  {docPerms.can_download && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(doc)} title="Télécharger">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {docPerms.can_delete && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(doc)} title="Supprimer">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}

@@ -213,7 +213,7 @@ export default function PdrDetail() {
         <TabsContent value="documents">
           <Card>
             <CardContent className="p-6">
-              <EntityDocumentManager entityType="pdr" entityId={id!} canEdit={canEdit("pdr")} />
+              <EntityDocumentManager entityType="pdr" entityId={id!} />
             </CardContent>
           </Card>
         </TabsContent>

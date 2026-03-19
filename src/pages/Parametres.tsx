@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText } from "lucide-react";
+import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const sections = [
@@ -11,6 +11,7 @@ const sections = [
   { title: "Lignes de production", description: "Gérer les lignes et ateliers", icon: Factory, url: "/parametres/lignes" },
   { title: "Shifts & Rotation", description: "Équipes, créneaux, planning et règles", icon: Clock, url: "/parametres/shifts" },
   { title: "Catégories documents", description: "Types de documents (fiche technique, certificat…)", icon: FileText, url: "/parametres/document-categories" },
+  { title: "Permissions documents", description: "Droits d'accès aux documents par rôle et entité", icon: Lock, url: "/parametres/document-permissions" },
   { title: "Photos & Images", description: "Taille max des photos par entité", icon: ImageIcon, url: "/parametres/images" },
   { title: "Général", description: "Paramètres de l'application", icon: Wrench, url: "/parametres/general" },
 ];

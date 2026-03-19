@@ -26,6 +26,7 @@ import GeneralSettings from "@/pages/parametres/GeneralSettings";
 import ImageSettings from "@/pages/parametres/ImageSettings";
 import ProductFamiliesAdmin from "@/pages/parametres/ProductFamiliesAdmin";
 import DocumentCategoriesAdmin from "@/pages/parametres/DocumentCategoriesAdmin";
+import DocumentPermissionsAdmin from "@/pages/parametres/DocumentPermissionsAdmin";
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";
 import OfDetail from "@/pages/gpao/OfDetail";
@@ -122,6 +123,7 @@ const App = () => (
               <Route path="/parametres/familles-produits" element={<ProductFamiliesAdmin />} />
               <Route path="/parametres/images" element={<ImageSettings />} />
               <Route path="/parametres/document-categories" element={<DocumentCategoriesAdmin />} />
+              <Route path="/parametres/document-permissions" element={<DocumentPermissionsAdmin />} />
               <Route path="/parametres/general" element={<GeneralSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />

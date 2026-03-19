@@ -234,7 +234,7 @@ export default function MachineDetail() {
         <TabsContent value="documents">
           <Card>
             <CardContent className="p-6">
-              <EntityDocumentManager entityType="machine" entityId={id!} canEdit={canEdit("machines")} />
+              <EntityDocumentManager entityType="machine" entityId={id!} />
             </CardContent>
           </Card>
         </TabsContent>

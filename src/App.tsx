@@ -25,6 +25,7 @@ import LignesAdmin from "@/pages/parametres/LignesAdmin";
 import GeneralSettings from "@/pages/parametres/GeneralSettings";
 import ImageSettings from "@/pages/parametres/ImageSettings";
 import ProductFamiliesAdmin from "@/pages/parametres/ProductFamiliesAdmin";
+import DocumentCategoriesAdmin from "@/pages/parametres/DocumentCategoriesAdmin";
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";
 import OfDetail from "@/pages/gpao/OfDetail";

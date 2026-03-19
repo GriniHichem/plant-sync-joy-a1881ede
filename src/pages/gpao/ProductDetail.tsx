@@ -122,6 +122,7 @@ export default function ProductDetail() {
           <TabsTrigger value="packaging" className="h-9">Conditionnement</TabsTrigger>
           <TabsTrigger value="lines" className="h-9">Lignes autorisées</TabsTrigger>
           <TabsTrigger value="images" className="h-9">Images</TabsTrigger>
+          <TabsTrigger value="documents" className="h-9">Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info">

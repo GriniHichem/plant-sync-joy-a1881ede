@@ -197,6 +197,50 @@ export type Database = {
           },
         ]
       }
+      document_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          document_id: string | null
+          document_name: string
+          entity_id: string
+          entity_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          document_id?: string | null
+          document_name?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          document_id?: string | null
+          document_name?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_audit_logs_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "entity_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_categories: {
         Row: {
           created_at: string
@@ -223,6 +267,45 @@ export type Database = {
           is_active?: boolean
           name?: string
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      document_permissions: {
+        Row: {
+          can_delete: boolean
+          can_download: boolean
+          can_edit_metadata: boolean
+          can_upload: boolean
+          can_view: boolean
+          created_at: string
+          entity_type: string
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          can_delete?: boolean
+          can_download?: boolean
+          can_edit_metadata?: boolean
+          can_upload?: boolean
+          can_view?: boolean
+          created_at?: string
+          entity_type: string
+          id?: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          can_delete?: boolean
+          can_download?: boolean
+          can_edit_metadata?: boolean
+          can_upload?: boolean
+          can_view?: boolean
+          created_at?: string
+          entity_type?: string
+          id?: string
+          role?: string
           updated_at?: string
         }
         Relationships: []
@@ -1998,6 +2081,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_document_permission: {
+        Args: { _action: string; _entity_type: string; _user_id: string }
+        Returns: boolean
+      }
       check_permission: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean

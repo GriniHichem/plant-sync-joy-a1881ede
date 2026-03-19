@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Edit, X, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Save, Edit, X, AlertCircle, FileText } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { EntityDocumentManager } from "@/components/documents/EntityDocumentManager";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 
@@ -114,88 +116,108 @@ export default function PdrDetail() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Photo</CardTitle></CardHeader>
-          <CardContent>
-            <EntityImageUploader
-              images={entityImages.images}
-              primaryImage={entityImages.primaryImage}
-              uploading={entityImages.uploading}
-              onUpload={entityImages.uploadImage}
-              onDelete={entityImages.deleteImage}
-              onSetPrimary={entityImages.setPrimary}
-              canEdit={canEdit("pdr")}
-              maxSizeMb={entityImages.maxSizeMb}
-            />
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="info">
+        <TabsList className="h-11">
+          <TabsTrigger value="info" className="h-9">Informations</TabsTrigger>
+          <TabsTrigger value="photos" className="h-9">Photos</TabsTrigger>
+          <TabsTrigger value="documents" className="h-9">
+            <FileText className="h-3.5 w-3.5 mr-1" /> Documents
+          </TabsTrigger>
+        </TabsList>
 
-        <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base">Informations</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            {editing ? (
-              <>
-                <div className="space-y-2">
-                  <Label>Référence *</Label>
-                  <Input value={form.reference} onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))} className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Désignation *</Label>
-                  <Input value={form.designation} onChange={(e) => setForm(f => ({ ...f, designation: e.target.value }))} className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Stock actuel</Label>
-                  <Input type="number" value={form.stock_actuel} onChange={(e) => setForm(f => ({ ...f, stock_actuel: Number(e.target.value) }))} className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Stock minimum</Label>
-                  <Input type="number" value={form.stock_min} onChange={(e) => setForm(f => ({ ...f, stock_min: Number(e.target.value) }))} className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Prix unitaire</Label>
-                  <Input type="number" step="0.01" value={form.prix_unitaire} onChange={(e) => setForm(f => ({ ...f, prix_unitaire: Number(e.target.value) }))} className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Fournisseur</Label>
-                  <Input value={form.fournisseur} onChange={(e) => setForm(f => ({ ...f, fournisseur: e.target.value }))} className="h-11" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Emplacement</Label>
-                  <Input value={form.emplacement} onChange={(e) => setForm(f => ({ ...f, emplacement: e.target.value }))} className="h-11" />
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <Label>Description</Label>
-                  <Textarea value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} rows={2} />
-                </div>
-              </>
-            ) : (
-              <>
-                {[
-                  ["Référence", pdr.reference],
-                  ["Désignation", pdr.designation],
-                  ["Stock actuel", pdr.stock_actuel],
-                  ["Stock minimum", pdr.stock_min],
-                  ["Prix unitaire", pdr.prix_unitaire ? `${pdr.prix_unitaire} €` : "—"],
-                  ["Fournisseur", pdr.fournisseur || "—"],
-                  ["Emplacement", pdr.emplacement || "—"],
-                ].map(([label, value]) => (
-                  <div key={label as string}>
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                    <p className="text-sm font-medium">{String(value)}</p>
+        <TabsContent value="info">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Informations</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              {editing ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Référence *</Label>
+                    <Input value={form.reference} onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))} className="h-11" />
                   </div>
-                ))}
-                {pdr.description && (
-                  <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">Description</p>
-                    <p className="text-sm">{pdr.description}</p>
+                  <div className="space-y-2">
+                    <Label>Désignation *</Label>
+                    <Input value={form.designation} onChange={(e) => setForm(f => ({ ...f, designation: e.target.value }))} className="h-11" />
                   </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  <div className="space-y-2">
+                    <Label>Stock actuel</Label>
+                    <Input type="number" value={form.stock_actuel} onChange={(e) => setForm(f => ({ ...f, stock_actuel: Number(e.target.value) }))} className="h-11" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Stock minimum</Label>
+                    <Input type="number" value={form.stock_min} onChange={(e) => setForm(f => ({ ...f, stock_min: Number(e.target.value) }))} className="h-11" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Prix unitaire</Label>
+                    <Input type="number" step="0.01" value={form.prix_unitaire} onChange={(e) => setForm(f => ({ ...f, prix_unitaire: Number(e.target.value) }))} className="h-11" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fournisseur</Label>
+                    <Input value={form.fournisseur} onChange={(e) => setForm(f => ({ ...f, fournisseur: e.target.value }))} className="h-11" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Emplacement</Label>
+                    <Input value={form.emplacement} onChange={(e) => setForm(f => ({ ...f, emplacement: e.target.value }))} className="h-11" />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label>Description</Label>
+                    <Textarea value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} rows={2} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {[
+                    ["Référence", pdr.reference],
+                    ["Désignation", pdr.designation],
+                    ["Stock actuel", pdr.stock_actuel],
+                    ["Stock minimum", pdr.stock_min],
+                    ["Prix unitaire", pdr.prix_unitaire ? `${pdr.prix_unitaire} €` : "—"],
+                    ["Fournisseur", pdr.fournisseur || "—"],
+                    ["Emplacement", pdr.emplacement || "—"],
+                  ].map(([label, value]) => (
+                    <div key={label as string}>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <p className="text-sm font-medium">{String(value)}</p>
+                    </div>
+                  ))}
+                  {pdr.description && (
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground">Description</p>
+                      <p className="text-sm">{pdr.description}</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="photos">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Photos</CardTitle></CardHeader>
+            <CardContent>
+              <EntityImageUploader
+                images={entityImages.images}
+                primaryImage={entityImages.primaryImage}
+                uploading={entityImages.uploading}
+                onUpload={entityImages.uploadImage}
+                onDelete={entityImages.deleteImage}
+                onSetPrimary={entityImages.setPrimary}
+                canEdit={canEdit("pdr")}
+                maxSizeMb={entityImages.maxSizeMb}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <Card>
+            <CardContent className="p-6">
+              <EntityDocumentManager entityType="pdr" entityId={id!} canEdit={canEdit("pdr")} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

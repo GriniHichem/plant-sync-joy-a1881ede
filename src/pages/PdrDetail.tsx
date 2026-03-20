@@ -233,7 +233,7 @@ export default function PdrDetail() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-base">Fournisseurs liés</CardTitle>
               {canEdit("pdr") && (
-                <Button size="sm" onClick={() => { setEditingSupplierId(null); setSupplierForm({ nom: "", reference_fournisseur: "", prix: 0, delai_jours: 0, contact: "", notes: "", is_principal: false }); setSupplierDialog(true); }}>
+                <Button size="sm" onClick={() => { setEditingSupplierId(null); setSupplierForm({ nom: "", reference_fournisseur: "", prix: null, delai_jours: 0, email: "", tel: "", adresse: "", url1: "", url2: "", notes: "", is_principal: false }); setSupplierDialog(true); }}>
                   <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
                 </Button>
               )}

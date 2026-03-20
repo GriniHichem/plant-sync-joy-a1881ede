@@ -44,18 +44,20 @@ export default function PdrDetail() {
 
   const loadAll = async () => {
     if (!id) return;
-    const [pRes, sRes, mRes, mlRes, cRes] = await Promise.all([
+    const [pRes, sRes, mRes, mlRes, cRes, iRes] = await Promise.all([
       supabase.from("pdr").select("*, pdr_families(name, approvisionnement, statut_default)").eq("id", id).single(),
       supabase.from("pdr_suppliers").select("*").eq("pdr_id", id).order("is_principal", { ascending: false }),
       supabase.from("pdr_stock_movements").select("*").eq("pdr_id", id).order("created_at", { ascending: false }).limit(100),
       supabase.from("machine_pdr").select("*, machines(code, designation)").eq("pdr_id", id),
       supabase.from("intervention_pdr").select("*, interventions(ticket_id, date_debut, tickets(numero, machines(code)))").eq("pdr_id", id).order("created_at", { ascending: false }).limit(50),
+      supabase.from("pdr_instances").select("*, machines(code, designation), equipements(code, designation)").eq("pdr_id", id).order("date_installation", { ascending: false }),
     ]);
     if (pRes.data) setPdr(pRes.data);
     setSuppliers(sRes.data || []);
     setMovements(mRes.data || []);
     setLinkedMachines(mlRes.data || []);
     setConsumptionHistory(cRes.data || []);
+    setInstances(iRes.data || []);
   };
 
   useEffect(() => { loadAll(); }, [id]);

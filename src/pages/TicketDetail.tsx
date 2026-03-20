@@ -97,7 +97,17 @@ export default function TicketDetail() {
         await supabase.from("intervention_pdr").insert(selectedPdr.map((p) => ({ intervention_id: activeIntervention.id, pdr_id: p.pdr_id, quantite: p.quantite })));
         for (const p of selectedPdr) {
           const pdrItem = pdrList.find((x) => x.id === p.pdr_id);
-          if (pdrItem) await supabase.from("pdr").update({ stock_actuel: Math.max(0, pdrItem.stock_actuel - p.quantite) }).eq("id", p.pdr_id);
+          if (pdrItem) {
+            const stockApres = Math.max(0, pdrItem.stock_actuel - p.quantite);
+            await supabase.from("pdr").update({ stock_actuel: stockApres }).eq("id", p.pdr_id);
+            await supabase.from("pdr_stock_movements").insert({
+              pdr_id: p.pdr_id, type: "sortie" as any, quantite: p.quantite,
+              stock_avant: pdrItem.stock_actuel, stock_apres: stockApres,
+              source_type: "ticket", source_id: id,
+              reference_source: ticket.numero, motif: `Ticket ${ticket.numero}`,
+              user_id: user?.id,
+            });
+          }
         }
       }
     }

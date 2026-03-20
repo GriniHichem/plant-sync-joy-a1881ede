@@ -85,7 +85,7 @@ export default function PdrDetail() {
     await supabase.from("pdr").update({ stock_actuel: stockApres, pmp: Math.round(newPmp * 100) / 100 }).eq("id", id);
     toast({ title: "Mouvement enregistré" });
     setMovementDialog(false);
-    setMvtForm({ type: "entree", quantite: 0, prix_unitaire: 0, motif: "" });
+    setMvtForm({ type: "entree", quantite: 0, prix_unitaire: 0, motif: "", ref_document_erp: "" });
     loadAll();
   };
 

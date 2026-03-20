@@ -225,6 +225,14 @@ export default function PdrForm() {
                 <Label>Délai appro. (jours)</Label>
                 <Input type="number" value={form.delai_approvisionnement} onChange={(e) => handleChange("delai_approvisionnement", Number(e.target.value))} className="h-12" min="0" />
               </div>
+              <div className="space-y-2">
+                <Label>Durée de vie min (jours)</Label>
+                <Input type="number" value={form.duree_vie_min_jours ?? ""} onChange={(e) => handleChange("duree_vie_min_jours", e.target.value ? Number(e.target.value) : null as any)} className="h-12" min="0" placeholder="Optionnel" />
+              </div>
+              <div className="space-y-2">
+                <Label>Durée de vie max / Dead age (jours)</Label>
+                <Input type="number" value={form.duree_vie_max_jours ?? ""} onChange={(e) => handleChange("duree_vie_max_jours", e.target.value ? Number(e.target.value) : null as any)} className="h-12" min="0" placeholder="Optionnel" />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Description</Label>

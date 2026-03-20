@@ -39,6 +39,8 @@ export default function PdrForm() {
     prix_unitaire: 0, pmp: 0,
     family_id: "", statut_pdr: "commune",
     approvisionnement: "local",
+    duree_vie_min_jours: null as number | null,
+    duree_vie_max_jours: null as number | null,
   });
 
   useEffect(() => {

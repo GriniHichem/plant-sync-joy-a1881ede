@@ -39,7 +39,7 @@ export default function PdrDetail() {
 
   // Movement dialog
   const [movementDialog, setMovementDialog] = useState(false);
-  const [mvtForm, setMvtForm] = useState({ type: "entree" as string, quantite: 0, prix_unitaire: 0, motif: "" });
+  const [mvtForm, setMvtForm] = useState({ type: "entree" as string, quantite: 0, prix_unitaire: 0, motif: "", ref_document_erp: "" });
 
   const loadAll = async () => {
     if (!id) return;

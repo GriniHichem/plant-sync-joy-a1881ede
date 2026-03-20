@@ -488,15 +488,31 @@ export default function PdrDetail() {
               </div>
               <div className="space-y-2">
                 <Label>Prix (DA)</Label>
-                <Input type="number" value={supplierForm.prix} onChange={(e) => setSupplierForm((f) => ({ ...f, prix: Number(e.target.value) }))} className="h-12" />
+                <Input type="number" value={supplierForm.prix ?? ""} onChange={(e) => setSupplierForm((f) => ({ ...f, prix: e.target.value ? Number(e.target.value) : null }))} className="h-12" placeholder="Optionnel" />
               </div>
               <div className="space-y-2">
                 <Label>Délai (jours)</Label>
                 <Input type="number" value={supplierForm.delai_jours} onChange={(e) => setSupplierForm((f) => ({ ...f, delai_jours: Number(e.target.value) }))} className="h-12" />
               </div>
               <div className="space-y-2">
-                <Label>Contact</Label>
-                <Input value={supplierForm.contact} onChange={(e) => setSupplierForm((f) => ({ ...f, contact: e.target.value }))} className="h-12" />
+                <Label>Email</Label>
+                <Input type="email" value={supplierForm.email} onChange={(e) => setSupplierForm((f) => ({ ...f, email: e.target.value }))} className="h-12" placeholder="email@example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Téléphone</Label>
+                <Input value={supplierForm.tel} onChange={(e) => setSupplierForm((f) => ({ ...f, tel: e.target.value }))} className="h-12" placeholder="+213..." />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Adresse</Label>
+                <Input value={supplierForm.adresse} onChange={(e) => setSupplierForm((f) => ({ ...f, adresse: e.target.value }))} className="h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>URL 1</Label>
+                <Input value={supplierForm.url1} onChange={(e) => setSupplierForm((f) => ({ ...f, url1: e.target.value }))} className="h-12" placeholder="https://..." />
+              </div>
+              <div className="space-y-2">
+                <Label>URL 2</Label>
+                <Input value={supplierForm.url2} onChange={(e) => setSupplierForm((f) => ({ ...f, url2: e.target.value }))} className="h-12" placeholder="https://..." />
               </div>
             </div>
             <label className="flex items-center gap-2 text-sm">

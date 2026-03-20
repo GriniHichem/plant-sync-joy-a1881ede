@@ -1218,6 +1218,7 @@ export type Database = {
           pdr_id: string
           prix_unitaire: number | null
           quantite: number
+          ref_document_erp: string | null
           reference_source: string | null
           source_id: string | null
           source_type: string | null
@@ -1233,6 +1234,7 @@ export type Database = {
           pdr_id: string
           prix_unitaire?: number | null
           quantite: number
+          ref_document_erp?: string | null
           reference_source?: string | null
           source_id?: string | null
           source_type?: string | null
@@ -1248,6 +1250,7 @@ export type Database = {
           pdr_id?: string
           prix_unitaire?: number | null
           quantite?: number
+          ref_document_erp?: string | null
           reference_source?: string | null
           source_id?: string | null
           source_type?: string | null

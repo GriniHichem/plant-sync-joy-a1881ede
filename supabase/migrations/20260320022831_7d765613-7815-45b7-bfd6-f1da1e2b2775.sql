@@ -1,0 +1,1 @@
+ALTER TABLE public.pdr_stock_movements ADD COLUMN ref_document_erp text DEFAULT '';

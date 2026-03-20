@@ -7,6 +7,7 @@ const sections = [
   { title: "Matrice des rôles", description: "Permissions détaillées par rôle", icon: ShieldCheck, url: "/parametres/roles" },
   { title: "Familles machines", description: "Catégories et sous-familles", icon: FolderTree, url: "/parametres/familles" },
   { title: "Familles produits", description: "Catégories de produits et articles", icon: Package, url: "/parametres/familles-produits" },
+  { title: "Familles PDR", description: "Familles de pièces de rechange", icon: Cog, url: "/parametres/familles-pdr" },
   { title: "Types de panne", description: "Référentiel des types de panne", icon: AlertTriangle, url: "/parametres/pannes" },
   { title: "Lignes de production", description: "Gérer les lignes et ateliers", icon: Factory, url: "/parametres/lignes" },
   { title: "Shifts & Rotation", description: "Équipes, créneaux, planning et règles", icon: Clock, url: "/parametres/shifts" },

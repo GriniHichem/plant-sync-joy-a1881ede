@@ -128,6 +128,7 @@ const App = () => (
               <Route path="/parametres/images" element={<ImageSettings />} />
               <Route path="/parametres/document-categories" element={<DocumentCategoriesAdmin />} />
               <Route path="/parametres/document-permissions" element={<DocumentPermissionsAdmin />} />
+              <Route path="/parametres/familles-pdr" element={<PdrFamiliesAdmin />} />
               <Route path="/parametres/general" element={<GeneralSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />

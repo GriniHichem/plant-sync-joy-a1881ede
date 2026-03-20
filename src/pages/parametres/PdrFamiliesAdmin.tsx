@@ -352,8 +352,8 @@ export default function PdrFamiliesAdmin() {
                   <TableRow>
                     <TableHead>Nom</TableHead>
                     <TableHead>Réf</TableHead>
-                    <TableHead>Prix</TableHead>
                     <TableHead>Délai</TableHead>
+                    <TableHead>Email / Tél</TableHead>
                     <TableHead>Principal</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
@@ -363,8 +363,12 @@ export default function PdrFamiliesAdmin() {
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">{s.nom}</TableCell>
                       <TableCell className="text-xs">{s.reference_fournisseur || "—"}</TableCell>
-                      <TableCell className="text-xs">{s.prix ? `${Number(s.prix).toLocaleString("fr-FR")} DA` : "—"}</TableCell>
                       <TableCell className="text-xs">{s.delai_jours ? `${s.delai_jours}j` : "—"}</TableCell>
+                      <TableCell className="text-xs">
+                        {s.email && <span className="block">{s.email}</span>}
+                        {s.tel && <span className="block">{s.tel}</span>}
+                        {!s.email && !s.tel && "—"}
+                      </TableCell>
                       <TableCell>{s.is_principal && <Badge className="text-xs">Principal</Badge>}</TableCell>
                       <TableCell className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editSupplier(s)}><Edit className="h-3 w-3" /></Button>

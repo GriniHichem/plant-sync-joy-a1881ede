@@ -1094,6 +1094,8 @@ export type Database = {
           description: string | null
           designation: string
           devise: string
+          duree_vie_max_jours: number | null
+          duree_vie_min_jours: number | null
           emplacement: string | null
           family_id: string | null
           fournisseur: string | null
@@ -1117,6 +1119,8 @@ export type Database = {
           description?: string | null
           designation: string
           devise?: string
+          duree_vie_max_jours?: number | null
+          duree_vie_min_jours?: number | null
           emplacement?: string | null
           family_id?: string | null
           fournisseur?: string | null
@@ -1140,6 +1144,8 @@ export type Database = {
           description?: string | null
           designation?: string
           devise?: string
+          duree_vie_max_jours?: number | null
+          duree_vie_min_jours?: number | null
           emplacement?: string | null
           family_id?: string | null
           fournisseur?: string | null
@@ -1265,6 +1271,73 @@ export type Database = {
             columns: ["family_id"]
             isOneToOne: false
             referencedRelation: "pdr_families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdr_instances: {
+        Row: {
+          created_at: string | null
+          date_installation: string
+          date_remplacement: string | null
+          equipement_id: string | null
+          id: string
+          installed_by: string | null
+          intervention_id: string | null
+          machine_id: string | null
+          notes: string | null
+          pdr_id: string
+          statut: string
+          ticket_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_installation?: string
+          date_remplacement?: string | null
+          equipement_id?: string | null
+          id?: string
+          installed_by?: string | null
+          intervention_id?: string | null
+          machine_id?: string | null
+          notes?: string | null
+          pdr_id: string
+          statut?: string
+          ticket_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_installation?: string
+          date_remplacement?: string | null
+          equipement_id?: string | null
+          id?: string
+          installed_by?: string | null
+          intervention_id?: string | null
+          machine_id?: string | null
+          notes?: string | null
+          pdr_id?: string
+          statut?: string
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_instances_equipement_id_fkey"
+            columns: ["equipement_id"]
+            isOneToOne: false
+            referencedRelation: "equipements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_instances_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_instances_pdr_id_fkey"
+            columns: ["pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
             referencedColumns: ["id"]
           },
         ]
@@ -1428,6 +1501,74 @@ export type Database = {
           },
         ]
       }
+      preventive_plan_assignees: {
+        Row: {
+          created_at: string | null
+          id: string
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventive_plan_assignees_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "preventive_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preventive_plan_pdr: {
+        Row: {
+          created_at: string | null
+          id: string
+          pdr_id: string
+          plan_id: string
+          quantite: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pdr_id: string
+          plan_id: string
+          quantite?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pdr_id?: string
+          plan_id?: string
+          quantite?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventive_plan_pdr_pdr_id_fkey"
+            columns: ["pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventive_plan_pdr_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "preventive_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preventive_plans: {
         Row: {
           checklist: Json | null
@@ -1437,9 +1578,14 @@ export type Database = {
           frequence: Database["public"]["Enums"]["frequence_preventif"]
           id: string
           is_active: boolean
+          line_id: string | null
           machine_id: string
           prochaine_echeance: string | null
+          source: string | null
+          source_pdr_id: string | null
+          statut_plan: string
           title: string
+          type_maintenance: string | null
           updated_at: string
         }
         Insert: {
@@ -1450,9 +1596,14 @@ export type Database = {
           frequence?: Database["public"]["Enums"]["frequence_preventif"]
           id?: string
           is_active?: boolean
+          line_id?: string | null
           machine_id: string
           prochaine_echeance?: string | null
+          source?: string | null
+          source_pdr_id?: string | null
+          statut_plan?: string
           title: string
+          type_maintenance?: string | null
           updated_at?: string
         }
         Update: {
@@ -1463,17 +1614,36 @@ export type Database = {
           frequence?: Database["public"]["Enums"]["frequence_preventif"]
           id?: string
           is_active?: boolean
+          line_id?: string | null
           machine_id?: string
           prochaine_echeance?: string | null
+          source?: string | null
+          source_pdr_id?: string | null
+          statut_plan?: string
           title?: string
+          type_maintenance?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "preventive_plans_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "preventive_plans_machine_id_fkey"
             columns: ["machine_id"]
             isOneToOne: false
             referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventive_plans_source_pdr_id_fkey"
+            columns: ["source_pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
             referencedColumns: ["id"]
           },
         ]

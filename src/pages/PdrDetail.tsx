@@ -246,7 +246,7 @@ export default function PdrDetail() {
                     <TableHead>Réf. fourn.</TableHead>
                     <TableHead>Prix (DA)</TableHead>
                     <TableHead>Délai (j)</TableHead>
-                    <TableHead>Contact</TableHead>
+                    <TableHead>Email / Tél</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
                 </TableHeader>
@@ -261,7 +261,11 @@ export default function PdrDetail() {
                       <TableCell className="font-mono text-sm">{s.reference_fournisseur || "—"}</TableCell>
                       <TableCell className="tabular-nums">{s.prix ? Number(s.prix).toLocaleString("fr-FR") : "—"}</TableCell>
                       <TableCell className="tabular-nums">{s.delai_jours || "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{s.contact || "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {s.email && <span className="block">{s.email}</span>}
+                        {s.tel && <span className="block">{s.tel}</span>}
+                        {!s.email && !s.tel && "—"}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {

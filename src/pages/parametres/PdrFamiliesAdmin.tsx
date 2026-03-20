@@ -139,8 +139,10 @@ export default function PdrFamiliesAdmin() {
     setEditingSupplierId(s.id);
     setSupplierForm({
       nom: s.nom, reference_fournisseur: s.reference_fournisseur || "",
-      prix: s.prix || 0, delai_jours: s.delai_jours || 0,
-      contact: s.contact || "", notes: s.notes || "", is_principal: s.is_principal,
+      prix: s.prix || null, delai_jours: s.delai_jours || 0,
+      email: s.email || "", tel: s.tel || "", adresse: s.adresse || "",
+      url1: s.url1 || "", url2: s.url2 || "",
+      notes: s.notes || "", is_principal: s.is_principal,
     });
   };
 

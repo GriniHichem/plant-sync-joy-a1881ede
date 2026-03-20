@@ -1210,6 +1210,53 @@ export type Database = {
           },
         ]
       }
+      pdr_family_suppliers: {
+        Row: {
+          contact: string | null
+          created_at: string
+          delai_jours: number | null
+          family_id: string
+          id: string
+          is_principal: boolean | null
+          nom: string
+          notes: string | null
+          prix: number | null
+          reference_fournisseur: string | null
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          delai_jours?: number | null
+          family_id: string
+          id?: string
+          is_principal?: boolean | null
+          nom: string
+          notes?: string | null
+          prix?: number | null
+          reference_fournisseur?: string | null
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          delai_jours?: number | null
+          family_id?: string
+          id?: string
+          is_principal?: boolean | null
+          nom?: string
+          notes?: string | null
+          prix?: number | null
+          reference_fournisseur?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_family_suppliers_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "pdr_families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdr_stock_movements: {
         Row: {
           created_at: string

@@ -152,6 +152,19 @@ export default function PdrForm() {
       }
     }
 
+    // Auto-inherit family suppliers for new PDR
+    if (isNew && pdrId && pdrId !== "new" && form.family_id && form.family_id !== "__none__") {
+      const { data: familySuppliers } = await supabase
+        .from("pdr_family_suppliers")
+        .select("nom, reference_fournisseur, prix, delai_jours, contact, notes, is_principal")
+        .eq("family_id", form.family_id);
+      if (familySuppliers && familySuppliers.length > 0) {
+        await supabase.from("pdr_suppliers").insert(
+          familySuppliers.map((s: any) => ({ ...s, pdr_id: pdrId! }))
+        );
+      }
+    }
+
     toast({ title: isNew ? "PDR créée" : "PDR mise à jour" });
     navigate(`/pdr/${pdrId}`);
     setSaving(false);

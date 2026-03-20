@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, FolderTree, Plus, Shield } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Edit, FolderTree, Plus, Shield, Trash2, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const APPRO_OPTIONS = [
@@ -36,6 +37,14 @@ export default function PdrFamiliesAdmin() {
   const [parentId, setParentId] = useState("");
   const [approvisionnement, setApprovisionnement] = useState("local");
   const [statutDefault, setStatutDefault] = useState("commune");
+
+  // Supplier management
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [supplierFamilyId, setSupplierFamilyId] = useState<string | null>(null);
+  const [supplierFamilyName, setSupplierFamilyName] = useState("");
+  const [familySuppliers, setFamilySuppliers] = useState<any[]>([]);
+  const [supplierForm, setSupplierForm] = useState({ nom: "", reference_fournisseur: "", prix: 0, delai_jours: 0, contact: "", notes: "", is_principal: false });
+  const [editingSupplierId, setEditingSupplierId] = useState<string | null>(null);
 
   const load = async () => {
     const { data } = await supabase.from("pdr_families").select("*").order("name");
@@ -87,6 +96,52 @@ export default function PdrFamiliesAdmin() {
   const handleToggle = async (f: any) => {
     await supabase.from("pdr_families").update({ is_active: !f.is_active }).eq("id", f.id);
     load();
+  };
+
+  // --- Supplier management for families ---
+  const openSuppliers = async (f: any) => {
+    setSupplierFamilyId(f.id);
+    setSupplierFamilyName(f.name);
+    const { data } = await supabase.from("pdr_family_suppliers").select("*").eq("family_id", f.id).order("is_principal", { ascending: false });
+    setFamilySuppliers(data || []);
+    setSupplierDialogOpen(true);
+    resetSupplierForm();
+  };
+
+  const resetSupplierForm = () => {
+    setEditingSupplierId(null);
+    setSupplierForm({ nom: "", reference_fournisseur: "", prix: 0, delai_jours: 0, contact: "", notes: "", is_principal: false });
+  };
+
+  const handleSaveSupplier = async () => {
+    if (!supplierForm.nom.trim()) { toast({ title: "Nom obligatoire", variant: "destructive" }); return; }
+    const payload: any = { ...supplierForm, family_id: supplierFamilyId };
+    if (editingSupplierId) {
+      await supabase.from("pdr_family_suppliers").update(payload).eq("id", editingSupplierId);
+    } else {
+      await supabase.from("pdr_family_suppliers").insert(payload);
+    }
+    toast({ title: editingSupplierId ? "Fournisseur modifié" : "Fournisseur ajouté" });
+    resetSupplierForm();
+    // Reload
+    const { data } = await supabase.from("pdr_family_suppliers").select("*").eq("family_id", supplierFamilyId).order("is_principal", { ascending: false });
+    setFamilySuppliers(data || []);
+  };
+
+  const deleteSupplier = async (sid: string) => {
+    await supabase.from("pdr_family_suppliers").delete().eq("id", sid);
+    toast({ title: "Fournisseur supprimé" });
+    const { data } = await supabase.from("pdr_family_suppliers").select("*").eq("family_id", supplierFamilyId).order("is_principal", { ascending: false });
+    setFamilySuppliers(data || []);
+  };
+
+  const editSupplier = (s: any) => {
+    setEditingSupplierId(s.id);
+    setSupplierForm({
+      nom: s.nom, reference_fournisseur: s.reference_fournisseur || "",
+      prix: s.prix || 0, delai_jours: s.delai_jours || 0,
+      contact: s.contact || "", notes: s.notes || "", is_principal: s.is_principal,
+    });
   };
 
   const rootFamilies = families.filter((f) => !f.parent_id);
@@ -176,13 +231,14 @@ export default function PdrFamiliesAdmin() {
                 <TableHead>Approvisionnement</TableHead>
                 <TableHead>Statut défaut</TableHead>
                 <TableHead>Sous-familles</TableHead>
+                <TableHead>Fournisseurs</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead className="w-24" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {rootFamilies.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground"><FolderTree className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucune famille</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground"><FolderTree className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucune famille</TableCell></TableRow>
               ) : rootFamilies.map((f) => {
                 const children = getChildren(f.id);
                 return (
@@ -205,6 +261,11 @@ export default function PdrFamiliesAdmin() {
                       </div>
                     </TableCell>
                     <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => openSuppliers(f)} className="gap-1 text-xs h-8">
+                        <Truck className="h-3.5 w-3.5" /> Gérer
+                      </Button>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={f.is_active ? "default" : "secondary"} className="cursor-pointer" onClick={() => handleToggle(f)}>
                         {f.is_active ? "Actif" : "Inactif"}
                       </Badge>
@@ -219,6 +280,86 @@ export default function PdrFamiliesAdmin() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Supplier management dialog */}
+      <Dialog open={supplierDialogOpen} onOpenChange={(o) => { setSupplierDialogOpen(o); if (!o) resetSupplierForm(); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Fournisseurs — {supplierFamilyName}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Supplier form */}
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <p className="text-sm font-medium">{editingSupplierId ? "Modifier le fournisseur" : "Ajouter un fournisseur"}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Nom *</Label>
+                    <Input value={supplierForm.nom} onChange={(e) => setSupplierForm(p => ({ ...p, nom: e.target.value }))} className="h-10" placeholder="Nom fournisseur" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Réf fournisseur</Label>
+                    <Input value={supplierForm.reference_fournisseur} onChange={(e) => setSupplierForm(p => ({ ...p, reference_fournisseur: e.target.value }))} className="h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Prix (DA)</Label>
+                    <Input type="number" value={supplierForm.prix} onChange={(e) => setSupplierForm(p => ({ ...p, prix: Number(e.target.value) }))} className="h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Délai (jours)</Label>
+                    <Input type="number" value={supplierForm.delai_jours} onChange={(e) => setSupplierForm(p => ({ ...p, delai_jours: Number(e.target.value) }))} className="h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Contact</Label>
+                    <Input value={supplierForm.contact} onChange={(e) => setSupplierForm(p => ({ ...p, contact: e.target.value }))} className="h-10" />
+                  </div>
+                  <div className="flex items-end gap-2 pb-1">
+                    <Checkbox checked={supplierForm.is_principal} onCheckedChange={(v) => setSupplierForm(p => ({ ...p, is_principal: !!v }))} />
+                    <Label className="text-xs">Principal</Label>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveSupplier} size="sm" className="h-9">{editingSupplierId ? "Enregistrer" : "Ajouter"}</Button>
+                  {editingSupplierId && <Button variant="ghost" size="sm" onClick={resetSupplierForm} className="h-9">Annuler</Button>}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Supplier list */}
+            {familySuppliers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Aucun fournisseur pour cette famille</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Réf</TableHead>
+                    <TableHead>Prix</TableHead>
+                    <TableHead>Délai</TableHead>
+                    <TableHead>Principal</TableHead>
+                    <TableHead className="w-20" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {familySuppliers.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium">{s.nom}</TableCell>
+                      <TableCell className="text-xs">{s.reference_fournisseur || "—"}</TableCell>
+                      <TableCell className="text-xs">{s.prix ? `${Number(s.prix).toLocaleString("fr-FR")} DA` : "—"}</TableCell>
+                      <TableCell className="text-xs">{s.delai_jours ? `${s.delai_jours}j` : "—"}</TableCell>
+                      <TableCell>{s.is_principal && <Badge className="text-xs">Principal</Badge>}</TableCell>
+                      <TableCell className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editSupplier(s)}><Edit className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteSupplier(s.id)}><Trash2 className="h-3 w-3" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

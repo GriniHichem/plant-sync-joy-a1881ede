@@ -79,6 +79,7 @@ export default function PdrDetail() {
       stock_avant: stockAvant, stock_apres: stockApres,
       prix_unitaire: mvtForm.prix_unitaire || null, motif: mvtForm.motif || null,
       source_type: "manuel", user_id: user?.id,
+      ref_document_erp: mvtForm.ref_document_erp || null,
     });
 
     await supabase.from("pdr").update({ stock_actuel: stockApres, pmp: Math.round(newPmp * 100) / 100 }).eq("id", id);

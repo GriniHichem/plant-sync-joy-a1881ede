@@ -46,7 +46,7 @@ const gmaoItems = [
   { title: "Pièces (PDR)", url: "/pdr", icon: Package },
   { title: "Tickets", url: "/tickets", icon: AlertTriangle },
   { title: "Préventif", url: "/preventif", icon: CalendarCheck },
-  { title: "Mon Shift", url: "/maintenance/shift", icon: HardHat },
+  { title: "Shift", url: "/maintenance/shift", icon: HardHat },
   { title: "Analyse & KPI", url: "/analytics", icon: Activity },
 ];
 

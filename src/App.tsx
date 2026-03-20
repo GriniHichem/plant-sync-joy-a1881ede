@@ -12,6 +12,7 @@ import MachineDetail from "@/pages/MachineDetail";
 import MachineForm from "@/pages/MachineForm";
 import PdrList from "@/pages/PdrList";
 import PdrDetail from "@/pages/PdrDetail";
+import PdrForm from "@/pages/PdrForm";
 import TicketsList from "@/pages/TicketsList";
 import TicketDetail from "@/pages/TicketDetail";
 import PreventifList from "@/pages/PreventifList";
@@ -27,6 +28,7 @@ import ImageSettings from "@/pages/parametres/ImageSettings";
 import ProductFamiliesAdmin from "@/pages/parametres/ProductFamiliesAdmin";
 import DocumentCategoriesAdmin from "@/pages/parametres/DocumentCategoriesAdmin";
 import DocumentPermissionsAdmin from "@/pages/parametres/DocumentPermissionsAdmin";
+import PdrFamiliesAdmin from "@/pages/parametres/PdrFamiliesAdmin";
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";
 import OfDetail from "@/pages/gpao/OfDetail";
@@ -87,7 +89,9 @@ const App = () => (
               <Route path="/machines/:id" element={<MachineDetail />} />
               <Route path="/machines/:id/edit" element={<MachineForm />} />
               <Route path="/pdr" element={<PdrList />} />
+              <Route path="/pdr/new" element={<PdrForm />} />
               <Route path="/pdr/:id" element={<PdrDetail />} />
+              <Route path="/pdr/:id/edit" element={<PdrForm />} />
               <Route path="/tickets" element={<TicketsList />} />
               <Route path="/tickets/:id" element={<TicketDetail />} />
               <Route path="/preventif" element={<PreventifList />} />
@@ -124,6 +128,7 @@ const App = () => (
               <Route path="/parametres/images" element={<ImageSettings />} />
               <Route path="/parametres/document-categories" element={<DocumentCategoriesAdmin />} />
               <Route path="/parametres/document-permissions" element={<DocumentPermissionsAdmin />} />
+              <Route path="/parametres/familles-pdr" element={<PdrFamiliesAdmin />} />
               <Route path="/parametres/general" element={<GeneralSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />

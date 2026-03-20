@@ -1088,48 +1088,230 @@ export type Database = {
       }
       pdr: {
         Row: {
+          approvisionnement: Database["public"]["Enums"]["approvisionnement_type"]
           created_at: string
+          delai_approvisionnement: number
           description: string | null
           designation: string
+          devise: string
           emplacement: string | null
+          family_id: string | null
           fournisseur: string | null
           id: string
           is_active: boolean
+          pmp: number
+          point_commande: number
           prix_unitaire: number | null
           reference: string
+          statut_pdr: Database["public"]["Enums"]["statut_pdr"]
           stock_actuel: number
+          stock_max: number
           stock_min: number
+          stock_securite: number
           updated_at: string
         }
         Insert: {
+          approvisionnement?: Database["public"]["Enums"]["approvisionnement_type"]
           created_at?: string
+          delai_approvisionnement?: number
           description?: string | null
           designation: string
+          devise?: string
           emplacement?: string | null
+          family_id?: string | null
           fournisseur?: string | null
           id?: string
           is_active?: boolean
+          pmp?: number
+          point_commande?: number
           prix_unitaire?: number | null
           reference: string
+          statut_pdr?: Database["public"]["Enums"]["statut_pdr"]
           stock_actuel?: number
+          stock_max?: number
           stock_min?: number
+          stock_securite?: number
           updated_at?: string
         }
         Update: {
+          approvisionnement?: Database["public"]["Enums"]["approvisionnement_type"]
           created_at?: string
+          delai_approvisionnement?: number
           description?: string | null
           designation?: string
+          devise?: string
           emplacement?: string | null
+          family_id?: string | null
           fournisseur?: string | null
           id?: string
           is_active?: boolean
+          pmp?: number
+          point_commande?: number
           prix_unitaire?: number | null
           reference?: string
+          statut_pdr?: Database["public"]["Enums"]["statut_pdr"]
           stock_actuel?: number
+          stock_max?: number
           stock_min?: number
+          stock_securite?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pdr_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "pdr_families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdr_families: {
+        Row: {
+          approvisionnement: Database["public"]["Enums"]["approvisionnement_type"]
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          statut_default: Database["public"]["Enums"]["statut_pdr"]
+          updated_at: string
+        }
+        Insert: {
+          approvisionnement?: Database["public"]["Enums"]["approvisionnement_type"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          statut_default?: Database["public"]["Enums"]["statut_pdr"]
+          updated_at?: string
+        }
+        Update: {
+          approvisionnement?: Database["public"]["Enums"]["approvisionnement_type"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          statut_default?: Database["public"]["Enums"]["statut_pdr"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_families_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "pdr_families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdr_stock_movements: {
+        Row: {
+          created_at: string
+          id: string
+          motif: string | null
+          pdr_id: string
+          prix_unitaire: number | null
+          quantite: number
+          reference_source: string | null
+          source_id: string | null
+          source_type: string | null
+          stock_apres: number
+          stock_avant: number
+          type: Database["public"]["Enums"]["mouvement_type"]
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          motif?: string | null
+          pdr_id: string
+          prix_unitaire?: number | null
+          quantite: number
+          reference_source?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          stock_apres?: number
+          stock_avant?: number
+          type: Database["public"]["Enums"]["mouvement_type"]
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          motif?: string | null
+          pdr_id?: string
+          prix_unitaire?: number | null
+          quantite?: number
+          reference_source?: string | null
+          source_id?: string | null
+          source_type?: string | null
+          stock_apres?: number
+          stock_avant?: number
+          type?: Database["public"]["Enums"]["mouvement_type"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_stock_movements_pdr_id_fkey"
+            columns: ["pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdr_suppliers: {
+        Row: {
+          contact: string | null
+          created_at: string
+          delai_jours: number | null
+          id: string
+          is_principal: boolean
+          nom: string
+          notes: string | null
+          pdr_id: string
+          prix: number | null
+          reference_fournisseur: string | null
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          delai_jours?: number | null
+          id?: string
+          is_principal?: boolean
+          nom: string
+          notes?: string | null
+          pdr_id: string
+          prix?: number | null
+          reference_fournisseur?: string | null
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          delai_jours?: number | null
+          id?: string
+          is_principal?: boolean
+          nom?: string
+          notes?: string | null
+          pdr_id?: string
+          prix?: number | null
+          reference_fournisseur?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_suppliers_pdr_id_fkey"
+            columns: ["pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       preventive_executions: {
         Row: {
@@ -2107,6 +2289,7 @@ export type Database = {
         | "operateur"
         | "gestionnaire_magasin"
         | "bureau_methode"
+      approvisionnement_type: "local" | "importation" | "mixte"
       arret_type:
         | "panne"
         | "changement_serie"
@@ -2142,6 +2325,7 @@ export type Database = {
       impact_ligne: "arret_complet" | "arret_partiel" | "degradation" | "aucun"
       intervention_statut: "en_cours" | "terminee" | "annulee"
       machine_statut: "en_marche" | "arret" | "maintenance"
+      mouvement_type: "entree" | "sortie" | "correction" | "inventaire"
       of_statut: "planifie" | "en_cours" | "termine" | "annule"
       role_fonctionnel:
         | "alimentation"
@@ -2155,6 +2339,7 @@ export type Database = {
         | "utilite"
         | "autre"
       shift_type: "matin" | "apres_midi" | "nuit"
+      statut_pdr: "strategique" | "commune"
       ticket_priorite: "critique" | "haute" | "normale" | "basse"
       ticket_statut:
         | "ouvert"
@@ -2299,6 +2484,7 @@ export const Constants = {
         "gestionnaire_magasin",
         "bureau_methode",
       ],
+      approvisionnement_type: ["local", "importation", "mixte"],
       arret_type: [
         "panne",
         "changement_serie",
@@ -2338,6 +2524,7 @@ export const Constants = {
       impact_ligne: ["arret_complet", "arret_partiel", "degradation", "aucun"],
       intervention_statut: ["en_cours", "terminee", "annulee"],
       machine_statut: ["en_marche", "arret", "maintenance"],
+      mouvement_type: ["entree", "sortie", "correction", "inventaire"],
       of_statut: ["planifie", "en_cours", "termine", "annule"],
       role_fonctionnel: [
         "alimentation",
@@ -2352,6 +2539,7 @@ export const Constants = {
         "autre",
       ],
       shift_type: ["matin", "apres_midi", "nuit"],
+      statut_pdr: ["strategique", "commune"],
       ticket_priorite: ["critique", "haute", "normale", "basse"],
       ticket_statut: [
         "ouvert",

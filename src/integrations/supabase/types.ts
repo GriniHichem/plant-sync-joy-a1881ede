@@ -1212,9 +1212,10 @@ export type Database = {
       }
       pdr_family_suppliers: {
         Row: {
-          contact: string | null
+          adresse: string | null
           created_at: string
           delai_jours: number | null
+          email: string | null
           family_id: string
           id: string
           is_principal: boolean | null
@@ -1222,11 +1223,15 @@ export type Database = {
           notes: string | null
           prix: number | null
           reference_fournisseur: string | null
+          tel: string | null
+          url1: string | null
+          url2: string | null
         }
         Insert: {
-          contact?: string | null
+          adresse?: string | null
           created_at?: string
           delai_jours?: number | null
+          email?: string | null
           family_id: string
           id?: string
           is_principal?: boolean | null
@@ -1234,11 +1239,15 @@ export type Database = {
           notes?: string | null
           prix?: number | null
           reference_fournisseur?: string | null
+          tel?: string | null
+          url1?: string | null
+          url2?: string | null
         }
         Update: {
-          contact?: string | null
+          adresse?: string | null
           created_at?: string
           delai_jours?: number | null
+          email?: string | null
           family_id?: string
           id?: string
           is_principal?: boolean | null
@@ -1246,6 +1255,9 @@ export type Database = {
           notes?: string | null
           prix?: number | null
           reference_fournisseur?: string | null
+          tel?: string | null
+          url1?: string | null
+          url2?: string | null
         }
         Relationships: [
           {
@@ -1318,9 +1330,10 @@ export type Database = {
       }
       pdr_suppliers: {
         Row: {
-          contact: string | null
+          adresse: string | null
           created_at: string
           delai_jours: number | null
+          email: string | null
           id: string
           is_principal: boolean
           nom: string
@@ -1328,11 +1341,15 @@ export type Database = {
           pdr_id: string
           prix: number | null
           reference_fournisseur: string | null
+          tel: string | null
+          url1: string | null
+          url2: string | null
         }
         Insert: {
-          contact?: string | null
+          adresse?: string | null
           created_at?: string
           delai_jours?: number | null
+          email?: string | null
           id?: string
           is_principal?: boolean
           nom: string
@@ -1340,11 +1357,15 @@ export type Database = {
           pdr_id: string
           prix?: number | null
           reference_fournisseur?: string | null
+          tel?: string | null
+          url1?: string | null
+          url2?: string | null
         }
         Update: {
-          contact?: string | null
+          adresse?: string | null
           created_at?: string
           delai_jours?: number | null
+          email?: string | null
           id?: string
           is_principal?: boolean
           nom?: string
@@ -1352,6 +1373,9 @@ export type Database = {
           pdr_id?: string
           prix?: number | null
           reference_fournisseur?: string | null
+          tel?: string | null
+          url1?: string | null
+          url2?: string | null
         }
         Relationships: [
           {

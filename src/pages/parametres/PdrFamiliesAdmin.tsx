@@ -43,7 +43,7 @@ export default function PdrFamiliesAdmin() {
   const [supplierFamilyId, setSupplierFamilyId] = useState<string | null>(null);
   const [supplierFamilyName, setSupplierFamilyName] = useState("");
   const [familySuppliers, setFamilySuppliers] = useState<any[]>([]);
-  const [supplierForm, setSupplierForm] = useState({ nom: "", reference_fournisseur: "", prix: 0, delai_jours: 0, contact: "", notes: "", is_principal: false });
+  const [supplierForm, setSupplierForm] = useState({ nom: "", reference_fournisseur: "", prix: null as number | null, delai_jours: 0, email: "", tel: "", adresse: "", url1: "", url2: "", notes: "", is_principal: false });
   const [editingSupplierId, setEditingSupplierId] = useState<string | null>(null);
 
   const load = async () => {
@@ -110,7 +110,7 @@ export default function PdrFamiliesAdmin() {
 
   const resetSupplierForm = () => {
     setEditingSupplierId(null);
-    setSupplierForm({ nom: "", reference_fournisseur: "", prix: 0, delai_jours: 0, contact: "", notes: "", is_principal: false });
+    setSupplierForm({ nom: "", reference_fournisseur: "", prix: null, delai_jours: 0, email: "", tel: "", adresse: "", url1: "", url2: "", notes: "", is_principal: false });
   };
 
   const handleSaveSupplier = async () => {
@@ -139,8 +139,10 @@ export default function PdrFamiliesAdmin() {
     setEditingSupplierId(s.id);
     setSupplierForm({
       nom: s.nom, reference_fournisseur: s.reference_fournisseur || "",
-      prix: s.prix || 0, delai_jours: s.delai_jours || 0,
-      contact: s.contact || "", notes: s.notes || "", is_principal: s.is_principal,
+      prix: s.prix || null, delai_jours: s.delai_jours || 0,
+      email: s.email || "", tel: s.tel || "", adresse: s.adresse || "",
+      url1: s.url1 || "", url2: s.url2 || "",
+      notes: s.notes || "", is_principal: s.is_principal,
     });
   };
 
@@ -303,15 +305,31 @@ export default function PdrFamiliesAdmin() {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Prix (DA)</Label>
-                    <Input type="number" value={supplierForm.prix} onChange={(e) => setSupplierForm(p => ({ ...p, prix: Number(e.target.value) }))} className="h-10" />
+                    <Input type="number" value={supplierForm.prix ?? ""} onChange={(e) => setSupplierForm(p => ({ ...p, prix: e.target.value ? Number(e.target.value) : null }))} className="h-10" placeholder="Optionnel" />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Délai (jours)</Label>
                     <Input type="number" value={supplierForm.delai_jours} onChange={(e) => setSupplierForm(p => ({ ...p, delai_jours: Number(e.target.value) }))} className="h-10" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Contact</Label>
-                    <Input value={supplierForm.contact} onChange={(e) => setSupplierForm(p => ({ ...p, contact: e.target.value }))} className="h-10" />
+                    <Label className="text-xs">Email</Label>
+                    <Input type="email" value={supplierForm.email} onChange={(e) => setSupplierForm(p => ({ ...p, email: e.target.value }))} className="h-10" placeholder="email@example.com" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Téléphone</Label>
+                    <Input value={supplierForm.tel} onChange={(e) => setSupplierForm(p => ({ ...p, tel: e.target.value }))} className="h-10" placeholder="+213..." />
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-xs">Adresse</Label>
+                    <Input value={supplierForm.adresse} onChange={(e) => setSupplierForm(p => ({ ...p, adresse: e.target.value }))} className="h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">URL 1</Label>
+                    <Input value={supplierForm.url1} onChange={(e) => setSupplierForm(p => ({ ...p, url1: e.target.value }))} className="h-10" placeholder="https://..." />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">URL 2</Label>
+                    <Input value={supplierForm.url2} onChange={(e) => setSupplierForm(p => ({ ...p, url2: e.target.value }))} className="h-10" placeholder="https://..." />
                   </div>
                   <div className="flex items-end gap-2 pb-1">
                     <Checkbox checked={supplierForm.is_principal} onCheckedChange={(v) => setSupplierForm(p => ({ ...p, is_principal: !!v }))} />
@@ -334,8 +352,8 @@ export default function PdrFamiliesAdmin() {
                   <TableRow>
                     <TableHead>Nom</TableHead>
                     <TableHead>Réf</TableHead>
-                    <TableHead>Prix</TableHead>
                     <TableHead>Délai</TableHead>
+                    <TableHead>Email / Tél</TableHead>
                     <TableHead>Principal</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
@@ -345,8 +363,12 @@ export default function PdrFamiliesAdmin() {
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">{s.nom}</TableCell>
                       <TableCell className="text-xs">{s.reference_fournisseur || "—"}</TableCell>
-                      <TableCell className="text-xs">{s.prix ? `${Number(s.prix).toLocaleString("fr-FR")} DA` : "—"}</TableCell>
                       <TableCell className="text-xs">{s.delai_jours ? `${s.delai_jours}j` : "—"}</TableCell>
+                      <TableCell className="text-xs">
+                        {s.email && <span className="block">{s.email}</span>}
+                        {s.tel && <span className="block">{s.tel}</span>}
+                        {!s.email && !s.tel && "—"}
+                      </TableCell>
                       <TableCell>{s.is_principal && <Badge className="text-xs">Principal</Badge>}</TableCell>
                       <TableCell className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editSupplier(s)}><Edit className="h-3 w-3" /></Button>

@@ -35,7 +35,7 @@ export default function PdrDetail() {
   // Supplier dialog
   const [supplierDialog, setSupplierDialog] = useState(false);
   const [editingSupplierId, setEditingSupplierId] = useState<string | null>(null);
-  const [supplierForm, setSupplierForm] = useState({ nom: "", reference_fournisseur: "", prix: 0, delai_jours: 0, contact: "", notes: "", is_principal: false });
+  const [supplierForm, setSupplierForm] = useState({ nom: "", reference_fournisseur: "", prix: null as number | null, delai_jours: 0, email: "", tel: "", adresse: "", url1: "", url2: "", notes: "", is_principal: false });
 
   // Movement dialog
   const [movementDialog, setMovementDialog] = useState(false);
@@ -101,7 +101,7 @@ export default function PdrDetail() {
     toast({ title: editingSupplierId ? "Fournisseur modifié" : "Fournisseur ajouté" });
     setSupplierDialog(false);
     setEditingSupplierId(null);
-    setSupplierForm({ nom: "", reference_fournisseur: "", prix: 0, delai_jours: 0, contact: "", notes: "", is_principal: false });
+    setSupplierForm({ nom: "", reference_fournisseur: "", prix: null, delai_jours: 0, email: "", tel: "", adresse: "", url1: "", url2: "", notes: "", is_principal: false });
     loadAll();
   };
 
@@ -233,7 +233,7 @@ export default function PdrDetail() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-base">Fournisseurs liés</CardTitle>
               {canEdit("pdr") && (
-                <Button size="sm" onClick={() => { setEditingSupplierId(null); setSupplierForm({ nom: "", reference_fournisseur: "", prix: 0, delai_jours: 0, contact: "", notes: "", is_principal: false }); setSupplierDialog(true); }}>
+                <Button size="sm" onClick={() => { setEditingSupplierId(null); setSupplierForm({ nom: "", reference_fournisseur: "", prix: null, delai_jours: 0, email: "", tel: "", adresse: "", url1: "", url2: "", notes: "", is_principal: false }); setSupplierDialog(true); }}>
                   <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
                 </Button>
               )}
@@ -246,7 +246,7 @@ export default function PdrDetail() {
                     <TableHead>Réf. fourn.</TableHead>
                     <TableHead>Prix (DA)</TableHead>
                     <TableHead>Délai (j)</TableHead>
-                    <TableHead>Contact</TableHead>
+                    <TableHead>Email / Tél</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
                 </TableHeader>
@@ -261,12 +261,16 @@ export default function PdrDetail() {
                       <TableCell className="font-mono text-sm">{s.reference_fournisseur || "—"}</TableCell>
                       <TableCell className="tabular-nums">{s.prix ? Number(s.prix).toLocaleString("fr-FR") : "—"}</TableCell>
                       <TableCell className="tabular-nums">{s.delai_jours || "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{s.contact || "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {s.email && <span className="block">{s.email}</span>}
+                        {s.tel && <span className="block">{s.tel}</span>}
+                        {!s.email && !s.tel && "—"}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                             setEditingSupplierId(s.id);
-                            setSupplierForm({ nom: s.nom, reference_fournisseur: s.reference_fournisseur || "", prix: s.prix || 0, delai_jours: s.delai_jours || 0, contact: s.contact || "", notes: s.notes || "", is_principal: s.is_principal });
+                            setSupplierForm({ nom: s.nom, reference_fournisseur: s.reference_fournisseur || "", prix: s.prix || null, delai_jours: s.delai_jours || 0, email: s.email || "", tel: s.tel || "", adresse: s.adresse || "", url1: s.url1 || "", url2: s.url2 || "", notes: s.notes || "", is_principal: s.is_principal });
                             setSupplierDialog(true);
                           }}><Edit className="h-3.5 w-3.5" /></Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteSupplier(s.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -484,15 +488,31 @@ export default function PdrDetail() {
               </div>
               <div className="space-y-2">
                 <Label>Prix (DA)</Label>
-                <Input type="number" value={supplierForm.prix} onChange={(e) => setSupplierForm((f) => ({ ...f, prix: Number(e.target.value) }))} className="h-12" />
+                <Input type="number" value={supplierForm.prix ?? ""} onChange={(e) => setSupplierForm((f) => ({ ...f, prix: e.target.value ? Number(e.target.value) : null }))} className="h-12" placeholder="Optionnel" />
               </div>
               <div className="space-y-2">
                 <Label>Délai (jours)</Label>
                 <Input type="number" value={supplierForm.delai_jours} onChange={(e) => setSupplierForm((f) => ({ ...f, delai_jours: Number(e.target.value) }))} className="h-12" />
               </div>
               <div className="space-y-2">
-                <Label>Contact</Label>
-                <Input value={supplierForm.contact} onChange={(e) => setSupplierForm((f) => ({ ...f, contact: e.target.value }))} className="h-12" />
+                <Label>Email</Label>
+                <Input type="email" value={supplierForm.email} onChange={(e) => setSupplierForm((f) => ({ ...f, email: e.target.value }))} className="h-12" placeholder="email@example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Téléphone</Label>
+                <Input value={supplierForm.tel} onChange={(e) => setSupplierForm((f) => ({ ...f, tel: e.target.value }))} className="h-12" placeholder="+213..." />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Adresse</Label>
+                <Input value={supplierForm.adresse} onChange={(e) => setSupplierForm((f) => ({ ...f, adresse: e.target.value }))} className="h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>URL 1</Label>
+                <Input value={supplierForm.url1} onChange={(e) => setSupplierForm((f) => ({ ...f, url1: e.target.value }))} className="h-12" placeholder="https://..." />
+              </div>
+              <div className="space-y-2">
+                <Label>URL 2</Label>
+                <Input value={supplierForm.url2} onChange={(e) => setSupplierForm((f) => ({ ...f, url2: e.target.value }))} className="h-12" placeholder="https://..." />
               </div>
             </div>
             <label className="flex items-center gap-2 text-sm">

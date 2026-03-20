@@ -156,7 +156,7 @@ export default function PdrForm() {
     if (isNew && pdrId && pdrId !== "new" && form.family_id && form.family_id !== "__none__") {
       const { data: familySuppliers } = await supabase
         .from("pdr_family_suppliers")
-        .select("nom, reference_fournisseur, prix, delai_jours, contact, notes, is_principal")
+        .select("nom, reference_fournisseur, prix, delai_jours, email, tel, adresse, url1, url2, notes, is_principal")
         .eq("family_id", form.family_id);
       if (familySuppliers && familySuppliers.length > 0) {
         await supabase.from("pdr_suppliers").insert(

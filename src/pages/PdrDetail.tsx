@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, AlertCircle, FileText, Package, Truck, History, BarChart3, Plus, Trash2, Wrench } from "lucide-react";
+import { ArrowLeft, Edit, AlertCircle, FileText, Package, Truck, History, BarChart3, Plus, Trash2, Wrench, Clock } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";

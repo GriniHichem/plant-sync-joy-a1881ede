@@ -278,18 +278,39 @@ export default function PreventifDetail() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
+                    <TableHead>Exécuté par</TableHead>
+                    <TableHead>PDR utilisées</TableHead>
                     <TableHead>Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {executions.length === 0 ? (
-                    <TableRow><TableCell colSpan={2} className="text-center py-6 text-muted-foreground">Aucune exécution</TableCell></TableRow>
-                  ) : executions.map((e: any) => (
-                    <TableRow key={e.id}>
-                      <TableCell className="tabular-nums text-sm">{new Date(e.date_execution).toLocaleDateString("fr-FR")}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{e.notes || "—"}</TableCell>
-                    </TableRow>
-                  ))}
+                    <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Aucune exécution</TableCell></TableRow>
+                  ) : executions.map((e: any) => {
+                    const pdrUsed = Array.isArray(e.pdr_used) ? e.pdr_used : [];
+                    return (
+                      <TableRow key={e.id}>
+                        <TableCell className="tabular-nums text-sm">{new Date(e.date_execution).toLocaleDateString("fr-FR")}</TableCell>
+                        <TableCell className="text-sm">
+                          {assignees.find((a: any) => a.user_id === e.executed_by)
+                            ? `${assignees.find((a: any) => a.user_id === e.executed_by)?.first_name} ${assignees.find((a: any) => a.user_id === e.executed_by)?.last_name}`
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {pdrUsed.length > 0 ? (
+                            <div className="space-y-0.5">
+                              {pdrUsed.map((p: any, i: number) => (
+                                <span key={i} className="block text-xs">
+                                  <span className="font-mono">{p.reference}</span> ×{p.quantite}
+                                </span>
+                              ))}
+                            </div>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground max-w-[250px]">{e.notes || "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>

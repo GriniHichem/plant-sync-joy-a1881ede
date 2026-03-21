@@ -230,10 +230,32 @@ export default function InterventionJournal() {
         <h1 className="text-2xl font-bold">Journal des interventions</h1>
         <p className="text-muted-foreground text-sm">
           Historique complet — {filtered.length} intervention(s)
-          <span className="ml-2 text-xs">
-            ({curativeCount} curative · {preventiveCount} préventive)
-          </span>
         </p>
+      </div>
+
+      {/* Type tabs */}
+      <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-lg w-fit">
+        {([
+          { value: "all", label: "Tous", count: entries.length },
+          { value: "curative", label: "Curative", count: entries.filter(e => e.type === "curative").length },
+          { value: "preventive", label: "Préventive", count: entries.filter(e => e.type === "preventive").length },
+        ] as const).map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setFilterType(tab.value)}
+            className={cn(
+              "px-4 py-1.5 rounded-md text-sm font-medium transition-all",
+              filterType === tab.value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {tab.label}
+            <span className={cn("ml-1.5 text-xs tabular-nums", filterType === tab.value ? "text-foreground/70" : "text-muted-foreground/60")}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* Filters */}
@@ -243,7 +265,7 @@ export default function InterventionJournal() {
             <Filter className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Filtres</span>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="relative col-span-2 md:col-span-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -253,17 +275,6 @@ export default function InterventionJournal() {
                 className="pl-9 h-9"
               />
             </div>
-
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                <SelectItem value="curative">Curative</SelectItem>
-                <SelectItem value="preventive">Préventive</SelectItem>
-              </SelectContent>
-            </Select>
 
             <Select value={filterLine} onValueChange={setFilterLine}>
               <SelectTrigger className="h-9">

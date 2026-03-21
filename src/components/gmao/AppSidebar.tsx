@@ -1,64 +1,44 @@
-import {
-  LayoutDashboard,
-  Cog,
-  Wrench,
-  Package,
-  AlertTriangle,
-  CalendarCheck,
-  LogOut,
-  Factory,
-  ClipboardList,
-  BarChart3,
-  Boxes,
-  Timer,
-  ChevronDown,
-  Activity,
-  BookOpen,
-  Component,
-  HardHat,
-} from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
+  IconDashboard, IconMachine, IconEquipment, IconFactory, IconSpare,
+  IconTicket, IconPreventive, IconShift, IconAnalytics, IconChart,
+  IconOrder, IconProduct, IconArticle, IconRecipe, IconTimer,
+  IconConsumption, IconStop, IconSettings, IconLogout,
+  IconMaintenance, IconProduction,
+} from "@/components/icons/IndustrialIcons";
+import {
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
+  SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 const gmaoItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Machines", url: "/machines", icon: Cog },
-  { title: "Équipements", url: "/equipements", icon: Component },
-  { title: "Lignes", url: "/lignes", icon: Factory },
-  { title: "Pièces (PDR)", url: "/pdr", icon: Package },
-  { title: "Tickets", url: "/tickets", icon: AlertTriangle },
-  { title: "Préventif", url: "/preventif", icon: CalendarCheck },
-  { title: "Shift", url: "/maintenance/shift", icon: HardHat },
-  { title: "Analyse & KPI", url: "/analytics", icon: Activity },
+  { title: "Dashboard", url: "/", icon: IconDashboard },
+  { title: "Machines", url: "/machines", icon: IconMachine },
+  { title: "Équipements", url: "/equipements", icon: IconEquipment },
+  { title: "Lignes", url: "/lignes", icon: IconFactory },
+  { title: "Pièces (PDR)", url: "/pdr", icon: IconSpare },
+  { title: "Tickets", url: "/tickets", icon: IconTicket },
+  { title: "Préventif", url: "/preventif", icon: IconPreventive },
+  { title: "Shift", url: "/maintenance/shift", icon: IconShift },
+  { title: "Analyse & KPI", url: "/analytics", icon: IconAnalytics },
 ];
 
 const gpaoItems = [
-  { title: "Dashboard", url: "/gpao", icon: BarChart3 },
-  { title: "Ordres de fab.", url: "/gpao/of", icon: ClipboardList },
-  { title: "Produits", url: "/gpao/produits", icon: Boxes },
-  { title: "Articles", url: "/gpao/articles", icon: Package },
-  { title: "Recettes", url: "/gpao/recettes", icon: BookOpen },
-  { title: "Shift", url: "/gpao/shift", icon: Timer },
-  { title: "Consommations", url: "/gpao/consommations", icon: Boxes },
-  { title: "Arrêts", url: "/gpao/arrets", icon: AlertTriangle },
+  { title: "Dashboard", url: "/gpao", icon: IconChart },
+  { title: "Ordres de fab.", url: "/gpao/of", icon: IconOrder },
+  { title: "Produits", url: "/gpao/produits", icon: IconProduct },
+  { title: "Articles", url: "/gpao/articles", icon: IconArticle },
+  { title: "Recettes", url: "/gpao/recettes", icon: IconRecipe },
+  { title: "Shift", url: "/gpao/shift", icon: IconTimer },
+  { title: "Consommations", url: "/gpao/consommations", icon: IconConsumption },
+  { title: "Arrêts", url: "/gpao/arrets", icon: IconStop },
 ];
 
 export function AppSidebar() {
@@ -79,21 +59,75 @@ export function AppSidebar() {
 
   const roleLabel = roles.length > 0 ? roles[0].replace("_", " ") : "—";
 
+  const renderGroup = (
+    label: string,
+    GroupIcon: React.FC<{ size?: number }>,
+    items: typeof gmaoItems,
+    defaultOpen: boolean,
+  ) => (
+    <SidebarGroup>
+      <Collapsible defaultOpen={defaultOpen}>
+        <CollapsibleTrigger className="w-full group/trigger">
+          <SidebarGroupLabel className="cursor-pointer flex items-center gap-2 text-[10px] font-bold tracking-[0.15em] uppercase text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors px-3 py-2">
+            <GroupIcon size={14} />
+            {!collapsed && <span>{label}</span>}
+            {!collapsed && (
+              <svg className="h-3 w-3 ml-auto transition-transform group-data-[state=open]/trigger:rotate-180 text-sidebar-foreground/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            )}
+          </SidebarGroupLabel>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SidebarMenu className="px-2 space-y-0.5">
+              {items.map((item) => {
+                const active = isActive(item.url);
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                          "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
+                          active && "sidebar-active-glow text-sidebar-primary-foreground"
+                        )}
+                        activeClassName=""
+                      >
+                        <item.icon size={18} className="shrink-0" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </SidebarGroup>
+  );
+
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-3">
-        <div className="flex items-center gap-2.5">
-          <img
-            src={logoEntreprise}
-            alt="Entreprise"
-            className={`object-contain rounded-md shrink-0 ${collapsed ? "h-9 w-9" : "h-10"}`}
-          />
+      {/* Header — Brand identity */}
+      <SidebarHeader className="p-4 pb-3">
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "shrink-0 rounded-lg overflow-hidden border border-sidebar-border/50",
+            "shadow-[0_0_12px_hsl(var(--sidebar-glow)/0.15)]",
+            collapsed ? "h-9 w-9" : "h-10 w-10"
+          )}>
+            <img src={logoEntreprise} alt="Entreprise" className="h-full w-full object-cover" />
+          </div>
           {!collapsed && (
-            <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-[13px] font-extrabold tracking-wider uppercase text-sidebar-foreground">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[14px] font-extrabold tracking-[0.12em] uppercase text-sidebar-primary-foreground leading-none">
                 PROD IN TIME
               </span>
-              <span className="text-[10px] font-medium tracking-wide text-sidebar-foreground/40 uppercase">
+              <span className="text-[9px] font-semibold tracking-[0.2em] text-sidebar-foreground/35 uppercase mt-1">
                 GMAO · GPAO
               </span>
             </div>
@@ -101,75 +135,34 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <Separator className="bg-sidebar-border mx-2 w-auto" />
+      {/* Divider with glow */}
+      <div className="mx-3 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
 
-      <SidebarContent className="pt-2">
-        {/* GMAO */}
-        <SidebarGroup>
-          <Collapsible defaultOpen={isGmaoActive || !isGpaoActive}>
-            <CollapsibleTrigger className="w-full">
-              <SidebarGroupLabel className="cursor-pointer hover:text-sidebar-foreground">
-                <Wrench className="h-3.5 w-3.5 mr-1.5" />
-                {!collapsed && "GMAO — Maintenance"}
-                {!collapsed && <ChevronDown className="h-3 w-3 ml-auto" />}
-              </SidebarGroupLabel>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {gmaoItems.map((item) => (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                        <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                          <item.icon className="h-4.5 w-4.5 shrink-0" />
-                          {!collapsed && <span>{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </SidebarGroup>
+      <SidebarContent className="pt-3 overflow-y-auto">
+        {renderGroup("Maintenance", IconMaintenance, gmaoItems, isGmaoActive || !isGpaoActive)}
 
-        {/* GPAO */}
-        <SidebarGroup>
-          <Collapsible defaultOpen={isGpaoActive}>
-            <CollapsibleTrigger className="w-full">
-              <SidebarGroupLabel className="cursor-pointer hover:text-sidebar-foreground">
-                <Factory className="h-3.5 w-3.5 mr-1.5" />
-                {!collapsed && "GPAO — Production"}
-                {!collapsed && <ChevronDown className="h-3 w-3 ml-auto" />}
-              </SidebarGroupLabel>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {gpaoItems.map((item) => (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                        <NavLink to={item.url} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                          <item.icon className="h-4.5 w-4.5 shrink-0" />
-                          {!collapsed && <span>{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </SidebarGroup>
+        <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
 
-        {/* Paramètres */}
+        {renderGroup("Production", IconProduction, gpaoItems, isGpaoActive)}
+
+        <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
+
+        {/* Settings */}
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="px-2">
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/parametres")} tooltip="Paramètres">
-                  <NavLink to="/parametres" className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                    <Wrench className="h-4.5 w-4.5 shrink-0" />
+                  <NavLink
+                    to="/parametres"
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                      "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
+                      isActive("/parametres") && "sidebar-active-glow text-sidebar-primary-foreground"
+                    )}
+                    activeClassName=""
+                  >
+                    <IconSettings size={18} className="shrink-0" />
                     {!collapsed && <span>Paramètres</span>}
                   </NavLink>
                 </SidebarMenuButton>
@@ -179,22 +172,23 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
-        <Separator className="bg-sidebar-border mb-2" />
+      {/* Footer — User area */}
+      <SidebarFooter className="p-3 pt-0">
+        <div className="mx-0 mb-2 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
         {!collapsed && (
-          <div className="mb-2 px-1">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">{displayName}</p>
-            <p className="text-[11px] text-sidebar-foreground/60 capitalize">{roleLabel}</p>
+          <div className="mb-2 px-2">
+            <p className="text-[13px] font-semibold text-sidebar-foreground truncate">{displayName}</p>
+            <p className="text-[10px] text-sidebar-foreground/45 capitalize font-medium tracking-wide">{roleLabel}</p>
           </div>
         )}
         <Button
           variant="ghost"
           size={collapsed ? "icon" : "default"}
-          className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+          className="w-full justify-start gap-3 text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-destructive/10 rounded-lg text-[13px] font-medium px-3"
           onClick={signOut}
         >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span className="ml-2">Déconnexion</span>}
+          <IconLogout size={18} className="shrink-0" />
+          {!collapsed && <span>Déconnexion</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>

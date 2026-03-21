@@ -1220,6 +1220,7 @@ export type Database = {
         Row: {
           adresse: string | null
           created_at: string
+          created_by: string | null
           delai_jours: number | null
           email: string | null
           family_id: string
@@ -1230,12 +1231,15 @@ export type Database = {
           prix: number | null
           reference_fournisseur: string | null
           tel: string | null
+          updated_at: string
+          updated_by: string | null
           url1: string | null
           url2: string | null
         }
         Insert: {
           adresse?: string | null
           created_at?: string
+          created_by?: string | null
           delai_jours?: number | null
           email?: string | null
           family_id: string
@@ -1246,12 +1250,15 @@ export type Database = {
           prix?: number | null
           reference_fournisseur?: string | null
           tel?: string | null
+          updated_at?: string
+          updated_by?: string | null
           url1?: string | null
           url2?: string | null
         }
         Update: {
           adresse?: string | null
           created_at?: string
+          created_by?: string | null
           delai_jours?: number | null
           email?: string | null
           family_id?: string
@@ -1262,6 +1269,8 @@ export type Database = {
           prix?: number | null
           reference_fournisseur?: string | null
           tel?: string | null
+          updated_at?: string
+          updated_by?: string | null
           url1?: string | null
           url2?: string | null
         }
@@ -1346,6 +1355,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          modified_at: string | null
+          modified_by: string | null
           motif: string | null
           pdr_id: string
           prix_unitaire: number | null
@@ -1357,11 +1368,14 @@ export type Database = {
           stock_apres: number
           stock_avant: number
           type: Database["public"]["Enums"]["mouvement_type"]
+          updated_at: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          modified_at?: string | null
+          modified_by?: string | null
           motif?: string | null
           pdr_id: string
           prix_unitaire?: number | null
@@ -1373,11 +1387,14 @@ export type Database = {
           stock_apres?: number
           stock_avant?: number
           type: Database["public"]["Enums"]["mouvement_type"]
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          modified_at?: string | null
+          modified_by?: string | null
           motif?: string | null
           pdr_id?: string
           prix_unitaire?: number | null
@@ -1389,6 +1406,7 @@ export type Database = {
           stock_apres?: number
           stock_avant?: number
           type?: Database["public"]["Enums"]["mouvement_type"]
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -1401,10 +1419,59 @@ export type Database = {
           },
         ]
       }
+      pdr_stock_permissions: {
+        Row: {
+          can_cancel_movement: boolean
+          can_correct_stock: boolean
+          can_create_entry: boolean
+          can_create_exit: boolean
+          can_create_supplier: boolean
+          can_delete_supplier: boolean
+          can_edit_supplier: boolean
+          can_inventory: boolean
+          can_view_suppliers: boolean
+          created_at: string
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          can_cancel_movement?: boolean
+          can_correct_stock?: boolean
+          can_create_entry?: boolean
+          can_create_exit?: boolean
+          can_create_supplier?: boolean
+          can_delete_supplier?: boolean
+          can_edit_supplier?: boolean
+          can_inventory?: boolean
+          can_view_suppliers?: boolean
+          created_at?: string
+          id?: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          can_cancel_movement?: boolean
+          can_correct_stock?: boolean
+          can_create_entry?: boolean
+          can_create_exit?: boolean
+          can_create_supplier?: boolean
+          can_delete_supplier?: boolean
+          can_edit_supplier?: boolean
+          can_inventory?: boolean
+          can_view_suppliers?: boolean
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pdr_suppliers: {
         Row: {
           adresse: string | null
           created_at: string
+          created_by: string | null
           delai_jours: number | null
           email: string | null
           id: string
@@ -1415,12 +1482,15 @@ export type Database = {
           prix: number | null
           reference_fournisseur: string | null
           tel: string | null
+          updated_at: string
+          updated_by: string | null
           url1: string | null
           url2: string | null
         }
         Insert: {
           adresse?: string | null
           created_at?: string
+          created_by?: string | null
           delai_jours?: number | null
           email?: string | null
           id?: string
@@ -1431,12 +1501,15 @@ export type Database = {
           prix?: number | null
           reference_fournisseur?: string | null
           tel?: string | null
+          updated_at?: string
+          updated_by?: string | null
           url1?: string | null
           url2?: string | null
         }
         Update: {
           adresse?: string | null
           created_at?: string
+          created_by?: string | null
           delai_jours?: number | null
           email?: string | null
           id?: string
@@ -1447,6 +1520,8 @@ export type Database = {
           prix?: number | null
           reference_fournisseur?: string | null
           tel?: string | null
+          updated_at?: string
+          updated_by?: string | null
           url1?: string | null
           url2?: string | null
         }

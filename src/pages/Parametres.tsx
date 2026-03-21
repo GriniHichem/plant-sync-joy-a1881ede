@@ -23,6 +23,7 @@ const groups: SectionGroup[] = [
       { title: "Utilisateurs", description: "Gérer les comptes et rôles", icon: Users, url: "/parametres/users" },
       { title: "Matrice des rôles", description: "Permissions détaillées par rôle", icon: ShieldCheck, url: "/parametres/roles" },
       { title: "Permissions documents", description: "Droits d'accès aux documents par rôle et entité", icon: Lock, url: "/parametres/document-permissions" },
+      { title: "Permissions PDR & Stock", description: "Fournisseurs, entrées, sorties, corrections, inventaires", icon: Package, url: "/parametres/pdr-stock-permissions" },
     ],
   },
   {

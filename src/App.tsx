@@ -32,6 +32,7 @@ import ProductFamiliesAdmin from "@/pages/parametres/ProductFamiliesAdmin";
 import DocumentCategoriesAdmin from "@/pages/parametres/DocumentCategoriesAdmin";
 import DocumentPermissionsAdmin from "@/pages/parametres/DocumentPermissionsAdmin";
 import PdrFamiliesAdmin from "@/pages/parametres/PdrFamiliesAdmin";
+import PdrStockPermissionsAdmin from "@/pages/parametres/PdrStockPermissionsAdmin";
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";
 import OfDetail from "@/pages/gpao/OfDetail";
@@ -137,6 +138,7 @@ const App = () => (
               <Route path="/parametres/document-permissions" element={<DocumentPermissionsAdmin />} />
               <Route path="/parametres/familles-pdr" element={<PdrFamiliesAdmin />} />
               <Route path="/parametres/general" element={<GeneralSettings />} />
+              <Route path="/parametres/pdr-stock-permissions" element={<PdrStockPermissionsAdmin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

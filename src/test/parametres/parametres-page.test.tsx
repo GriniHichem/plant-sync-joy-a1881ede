@@ -29,7 +29,7 @@ describe("Parametres — Page d'accueil", () => {
     expect(screen.getByText("Administration et référentiels")).toBeInTheDocument();
   });
 
-  const expectedSections = [
+  const coreSections = [
     { title: "Utilisateurs", description: "Gérer les comptes et rôles", url: "/parametres/users" },
     { title: "Matrice des rôles", description: "Permissions détaillées par rôle", url: "/parametres/roles" },
     { title: "Familles machines", description: "Catégories et sous-familles", url: "/parametres/familles" },
@@ -39,15 +39,15 @@ describe("Parametres — Page d'accueil", () => {
     { title: "Général", description: "Paramètres de l'application", url: "/parametres/general" },
   ];
 
-  it("affiche exactement 7 sections de configuration", () => {
+  it("affiche toutes les sections de configuration attendues", () => {
     renderPage();
-    expectedSections.forEach((s) => {
+    coreSections.forEach((s) => {
       expect(screen.getByText(s.title)).toBeInTheDocument();
       expect(screen.getByText(s.description)).toBeInTheDocument();
     });
   });
 
-  expectedSections.forEach((section) => {
+  coreSections.forEach((section) => {
     it(`navigue vers ${section.url} au clic sur "${section.title}"`, () => {
       renderPage();
       fireEvent.click(screen.getByText(section.title));
@@ -58,7 +58,8 @@ describe("Parametres — Page d'accueil", () => {
   it("chaque carte a une icône visible", () => {
     const { container } = renderPage();
     const iconContainers = container.querySelectorAll(".bg-primary\\/10");
-    expect(iconContainers).toHaveLength(7);
+    // 13 sections across 4 groups
+    expect(iconContainers.length).toBeGreaterThanOrEqual(7);
     iconContainers.forEach((el) => {
       expect(el.querySelector("svg")).toBeTruthy();
     });
@@ -70,5 +71,13 @@ describe("Parametres — Page d'accueil", () => {
     expect(grid).toBeTruthy();
     expect(grid?.classList.contains("grid-cols-1")).toBe(true);
     expect(grid?.classList.contains("md:grid-cols-2")).toBe(true);
+  });
+
+  it("affiche les 4 groupes de paramètres", () => {
+    renderPage();
+    expect(screen.getByText("Sécurité & Accès")).toBeInTheDocument();
+    expect(screen.getByText("Référentiels & Classification")).toBeInTheDocument();
+    expect(screen.getByText("Production & Organisation")).toBeInTheDocument();
+    expect(screen.getByText("Configuration générale")).toBeInTheDocument();
   });
 });

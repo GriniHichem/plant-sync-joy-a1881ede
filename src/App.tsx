@@ -19,6 +19,7 @@ import PreventifList from "@/pages/PreventifList";
 import PreventifForm from "@/pages/PreventifForm";
 import PreventifDetail from "@/pages/PreventifDetail";
 import MaintenancierShiftView from "@/pages/MaintenancierShiftView";
+import InterventionJournal from "@/pages/InterventionJournal";
 import Parametres from "@/pages/Parametres";
 import UsersAdmin from "@/pages/parametres/UsersAdmin";
 import FamillesAdmin from "@/pages/parametres/FamillesAdmin";

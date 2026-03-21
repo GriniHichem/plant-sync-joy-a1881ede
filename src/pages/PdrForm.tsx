@@ -22,7 +22,7 @@ const STATUT_OPTIONS = [
 
 export default function PdrForm() {
   const { id } = useParams();
-  const isNew = id === "new";
+  const isNew = !id;
   const navigate = useNavigate();
   const { toast } = useToast();
   const [families, setFamilies] = useState<any[]>([]);

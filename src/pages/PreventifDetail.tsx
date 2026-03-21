@@ -295,26 +295,66 @@ export default function PreventifDetail() {
           <DialogHeader>
             <DialogTitle>Exécuter le plan préventif</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            {/* Timing */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="exec-start" className="text-sm font-medium flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" /> Heure début
+                </Label>
+                <Input
+                  id="exec-start"
+                  type="time"
+                  value={execStartTime}
+                  onChange={(e) => setExecStartTime(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="exec-duree" className="text-sm font-medium flex items-center gap-1.5">
+                  <Timer className="h-3.5 w-3.5 text-muted-foreground" /> Durée (minutes)
+                </Label>
+                <Input
+                  id="exec-duree"
+                  type="number"
+                  min={0}
+                  value={execDureeMinutes || ""}
+                  onChange={(e) => setExecDureeMinutes(Number(e.target.value))}
+                  placeholder="Ex: 45"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            {/* PDR utilisées */}
             {planPdr.length > 0 && (
               <div>
-                <Label className="text-sm font-medium">PDR utilisées</Label>
-                <div className="space-y-2 mt-2">
+                <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                  <Package className="h-3.5 w-3.5 text-muted-foreground" /> PDR utilisées
+                </Label>
+                <div className="border rounded-lg divide-y">
                   {planPdr.map((pp: any) => (
-                    <div key={pp.id} className="flex items-center gap-2">
+                    <div key={pp.id} className="flex items-center gap-3 p-2.5 hover:bg-muted/50 transition-colors">
                       <Checkbox
                         id={`pdr-${pp.id}`}
                         checked={execPdrUsed[pp.id] ?? false}
                         onCheckedChange={(v) => setExecPdrUsed(prev => ({ ...prev, [pp.id]: !!v }))}
                       />
-                      <label htmlFor={`pdr-${pp.id}`} className="text-sm cursor-pointer">
-                        {pp.pdr?.reference} — {pp.pdr?.designation} (×{pp.quantite})
+                      <label htmlFor={`pdr-${pp.id}`} className="flex-1 cursor-pointer">
+                        <span className="text-sm font-mono font-medium">{pp.pdr?.reference}</span>
+                        <span className="text-sm text-muted-foreground ml-2">— {pp.pdr?.designation}</span>
+                        <Badge variant="outline" className="ml-2 text-xs">×{pp.quantite}</Badge>
                       </label>
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Object.values(execPdrUsed).filter(Boolean).length}/{planPdr.length} pièce(s) sélectionnée(s)
+                </p>
               </div>
             )}
+
+            {/* Notes */}
             <div>
               <Label htmlFor="exec-notes">Notes / Observations</Label>
               <Textarea
@@ -323,6 +363,7 @@ export default function PreventifDetail() {
                 onChange={(e) => setExecNotes(e.target.value)}
                 placeholder="Observations sur l'exécution..."
                 className="mt-1"
+                rows={3}
               />
             </div>
           </div>

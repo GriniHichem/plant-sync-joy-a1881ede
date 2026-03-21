@@ -19,6 +19,7 @@ import PreventifList from "@/pages/PreventifList";
 import PreventifForm from "@/pages/PreventifForm";
 import PreventifDetail from "@/pages/PreventifDetail";
 import MaintenancierShiftView from "@/pages/MaintenancierShiftView";
+import InterventionJournal from "@/pages/InterventionJournal";
 import Parametres from "@/pages/Parametres";
 import UsersAdmin from "@/pages/parametres/UsersAdmin";
 import FamillesAdmin from "@/pages/parametres/FamillesAdmin";
@@ -103,6 +104,7 @@ const App = () => (
               <Route path="/preventif/:id" element={<PreventifDetail />} />
               <Route path="/preventif/:id/edit" element={<PreventifForm />} />
               <Route path="/maintenance/shift" element={<MaintenancierShiftView />} />
+              <Route path="/maintenance/journal" element={<InterventionJournal />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/equipements" element={<EquipmentsList />} />
               <Route path="/equipements/new" element={<EquipmentForm />} />

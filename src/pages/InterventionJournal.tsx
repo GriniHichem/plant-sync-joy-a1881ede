@@ -189,13 +189,22 @@ export default function InterventionJournal() {
       if (filterLine !== "all" && e.line_id !== filterLine) return false;
       if (filterMachine !== "all" && e.machine_id !== filterMachine) return false;
       if (filterUser !== "all" && e.user_id !== filterUser) return false;
+      if (dateFrom) {
+        const d = new Date(e.date);
+        if (d < dateFrom) return false;
+      }
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        if (new Date(e.date) > end) return false;
+      }
       if (search) {
         const s = search.toLowerCase();
         if (!e.title.toLowerCase().includes(s) && !e.description.toLowerCase().includes(s) && !e.machine_name.toLowerCase().includes(s) && !e.machine_code.toLowerCase().includes(s)) return false;
       }
       return true;
     });
-  }, [entries, filterType, filterLine, filterMachine, filterUser, search]);
+  }, [entries, filterType, filterLine, filterMachine, filterUser, dateFrom, dateTo, search]);
 
   const curativeCount = filtered.filter((e) => e.type === "curative").length;
   const preventiveCount = filtered.filter((e) => e.type === "preventive").length;

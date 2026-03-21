@@ -138,13 +138,9 @@ export default function PreventifList() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={statutInfo.variant} className="text-xs">{statutInfo.label}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {isOverdue ? (
-                          <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-1 rounded">EN RETARD</span>
-                        ) : (p as any).statut_plan === "valide" ? (
-                          <span className="text-xs text-success bg-success/10 px-2 py-1 rounded">À jour</span>
-                        ) : null}
+                        {isOverdue && (
+                          <Badge variant="destructive" className="text-[10px] ml-1">RETARD</Badge>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

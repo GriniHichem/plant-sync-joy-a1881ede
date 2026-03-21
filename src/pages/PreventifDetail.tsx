@@ -79,6 +79,9 @@ export default function PreventifDetail() {
 
   const openExecDialog = () => {
     setExecNotes("");
+    setExecDureeMinutes(0);
+    const now = new Date();
+    setExecStartTime(now.toTimeString().slice(0, 5));
     const pdrMap: Record<string, boolean> = {};
     planPdr.forEach(pp => { pdrMap[pp.id] = true; });
     setExecPdrUsed(pdrMap);

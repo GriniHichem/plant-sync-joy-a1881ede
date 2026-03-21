@@ -115,6 +115,14 @@ export default function PdrForm() {
       toast({ title: "PDR stratégique : au moins une machine doit être liée", variant: "destructive" });
       return;
     }
+    if (form.duree_vie_min_jours != null && form.duree_vie_max_jours != null && form.duree_vie_min_jours > form.duree_vie_max_jours) {
+      toast({ title: "Durée de vie min doit être ≤ durée de vie max", variant: "destructive" });
+      return;
+    }
+    if (Number(form.stock_min) > Number(form.stock_max) && Number(form.stock_max) > 0) {
+      toast({ title: "Stock min doit être ≤ stock max", variant: "destructive" });
+      return;
+    }
     setSaving(true);
 
     const payload: any = {

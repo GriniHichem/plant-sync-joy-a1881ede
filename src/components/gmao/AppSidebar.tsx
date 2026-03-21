@@ -58,7 +58,7 @@ export function AppSidebar() {
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"
     : "Utilisateur";
 
-  const roleLabel = roles.length > 0 ? roles[0].replace("_", " ") : "—";
+  const roleLabel = roles.length > 0 ? roles[0].replaceAll("_", " ") : "—";
 
   const renderGroup = (
     label: string,

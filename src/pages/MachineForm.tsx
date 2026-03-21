@@ -95,7 +95,7 @@ export default function MachineForm() {
       setLines(lRes.data || []);
     });
 
-    if (!isNew && id) {
+    if (id) {
       supabase.from("machines").select("*").eq("id", id).single().then(({ data }) => {
         if (data) {
           setForm({

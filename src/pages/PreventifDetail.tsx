@@ -2,19 +2,28 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Edit, CheckCircle, PauseCircle, Play, CalendarCheck, Package, Users, Wrench } from "lucide-react";
+import { ArrowLeft, Edit, CheckCircle, PauseCircle, Play, CalendarCheck, Package, Users, ClipboardCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   brouillon: { label: "Brouillon", variant: "secondary" },
   valide: { label: "Validé", variant: "default" },
   suspendu: { label: "Suspendu", variant: "outline" },
+};
+
+const FREQUENCE_DAYS: Record<string, number> = {
+  quotidien: 1, hebdomadaire: 7, bimensuel: 14, mensuel: 30,
+  trimestriel: 90, semestriel: 180, annuel: 365,
 };
 
 export default function PreventifDetail() {
@@ -26,7 +35,14 @@ export default function PreventifDetail() {
   const [plan, setPlan] = useState<any>(null);
   const [planPdr, setPlanPdr] = useState<any[]>([]);
   const [assignees, setAssignees] = useState<any[]>([]);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [executions, setExecutions] = useState<any[]>([]);
+
+  // Execution dialog state
+  const [execOpen, setExecOpen] = useState(false);
+  const [execNotes, setExecNotes] = useState("");
+  const [execPdrUsed, setExecPdrUsed] = useState<Record<string, boolean>>({});
+  const [execLoading, setExecLoading] = useState(false);
 
   const loadAll = async () => {
     if (!id) return;
@@ -40,8 +56,8 @@ export default function PreventifDetail() {
     setPlanPdr(ppRes.data || []);
     setExecutions(eRes.data || []);
 
-    // Load assignee profiles
     const userIds = (aRes.data || []).map((a: any) => a.user_id);
+    setAssigneeIds(userIds);
     if (userIds.length > 0) {
       const { data: profiles } = await supabase.from("profiles").select("user_id, first_name, last_name").in("user_id", userIds);
       setAssignees(profiles || []);
@@ -56,6 +72,54 @@ export default function PreventifDetail() {
     loadAll();
   };
 
+  const isAssigned = user ? assigneeIds.includes(user.id) : false;
+  const canExecute = plan && (plan as any).statut_plan === "valide" && (isAssigned || hasRole("admin") || hasRole("resp_maintenance"));
+
+  const openExecDialog = () => {
+    setExecNotes("");
+    const pdrMap: Record<string, boolean> = {};
+    planPdr.forEach(pp => { pdrMap[pp.id] = true; });
+    setExecPdrUsed(pdrMap);
+    setExecOpen(true);
+  };
+
+  const submitExecution = async () => {
+    if (!user || !id) return;
+    setExecLoading(true);
+    try {
+      const pdrUsedList = planPdr
+        .filter(pp => execPdrUsed[pp.id])
+        .map(pp => ({ pdr_id: pp.pdr_id, reference: pp.pdr?.reference, quantite: pp.quantite }));
+
+      const { error } = await supabase.from("preventive_executions").insert({
+        plan_id: id,
+        executed_by: user.id,
+        notes: execNotes || null,
+        pdr_used: pdrUsedList as any,
+      });
+
+      if (error) throw error;
+
+      // Update plan: derniere_execution + prochaine_echeance
+      const now = new Date();
+      const days = FREQUENCE_DAYS[plan.frequence] || 30;
+      const nextDate = new Date(now.getTime() + days * 86400000);
+
+      await supabase.from("preventive_plans").update({
+        derniere_execution: now.toISOString(),
+        prochaine_echeance: nextDate.toISOString(),
+      } as any).eq("id", id);
+
+      toast({ title: "Exécution enregistrée", description: `Prochaine échéance : ${nextDate.toLocaleDateString("fr-FR")}` });
+      setExecOpen(false);
+      loadAll();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setExecLoading(false);
+    }
+  };
+
   if (!plan) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
 
   const statutInfo = STATUT_LABELS[(plan as any).statut_plan] || STATUT_LABELS.valide;
@@ -63,12 +127,12 @@ export default function PreventifDetail() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="icon" onClick={() => navigate("/preventif")} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{plan.title}</h1>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl font-bold truncate">{plan.title}</h1>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <Badge variant={statutInfo.variant} className="text-xs">{statutInfo.label}</Badge>
             <Badge variant="outline" className="text-xs capitalize">{plan.frequence}</Badge>
@@ -76,7 +140,12 @@ export default function PreventifDetail() {
             {(plan as any).source === "auto_duree_vie" && <Badge variant="secondary" className="text-xs">Auto (durée de vie)</Badge>}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {canExecute && (
+            <Button onClick={openExecDialog} className="h-12 px-4 bg-green-600 hover:bg-green-700">
+              <ClipboardCheck className="h-4 w-4 mr-2" /> Exécuter
+            </Button>
+          )}
           {canEdit("preventif") && (plan as any).statut_plan === "brouillon" && (
             <Button onClick={() => updateStatut("valide")} className="h-12 px-4">
               <CheckCircle className="h-4 w-4 mr-2" /> Valider
@@ -213,6 +282,52 @@ export default function PreventifDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Execution Dialog */}
+      <Dialog open={execOpen} onOpenChange={setExecOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Exécuter le plan préventif</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {planPdr.length > 0 && (
+              <div>
+                <Label className="text-sm font-medium">PDR utilisées</Label>
+                <div className="space-y-2 mt-2">
+                  {planPdr.map((pp: any) => (
+                    <div key={pp.id} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`pdr-${pp.id}`}
+                        checked={execPdrUsed[pp.id] ?? false}
+                        onCheckedChange={(v) => setExecPdrUsed(prev => ({ ...prev, [pp.id]: !!v }))}
+                      />
+                      <label htmlFor={`pdr-${pp.id}`} className="text-sm cursor-pointer">
+                        {pp.pdr?.reference} — {pp.pdr?.designation} (×{pp.quantite})
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="exec-notes">Notes / Observations</Label>
+              <Textarea
+                id="exec-notes"
+                value={execNotes}
+                onChange={(e) => setExecNotes(e.target.value)}
+                placeholder="Observations sur l'exécution..."
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExecOpen(false)}>Annuler</Button>
+            <Button onClick={submitExecution} disabled={execLoading} className="bg-green-600 hover:bg-green-700">
+              {execLoading ? "Enregistrement..." : "Confirmer l'exécution"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -52,7 +52,7 @@ const PRIORITY_LABELS: Record<number, string> = { 1: "Principale", 2: "Secondair
 
 export default function MachineForm() {
   const { id } = useParams();
-  const isNew = id === "new";
+  const isNew = !id;
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Wrench, AlertTriangle, CalendarCheck, Factory, ShieldAlert, ClipboardCheck } from "lucide-react";
+import { ChevronDown, ChevronRight, AlertTriangle, CalendarCheck, Factory, ShieldAlert, ClipboardCheck, Clock } from "lucide-react";
+import { EntityThumbnail } from "@/components/images/EntityThumbnail";
+import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
 
 interface MachineGroup {
   machine: { id: string; code: string; designation: string };
@@ -40,6 +42,17 @@ function buildLineGroups(items: any[], type: "plan" | "ticket"): LineGroup[] {
     mg.items.push(item);
   }
   return Array.from(lineMap.values()).sort((a, b) => (a.line?.code || "zzz").localeCompare(b.line?.code || "zzz"));
+}
+
+function PriorityBadge({ priority }: { priority: string }) {
+  const map: Record<string, { label: string; variant: "destructive" | "default" | "secondary" | "outline" }> = {
+    critique: { label: "Critique", variant: "destructive" },
+    haute: { label: "Haute", variant: "destructive" },
+    normale: { label: "Normale", variant: "secondary" },
+    basse: { label: "Basse", variant: "outline" },
+  };
+  const info = map[priority] || map.normale;
+  return <Badge variant={info.variant} className="text-[10px] px-1.5 py-0">{info.label}</Badge>;
 }
 
 export default function MaintenancierShiftView() {
@@ -87,6 +100,16 @@ export default function MaintenancierShiftView() {
     setLoading(false);
   };
 
+  // Collect all machine IDs for image fetching
+  const allMachineIds = useMemo(() => {
+    const ids = new Set<string>();
+    plans.forEach(p => { if (p.machines?.id) ids.add(p.machines.id); });
+    tickets.forEach(t => { if (t.machines?.id) ids.add(t.machines.id); });
+    return Array.from(ids);
+  }, [plans, tickets]);
+
+  const machineImages = useEntityPrimaryImages("machine", allMachineIds);
+
   if (loading) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
 
   const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -96,12 +119,12 @@ export default function MaintenancierShiftView() {
   const renderLineGroups = (groups: LineGroup[], type: "plan" | "ticket") => {
     if (groups.length === 0) {
       return (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+        <Card className="border-dashed">
+          <CardContent className="py-16 text-center text-muted-foreground">
             {type === "ticket" ? (
-              <><ShieldAlert className="h-10 w-10 mx-auto mb-3 opacity-30" /><p className="text-lg font-medium">Aucun ticket curatif</p></>
+              <><ShieldAlert className="h-12 w-12 mx-auto mb-4 opacity-20" /><p className="text-base font-medium">Aucun ticket curatif</p><p className="text-sm mt-1">Pas de pannes signalées pour le moment</p></>
             ) : (
-              <><CalendarCheck className="h-10 w-10 mx-auto mb-3 opacity-30" /><p className="text-lg font-medium">Aucun plan préventif</p></>
+              <><CalendarCheck className="h-12 w-12 mx-auto mb-4 opacity-20" /><p className="text-base font-medium">Aucun plan préventif</p><p className="text-sm mt-1">Aucune intervention programmée</p></>
             )}
           </CardContent>
         </Card>
@@ -110,54 +133,103 @@ export default function MaintenancierShiftView() {
 
     return groups.map((group) => (
       <Collapsible key={group.line?.id || "__no_line__"} defaultOpen>
-        <Card>
+        <Card className="overflow-hidden">
           <CollapsibleTrigger className="w-full">
-            <CardHeader className="flex flex-row items-center gap-3 py-3 cursor-pointer hover:bg-muted/30">
-              <Factory className="h-5 w-5 text-muted-foreground shrink-0" />
-              <CardTitle className="text-base flex-1 text-left">
+            <CardHeader className="flex flex-row items-center gap-3 py-3 px-4 cursor-pointer hover:bg-muted/40 transition-colors border-b border-border/50">
+              <Factory className="h-5 w-5 text-primary/70 shrink-0" />
+              <CardTitle className="text-sm font-semibold flex-1 text-left tracking-wide uppercase">
                 {group.line ? `${group.line.code} — ${group.line.designation}` : "Sans ligne"}
               </CardTitle>
-              <Badge variant="outline" className="text-xs">
-                {group.machines.reduce((s, m) => s + m.items.length, 0)} {type === "ticket" ? "ticket(s)" : "plan(s)"}
+              <Badge variant="secondary" className="text-[10px] font-mono">
+                {group.machines.reduce((s, m) => s + m.items.length, 0)}
               </Badge>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
             </CardHeader>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent className="pt-0 space-y-3">
+            <CardContent className="p-0 divide-y divide-border/40">
               {group.machines.map((mg) => (
-                <div key={mg.machine.id} className="border rounded-lg p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Wrench className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-mono text-sm font-medium">{mg.machine.code}</span>
-                    <span className="text-sm text-muted-foreground">{mg.machine.designation}</span>
+                <div key={mg.machine.id} className="p-3 space-y-2">
+                  {/* Machine header with image */}
+                  <div className="flex items-center gap-3">
+                    <EntityThumbnail
+                      imageUrl={machineImages[mg.machine.id]}
+                      alt={mg.machine.designation}
+                      size="lg"
+                      rounded="lg"
+                      enableLightbox
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-mono text-sm font-bold text-foreground">{mg.machine.code}</p>
+                      <p className="text-xs text-muted-foreground truncate">{mg.machine.designation}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px]">
+                      {mg.items.length} {type === "ticket" ? "ticket(s)" : "plan(s)"}
+                    </Badge>
                   </div>
-                  {mg.items.map((item: any) =>
-                    type === "ticket" ? (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted/50 bg-destructive/5"
-                        onClick={() => navigate(`/tickets/${item.id}`)}
-                      >
-                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-                        <span className="text-sm flex-1">{item.numero} — {item.description?.slice(0, 60)}</span>
-                        <Badge variant={item.statut === "ouvert" ? "destructive" : "secondary"} className="text-xs capitalize">{item.statut.replace("_", " ")}</Badge>
-                      </div>
-                    ) : (
-                      <div
-                        key={item.id}
-                        className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted/50 ${item.prochaine_echeance && new Date(item.prochaine_echeance) < new Date() ? "bg-destructive/5" : "bg-muted/20"}`}
-                        onClick={() => navigate(`/preventif/${item.id}`)}
-                      >
-                        <CalendarCheck className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-sm flex-1">{item.title}</span>
-                        <Badge variant="outline" className="text-xs capitalize">{item.frequence}</Badge>
-                        {item.prochaine_echeance && new Date(item.prochaine_echeance) < new Date() && (
-                          <Badge variant="destructive" className="text-xs">Retard</Badge>
-                        )}
-                      </div>
-                    )
-                  )}
+
+                  {/* Items */}
+                  <div className="space-y-1.5 pl-1">
+                    {mg.items.map((item: any) =>
+                      type === "ticket" ? (
+                        <div
+                          key={item.id}
+                          className="flex items-start gap-3 p-2.5 rounded-lg cursor-pointer hover:bg-destructive/5 border border-destructive/15 bg-destructive/[0.02] transition-colors"
+                          onClick={() => navigate(`/tickets/${item.id}`)}
+                        >
+                          <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold text-foreground">{item.numero}</span>
+                              <PriorityBadge priority={item.priorite} />
+                              <Badge variant={item.statut === "ouvert" ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 capitalize">{item.statut.replace("_", " ")}</Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
+                            {item.heure_declaration && (
+                              <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground/70">
+                                <Clock className="h-3 w-3" />
+                                {new Date(item.heure_declaration).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                            )}
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />
+                        </div>
+                      ) : (
+                        <div
+                          key={item.id}
+                          className={`flex items-start gap-3 p-2.5 rounded-lg cursor-pointer hover:bg-primary/5 border transition-colors ${
+                            item.prochaine_echeance && new Date(item.prochaine_echeance) < new Date()
+                              ? "border-destructive/20 bg-destructive/[0.02]"
+                              : "border-primary/10 bg-primary/[0.02]"
+                          }`}
+                          onClick={() => navigate(`/preventif/${item.id}`)}
+                        >
+                          <CalendarCheck className={`h-4 w-4 shrink-0 mt-0.5 ${
+                            item.prochaine_echeance && new Date(item.prochaine_echeance) < new Date() ? "text-destructive" : "text-primary"
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-foreground">{item.title}</span>
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{item.frequence}</Badge>
+                              {item.prochaine_echeance && new Date(item.prochaine_echeance) < new Date() && (
+                                <Badge variant="destructive" className="text-[10px] px-1.5 py-0">En retard</Badge>
+                              )}
+                            </div>
+                            {item.type_maintenance && (
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.type_maintenance}</p>
+                            )}
+                            {item.prochaine_echeance && (
+                              <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground/70">
+                                <Clock className="h-3 w-3" />
+                                Échéance : {new Date(item.prochaine_echeance).toLocaleDateString("fr-FR")}
+                              </div>
+                            )}
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
               ))}
             </CardContent>
@@ -169,22 +241,38 @@ export default function MaintenancierShiftView() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Shift</h1>
-        <p className="text-muted-foreground capitalize">{today}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Shift</h1>
+          <p className="text-sm text-muted-foreground capitalize">{today}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                <span className="text-xs font-medium">{tickets.length} curatif</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-primary" />
+                <span className="text-xs font-medium">{plans.length} préventif</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Tabs defaultValue="curative">
-        <TabsList className="h-11">
-          <TabsTrigger value="curative" className="h-9 gap-1.5">
-            <ShieldAlert className="h-3.5 w-3.5" />
+        <TabsList className="h-11 w-full grid grid-cols-2">
+          <TabsTrigger value="curative" className="h-9 gap-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive">
+            <ShieldAlert className="h-4 w-4" />
             Curative
-            {tickets.length > 0 && <Badge variant="destructive" className="ml-1 text-xs px-1.5">{tickets.length}</Badge>}
+            {tickets.length > 0 && <Badge variant="destructive" className="ml-1 text-[10px] px-1.5 h-4">{tickets.length}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="preventive" className="h-9 gap-1.5">
-            <ClipboardCheck className="h-3.5 w-3.5" />
+          <TabsTrigger value="preventive" className="h-9 gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <ClipboardCheck className="h-4 w-4" />
             Préventive
-            {plans.length > 0 && <Badge variant="secondary" className="ml-1 text-xs px-1.5">{plans.length}</Badge>}
+            {plans.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 h-4">{plans.length}</Badge>}
           </TabsTrigger>
         </TabsList>
 

@@ -555,8 +555,13 @@ export default function PdrDetail() {
             </div>
             <p className="text-xs text-muted-foreground">
               Stock actuel: <span className="font-bold">{pdr.stock_actuel}</span> → Après: <span className="font-bold">
-                {mvtForm.type === "entree" ? pdr.stock_actuel + mvtForm.quantite : Math.max(0, pdr.stock_actuel - mvtForm.quantite)}
+                {mvtForm.type === "inventaire" ? mvtForm.quantite
+                  : mvtForm.type === "entree" ? pdr.stock_actuel + mvtForm.quantite
+                  : Math.max(0, pdr.stock_actuel - mvtForm.quantite)}
               </span>
+              {mvtForm.type === "sortie" && mvtForm.quantite > pdr.stock_actuel && (
+                <span className="text-destructive ml-2 font-medium">⚠ Stock insuffisant</span>
+              )}
             </p>
             <Button onClick={handleSaveMovement} className="w-full h-12">Enregistrer</Button>
           </div>

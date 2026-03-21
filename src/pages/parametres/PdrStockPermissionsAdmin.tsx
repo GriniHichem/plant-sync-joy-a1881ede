@@ -92,9 +92,9 @@ export default function PdrStockPermissionsAdmin() {
     for (const p of perms) {
       const { id, created_at, updated_at, ...rest } = p;
       if (id) {
-        await supabase.from("pdr_stock_permissions").update(rest).eq("id", id);
+        await supabase.from("pdr_stock_permissions").update(rest as any).eq("id", id);
       } else {
-        await supabase.from("pdr_stock_permissions").insert(rest);
+        await supabase.from("pdr_stock_permissions").insert(rest as any);
       }
     }
     toast({ title: "✅ Sauvegardé", description: "Permissions PDR/Stock mises à jour." });

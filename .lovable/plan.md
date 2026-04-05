@@ -1,24 +1,46 @@
 
-# Plan : PDR Durée de vie + Préventif structuré + Vue maintenancier
 
-**Statut : ✅ IMPLÉMENTÉ**
+## Plan: Suppression de Produits et Articles (si jamais utilisés)
 
-## Résumé des changements
+### Principe
+Ajouter un bouton "Supprimer" sur les pages de détail Produit et Article. Avant suppression, vérifier que l'entité n'a jamais été utilisée dans aucune table liée. Si elle est utilisée, bloquer et afficher un message explicatif.
 
-### Base de données
-- ✅ Colonnes `duree_vie_min_jours` et `duree_vie_max_jours` sur `pdr`
-- ✅ Table `pdr_instances` (cycle de vie actif/passif)
-- ✅ Colonnes `line_id`, `statut_plan`, `type_maintenance`, `source`, `source_pdr_id` sur `preventive_plans`
-- ✅ Table `preventive_plan_pdr` (PDR liées aux plans)
-- ✅ Table `preventive_plan_assignees` (maintenanciers affectés)
-- ✅ RLS sur toutes les nouvelles tables
+### Vérifications de dépendances
 
-### UI
-- ✅ `PdrForm.tsx` — champs durée de vie min/max
-- ✅ `PdrDetail.tsx` — onglet Instances avec alertes dead age + bouton génération plan
-- ✅ `PreventifList.tsx` — filtres par statut/machine, badges brouillon/validé/suspendu
-- ✅ `PreventifForm.tsx` — formulaire cascade machine → ligne → PDR → opérations → maintenanciers
-- ✅ `PreventifDetail.tsx` — vue détaillée avec validation workflow
-- ✅ `MaintenancierShiftView.tsx` — vue shift par ligne/machine
-- ✅ `AppSidebar.tsx` — lien "Mon Shift"
-- ✅ `App.tsx` — routes `/preventif/new`, `/preventif/:id`, `/preventif/:id/edit`, `/maintenance/shift`
+**Produit** — bloquer si trouvé dans :
+- `recipes` (product_id)
+- `ordres_fabrication` (product_id)
+- `line_products` (product_id)
+
+**Article** — bloquer si trouvé dans :
+- `recipe_lines` (article_id)
+- `consumptions` (article_id)
+
+### Fichiers modifiés
+
+1. **`src/pages/gpao/ProductDetail.tsx`**
+   - Ajouter un bouton "Supprimer" (icône Trash2, rouge) dans le header, visible si `canDelete("produits")`
+   - Au clic, vérifier en parallèle les 3 tables (`recipes`, `ordres_fabrication`, `line_products`) pour des lignes avec ce `product_id`
+   - Si aucune dépendance : afficher un AlertDialog de confirmation, puis `DELETE FROM products WHERE id = ...`
+   - Si dépendances trouvées : toast d'erreur listant où le produit est utilisé (ex: "Ce produit est utilisé dans 2 recettes et 1 OF")
+   - Après suppression réussie, naviguer vers `/gpao/produits`
+
+2. **`src/pages/gpao/ArticleDetail.tsx`**
+   - Même logique avec bouton "Supprimer" si `canDelete("articles")`
+   - Vérifier `recipe_lines` (article_id) et `consumptions` (article_id)
+   - Même AlertDialog de confirmation et navigation vers `/gpao/articles` après suppression
+
+3. **Imports à ajouter** dans les deux fichiers :
+   - `usePermissions` hook
+   - `AlertDialog` composants
+   - `Trash2` icon de lucide-react
+
+### UX
+- Bouton rouge discret dans le header à côté du bouton Sauvegarder
+- Dialog de confirmation : "Êtes-vous sûr de vouloir supprimer définitivement ce produit/article ? Cette action est irréversible."
+- Message de blocage clair si dépendances détectées (ex: "Impossible de supprimer : utilisé dans 3 recettes, 1 OF")
+
+### Sécurité
+- Les RLS existantes couvrent déjà la suppression pour les rôles admin/resp_production/gestionnaire_magasin
+- Le contrôle `canDelete()` côté frontend empêche l'affichage du bouton pour les rôles non autorisés
+

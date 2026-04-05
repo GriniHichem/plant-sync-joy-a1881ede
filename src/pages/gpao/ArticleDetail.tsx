@@ -210,7 +210,7 @@ export default function ArticleDetail() {
                   <Input type="number" value={stockMin} onChange={(e) => setStockMin(Number(e.target.value))} className="h-12" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Prix unitaire (€)</Label>
+                  <Label>Prix unitaire (DA)</Label>
                   <Input type="number" value={prixUnitaire} onChange={(e) => setPrixUnitaire(Number(e.target.value))} className="h-12" />
                 </div>
               </div>

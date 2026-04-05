@@ -165,7 +165,7 @@ export default function ArticlesList() {
                       <Input type="number" value={stockMin} onChange={(e) => setStockMin(e.target.value)} className="h-12" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Prix unitaire (€)</Label>
+                      <Label>Prix unitaire (DA)</Label>
                       <Input type="number" value={prixUnitaire} onChange={(e) => setPrixUnitaire(e.target.value)} className="h-12" />
                     </div>
                   </div>
@@ -231,7 +231,7 @@ export default function ArticlesList() {
                   </TableCell>
                   <TableCell className="tabular-nums text-muted-foreground">{Number(a.stock_min).toLocaleString("fr-FR")}</TableCell>
                   <TableCell>{a.unite}</TableCell>
-                  <TableCell className="hidden md:table-cell tabular-nums">{a.prix_unitaire ? `${a.prix_unitaire} €` : "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell tabular-nums">{a.prix_unitaire ? `${a.prix_unitaire} DA` : "—"}</TableCell>
                 </TableRow>
                 );
               })}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Factory, Eye, Settings, Plus } from "lucide-react";
+import { Factory, Eye, Settings, Plus, CalendarCheck } from "lucide-react";
 
 export default function LinesList() {
   const navigate = useNavigate();
@@ -78,6 +78,9 @@ export default function LinesList() {
                     <div className="flex gap-1">
                       <Button variant="ghost" size="sm" onClick={() => navigate(`/lignes/${l.id}`)} className="h-8 px-2">
                         <Eye className="h-3.5 w-3.5 mr-1" /> Synoptique
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/preventif?line=${l.id}`)} className="h-8 w-8" title="Plans préventifs">
+                        <CalendarCheck className="h-3.5 w-3.5" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/lignes/${l.id}/config`)} className="h-8 w-8">
                         <Settings className="h-3.5 w-3.5" />

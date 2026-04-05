@@ -393,6 +393,23 @@ export default function MachineDetail() {
         <TabsContent value="preventif">
           <Card>
             <CardContent className="p-0">
+              {lineAssignments.length > 0 && (
+                <div className="px-4 pt-3 pb-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const firstLine = lineAssignments[0];
+                      if (firstLine) navigate(`/preventif?line=${firstLine.line_id}`);
+                    }}
+                    className="text-xs h-8"
+                  >
+                    <CalendarCheck className="h-3.5 w-3.5 mr-1.5" />
+                    Voir tous les plans de la ligne
+                  </Button>
+                </div>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -408,7 +425,7 @@ export default function MachineDetail() {
                     </TableRow>
                   ) : (
                     plans.map((p) => (
-                      <TableRow key={p.id}>
+                      <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/preventif/${p.id}`)}>
                         <TableCell className="font-medium">{p.title}</TableCell>
                         <TableCell className="capitalize">{p.frequence}</TableCell>
                         <TableCell className="tabular-nums">

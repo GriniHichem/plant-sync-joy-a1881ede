@@ -139,6 +139,21 @@ export default function PdrList() {
                 <SelectItem value="a_commander">À commander</SelectItem>
               </SelectContent>
             </Select>
+            {(search.trim() || filterFamily !== "__all__" || filterStatut !== "__all__" || filterStock !== "__all__") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-11 px-3 text-muted-foreground"
+                onClick={() => {
+                  setSearch("");
+                  setFilterFamily("__all__");
+                  setFilterStatut("__all__");
+                  setFilterStock("__all__");
+                }}
+              >
+                <RotateCcw className="h-4 w-4 mr-1" /> Réinitialiser
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">

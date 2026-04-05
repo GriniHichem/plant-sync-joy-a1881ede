@@ -343,6 +343,25 @@ export default function InterventionJournal() {
                 <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
+
+            {(filterType !== "all" || filterLine !== "all" || filterMachine !== "all" || filterUser !== "all" || dateFrom || dateTo || search.trim()) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3 text-muted-foreground"
+                onClick={() => {
+                  setFilterType("all");
+                  setFilterLine("all");
+                  setFilterMachine("all");
+                  setFilterUser("all");
+                  setDateFrom(undefined);
+                  setDateTo(undefined);
+                  setSearch("");
+                }}
+              >
+                <RotateCcw className="h-3.5 w-3.5 mr-1" /> Réinitialiser
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

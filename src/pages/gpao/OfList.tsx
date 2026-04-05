@@ -206,6 +206,19 @@ export default function OfList() {
                 <SelectItem value="annule">Annulé</SelectItem>
               </SelectContent>
             </Select>
+            {(search.trim() || statusFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-11 px-3 text-muted-foreground"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+              >
+                <RotateCcw className="h-4 w-4 mr-1" /> Réinitialiser
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">

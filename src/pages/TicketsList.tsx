@@ -180,6 +180,20 @@ export default function TicketsList() {
                   <SelectItem value="basse">Basse</SelectItem>
                 </SelectContent>
               </Select>
+              {(search.trim() || statusFilter !== "all" || priorityFilter !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-10 px-3 text-muted-foreground"
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("all");
+                    setPriorityFilter("all");
+                  }}
+                >
+                  <RotateCcw className="h-4 w-4 mr-1" /> Réinitialiser
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>

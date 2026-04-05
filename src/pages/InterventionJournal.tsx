@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
-import { CalendarCheck, Wrench, Search, Filter, CalendarIcon, X } from "lucide-react";
+import { CalendarCheck, Wrench, Search, Filter, CalendarIcon, X, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type JournalEntry = {

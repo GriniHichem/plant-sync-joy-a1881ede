@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ArrowLeft, ChevronRight, Settings, AlertTriangle, CheckCircle2,
-  XCircle, Wrench, Package, Zap, Component, Factory,
+  XCircle, Wrench, Package, Zap, Component, Factory, CalendarCheck,
 } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -166,6 +166,9 @@ export default function LineSynoptic() {
             {" "}• {machines.length} machine(s) • {equipments.length} équipement(s)
           </p>
         </div>
+        <Button variant="outline" onClick={() => navigate(`/preventif?line=${id}`)} className="h-10">
+          <CalendarCheck className="h-4 w-4 mr-2" /> Plans préventifs
+        </Button>
         <Button variant="outline" onClick={() => navigate(`/lignes/${id}/config`)} className="h-10">
           <Settings className="h-4 w-4 mr-2" /> Configurer
         </Button>

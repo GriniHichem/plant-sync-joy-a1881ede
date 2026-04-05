@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Package, AlertCircle, Download, ShieldAlert, TrendingDown, DollarSign } from "lucide-react";
+import { Plus, Search, Package, AlertCircle, Download, ShieldAlert, TrendingDown, DollarSign, RotateCcw } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
@@ -139,6 +139,21 @@ export default function PdrList() {
                 <SelectItem value="a_commander">À commander</SelectItem>
               </SelectContent>
             </Select>
+            {(search.trim() || filterFamily !== "__all__" || filterStatut !== "__all__" || filterStock !== "__all__") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-11 px-3 text-muted-foreground"
+                onClick={() => {
+                  setSearch("");
+                  setFilterFamily("__all__");
+                  setFilterStatut("__all__");
+                  setFilterStock("__all__");
+                }}
+              >
+                <RotateCcw className="h-4 w-4 mr-1" /> Réinitialiser
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">

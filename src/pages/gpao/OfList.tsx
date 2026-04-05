@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OfStatusBadge } from "./GpaoDashboard";
-import { Plus, Search, ClipboardList, Download } from "lucide-react";
+import { Plus, Search, ClipboardList, Download, RotateCcw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -206,6 +206,19 @@ export default function OfList() {
                 <SelectItem value="annule">Annulé</SelectItem>
               </SelectContent>
             </Select>
+            {(search.trim() || statusFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-11 px-3 text-muted-foreground"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+              >
+                <RotateCcw className="h-4 w-4 mr-1" /> Réinitialiser
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">

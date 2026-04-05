@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
-import { Plus, Search, Cog, Download } from "lucide-react";
+import { Plus, Search, Cog, Download, RotateCcw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
@@ -135,6 +135,21 @@ export default function MachinesList() {
                 ))}
               </SelectContent>
             </Select>
+            {(search.trim() || statusFilter !== "all" || familyFilter !== "all" || lineFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-11 px-3 text-muted-foreground"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                  setFamilyFilter("all");
+                  setLineFilter("all");
+                }}
+              >
+                <RotateCcw className="h-4 w-4 mr-1" /> Réinitialiser
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">

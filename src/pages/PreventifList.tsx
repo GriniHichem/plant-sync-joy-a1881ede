@@ -3,9 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarCheck, Search, CheckCircle2, AlertTriangle, FileEdit, PauseCircle } from "lucide-react";
+import { CalendarCheck, Search, CheckCircle2, AlertTriangle, FileEdit, PauseCircle, RotateCcw, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -233,6 +232,22 @@ export default function PreventifList() {
             {Object.entries(FREQ_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
+        {(filterLine !== "all" || filterMachine !== "all" || filterStatut !== "all" || filterFrequence !== "all" || searchText.trim()) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 px-3 text-muted-foreground"
+            onClick={() => {
+              setFilterLine("all");
+              setFilterMachine("all");
+              setFilterStatut("all");
+              setFilterFrequence("all");
+              setSearchText("");
+            }}
+          >
+            <RotateCcw className="h-4 w-4 mr-1" /> Réinitialiser
+          </Button>
+        )}
       </div>
 
       {/* Line context summary */}

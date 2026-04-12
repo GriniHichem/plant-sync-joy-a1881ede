@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Wrench } from "lucide-react";
+import logoEntreprise from "@/assets/logo-entreprise.jpg";
+import logoAmour from "@/assets/logo-amour.jpg";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -57,10 +58,12 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Wrench className="h-7 w-7" />
+          <div className="flex items-center justify-center gap-3">
+            <img src={logoEntreprise} alt="Entreprise" className="h-14 w-14 rounded-xl object-cover" />
+            <img src={logoAmour} alt="Amour" className="h-12 object-contain rounded" />
           </div>
-          <CardTitle className="text-2xl font-bold">GMAO Industrielle</CardTitle>
+          <CardTitle className="text-xl font-bold tracking-widest uppercase">PROD IN TIME</CardTitle>
+          <p className="text-xs text-muted-foreground tracking-wide">GMAO & GPAO</p>
           <CardDescription>
             {isLogin ? "Connectez-vous à votre espace" : "Créer un nouveau compte"}
           </CardDescription>

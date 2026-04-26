@@ -1,76 +1,179 @@
 # 📘 Manuel Utilisateur — PROD IN TIME (GMAO · GPAO)
 
-> Application industrielle de gestion de maintenance assistée par ordinateur (GMAO) et de gestion de production assistée par ordinateur (GPAO).
+> Application industrielle intégrée de **gestion de maintenance** (GMAO) et de **gestion de production** (GPAO).
+> Version manuel : **2.0** — Mise à jour : 26/04/2026
 
 ---
 
 ## Table des matières
 
-1. [Présentation générale](#1-présentation-générale)
-2. [Authentification & Sécurité](#2-authentification--sécurité)
+0. [Glossaire & conventions](#0-glossaire--conventions)
+1. [Présentation & architecture](#1-présentation--architecture)
+2. [Authentification & sécurité](#2-authentification--sécurité)
 3. [Module GMAO — Maintenance](#3-module-gmao--maintenance)
-   - [Dashboard](#31-dashboard)
-   - [Machines](#32-machines)
-   - [Équipements](#33-équipements)
-   - [Lignes de production](#34-lignes-de-production)
-   - [Pièces de rechange (PDR)](#35-pièces-de-rechange-pdr)
-   - [Tickets de maintenance](#36-tickets-de-maintenance)
-   - [Préventif](#37-maintenance-préventive)
-   - [Shift Maintenance](#38-shift-maintenance)
-   - [Journal des interventions](#39-journal-des-interventions)
-   - [Analyse & KPI](#310-analyse--kpi)
+   - 3.1 [Dashboard](#31-dashboard)
+   - 3.2 [Machines](#32-machines)
+   - 3.3 [Équipements](#33-équipements)
+   - 3.4 [Lignes de production](#34-lignes-de-production)
+   - 3.5 [Pièces de rechange (PDR)](#35-pièces-de-rechange-pdr)
+   - 3.6 [Tickets de maintenance](#36-tickets-de-maintenance)
+   - 3.7 [Maintenance préventive](#37-maintenance-préventive)
+   - 3.8 [Shift Maintenance](#38-shift-maintenance)
+   - 3.9 [Journal des interventions](#39-journal-des-interventions)
+   - 3.10 [Analyse & KPI](#310-analyse--kpi)
 4. [Module GPAO — Production](#4-module-gpao--production)
-   - [Dashboard Production](#41-dashboard-production)
-   - [Ordres de fabrication (OF)](#42-ordres-de-fabrication)
-   - [Produits](#43-produits)
-   - [Articles](#44-articles)
-   - [Recettes](#45-recettes)
-   - [Shift Production](#46-shift-production)
-   - [Consommations](#47-consommations)
-   - [Arrêts](#48-arrêts)
-5. [Administration & Paramètres](#5-administration--paramètres)
-6. [Gestion documentaire](#6-gestion-documentaire)
-7. [Gestion des images](#7-gestion-des-images)
-8. [Rôles & Permissions](#8-rôles--permissions)
-9. [Export de données](#9-export-de-données)
+   - 4.1 [Dashboard Production](#41-dashboard-production)
+   - 4.2 [Ordres de fabrication (OF)](#42-ordres-de-fabrication)
+   - 4.3 [Produits](#43-produits)
+   - 4.4 [Articles (matières premières)](#44-articles-matières-premières)
+   - 4.5 [Recettes](#45-recettes)
+   - 4.6 [Shift Production](#46-shift-production)
+   - 4.7 [Consommations](#47-consommations)
+   - 4.8 [Arrêts](#48-arrêts)
+5. [Workflows transverses](#5-workflows-transverses)
+6. [Administration & paramètres](#6-administration--paramètres)
+7. [Documents](#7-documents)
+8. [Images](#8-images)
+9. [Rôles & permissions](#9-rôles--permissions)
+10. [Export / Import CSV](#10-export--import-csv)
+11. [Cas d'erreur & dépannage](#11-cas-derreur--dépannage)
+12. [Annexes](#12-annexes)
 
 ---
 
-## 1. Présentation générale
+## 0. Glossaire & conventions
 
-**PROD IN TIME** est une application web industrielle intégrée qui combine :
+### Acronymes
 
-- **GMAO** : Gestion de Maintenance Assistée par Ordinateur — suivi du parc machines, tickets d'intervention, maintenance préventive, gestion des pièces de rechange.
-- **GPAO** : Gestion de Production Assistée par Ordinateur — ordres de fabrication, recettes, déclarations de production, suivi des arrêts et consommations.
+| Sigle | Signification |
+|-------|---------------|
+| **GMAO** | Gestion de Maintenance Assistée par Ordinateur |
+| **GPAO** | Gestion de Production Assistée par Ordinateur |
+| **OF** | Ordre de Fabrication |
+| **PDR** | Pièce de Rechange |
+| **PMP** | Prix Moyen Pondéré |
+| **MTBF** | Mean Time Between Failures (temps moyen entre pannes) |
+| **MTTR** | Mean Time To Repair (temps moyen de réparation) |
+| **RBAC** | Role-Based Access Control |
+| **RLS** | Row Level Security (sécurité au niveau de la ligne BDD) |
+| **DA** | Dinar Algérien (devise par défaut) |
 
-### Architecture
+### Conventions du manuel
 
-- **Frontend** : React 18 + TypeScript + Tailwind CSS + shadcn/ui
-- **Backend** : Lovable Cloud (base de données, authentification, stockage, fonctions serverless)
-- **Temps réel** : Mises à jour en temps réel sur les données critiques
+- Un astérisque **\*** signale un champ **obligatoire** au formulaire.
+- Les **codes** d'entité (machine, PDR, équipement, produit, article…) sont **uniques** dans la base.
+- Les dates sont au format **JJ/MM/AAAA** ; les heures au format **24h** (`HH:mm`).
+- Tous les **prix et montants** sont en **DA (Dinar Algérien)**.
+- Les actions destructrices (suppression) sont précédées d'une **boîte de confirmation**.
+- Les notifications **toast** confirment les actions ou affichent les erreurs.
+- Les **badges de statut** utilisent un code couleur cohérent : vert = OK / actif, rouge = critique / panne, orange = attention, gris = inactif.
+
+### Codes couleur des statuts
+
+| Couleur | Signification |
+|---------|---------------|
+| 🟢 Vert | En service, validé, terminé, OK |
+| 🟠 Orange | En maintenance, en cours, attention |
+| 🔴 Rouge | En panne, critique, en retard, rupture |
+| ⚫ Gris | Hors service, inactif, brouillon |
+| 🔵 Bleu | Information, planifié |
 
 ---
 
-## 2. Authentification & Sécurité
+## 1. Présentation & architecture
 
-### Connexion
+**PROD IN TIME** est une application web industrielle qui combine deux modules opérationnels :
 
-- Accès via email + mot de passe
-- Vérification obligatoire de l'adresse email avant la première connexion
-- Page de connexion : `/auth`
+- **GMAO** — suivi du parc machines, tickets curatifs, plans préventifs, gestion des pièces de rechange et fournisseurs.
+- **GPAO** — ordres de fabrication, recettes, déclarations horaires de production, suivi des arrêts et consommations matières.
 
-### Réinitialisation du mot de passe
+### Stack technique
 
-- Lien **"Mot de passe oublié ?"** sur la page de connexion
-- Un email de récupération est envoyé à l'adresse saisie
-- Page de réinitialisation : `/reset-password`
+| Couche | Technologie |
+|--------|-------------|
+| Frontend | React 18 + TypeScript 5 + Vite 5 |
+| UI | Tailwind CSS v3 + shadcn/ui + design tokens HSL |
+| Backend | Lovable Cloud (PostgreSQL, Auth, Storage, Edge Functions) |
+| Sécurité | RLS PostgreSQL + RBAC applicatif |
+| Temps réel | Mises à jour live sur tickets, stocks et déclarations |
 
-### Sécurité des données
+### Modèle de données — entités principales
 
-- Les mots de passe sont chiffrés et hachés côté serveur (jamais accessibles en clair)
-- Politiques de sécurité au niveau des lignes (RLS) sur toutes les tables
-- Contrôle d'accès basé sur les rôles (RBAC)
-- Journal d'audit pour les actions sensibles
+```
+profiles ─── user_roles ─── role_permissions
+   │
+   └── (interventions, tickets, consommations, executions…)
+
+production_lines ── machine_line_assignments ── machines ── equipements
+       │                                          │
+       │                                          ├── pdr_machines ── pdr
+       │                                          │                    │
+       │                                          ├── tickets          ├── pdr_movements
+       │                                          ├── plans_preventifs ├── pdr_suppliers
+       │                                          └── entity_documents └── pdr_instances
+       │
+       └── ordres_fabrication ── of_mode_history
+                  │
+                  ├── declarations_production
+                  ├── consommations
+                  └── arrets_production
+```
+
+### Cycle de vie utilisateur type
+
+1. Inscription → vérification email → connexion
+2. Affectation de **rôle(s)** par un administrateur
+3. Accès aux modules autorisés (sidebar dynamique selon permissions)
+4. Exécution d'actions (créer, consulter, modifier, supprimer) — bornées par la matrice RBAC
+
+---
+
+## 2. Authentification & sécurité
+
+**Routes** : `/auth`, `/reset-password`
+
+### 2.1 Inscription (signup)
+
+Champs requis : **prénom\***, **nom\***, **email\***, **mot de passe\*** (min. 6 caractères).
+
+À la création :
+- Un trigger PostgreSQL `handle_new_user` crée automatiquement la fiche `profiles` associée.
+- Aucun rôle n'est attribué par défaut → l'utilisateur **ne peut accéder à rien** tant qu'un administrateur ne lui en assigne au moins un.
+- Un **email de vérification** est envoyé. La connexion échoue tant que l'email n'est pas confirmé.
+
+Toast affiché : *« Compte créé — Vérifiez votre email pour confirmer votre compte. »*
+
+### 2.2 Connexion
+
+Champs : email, mot de passe.
+
+**Cas d'erreur** :
+
+| Cause | Message affiché |
+|-------|-----------------|
+| Identifiants invalides | *« Invalid login credentials »* |
+| Email non vérifié | *« Email not confirmed »* |
+| Compte introuvable | *« User not found »* |
+| Mot de passe trop court | *« Password should be at least 6 characters »* |
+
+### 2.3 Réinitialisation du mot de passe
+
+1. Sur `/auth`, saisir l'email puis cliquer **« Mot de passe oublié ? »**.
+2. Si l'email est vide, un toast d'erreur s'affiche : *« Saisissez votre adresse email puis cliquez… »*.
+3. Un email contenant un lien temporaire est envoyé.
+4. Le lien redirige vers `/reset-password` où l'utilisateur saisit un nouveau mot de passe.
+5. Le lien expire au bout d'une période courte (sécurité Lovable Cloud).
+
+### 2.4 Déconnexion
+
+Bouton dans la sidebar (icône Logout). Vide la session et redirige vers `/auth`.
+
+### 2.5 Sécurité des données
+
+- Mots de passe **hachés** côté serveur — jamais accessibles en clair.
+- **RLS activée** sur toutes les tables sensibles.
+- Fonctions SQL `SECURITY DEFINER` pour les vérifications de rôle (`has_role`, `check_permission`, `check_document_permission`).
+- Aucun rôle stocké sur `profiles` — uniquement dans la table `user_roles` (prévention de l'escalade de privilèges).
 
 ---
 
@@ -80,20 +183,19 @@
 
 **Route** : `/`
 
-Le tableau de bord principal affiche des indicateurs clés en temps réel :
+Tableau de bord en temps réel. Tous les KPI sont **filtrables par période** via le sélecteur en haut à droite, avec **comparaison à la période précédente** (variation en %).
 
-| KPI | Description |
-|-----|-------------|
-| Tickets ouverts | Nombre de tickets en cours |
-| Interventions en cours | Interventions actives |
-| Machines en panne | Machines avec statut "en panne" |
-| Taux de disponibilité | % de machines opérationnelles |
-| PDR en stock critique | Pièces sous le seuil minimum |
-| PDR en rupture | Pièces avec stock à zéro |
-| Plans préventifs actifs | Nombre de plans validés actifs |
-| Préventifs en retard | Plans dont l'échéance est dépassée |
-
-Les KPI incluent des comparaisons temporelles (variation par rapport à la période précédente).
+| KPI | Source de données | Calcul |
+|-----|-------------------|--------|
+| Tickets ouverts | `tickets.statut = 'ouvert'` | Count |
+| Interventions en cours | `interventions.statut = 'en_cours'` | Count |
+| Machines en panne | `machines.statut = 'en_panne'` | Count |
+| Taux de disponibilité | machines opérationnelles / total | % |
+| PDR en stock critique | `stock_actuel ≤ stock_min` | Count |
+| PDR en rupture | `stock_actuel = 0` | Count |
+| Plans préventifs actifs | `plans_preventifs.statut_plan = 'valide'` | Count |
+| Préventifs en retard | `prochaine_echeance < now()` AND `statut = 'valide'` | Count |
+| MTBF / MTTR | Voir [Analyse](#310-analyse--kpi) | Moyenne |
 
 ---
 
@@ -101,35 +203,49 @@ Les KPI incluent des comparaisons temporelles (variation par rapport à la péri
 
 **Routes** : `/machines`, `/machines/new`, `/machines/:id`, `/machines/:id/edit`
 
-#### Liste des machines
-- Tableau avec colonnes : Code, Désignation, Statut, Criticité, Localisation
-- Recherche textuelle par code ou désignation
-- Filtres par statut et criticité
-- Badge de statut coloré (En service, En panne, En maintenance, Hors service)
+#### Liste
+- Colonnes : Code, Désignation, Statut, Criticité, Localisation.
+- **Recherche** textuelle (code ou désignation).
+- **Filtres** : statut, criticité.
+- **Bouton "Réinitialiser les filtres"** pour remettre tous les filtres à zéro.
+- **Export CSV** des données filtrées.
 
-#### Fiche machine (détail)
-- **Informations générales** : code, désignation, marque, modèle, n° série, date de mise en service
-- **Classification** : famille, criticité, criticité maintenance, rôle fonctionnel, impact ligne, disponibilité PDR
-- **Localisation**
-- **Onglet Documents** : documents techniques attachés
-- **Onglet Images** : galerie photo avec image principale
-- **Onglet PDR** : pièces de rechange associées avec quantité recommandée
-- **Onglet Lignes** : lignes de production auxquelles la machine est affectée
+#### Fiche machine — onglets
+1. **Informations générales** : code, désignation, marque, modèle, n° série, date de mise en service.
+2. **Classification** : famille (arborescence), criticité globale, criticité maintenance, rôle fonctionnel, impact ligne, disponibilité PDR.
+3. **Localisation** : zone, atelier, position.
+4. **Documents** : voir [§7](#7-documents).
+5. **Images** : voir [§8](#8-images).
+6. **PDR** : pièces associées avec quantité recommandée par machine.
+7. **Lignes** : lignes de production où la machine est affectée (table `machine_line_assignments`).
+8. **Préventif** : plans préventifs liés à la machine + bouton **« Voir tous les plans de cette ligne »** (cascade vers `/preventif?line=<id>`).
 
-#### Formulaire machine
-- Champs obligatoires : code (unique), désignation
-- Champs optionnels : marque, modèle, n° série, description, localisation, date de mise en service
-- Sélecteurs : famille, statut, criticité, criticité maintenance, rôle fonctionnel, impact ligne, disponibilité PDR
+#### Création / édition
+
+| Champ | Obligatoire | Règle |
+|-------|-------------|-------|
+| Code | ✅ | **Unique** dans la base |
+| Désignation | ✅ | — |
+| Marque, modèle, n° série, description, localisation, date MES | ❌ | — |
+| Famille | ❌ | Sélecteur arborescent |
+| Statut | ✅ | Défaut : `en_service` |
+| Criticité, criticité maintenance, rôle fonctionnel, impact ligne, disponibilité PDR | ❌ | Voir tableau ci-dessous |
 
 #### Métadonnées industrielles
 
-| Champ | Valeurs possibles |
-|-------|-------------------|
+| Champ | Valeurs |
+|-------|---------|
 | Criticité | Critique, Importante, Normale |
 | Criticité maintenance | Haute, Moyenne, Basse |
 | Rôle fonctionnel | Dosage, Convoyage, Remplissage, Bouchage, Étiquetage, Emballage, Palettisation, Contrôle, Nettoyage, Stockage |
 | Impact ligne | Arrêt complet, Arrêt partiel, Dégradation performance |
 | Disponibilité PDR | Disponible, Partielle, Indisponible |
+| Statut | En service, En panne, En maintenance, Hors service |
+
+#### Cas particuliers & exceptions
+
+- **Suppression bloquée** si la machine est référencée par : tickets, plans préventifs, PDR, équipements, lignes, déclarations de production. Toast : *« Suppression impossible — utilisée dans : … »*.
+- Le **changement de statut** « En panne » est généralement issu d'un ticket et non d'une édition manuelle (traçabilité).
 
 ---
 
@@ -137,44 +253,42 @@ Les KPI incluent des comparaisons temporelles (variation par rapport à la péri
 
 **Routes** : `/equipements`, `/equipements/new`, `/equipements/:id`, `/equipements/:id/edit`
 
-Les équipements sont des sous-ensembles rattachés aux machines.
+Sous-ensembles fonctionnels rattachés à une machine.
 
-#### Liste des équipements
-- Recherche et filtrage par statut, type, criticité
-- Affichage de la machine parente
+#### Champs obligatoires
+- Code\* (unique), Désignation\*, Type\*, Statut\*.
 
-#### Fiche équipement
-- Informations : code, désignation, type, statut, criticité
-- Rattachement à une machine et/ou une ligne
-- Documents et images associés
+#### Types
+Mécanique, Électrique, Pneumatique, Hydraulique, Électronique, Instrumentation.
 
-#### Types d'équipement
-- Mécanique, Électrique, Pneumatique, Hydraulique, Électronique, Instrumentation
-
-#### Statuts
-- En service, En panne, En maintenance, Hors service
+#### Cas particuliers
+- Un équipement **doit** être rattaché à une machine **ou** à une ligne (sinon il devient orphelin).
+- Suppression bloquée si tickets, préventif ou documents liés.
 
 ---
 
 ### 3.4 Lignes de production
 
-**Routes** : `/lignes`, `/lignes/:id`
+**Routes** : `/lignes`, `/lignes/:id`, `/lignes/:id/config`
 
-#### Liste des lignes
-- Code, désignation, atelier, statut actif/inactif
+#### Liste
+Colonnes : Code, Désignation, Atelier, Statut, Actions.
+- Action **"Préventif"** ouvre `/preventif?line=<id>` (filtre pré-rempli).
+- Action **"Synoptique"** ouvre la vue `/lignes/:id`.
 
-#### Synoptique de ligne (`/lignes/:id`)
-- Représentation visuelle du flux de production
-- Machines affichées en blocs interactifs (240px) selon l'ordre séquentiel (`sort_order`)
-- Indicateurs d'état en temps réel (marche, arrêt, maintenance)
-- Affichage de la criticité, rôle fonctionnel et disponibilité PDR
-- Équipements auxiliaires regroupés sous leurs machines parentes
-- Légende industrielle intégrée
+#### Synoptique (`/lignes/:id`)
+- Représentation visuelle séquentielle des machines (`sort_order`).
+- Blocs interactifs (240 px) cliquables → fiche machine.
+- Indicateurs temps réel : marche, arrêt, maintenance.
+- Affichage de criticité, rôle fonctionnel, disponibilité PDR.
+- Équipements auxiliaires regroupés sous leur machine parente.
+- Bouton header **« Plans préventifs »** → `/preventif?line=<id>`.
+- Légende industrielle intégrée.
 
-#### Configuration de ligne (`/lignes/:id/config`)
-- Ordonnancement des machines dans le flux
-- Gestion des priorités (drag & drop ou numérotation)
-- Ajout/retrait de machines
+#### Configuration (`/lignes/:id/config`)
+- Drag & drop des machines pour définir l'ordre séquentiel (`sort_order`).
+- Ajout / retrait de machines.
+- Définition de la **vitesse théorique** (cadence cible).
 
 ---
 
@@ -182,56 +296,72 @@ Les équipements sont des sous-ensembles rattachés aux machines.
 
 **Routes** : `/pdr`, `/pdr/new`, `/pdr/:id`, `/pdr/:id/edit`
 
-#### Liste des PDR
-- Tableau : référence, désignation, stock actuel, stock min, stock max, statut, famille
-- Recherche textuelle
-- Filtres par statut (stratégique, commun), famille, état de stock
-- Indicateurs visuels pour stock critique et rupture
+#### Liste
+- Colonnes : Référence, Désignation, Stock actuel, Min, Max, Statut, Famille.
+- **Filtres** : statut (stratégique/commun), famille, état stock (normal/critique/rupture).
+- Indicateurs visuels : badge rouge si **rupture**, orange si **critique**.
+- **Bouton "Réinitialiser les filtres"**.
 
-#### Fiche PDR (détail)
+#### Onglet Informations
+- **Référence\*** (unique), **Désignation\***.
+- Description, **Famille** (avec **héritage** : approvisionnement, statut, fournisseurs hérités automatiquement).
+- Fournisseur principal, emplacement de stockage.
+- Type d'approvisionnement : Achat local, Import, Fabrication interne.
+- **Statut** : Stratégique ou Commun.
 
-**Onglet Informations** :
-- Référence (unique), désignation, description
-- Famille (avec héritage de propriétés : approvisionnement, statut, fournisseurs)
-- Fournisseur, emplacement de stockage
-- Type d'approvisionnement : Achat local, Import, Fabrication interne
-- Statut : Stratégique (lien machine obligatoire), Commun
+#### Onglet Stock
+- Stock actuel, **Stock min**, **Stock max**, stock de sécurité, point de commande.
+- Délai d'approvisionnement (jours).
+- **Prix unitaire (DA)**, **PMP (DA)** — calculé automatiquement à chaque entrée.
+- Devise : **DA** (Dinar Algérien) sur tous les montants.
 
-**Onglet Stock** :
-- Stock actuel, stock minimum, stock maximum, stock de sécurité, point de commande
-- Délai d'approvisionnement (jours)
-- Prix unitaire, PMP (Prix Moyen Pondéré) — calculé automatiquement
-- Devise : DA (Dinar Algérien)
+#### Onglet Mouvements de stock
 
-**Onglet Mouvements de stock** :
-- Journal chronologique de tous les mouvements
-- Types de mouvement :
-  - **Entrée** : approvisionnement (référence ERP obligatoire)
-  - **Sortie** : consommation (bloquée si quantité > stock disponible)
-  - **Inventaire** : définit le nouveau stock total (valeur absolue)
-- Chaque mouvement enregistre : stock avant, stock après, utilisateur, date, motif, référence ERP
+Trois types de mouvement, chacun avec ses règles :
 
-**Onglet Durée de vie** :
-- Durée de vie min/max (en jours) — validation : min ≤ max
-- Instances actives : suivi du cycle de vie de chaque pièce installée
-- Alertes "dead age" quand une pièce dépasse sa durée de vie maximale
-- Bouton de génération automatique de plan préventif
+| Type | Effet sur stock | Règle / blocage |
+|------|-----------------|-----------------|
+| **Entrée** | `stock_actuel + quantité` | **Réf document ERP\*** obligatoire |
+| **Sortie** | `stock_actuel - quantité` | Bloquée si `quantité > stock_actuel` → toast *« Stock insuffisant — Stock actuel : X »* |
+| **Inventaire** | Remplace par **valeur absolue** | Quantité saisie devient le nouveau stock total |
 
-**Onglet Fournisseurs** :
-- Liste des fournisseurs spécifiques à la pièce
-- Fournisseurs hérités de la famille
-- Informations : nom, référence fournisseur, prix, délai, email, téléphone, adresse, URLs
-- Marquage fournisseur principal
+Chaque mouvement enregistre : stock avant, stock après, utilisateur, date, motif, référence ERP.
 
-**Onglet Machines** :
-- Machines associées avec quantité recommandée
+**Validations communes** :
+- Quantité ≤ 0 → toast *« Quantité invalide »*.
+- L'historique est **immuable** (pas de modification après enregistrement, uniquement annulation par mouvement compensatoire avec permission dédiée).
+
+#### Onglet Durée de vie
+- Durée de vie min/max (jours). **Validation** : `min ≤ max` sinon toast *« Durée de vie min doit être ≤ durée de vie max »*.
+- **Instances actives** : suivi de chaque pièce installée (date pose, machine).
+- Alerte **"dead age"** lorsqu'une instance dépasse sa durée max.
+- Bouton **« Générer plan préventif »** → crée un plan préventif pré-rempli avec la PDR et la machine concernée.
+
+#### Onglet Fournisseurs
+- Fournisseurs **propres** à la PDR + fournisseurs **hérités** de la famille (lecture seule, modifiables au niveau famille).
+- Champs : nom\*, référence fournisseur, prix (DA), délai (jours), email, téléphone, adresse, URLs.
+- Marquage **fournisseur principal** (un seul à la fois).
+- Permissions PDR stock dédiées : voir, créer, modifier, supprimer fournisseur.
+
+#### Onglet Machines
+- Machines associées + quantité recommandée par machine.
+- Si la PDR est **stratégique**, au moins **une machine\*** doit être liée → toast bloquant *« PDR stratégique : au moins une machine doit être liée »*.
+
+#### Validations à l'enregistrement (formulaire PDR)
+
+| Règle | Message d'erreur |
+|-------|------------------|
+| Référence + désignation requises | *« Référence et désignation obligatoires »* |
+| PDR stratégique sans machine | *« PDR stratégique : au moins une machine doit être liée »* |
+| `duree_vie_min > duree_vie_max` | *« Durée de vie min doit être ≤ durée de vie max »* |
+| `stock_min > stock_max` | *« Stock min doit être ≤ stock max »* |
 
 #### Permissions stock PDR
-Les opérations de stock sont contrôlées par des permissions spécifiques par rôle :
-- Créer entrée / Créer sortie
-- Correction de stock / Inventaire
+Voir [§9](#9-rôles--permissions). Actions contrôlées :
+- Créer entrée / créer sortie
+- Correction / inventaire
 - Annulation de mouvement
-- Gestion fournisseurs (voir, créer, modifier, supprimer)
+- Gestion fournisseurs (CRUD)
 
 ---
 
@@ -239,29 +369,40 @@ Les opérations de stock sont contrôlées par des permissions spécifiques par 
 
 **Routes** : `/tickets`, `/tickets/:id`
 
-#### Liste des tickets
-- Tableau : numéro, titre, machine, priorité, statut, date de création
-- Recherche et filtres par statut, priorité, machine
+#### Liste
+- Colonnes : Numéro, Titre, Machine, Priorité, Statut, Date.
+- Numéro auto-généré : **`TKT-00001`** (trigger PostgreSQL `generate_ticket_numero`).
+- Filtres : statut, priorité, machine.
+- **Bouton "Réinitialiser les filtres"**.
 
-#### Statuts du ticket
-| Statut | Description |
-|--------|-------------|
-| Ouvert | Ticket créé, en attente de prise en charge |
-| En cours | Intervention démarrée |
-| Résolu | Intervention terminée |
-| Clôturé | Ticket validé et fermé |
+#### Cycle de vie
 
-#### Détail du ticket
-- Informations du ticket : titre, description, machine, priorité, type de panne
-- Historique des interventions
-- Pièces consommées (PDR)
+```text
+   Ouvert ──► En cours ──► Résolu ──► Clôturé
+     │           │            │
+     └───── (réouverture si nécessaire) ─┘
+```
 
-#### Clôture du ticket
-- Optimisée pour usage mobile
-- Saisie obligatoire :
-  - Cause racine de la panne
-  - Pièces consommées (avec quantités)
-  - Notes de clôture
+| Statut | Action déclenchée |
+|--------|-------------------|
+| Ouvert | Création initiale |
+| En cours | Bouton **« Prendre en charge »** → crée une `intervention` `en_cours` |
+| Résolu | Bouton **« Résoudre »** → ouvre dialog avec champs obligatoires |
+| Clôturé | Bouton **« Clôturer »** → ticket fermé définitivement |
+
+#### Résolution — champs obligatoires
+
+| Champ | Validation |
+|-------|------------|
+| **Cause racine\*** | Non vide |
+| **Solution appliquée\*** | Non vide |
+| Pièces consommées (PDR + quantité) | Décrémente automatiquement le stock |
+| Notes de clôture | Optionnel |
+
+Si un champ obligatoire manque → toast *« Cause racine et solution obligatoires »*.
+
+#### Mobile
+La résolution est **optimisée mobile** (formulaire vertical, gros boutons, scan rapide PDR).
 
 ---
 
@@ -269,38 +410,59 @@ Les opérations de stock sont contrôlées par des permissions spécifiques par 
 
 **Routes** : `/preventif`, `/preventif/new`, `/preventif/:id`, `/preventif/:id/edit`
 
-#### Liste des plans préventifs
-- Tableau avec filtres : statut du plan (brouillon, validé, suspendu), machine, ligne
-- Badge de statut coloré
-- Alerte "En retard" si l'échéance est dépassée
-- Indicateur de prochaine échéance
+#### Liste
+- Colonnes : Titre, Machine, Ligne, Fréquence, Statut plan, Prochaine échéance, Actions.
+- Badge **« En retard »** si `prochaine_echeance < now()` ET statut `valide`.
+- **Filtres cumulables** :
+  - Statut plan (brouillon, validé, suspendu)
+  - **Ligne** (depuis `production_lines`) — sélectionner une ligne restreint le filtre Machine aux machines de cette ligne (jointure `machine_line_assignments`)
+  - Machine
+  - Fréquence
+  - Recherche textuelle (titre ou code/désignation machine)
+- **Bouton "Réinitialiser les filtres"**.
+- **KPIs contextuels** mis à jour selon les filtres : Validés, En retard, Brouillons, Suspendus.
+- Lecture des **query params** `?line=<id>` et `?machine=<id>` au chargement (depuis MachineDetail, LineSynoptic, LinesList).
 
-#### Formulaire de plan préventif
-Workflow en cascade :
-1. **Machine** → sélection de la machine cible
-2. **Ligne** → ligne de production associée (auto-détectée si la machine est affectée)
-3. **Fréquence** → quotidien, hebdomadaire, bimensuel, mensuel, trimestriel, semestriel, annuel
-4. **Type de maintenance** → mécanique, électrique, lubrification, nettoyage, inspection, calibration
-5. **Checklist** → liste d'opérations à réaliser (ajout dynamique)
-6. **PDR nécessaires** → sélection des pièces avec quantités
-7. **Maintenanciers assignés** → affectation des techniciens responsables
+#### Formulaire — workflow en cascade
+
+1. **Machine\*** → sélection de la machine cible.
+2. **Ligne** → auto-détectée si la machine est affectée à une seule ligne.
+3. **Titre\*** + description.
+4. **Fréquence** : quotidien, hebdomadaire, bimensuel, mensuel, trimestriel, semestriel, annuel.
+5. **Type de maintenance** : mécanique, électrique, lubrification, nettoyage, inspection, calibration.
+6. **Checklist** : opérations à réaliser (ajout dynamique).
+7. **PDR nécessaires** : pièces + quantités prévisionnelles.
+8. **Maintenanciers assignés** : techniciens responsables.
+9. **Prochaine échéance** : date initiale.
+
+#### Validations
+- **Titre + machine obligatoires** sinon toast *« Titre et machine obligatoires »*.
 
 #### Statuts du plan
-| Statut | Description |
-|--------|-------------|
-| Brouillon | Plan en cours de rédaction |
-| Validé | Plan actif, génère des échéances |
-| Suspendu | Plan temporairement désactivé |
 
-#### Exécution d'un plan préventif
-- Accessible depuis le détail du plan ou la vue Shift
-- Formulaire d'exécution :
-  - **Date d'exécution**
-  - **Temps d'intervention** (durée réelle)
-  - **Checklist** : validation point par point (OK / NOK)
-  - **PDR utilisées** : confirmation des pièces consommées (pré-remplies depuis le plan)
-  - **Notes** : observations du technicien
-- Historique des exécutions avec colonnes : date, exécutant, PDR utilisées, résultats checklist
+| Statut | Effet |
+|--------|-------|
+| Brouillon | Plan en rédaction, non actif |
+| Validé | Plan actif → génère échéances et apparaît en Shift |
+| Suspendu | Désactivé temporairement, n'apparaît plus en Shift |
+
+Toast au changement : *« Plan validé / suspendu / remis en brouillon »*.
+
+#### Exécution d'un plan
+
+Accessible depuis le détail du plan ou la vue **Shift Maintenance**.
+
+Champs du formulaire d'exécution :
+- **Date d'exécution\***
+- **Durée d'intervention\*** (en minutes) — sinon toast *« Durée obligatoire — Veuillez saisir la durée de l'intervention »*
+- **Checklist** : validation point par point (OK / NOK)
+- **PDR utilisées** : pré-remplies depuis le plan, modifiables ; décrémentent le stock
+- **Notes** : observations du technicien
+
+À l'enregistrement :
+- Mise à jour de `derniere_execution` et calcul automatique de `prochaine_echeance` selon la fréquence.
+- Toast : *« Exécution enregistrée — Prochaine échéance : JJ/MM/AAAA »*.
+- Historique conservé dans la table `preventif_executions`.
 
 ---
 
@@ -308,19 +470,24 @@ Workflow en cascade :
 
 **Route** : `/maintenance/shift`
 
-Vue dédiée au maintenancier pour son quart de travail.
+Vue dédiée au maintenancier connecté pour son quart de travail.
 
-#### Organisation
-- **Onglet Curatif** : tickets de maintenance assignés au maintenancier
-  - Liste des tickets ouverts et en cours
-  - Accès rapide au détail du ticket
-  - Image de la machine/équipement concerné
-- **Onglet Préventif** : plans préventifs assignés au maintenancier
-  - Liste des plans à exécuter (échéances du jour/semaine)
-  - Bouton d'exécution rapide
-  - Image de la machine concernée
-- Indicateurs visuels : compteurs par onglet, badges de priorité/urgence
-- Filtres par ligne de production
+#### Onglets
+
+| Onglet | Contenu |
+|--------|---------|
+| **Curatif** | Tickets ouverts ou en cours assignés au maintenancier |
+| **Préventif** | Plans préventifs assignés (échéances du jour / semaine) |
+
+#### Affichage par carte
+- **Image** de la machine ou équipement concerné (image principale).
+- Badges : priorité, urgence, type de panne.
+- Bouton d'**accès rapide** au détail (ticket ou plan).
+- Compteur dans chaque onglet.
+
+#### Filtres
+- Filtre par **ligne de production**.
+- **Bouton "Réinitialiser les filtres"**.
 
 ---
 
@@ -328,24 +495,27 @@ Vue dédiée au maintenancier pour son quart de travail.
 
 **Route** : `/maintenance/journal`
 
-Journal centralisé de toutes les activités de maintenance.
+Vue centralisée et auditable de toutes les interventions (curatives + préventives).
 
-#### Filtres disponibles
+#### Filtres
+
 | Filtre | Description |
 |--------|-------------|
-| Période | Date de début et date de fin (Du / Au) |
-| Type | Onglets : Tous, Curative, Préventive (avec compteurs) |
-| Ligne | Ligne de production |
-| Machine | Machine spécifique |
-| Maintenancier | Technicien ayant réalisé l'intervention |
+| **Période** | Date de début (Du) + date de fin (Au) |
+| **Type** | Onglets : Tous / Curative / Préventive (avec compteurs) |
+| **Ligne** | Restreint aux machines de la ligne |
+| **Machine** | Machine spécifique |
+| **Maintenancier** | Technicien |
 
-#### Informations affichées
-- Type d'intervention (curative / préventive)
-- Machine et ligne concernées
+**Bouton "Réinitialiser les filtres"** pour tout remettre à zéro.
+
+#### Colonnes affichées
+- Type d'intervention (badge curative / préventive)
+- Machine et ligne
 - Technicien responsable
-- Date et durée de l'intervention
-- Statut (en cours, terminée)
-- Lien direct vers le document source (ticket ou plan préventif)
+- Date et **durée** de l'intervention
+- Statut (en cours / terminée)
+- **Lien direct** vers le document source (ticket ou plan préventif)
 
 ---
 
@@ -353,19 +523,20 @@ Journal centralisé de toutes les activités de maintenance.
 
 **Route** : `/analytics`
 
-Tableau de bord analytique avec indicateurs de performance.
+Tableau de bord analytique.
 
 #### Filtres
-- Période personnalisable (date début / date fin)
-- Comparaison avec la période précédente
+- **Période personnalisable** (date début / date fin).
+- **Comparaison automatique** avec la période précédente (% de variation).
+- **Bouton "Réinitialiser les filtres"**.
 
-#### KPI disponibles
-- MTBF (Mean Time Between Failures)
-- MTTR (Mean Time To Repair)
-- Taux de disponibilité des machines
-- Nombre d'interventions curatives vs préventives
-- Coût de maintenance (consommation PDR)
-- Tendances temporelles (graphiques)
+#### KPI
+- **MTBF** (Mean Time Between Failures) : temps moyen entre deux pannes par machine
+- **MTTR** (Mean Time To Repair) : temps moyen de résolution
+- **Taux de disponibilité** par machine et global
+- **Curatives vs préventives** (ratio)
+- **Coût de maintenance** : valorisation des PDR consommées (PMP × quantité)
+- **Tendances** : graphiques temporels par jour / semaine / mois
 
 ---
 
@@ -375,39 +546,51 @@ Tableau de bord analytique avec indicateurs de performance.
 
 **Route** : `/gpao`
 
-Indicateurs de production en temps réel :
-- OF en cours / terminés / planifiés
-- Taux de rendement
-- Quantités produites vs prévues
-- Taux de rebut
+KPIs production temps réel : OF en cours / terminés / planifiés, taux de rendement, quantités produites vs prévues, taux de rebut.
 
 ---
 
-### 4.2 Ordres de fabrication
+### 4.2 Ordres de fabrication (OF)
 
-**Routes** : `/gpao/of`, `/gpao/of/:id`
+**Routes** : `/gpao/of`, `/gpao/of/new`, `/gpao/of/:id`
 
-#### Liste des OF
-- Numéro, produit, ligne, statut, quantités, dates
-- Filtres par statut, ligne, produit
+#### Liste
+- Numéro auto-généré **`OF-00001`** (trigger `generate_of_numero`).
+- Colonnes : Numéro, Produit, Ligne, Statut, Quantités, Dates.
+- Filtres : statut, ligne, produit.
+- **Bouton "Réinitialiser les filtres"**.
+- **Import / Export CSV** disponibles.
 
-#### Statuts de l'OF
+#### Statuts
+
 | Statut | Description |
 |--------|-------------|
-| Planifié | OF créé, pas encore démarré |
+| Planifié | Créé, pas encore démarré |
 | En cours | Production active |
 | Terminé | Production achevée |
 | Annulé | OF annulé |
 
-#### Détail de l'OF
-- Produit fabriqué, recette utilisée
-- Quantités : prévue, produite, rebut
+#### Détail OF — onglets
+- Produit fabriqué + recette utilisée
+- Quantités : prévue, produite, rebut, écart
 - Ligne de production assignée
-- Mode de fonctionnement : 3×8 (par défaut), 2×8, 1×8, Surface
-- Changement de mode en cours d'exécution (tracé dans l'historique `of_mode_history`)
-- Déclarations de production par shift
-- Consommations matières premières
-- Arrêts de production
+- **Mode shift** : 3×8 (défaut), 2×8, 1×8, Surface
+- **Déclarations de production** par shift
+- **Consommations matières premières**
+- **Arrêts de production**
+- **Historique des modes** (`of_mode_history`)
+
+#### Changement de mode shift en cours d'OF
+
+- Bouton **« Changer le mode »** dans le détail.
+- **Motif obligatoire** à saisir.
+- Trace dans `of_mode_history` : ancien mode, nouveau mode, motif, utilisateur, date.
+- Audit visible dans l'onglet Historique.
+
+#### Validations
+- Quantité prévue > 0.
+- Date de début ≤ date de fin prévisionnelle.
+- Une recette doit exister pour le produit avant le démarrage.
 
 ---
 
@@ -415,24 +598,30 @@ Indicateurs de production en temps réel :
 
 **Routes** : `/gpao/produits`, `/gpao/produits/:id`
 
-- Code, désignation, famille, unité, poids unitaire
-- Code ERP (référence externe)
-- Familles de produits hiérarchiques
-- Configuration des niveaux de conditionnement (packaging) :
-  - Niveaux multiples (unité, carton, palette…)
-  - Coefficients de conversion
-  - Poids par niveau
+- Code\* (unique), Désignation\*, Famille, Unité, Poids unitaire.
+- Code ERP (référence externe).
+- Familles **hiérarchiques**.
+- **Configuration de conditionnement** : niveaux multiples (unité, carton, palette…), coefficients de conversion, poids par niveau.
+
+#### Suppression
+- **Bloquée** si le produit est utilisé dans une recette, un OF ou une déclaration.
+- Toast : *« Suppression impossible — Ce produit est utilisé dans : recettes, OF, … »*.
+- Permet la suppression uniquement si le produit n'a **jamais** été utilisé.
 
 ---
 
-### 4.4 Articles (Matières premières)
+### 4.4 Articles (matières premières)
 
 **Routes** : `/gpao/articles`, `/gpao/articles/:id`
 
-- Code, désignation, famille, unité
-- Stock actuel, stock minimum
-- Prix unitaire, fournisseur
-- Code ERP
+- Code\* (unique), Désignation\*, Famille, Unité.
+- Stock actuel, stock minimum.
+- **Prix unitaire en DA**.
+- Fournisseur, Code ERP.
+
+#### Suppression
+- **Bloquée** si l'article est utilisé dans une recette ou une consommation.
+- Toast : *« Suppression impossible — Cet article est utilisé dans : recettes, consommations »*.
 
 ---
 
@@ -440,10 +629,10 @@ Indicateurs de production en temps réel :
 
 **Route** : `/gpao/recettes`
 
-- Association produit → liste d'articles (matières premières)
-- Quantités et unités par ligne de recette
-- Versioning des recettes
-- Statut actif/inactif
+- Association produit → liste d'articles avec quantités et unités.
+- **Versioning** : nouvelle version créée à chaque modification significative.
+- Statut **actif/inactif**.
+- Une recette inactive ne peut pas être assignée à un nouvel OF.
 
 ---
 
@@ -451,11 +640,39 @@ Indicateurs de production en temps réel :
 
 **Route** : `/gpao/shift`
 
-Écran opérateur pour les déclarations en temps réel :
-- Sélection du shift actif
-- Déclaration de production horaire (quantité produite, rebut)
-- Déclaration des consommations matières
-- Déclaration des arrêts
+Écran opérateur pour la déclaration en temps réel.
+
+#### Initialisation du shift
+- Sélection de l'**équipe** (A, B, C, D) et du **créneau** (dynamique selon le mode de l'OF : 3×8 → Matin/Après-midi/Nuit ; 2×8 → Matin/Après-midi ; 1×8 → Journée ; Surface → Surface).
+
+#### Règle de saisie horaire — fenêtre de tolérance
+
+> **Un créneau horaire ne devient saisissable qu'APRÈS sa fin**, et reste ouvert pendant **`tolerance_saisie_heures`** (défaut : **1 heure**).
+
+| Heure actuelle | Créneau 22h–23h | Créneau 23h–00h |
+|----------------|-----------------|-----------------|
+| 22h30 | ❌ Verrouillé (en cours) | ❌ Pas commencé |
+| 23h30 | ✅ Ouvert (tolérance 1h) | ❌ En cours |
+| 00h30 | ❌ Fermé (au-delà tolérance) | ✅ Ouvert |
+
+- Le paramètre `tolerance_saisie_heures` est **modifiable** par un admin dans `/parametres/shifts`.
+- Tentative de saisie hors fenêtre → bouton **désactivé** (grisé) avec tooltip explicatif.
+
+#### Saisies par créneau
+- **Quantité produite** (unité)
+- **Rebut** (unité)
+- **Consommations matières** (article + quantité réelle)
+- Les consommations sont **comparées à la recette théorique** → écart en % affiché.
+
+#### Création de ticket maintenance depuis Shift
+- Bouton **« Déclarer une panne »** ouvre un dialog → crée un ticket lié à la machine de la ligne courante.
+- Le ticket apparaît immédiatement en **Shift Maintenance** côté curatif.
+
+#### Clôture du shift
+- Exige la **complétion totale** :
+  - Toutes les saisies horaires renseignées
+  - Toutes les consommations matières déclarées
+- Bouton de clôture désactivé tant que les conditions ne sont pas remplies.
 
 ---
 
@@ -463,9 +680,13 @@ Indicateurs de production en temps réel :
 
 **Route** : `/gpao/consommations`
 
-- Historique des consommations de matières premières
-- Filtre par OF, article, shift
-- Quantités et unités consommées
+- Historique des consommations matières premières.
+- Filtres : OF, article, shift, période.
+- **Bouton "Réinitialiser les filtres"**.
+
+#### Correction d'une consommation hors jour
+- **Motif obligatoire** à saisir.
+- Audit log automatique : utilisateur, ancienne valeur, nouvelle valeur, motif, date.
 
 ---
 
@@ -474,151 +695,343 @@ Indicateurs de production en temps réel :
 **Route** : `/gpao/arrets`
 
 #### Types d'arrêt
-| Type | Description |
-|------|-------------|
-| Panne | Arrêt suite à une défaillance |
-| Changement de format | Reconfiguration de la ligne |
-| Nettoyage | Arrêt pour nettoyage |
-| Pause | Arrêt planifié (pause équipe) |
-| Approvisionnement | Attente de matière première |
-| Qualité | Arrêt pour contrôle qualité |
-| Autre | Autre motif |
 
-- Durée en minutes (calculée automatiquement si heure de fin renseignée)
-- Lien vers ticket de maintenance si applicable
-- Filtre par OF, ligne, machine, shift
+| Type | Usage |
+|------|-------|
+| Panne | Défaillance machine |
+| Changement de format | Reconfiguration ligne |
+| Nettoyage | Arrêt nettoyage planifié |
+| Pause | Pause équipe (planifiée) |
+| Approvisionnement | Attente matière première |
+| Qualité | Contrôle qualité |
+| Autre | Motif libre |
+
+#### Calculs et liens
+- **Durée** auto-calculée si heure de fin renseignée (`fin - début` en minutes).
+- Lien **optionnel** vers un ticket de maintenance (cas type "Panne").
+- Filtres : OF, ligne, machine, shift, période, type.
+- **Bouton "Réinitialiser les filtres"**.
 
 ---
 
-## 5. Administration & Paramètres
+## 5. Workflows transverses
+
+### 5.1 Génération automatique de plan préventif depuis une PDR
+
+1. Dans la fiche PDR → onglet **Durée de vie** → bouton **« Générer plan préventif »**.
+2. Le système crée un plan pré-rempli :
+   - Machine = celle de la dernière instance active
+   - Fréquence = calculée à partir de `duree_vie_min`
+   - PDR nécessaire = la PDR courante avec quantité 1
+3. L'utilisateur complète et **valide** le plan.
+
+### 5.2 Création de ticket depuis la production
+
+Bouton **« Déclarer panne »** dans `ShiftScreen` (production) → ouvre un dialog → crée :
+- Un ticket lié à la machine
+- Optionnellement un arrêt de production lié
+
+Le ticket apparaît instantanément dans le **Shift Maintenance** des techniciens assignés.
+
+### 5.3 Lien ticket ↔ arrêt production
+
+- Un arrêt de type "Panne" peut être lié à un ticket existant (sélecteur).
+- Permet de mesurer l'**impact production** d'un ticket maintenance.
+
+### 5.4 Image principale auto-affectée
+
+- Si une entité (machine, équipement, PDR, produit, article) n'a aucune image et qu'une image est uploadée, elle devient automatiquement **image principale**.
+- Affichée dans les listes, vues détail, Shift et synoptique.
+
+### 5.5 Cascade ligne → préventif
+
+Trois entrées :
+- `MachineDetail` → bouton **« Voir tous les plans de cette ligne »**
+- `LineSynoptic` → bouton header **« Plans préventifs »**
+- `LinesList` → action **« Préventif »** par ligne
+
+→ Tous redirigent vers `/preventif?line=<id>` avec **filtre pré-rempli** et **filtre Machine restreint** aux machines de la ligne (via `machine_line_assignments`).
+
+### 5.6 Permissions documents (héritage par type d'entité)
+
+Les permissions documentaires sont configurées par **rôle × type d'entité** (machine, équipement, PDR, produit, article, intervention, user). Toute entité de ce type hérite des règles définies.
+
+---
+
+## 6. Administration & paramètres
 
 **Route** : `/parametres`
 
-L'administration est organisée en 4 pôles :
+L'administration est organisée en **4 pôles** :
 
-### 5.1 Sécurité & Accès
+### 6.1 Sécurité & Accès
+
+| Page | Description | Cas particuliers |
+|------|-------------|------------------|
+| **Utilisateurs** (`/parametres/users`) | Liste, recherche, ajout/retrait de rôles, photo de profil, statut actif/inactif | Création via signup ; impossibilité de se retirer le rôle admin si dernier admin |
+| **Matrice des rôles** (`/parametres/roles`) | Toggle CRUD (Voir/Créer/Modifier/Supprimer) par rôle × module ; bouton "Accès complet" par rôle | Logique OR pour utilisateur multi-rôles |
+| **Permissions documents** (`/parametres/document-permissions`) | Droits par rôle × type d'entité (view/upload/download/edit_metadata/delete) | — |
+| **Permissions stock PDR** (`/parametres/pdr-stock-permissions`) | Droits spécifiques opérations stock | Voir [§3.5](#35-pièces-de-rechange-pdr) |
+
+### 6.2 Référentiels & Classification
+
+| Page | Description | Cas particuliers |
+|------|-------------|------------------|
+| **Familles machines** (`/parametres/familles`) | Arborescence hiérarchique | Suppression bloquée si famille a des enfants ou des machines liées |
+| **Familles produits** (`/parametres/product-families`) | Idem | Idem |
+| **Familles PDR** (`/parametres/pdr-families`) | Avec **héritage** : approvisionnement, statut, fournisseurs | Modifier la famille met à jour les PDR héritées |
+| **Types de pannes** (`/parametres/pannes`) | Référentiel libre | — |
+| **Catégories documents** (`/parametres/document-categories`) | Catégories pour classer les documents | — |
+
+### 6.3 Production & Organisation
+
+| Page | Description | Cas particuliers |
+|------|-------------|------------------|
+| **Lignes** (`/parametres/lignes`) | Configuration des lignes | Suppression bloquée si machines / OF liés |
+| **Shifts** (`/parametres/shifts`) | Plages horaires, équipes, modes, créneaux, tolérance saisie | **Édition inline** des heures début/fin |
+
+### 6.4 Configuration générale
 
 | Page | Description |
 |------|-------------|
-| **Utilisateurs** | Gestion des comptes : prénom, nom, poste, statut actif/inactif |
-| **Matrice des rôles** | Attribution des permissions par module et par rôle (Voir, Créer, Modifier, Supprimer) |
-| **Permissions documents** | Droits d'accès aux documents par rôle et type d'entité |
-| **Permissions stock PDR** | Droits spécifiques aux opérations de stock |
-
-### 5.2 Référentiels & Classification
-
-| Page | Description |
-|------|-------------|
-| **Familles machines** | Arborescence hiérarchique des familles de machines |
-| **Familles produits** | Classification des produits |
-| **Familles PDR** | Classification des pièces de rechange (avec héritage de propriétés) |
-| **Types de pannes** | Référentiel des types de pannes |
-| **Catégories documents** | Catégories pour classer les documents |
-
-### 5.3 Production & Organisation
-
-| Page | Description |
-|------|-------------|
-| **Lignes** | Configuration des lignes de production |
-| **Shifts** | Définition des plages horaires par équipe |
-
-### 5.4 Configuration générale
-
-| Page | Description |
-|------|-------------|
-| **Paramètres généraux** | Paramètres système de l'application |
-| **Media / Images** | Configuration de la taille maximale des images |
+| **Paramètres généraux** (`/parametres/general`) | Paramètres système (clé/valeur) — ex. `tolerance_saisie_heures` |
+| **Media / Images** (`/parametres/images`) | Taille maximale d'image (Mo) |
 
 ---
 
-## 6. Gestion documentaire
+## 7. Documents
 
-Système de gestion documentaire intégré à toutes les entités (machines, équipements, PDR…).
+Système intégré de gestion documentaire attachable à toute entité.
 
-### Fonctionnalités
-- Upload de fichiers (PDF, Word, Excel, images…)
-- Catégorisation par type de document
-- Description et métadonnées
-- Téléchargement et prévisualisation
-- Historique d'audit (qui a uploadé, quand, modifications)
+### Buckets de stockage
+
+| Bucket | Usage | Public |
+|--------|-------|--------|
+| `entity-documents` | Documents génériques (PDR, équipements, produits, articles…) | Oui |
+| `machine-documents` | Documents historiques machines | Oui |
+| `entity-images` | Images d'entités | Oui |
+
+### Workflow d'upload
+1. Onglet **Documents** d'une entité → bouton **« Ajouter »**.
+2. Sélection du fichier (PDF, Word, Excel, image, etc.).
+3. Choix de la **catégorie** (référentiel `document_categories`).
+4. Description (optionnel).
+5. Upload → enregistrement dans `entity_documents` avec audit (uploadé par, date).
 
 ### Permissions par rôle
-- Voir les documents
-- Uploader des documents
-- Modifier les métadonnées
-- Télécharger
-- Supprimer
+- view, upload, download, edit_metadata, delete — granulaires par **type d'entité**.
+
+### Affichage
+- Aperçu intégré pour PDF et images.
+- Téléchargement direct.
+- Historique des modifications.
 
 ---
 
-## 7. Gestion des images
+## 8. Images
 
 ### Fonctionnalités
-- Galerie d'images pour chaque entité (machine, équipement, produit…)
-- Image principale (thumbnail) affichée dans les listes et vues détail
-- Ordre de tri personnalisable
-- Taille maximale configurable dans les paramètres
-- Lightbox pour visualisation en plein écran
+- Galerie multi-images par entité.
+- **Image principale** affichée dans listes, vues détail, Shift et synoptique.
+- **Ordre de tri** personnalisable (drag).
+- **Lightbox** plein écran (zoom).
+- **Taille maximale** configurable dans `/parametres/images`.
+
+### Cas particuliers
+- Suppression de l'image principale → la suivante (par sort_order) devient principale automatiquement.
+- Format autorisés : JPG, PNG, WebP.
 
 ---
 
-## 8. Rôles & Permissions
+## 9. Rôles & permissions
 
-### Rôles disponibles
+### 9.1 Rôles disponibles
 
-| Rôle | Code | Description |
-|------|------|-------------|
-| Administrateur | `admin` | Accès total à tous les modules |
-| Responsable maintenance | `resp_maintenance` | Gestion complète de la maintenance |
-| Maintenancier | `maintenancier` | Exécution des interventions et plans préventifs |
-| Responsable production | `resp_production` | Gestion de la production |
-| Chef de ligne | `chef_ligne` | Supervision d'une ligne de production |
-| Opérateur | `operateur` | Déclarations de production |
-| Gestionnaire magasin | `gestionnaire_magasin` | Gestion des stocks PDR et articles |
-| Bureau méthode | `bureau_methode` | Configuration et ingénierie |
+| Rôle (code) | Périmètre |
+|-------------|-----------|
+| `admin` | Accès total à tous les modules |
+| `resp_maintenance` | Gestion complète maintenance + analytics |
+| `maintenancier` | Exécution interventions et plans préventifs |
+| `resp_production` | Gestion production complète |
+| `chef_ligne` | Supervision d'une ligne (shift, OF, déclarations) |
+| `operateur` | Saisies en Shift Production |
+| `gestionnaire_magasin` | Gestion stocks PDR et articles, fournisseurs |
+| `bureau_methode` | Configuration recettes, plans préventifs, ingénierie |
 
-### Matrice des permissions
+### 9.2 Matrice — modules couverts
 
-La matrice couvre les modules suivants avec 4 actions (Voir, Créer, Modifier, Supprimer) :
+Chaque rôle peut avoir 4 actions par module : **Voir**, **Créer**, **Modifier**, **Supprimer**.
+
+Modules : Machines, Équipements, Lignes, PDR, Tickets, Préventif, Interventions, OF, Produits, Articles, Recettes, Consommations, Arrêts, Shifts, Paramètres, Utilisateurs.
+
+### 9.3 Logique multi-rôles
+
+Un utilisateur peut cumuler **plusieurs rôles**. Les permissions sont fusionnées avec une logique **OR** (le droit le plus permissif s'applique pour chaque action).
+
+### 9.4 Fonctions de vérification (backend)
+
+```sql
+has_role(_user_id uuid, _role app_role) returns boolean
+check_permission(_user_id, _module, _action) returns boolean
+check_document_permission(_user_id, _entity_type, _action) returns boolean
+```
+
+Toutes en `SECURITY DEFINER` pour éviter la récursion RLS.
+
+### 9.5 Permissions stock PDR (spéciales)
+
+| Action | Description |
+|--------|-------------|
+| `pdr_stock.create_entry` | Créer une entrée |
+| `pdr_stock.create_exit` | Créer une sortie |
+| `pdr_stock.correction` | Correction de stock |
+| `pdr_stock.inventory` | Effectuer un inventaire |
+| `pdr_stock.cancel_movement` | Annuler un mouvement |
+| `pdr_stock.suppliers.*` | Gestion fournisseurs (view/create/edit/delete) |
+
+---
+
+## 10. Export / Import CSV
+
+### 10.1 Export CSV
+
+Disponible sur les listes principales :
 - Machines, Équipements, Lignes, PDR
-- Tickets, Préventif, Interventions
-- OF, Produits, Articles, Recettes
-- Consommations, Arrêts, Shifts
-- Paramètres, Utilisateurs
+- Tickets, Préventif, Journal interventions
+- OF, Produits, Articles, Consommations, Arrêts
 
-Un utilisateur peut avoir **plusieurs rôles** — les permissions sont fusionnées avec une logique **OU** (le droit le plus permissif s'applique).
+**Comportement** :
+- Les **filtres actifs sont appliqués** à l'export.
+- Encodage UTF-8 avec BOM (compatible Excel FR).
+- Colonnes auto-configurées selon le contexte.
+- Fichier nommé `<entité>_<date>.csv`.
 
----
+### 10.2 Import CSV
 
-## 9. Export de données
+Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 
-### Export CSV
-- Disponible sur les listes principales (machines, tickets, PDR, OF…)
-- Exporte les données filtrées (les filtres actifs sont appliqués à l'export)
-- Colonnes configurées automatiquement selon le contexte
-
-### Import CSV
-- Disponible pour certaines entités (OF, articles…)
-- Composant d'import avec mapping des colonnes
-- Validation des données avant insertion
-- Rapport d'erreurs en cas de données invalides
-
----
-
-## 📝 Notes techniques
-
-### Navigation
-- Barre latérale (sidebar) rétractable avec deux sections : Maintenance et Production
-- Breadcrumb sur les pages de détail
-- Responsive : adapté desktop et mobile
-
-### Notifications
-- Toasts (notifications temporaires) pour les actions réussies ou erreurs
-- Alertes visuelles pour les stocks critiques et plans en retard
-
-### Devise
-- L'application utilise le **Dinar Algérien (DA)** comme devise par défaut pour tous les montants (PMP, prix unitaire, coûts).
+**Workflow** :
+1. Téléchargement du modèle (template).
+2. Mapping des colonnes du fichier vers les champs cibles.
+3. **Validation ligne par ligne** :
+   - Champs obligatoires renseignés
+   - Codes uniques (pas de doublon)
+   - Références valides (familles, lignes…)
+4. **Rapport d'erreurs** affichant les lignes en échec avec motif.
+5. Import partiel possible (les lignes valides sont importées, les autres rejetées).
 
 ---
 
-*Document généré pour PROD IN TIME — Version actuelle au 05/04/2026*
+## 11. Cas d'erreur & dépannage
+
+### Tableau récapitulatif
+
+| Situation | Message affiché | Cause | Solution |
+|-----------|----------------|-------|----------|
+| Suppression machine | *« Suppression impossible — utilisée dans … »* | Dépendances FK (tickets, PDR, préventif…) | Clôturer ou réassigner d'abord |
+| Suppression produit | *« Suppression impossible — Ce produit est utilisé dans : … »* | Recette, OF, déclaration | Garder le produit (l'historique l'exige) |
+| Suppression article | *« Suppression impossible — Cet article est utilisé dans : … »* | Recette, consommation | Idem |
+| Sortie PDR | *« Stock insuffisant — Stock actuel : X »* | quantité > stock | Faire une entrée d'abord ou ajuster qte |
+| Entrée PDR sans réf ERP | *« Réf document ERP obligatoire »* | Champ vide | Saisir la référence ERP |
+| Quantité PDR ≤ 0 | *« Quantité invalide »* | Saisie incorrecte | Saisir > 0 |
+| PDR stratégique sans machine | *« PDR stratégique : au moins une machine doit être liée »* | Onglet Machines vide | Lier au moins une machine |
+| Durée de vie PDR | *« Durée de vie min doit être ≤ durée de vie max »* | min > max | Corriger les valeurs |
+| Stock PDR | *« Stock min doit être ≤ stock max »* | min > max | Corriger les valeurs |
+| Création préventif | *« Titre et machine obligatoires »* | Champ vide | Renseigner les deux |
+| Exécution préventif | *« Durée obligatoire »* | Durée vide | Saisir la durée en minutes |
+| Résolution ticket | *« Cause racine et solution obligatoires »* | Champ vide | Renseigner les deux |
+| Saisie shift hors fenêtre | Bouton désactivé + tooltip | Hors `tolerance_saisie_heures` | Saisir dans la fenêtre |
+| Login | *« Invalid login credentials »* | Identifiants faux | Vérifier email/mot de passe |
+| Login | *« Email not confirmed »* | Email non vérifié | Cliquer le lien de confirmation |
+| Reset password sans email | *« Saisissez votre adresse email… »* | Champ email vide | Saisir l'email puis cliquer "Mot de passe oublié" |
+| Action refusée | *« Vous n'avez pas la permission »* | Rôle insuffisant (RLS) | Contacter un administrateur |
+
+### Conseils généraux
+
+- **Toast persistant** : si un toast d'erreur revient à chaque action, vérifier d'abord ses **rôles** avec un administrateur.
+- **Données manquantes** : vérifier les **filtres actifs** et utiliser le bouton **"Réinitialiser les filtres"** disponible sur toutes les pages de liste.
+- **Stock incohérent** : utiliser un mouvement **Inventaire** plutôt que des entrées/sorties répétées.
+- **Plan préventif jamais déclenché** : vérifier qu'il est en statut **`Validé`** (pas brouillon ou suspendu) et qu'au moins un maintenancier est assigné.
+
+---
+
+## 12. Annexes
+
+### 12.1 Liste exhaustive des routes
+
+#### Authentification
+- `/auth` — connexion / inscription
+- `/reset-password` — réinitialisation du mot de passe
+
+#### GMAO
+- `/` — Dashboard
+- `/machines`, `/machines/new`, `/machines/:id`, `/machines/:id/edit`
+- `/equipements`, `/equipements/new`, `/equipements/:id`, `/equipements/:id/edit`
+- `/lignes`, `/lignes/:id`, `/lignes/:id/config`
+- `/pdr`, `/pdr/new`, `/pdr/:id`, `/pdr/:id/edit`
+- `/tickets`, `/tickets/:id`
+- `/preventif`, `/preventif/new`, `/preventif/:id`, `/preventif/:id/edit`
+- `/maintenance/shift`
+- `/maintenance/journal`
+- `/analytics`
+
+#### GPAO
+- `/gpao` — Dashboard production
+- `/gpao/of`, `/gpao/of/new`, `/gpao/of/:id`
+- `/gpao/produits`, `/gpao/produits/:id`
+- `/gpao/articles`, `/gpao/articles/:id`
+- `/gpao/recettes`
+- `/gpao/shift`
+- `/gpao/consommations`
+- `/gpao/arrets`
+
+#### Administration
+- `/parametres`
+- `/parametres/users`, `/parametres/roles`
+- `/parametres/document-permissions`, `/parametres/pdr-stock-permissions`
+- `/parametres/familles`, `/parametres/product-families`, `/parametres/pdr-families`
+- `/parametres/pannes`, `/parametres/document-categories`
+- `/parametres/lignes`, `/parametres/shifts`
+- `/parametres/general`, `/parametres/images`
+
+### 12.2 Tables principales (BDD)
+
+| Table | Usage |
+|-------|-------|
+| `profiles` | Profils utilisateurs |
+| `user_roles` | Affectation rôles |
+| `role_permissions` | Matrice CRUD par rôle |
+| `document_permissions` | Permissions documents par type |
+| `pdr_stock_permissions` | Permissions stock PDR |
+| `machines`, `equipements`, `production_lines` | Parc industriel |
+| `machine_line_assignments` | Affectation machine ↔ ligne |
+| `pdr`, `pdr_movements`, `pdr_suppliers`, `pdr_instances`, `pdr_machines` | Pièces de rechange |
+| `pdr_families` | Familles PDR (héritage) |
+| `tickets`, `interventions` | Maintenance curative |
+| `plans_preventifs`, `preventif_executions` | Maintenance préventive |
+| `ordres_fabrication`, `of_mode_history` | OF |
+| `produits`, `articles`, `recettes` | Référentiels production |
+| `declarations_production`, `consommations`, `arrets_production` | Déclarations |
+| `shift_modes`, `shift_time_slots`, `shift_teams`, `shift_settings` | Référentiel shifts |
+| `entity_documents`, `entity_images` | GED + galeries |
+| `document_categories` | Catégorisation documents |
+
+### 12.3 Triggers PostgreSQL clés
+
+| Trigger | Effet |
+|---------|-------|
+| `handle_new_user` | Crée auto la fiche `profiles` à l'inscription |
+| `generate_ticket_numero` | Génère `TKT-00001`, `TKT-00002`… |
+| `generate_of_numero` | Génère `OF-00001`, `OF-00002`… |
+| `update_updated_at_column` | Met à jour `updated_at` à chaque modification |
+
+### 12.4 Changelog du manuel
+
+| Version | Date | Notes |
+|---------|------|-------|
+| 1.0 | 05/04/2026 | Version initiale (descriptif) |
+| **2.0** | **26/04/2026** | Réécriture exhaustive : workflows pas-à-pas, validations, exceptions, messages d'erreur exacts, cas particuliers, workflows transverses, annexes routes/tables/triggers |
+
+---
+
+*Document généré pour **PROD IN TIME — GMAO & GPAO** · Version manuel 2.0 · 26/04/2026*

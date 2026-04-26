@@ -1,59 +1,109 @@
+## Plan : Manuel utilisateur exhaustif (MANUAL.md v2)
 
+### Objectif
+Transformer le `MANUAL.md` actuel (624 lignes, descriptif) en un manuel **exhaustif** documentant pour chaque module : workflows pas-à-pas, **règles de validation**, **cas particuliers**, **exceptions et messages d'erreur**, **comportements conditionnels**, et **interactions inter-modules**.
 
-## Plan: Enrichir le module Maintenance Préventive + liens transverses
+### Structure cible (~1500-1800 lignes)
 
-### 1. Filtre par ligne dans PreventifList
+#### 0. Glossaire & Conventions (NOUVEAU)
+- Acronymes : GMAO, GPAO, OF, PDR, PMP, MTBF, MTTR, RBAC, RLS
+- Conventions : champs obligatoires (*), badges de statut, codes couleur
+- Format dates/heures, devise (DA)
 
-**Fichier:** `src/pages/PreventifList.tsx`
+#### 1. Présentation & Architecture (enrichi)
+- Stack technique détaillée
+- Modèle de données global (entités principales et leurs relations)
+- Cycle de vie utilisateur type (login → dashboard → action)
 
-- Ajouter un state `filterLine` et charger les `production_lines` actives au mount
-- Ajouter un `<Select>` "Ligne" dans la barre de filtres
-- Quand une ligne est sélectionnée :
-  - Filtrer les plans qui ont `line_id === filterLine`
-  - Aussi charger les `machine_line_assignments` pour cette ligne et filtrer les plans dont la `machine_id` est assignée à cette ligne (même si `line_id` n'est pas renseigné sur le plan)
-  - Réduire le filtre Machine aux seules machines de cette ligne
-- Quand une ligne est sélectionnée, afficher sous la table un résumé contextuel : nombre de machines et équipements rattachés à cette ligne (via `machine_line_assignments` + `equipements`)
+#### 2. Authentification — cas exhaustifs
+- Inscription (signup) : champs requis, validation email
+- Connexion : **erreurs possibles** (email non vérifié, identifiants invalides, compte inactif)
+- Reset password : flow complet, expiration du lien
+- Première connexion : création automatique du profil via trigger `handle_new_user`
+- Déconnexion et expiration de session
 
-### 2. Filtre par fréquence
+#### 3. GMAO — par sous-module avec sections normalisées
+Pour **chaque** sous-module (Machines, Équipements, Lignes, PDR, Tickets, Préventif, Shift, Journal, Analytics) :
+- **Routes** et permissions requises
+- **Workflow création** (étapes, champs obligatoires/optionnels, valeurs par défaut)
+- **Règles de validation** (unicité du code, formats, plages numériques)
+- **Cas particuliers** :
+  - PDR stratégique → lien machine **obligatoire**
+  - PDR durée de vie : min ≤ max
+  - Sortie PDR bloquée si quantité > stock
+  - Inventaire = valeur absolue (remplace, n'ajoute pas)
+  - Suppression machine bloquée si tickets/PDR/préventifs liés
+  - Suppression produit/article bloquée si utilisé (recettes/OF/consommations)
+- **Workflow ticket complet** : création → prise en charge → résolution (cause racine + PDR consommés obligatoires) → clôture
+- **Workflow préventif complet** : brouillon → validé → exécution (calcul `prochaine_echeance` selon fréquence) → suspension/réactivation
+- **Filtres et reset** : nouveau bouton "Réinitialiser" disponible sur PreventifList, InterventionJournal, TicketsList, MachinesList, PdrList, OfList
+- **Filtre par ligne** dans Préventif : prend en compte `machine_line_assignments` (cascade ligne → machines)
+- **Liens transverses** : MachineDetail → préventif filtré ligne, LineSynoptic → préventif, LinesList → action préventif
 
-- Ajouter un filtre `filterFrequence` (quotidien, hebdomadaire, mensuel, etc.) pour affiner davantage la recherche
+#### 4. GPAO — par sous-module
+Pour OF, Produits, Articles, Recettes, Shift, Consommations, Arrêts :
+- **Workflow OF** : création → démarrage → déclarations horaires → clôture
+- **Changement de mode shift** en cours d'OF : motif obligatoire, traçabilité dans `of_mode_history`
+- **Tolérance de saisie horaire** : paramètre `tolerance_saisie_heures`, blocage de saisie hors fenêtre
+- **Consommations hors jour** : correction nécessite motif, audit log automatique
+- **Arrêts** : durée auto-calculée, lien optionnel vers ticket
+- **Suppression** : règles de blocage avec messages exacts
+- **Prix articles** affichés en **DA** (Dinar Algérien)
 
-### 3. Recherche textuelle
+#### 5. Workflows transverses (NOUVEAU section dédiée)
+- **Génération auto de plan préventif** depuis PDR (instances actives + dead age)
+- **Création ticket depuis Shift Production** (ouvre dialog dans `ShiftScreen`)
+- **Lien ticket ↔ arrêt production**
+- **Image principale** : auto-affectation si première image uploadée
+- **Permissions documents** : héritage par type d'entité
 
-- Ajouter un champ de recherche pour filtrer par titre du plan ou code/désignation de la machine
+#### 6. Administration — détails par page
+Pour chaque page sous `/parametres` :
+- Qui peut accéder (rôle requis)
+- Actions disponibles
+- Cas particuliers : impossibilité de supprimer un rôle attribué, gestion des familles avec enfants, etc.
+- **UsersAdmin** : création utilisateur via signup, ajout/suppression rôle, photo profil
+- **RolesMatrix** : toggle CRUD, "accès complet", merge OR multi-rôles
+- **Shifts** : édition inline des plages horaires
 
-### 4. KPIs contextuels en haut de page
+#### 7. Documents & Images (enrichi)
+- Buckets de stockage : `entity-documents`, `entity-images`, `machine-documents`
+- Workflow upload : sélection → catégorie → description → upload
+- Limites de taille (configurable via `useImageMaxSize`)
+- Permissions granulaires par entité (machine, equipement, pdr, produit, article, user, intervention)
+- Lightbox, ordre de tri, image principale
 
-- Afficher des mini-KPIs contextuels qui se mettent à jour selon les filtres actifs :
-  - Plans validés / En retard / Brouillons / Suspendus (compteurs)
-  - Taux d'exécution sur la période (si on ajoute un filtre date optionnel)
+#### 8. Rôles & Permissions — exhaustif
+- Tableau complet : 8 rôles × ~16 modules × 4 actions = matrice détaillée
+- Logique OR pour utilisateurs multi-rôles
+- Fonctions SQL : `has_role()`, `check_permission()`, `check_document_permission()`
+- Rôles spéciaux pour PDR stock (entrée, sortie, correction, inventaire, annulation, fournisseurs)
 
-### 5. Liens transverses avec les autres modules
+#### 9. Export / Import CSV
+- Pages avec export, format colonnes par entité
+- Import OF : mapping colonnes, validations, rapport d'erreurs
 
-**a) Depuis MachineDetail** (`src/pages/MachineDetail.tsx`)
-- Dans l'onglet "Preventif", ajouter un bouton "Voir tous les plans de cette ligne" qui navigue vers `/preventif?line=<lineId>` (le filtre ligne sera pré-rempli)
+#### 10. Cas d'erreur & Dépannage (NOUVEAU)
+Tableau récapitulatif :
+| Situation | Message affiché | Cause | Solution |
+|---|---|---|---|
+| Suppression machine | "Impossible de supprimer : utilisée dans X tickets" | Dépendances FK | Clôturer/réassigner d'abord |
+| Sortie PDR | "Stock insuffisant" | qte > stock_actuel | Faire entrée d'abord |
+| Préventif sans PDR | "Veuillez sélectionner au moins une opération" | Checklist vide | Ajouter opérations |
+| Ticket résolution | "Cause racine obligatoire" | Champ vide | Renseigner |
+| Email non vérifié | "Vérifiez votre email" | Compte non confirmé | Cliquer lien email |
+| RLS denied | "Vous n'avez pas la permission" | Rôle insuffisant | Contacter admin |
+| Saisie hors tolérance | Slot grisé | Hors fenêtre `tolerance_saisie_heures` | Déclarer dans la fenêtre |
 
-**b) Depuis LineSynoptic** (`src/pages/LineSynoptic.tsx`)
-- Ajouter un bouton/lien "Plans préventifs" dans le header qui navigue vers `/preventif?line=<lineId>`
+#### 11. Annexes
+- Liste exhaustive des routes (`/`, `/machines`, `/tickets/:id`, etc.)
+- Liste des tables principales et leur usage
+- Changelog du manuel (date de mise à jour, version)
 
-**c) Depuis LinesList** (`src/pages/LinesList.tsx`)
-- Ajouter une colonne ou un bouton d'action "Préventif" qui navigue vers `/preventif?line=<lineId>`
+### Méthode
+1. Lire en complément les pages clés non encore inspectées en détail (`PdrDetail`, `MachineDetail`, `EquipmentDetail`, `Auth`, `LineSynoptic`, `LineConfig`, `RolesMatrix`, hooks de permissions) pour extraire les **messages exacts**, validations et cas conditionnels.
+2. Réécrire `MANUAL.md` complet avec la structure ci-dessus en français, en conservant le ton du document actuel.
+3. Pas de modification du code applicatif — uniquement le fichier `MANUAL.md`.
 
-**d) PreventifList : lire les query params**
-- Au mount, lire `?line=<id>` et `?machine=<id>` depuis l'URL pour pré-remplir les filtres correspondants
-
-### Fichiers modifiés
-
-| Fichier | Changement |
-|---|---|
-| `src/pages/PreventifList.tsx` | Filtres ligne/fréquence/recherche, KPIs, lecture query params |
-| `src/pages/MachineDetail.tsx` | Bouton "Plans préventifs de la ligne" |
-| `src/pages/LineSynoptic.tsx` | Lien vers préventif filtré par ligne |
-| `src/pages/LinesList.tsx` | Action "Préventif" par ligne |
-
-### UX
-- Les filtres sont cumulatifs (ligne + machine + statut + fréquence + recherche)
-- Sélectionner une ligne restreint automatiquement le dropdown machine aux machines de cette ligne
-- Les KPIs se mettent à jour dynamiquement selon les filtres actifs
-- Navigation fluide entre modules avec pré-remplissage des filtres via query params
-
+### Fichier modifié
+- `MANUAL.md` (réécriture complète, ~1500-1800 lignes)

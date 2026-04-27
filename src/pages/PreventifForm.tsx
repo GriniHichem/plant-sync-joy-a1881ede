@@ -251,6 +251,33 @@ export default function PreventifForm() {
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label>Équipement (optionnel)</Label>
+                <Select value={form.equipement_id || "__none__"} onValueChange={v => setForm(f => ({ ...f, equipement_id: v === "__none__" ? "" : v, organe_id: "" }))}>
+                  <SelectTrigger className="h-12"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Aucun</SelectItem>
+                    {equipements
+                      .filter((e: any) => !form.machine_id || e.machine_id === form.machine_id || !e.machine_id)
+                      .map((e: any) => <SelectItem key={e.id} value={e.id}>{e.code} — {e.designation}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Organe (optionnel)</Label>
+                <Select value={form.organe_id || "__none__"} onValueChange={v => setForm(f => ({ ...f, organe_id: v === "__none__" ? "" : v }))}>
+                  <SelectTrigger className="h-12"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Aucun</SelectItem>
+                    {organes
+                      .filter((o: any) =>
+                        (form.equipement_id && o.equipement_id === form.equipement_id) ||
+                        (!form.equipement_id && form.machine_id && o.machine_id === form.machine_id)
+                      )
+                      .map((o: any) => <SelectItem key={o.id} value={o.id}>{o.code} — {o.designation}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Fréquence</Label>
                 <Select value={form.frequence} onValueChange={v => setForm(f => ({ ...f, frequence: v }))}>
                   <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>

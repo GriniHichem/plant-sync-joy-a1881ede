@@ -1,126 +1,187 @@
-# Synoptique de ligne — Vue de supervision industrielle
+## Module Audit & Traçabilité
 
-Refonte de `LineSynoptic.tsx` et `LineConfig.tsx` pour transformer la vue actuelle en vraie console de supervision GMAO/GPAO, sans rien casser de l'existant (mêmes routes, mêmes tables).
+Mise en place d'un module d'audit complet avec table étendue, helper de journalisation, page `/audit` riche (KPI, filtres, table paginée serveur, détails, export CSV) et permissions RLS par rôle.
 
-## 1. Données chargées en une passe
+---
 
-Une seule fonction `loadLine()` charge en parallèle, avec un skeleton loader et un bouton **Actualiser** :
+### 1. Migration SQL — étendre `audit_logs`
 
-- `production_lines` (entête)
-- `machine_line_assignments` triés par `sort_order` + jointure `machines(*)` + image principale
-- `equipements` rattachés à la ligne (avec ou sans `machine_id`)
-- `organes` (par machine et par équipement de la ligne, en un seul `in()`)
-- `tickets` ouverts/pris_en_charge sur ces machines/équipements/organes
-- `preventive_plans` actifs+validés sur ces machines/équipements/organes (avec `prochaine_echeance`)
-- `pdr_entity_links` + jointure `pdr(stock_actuel, stock_min, stock_securite, statut_pdr)` pour les machines/équipements/organes
-- `entity_images` (primaires) en batch via `useEntityPrimaryImages`
+La table actuelle `audit_logs` est minimaliste (action, table_name, record_id, old/new). On l'étend de façon **non destructive** (ALTER ADD COLUMN IF NOT EXISTS) pour ne casser aucun usage existant.
 
-Les compteurs (tickets, préventifs en retard, PDR critiques/rupture) sont agrégés **côté client** en `useMemo` par entité.
+**Nouvelles colonnes :**
+- `user_email`, `user_full_name` text
+- `action_type` text (login, logout, create, update, delete, status_change, role_change, permission_change, stock_entry, stock_exit, stock_inventory, stock_correction, production_declaration, production_correction, document_upload/download/delete, import_csv, export_csv, access_denied, error)
+- `module` text (auth, users, roles, permissions, machines, equipements, organes, pdr, pdr_stock, tickets, interventions, preventif, lignes, gpao, of, produits, articles, recettes, consommations, arrets, documents, images, parametres)
+- `entity_type`, `entity_id` (uuid), `entity_code`, `entity_label`
+- `action_label`, `description` text
+- `changed_fields` jsonb
+- `ip_address` inet, `user_agent` text
+- `status` text CHECK (success|failed|denied|warning) DEFAULT 'success'
+- `severity` text CHECK (info|low|medium|high|critical) DEFAULT 'info'
+- `source` text CHECK (app|auth|database|edge_function|system) DEFAULT 'app'
+- `metadata` jsonb
+- `archived_at` timestamptz
 
-## 2. KPI rapides (en haut de page)
+**Indexes :** `created_at DESC`, `user_id`, `module`, `action_type`, `entity_type`, `entity_id`, `status`, `severity`, plus index GIN trigram sur `description || entity_code || entity_label || user_email` pour la recherche globale.
 
-Bandeau `KpiCard` :
+**RLS — remplacer la policy SELECT actuelle :**
+- Fonction `has_audit_access(_uid, _module text DEFAULT NULL)` SECURITY DEFINER :
+  - admin / `responsable_si` / `auditeur` → tous modules
+  - `resp_maintenance` → modules GMAO (machines, equipements, organes, tickets, interventions, preventif, pdr, pdr_stock, lignes)
+  - `resp_production` → modules GPAO (gpao, of, produits, articles, recettes, consommations, arrets)
+  - autres → false
+- Policy SELECT : `has_audit_access(auth.uid(), module)` AND `archived_at IS NULL OR (filtre côté app)`
+- Policy INSERT existante conservée (`auth.uid() = user_id`)
+- Pas de DELETE/UPDATE (immutabilité)
 
-- Total machines · En service · En panne · En maintenance
-- Tickets ouverts (ligne) · Préventifs en retard · PDR critiques/rupture
-- Disponibilité estimée = `% machines en marche` (parmi celles non-`hors_service`)
+**Nouveaux rôles app_role :** ajouter `responsable_si` et `auditeur` à l'enum `app_role` (ALTER TYPE ... ADD VALUE IF NOT EXISTS).
 
-Les KPI se recalculent selon les filtres actifs.
+**Permissions — table existante `role_permissions` :** ajouter le module `'audit'` avec actions view/create/edit/delete (mappées sur view/export/technical/archive).
 
-## 3. Filtres (au-dessus du flow)
+---
 
-Barre de filtres avec `RotateCcw` standard :
+### 2. Helper de journalisation `src/lib/audit.ts`
 
-- Statut (multi-select : en marche, arrêt, maintenance, hors service)
-- Criticité (A/B/C)
-- Toggle **Anomalies seulement** (machine en panne/maint OR ticket ouvert OR PDR rupture/critique OR préventif en retard)
-- Toggle **PDR critiques**
-- Toggle **Préventifs en retard**
-- Toggle **Tickets ouverts**
-- Bouton Réinitialiser
+Fonction `logAudit(params)` qui insère dans `audit_logs` avec :
+- `user_id`, `user_email`, `user_full_name` lus depuis `useAuth` / session
+- `user_agent` depuis `navigator.userAgent`
+- `ip_address` laissée null (impossible côté client de façon fiable — laissée à edge functions plus tard)
+- Calcule `changed_fields` automatiquement par diff `old_values` vs `new_values`
+- **Masquage automatique** des clés sensibles : `password`, `token`, `api_key`, `secret`, `*_key`, `authorization` → remplacées par `"***"` avant insert
+- Construit `description` lisible si non fournie (template par action_type/module)
+- Try/catch silencieux pour ne jamais bloquer l'action métier
 
-Le filtre s'applique à la fois aux machines et aux équipements autonomes.
+Hooks d'usage :
+- `useLogAudit()` retourne `logAudit` lié à l'utilisateur courant
+- Wrapper `withAudit(supabaseCall, auditParams)` pour combiner mutation + log
+- Helper `logAuthEvent(type)` appelé dans `AuthContext` (signIn success/fail, signOut, password reset)
+- Helper `logAccessDenied(module, route)` appelé dans `ProtectedRoute` quand `has_role` échoue
 
-## 4. Cartes machine enrichies
+**Intégration progressive (Phase 1 = critique) :**
+- AuthContext : login/logout/reset
+- UserAdmin : create/activate/role add/remove
+- DocumentPermissionsAdmin / pdr_stock_permissions / role_permissions : modifications
+- PDR stock movements (entry/exit/inventory/correction/cancel)
+- Tickets : create/update/close + Interventions
+- Préventif : create/validate/execute
+- OF : create/update/cancel + mode shift change
+- Production declarations + corrections (avec motif)
+- Consumptions + corrections
+- Arrêts production
+- Documents : upload/download/delete + métadonnées
+- Images : upload/delete/set_primary
+- Machines/Equipements/Organes : CRUD + status_change
+- Imports/Exports CSV (compteurs lignes ok/rejetées)
+- ProtectedRoute : access_denied
 
-Chaque carte (largeur 260px desktop, full-width mobile) garde le design actuel et ajoute :
+---
 
-- Image principale (miniature 40x40) à côté du code
-- Bandeau rouge **« Arrêt complet »** si `impact_ligne = arret_complet` ET `statut != en_marche`
-- Badges sous la carte :
-  - `Tickets: N` (rouge si > 0, avec icône `AlertTriangle`)
-  - `Préventif retard: N` (orange)
-  - `PDR rupture: N` (rouge) / `PDR critique: N` (orange)
-- Contour rouge épaissi si au moins un ticket de priorité `critique` ou `haute` est ouvert
-- Section **Organes principaux** sous la carte : 3 organes max + bouton « Voir tous (X) » qui ouvre le panneau latéral sur l'onglet organes
-  - Chaque chip organe : code, type, point de couleur statut, badge ticket/PDR si applicable
+### 3. Page `/audit` — UI
 
-## 5. Équipements autonomes
+Route protégée par `audit.view`. Ajoutée dans `AppTopBar` (menu Paramètres) et `Apps`.
 
-Section dédiée **« Équipements autonomes de la ligne »** (bloc séparé sous le flow), affichant les équipements `line_id = ligne` ET dont la `machine_id` n'est pas une machine de la ligne. Mêmes badges (statut, criticité, tickets, préventifs, organes).
+**Structure (`src/pages/AuditPage.tsx`) :**
 
-Les équipements rattachés à une machine de la ligne restent affichés sous leur machine (existant).
+```text
+┌─ Header (titre + bouton "Réinitialiser" + "Exporter CSV") ─┐
+│                                                             │
+├─ KPI Cards (8) ────────────────────────────────────────────┤
+│ Total · Aujourd'hui · Critiques · Refusées · Erreurs       │
+│ Connexions jour · Modifs sensibles · Activité PDR          │
+│                                                             │
+├─ Filtres rapides (chips) ──────────────────────────────────┤
+│ Aujourd'hui | Semaine | Mois | Critiques | Refusés | ...  │
+│                                                             │
+├─ Filtres avancés (collapsible) ────────────────────────────┤
+│ Période · User · Module · Action · Statut · Sévérité       │
+│ Type entité · Code entité · IP · Source · Recherche libre  │
+│                                                             │
+├─ Table (colonnes ci-dessus) ───────────────────────────────┤
+│ Skeleton loader · pagination serveur · tri date desc       │
+└─────────────────────────────────────────────────────────────┘
+```
 
-## 6. Panneau latéral (Sheet) au clic
+**Composants :**
+- `src/components/audit/AuditKpiCards.tsx`
+- `src/components/audit/AuditFilters.tsx` (chips + form avancé)
+- `src/components/audit/AuditTable.tsx` (badges colorés statut/sévérité)
+- `src/components/audit/AuditDetailSheet.tsx` (Sheet Radix avec tabs Général / Valeurs / Technique)
+- `src/hooks/useAuditLogs.ts` (fetch paginé serveur + count, dépendances filtres)
 
-Au clic sur une **machine**, un **équipement** ou un **organe** : `Sheet` côté droit (à la place de la navigation directe) avec :
+**Détails (Sheet) :**
+- Section Général : user, module, action, entité, description, date, statut, sévérité
+- Section Valeurs : tableau diff `changed_fields` avec ancien/nouveau (champs sensibles affichés "valeur masquée")
+- Section Technique (visible si `audit.view_technical_details`) : IP, user_agent, JSON brut old_values/new_values/metadata, source
+- Boutons contextuels selon `entity_type` → "Voir machine/PDR/ticket/OF/utilisateur" via `useNavWithFrom`
 
-- En-tête : code, désignation, statut, criticité, image
-- Onglets : **Résumé** · **Tickets** · **Préventif** · **PDR** · **Organes** (machines/équipements seulement) · **Documents**
-- Boutons d'action :
-  - Voir fiche complète (navigate avec `from`)
-  - Créer ticket (pré-remplit `machine_id`/`equipement_id`/`organe_id`)
-  - Voir tickets / Voir préventif / Voir PDR liées (filtres URL)
+**Recherche globale :** filtre serveur avec `or(...)` Supabase sur `user_email,user_full_name,module,action_type,entity_type,entity_code,entity_label,action_label,description` (ilike).
 
-Le panneau réutilise les données déjà chargées (pas de nouveau fetch).
+**Export CSV :**
+- Réutilise les filtres actifs, pagine par 1000 jusqu'à fin
+- UTF-8 BOM, séparateur `;`, nom `audit_logs_YYYY-MM-DD.csv`
+- Colonnes par défaut : date, user, email, module, action, entité, description, statut, sévérité, IP, source
+- Checkbox "Inclure JSON technique" visible seulement si admin → ajoute old_values, new_values, metadata sérialisés
 
-## 7. Mode tablette / mobile
+---
 
-Breakpoint `md` :
+### 4. Permissions appliquées en UI
 
-- Desktop : flow horizontal scrollable existant
-- Tablette/mobile : liste verticale, cartes pleine largeur, organes pliables (`Collapsible`), bouton flottant **+ Ticket** en bas à droite
-- Touch targets 48px (Core rule)
+- Route `/audit` : redirection si pas `check_permission(uid, 'audit', 'view')`
+- Bouton Export : visible si `audit.export` (= edit dans la matrice mappée)
+- Onglet Technique du Sheet : si `audit.view_technical_details` (= delete mappé) — sinon section masquée
+- Toggle "Inclure archives" (filtre `archived_at`) : visible pour admin/responsable_si
 
-## 8. Configuration (`LineConfig.tsx`)
+Ajout d'entrée dans `Apps.tsx` (carte "Audit & Traçabilité") et dans `AppTopBar` (sous Paramètres ou dropdown utilisateur si rôle autorisé).
 
-Ajouts :
+---
 
-- **Drag & drop** des machines (via `@dnd-kit/sortable` déjà compatible avec le stack) en plus des flèches up/down (gardées en fallback accessibilité)
-- Section **« Équipements autonomes »** : ajouter/retirer un équipement de la ligne (UPDATE `equipements.line_id`)
-- Sauvegarde automatique du nouvel ordre après drop
+### 5. Protection des données sensibles & rétention
 
-## 9. Couleurs
+- Helper `sanitizeValues(obj)` masque récursivement les clés correspondant à la regex `/(password|token|secret|api[_-]?key|authorization|service[_-]?role)/i`
+- Champ `archived_at` permet d'archiver sans supprimer ; vue par défaut filtre `archived_at IS NULL`
+- Pas de DELETE policy (admin doit archiver, pas supprimer) — sauf besoin futur d'une policy spécifique
+- Paramètre app_settings `audit_retention_months` (default 24) — utilisé uniquement comme info affichée (pas de purge automatique dans cette itération, à demander explicitement)
 
-Strictement les tokens sémantiques existants :
+---
 
-- vert : `bg-green-500` (déjà en usage local pour statut machine)
-- orange : `bg-amber-500` / `text-amber-600`
-- rouge : `bg-destructive` / `text-destructive`
-- gris : `text-muted-foreground` / `bg-muted`
-- bleu : `bg-primary` / `text-primary`
+### 6. Détails techniques
 
-## 10. Détails techniques
+**Fichiers créés :**
+- `supabase/migrations/{ts}_audit_logs_extended.sql`
+- `src/lib/audit.ts` (logger + sanitizer + types)
+- `src/hooks/useAuditLogs.ts`
+- `src/hooks/useLogAudit.ts`
+- `src/pages/AuditPage.tsx`
+- `src/components/audit/AuditKpiCards.tsx`
+- `src/components/audit/AuditFilters.tsx`
+- `src/components/audit/AuditTable.tsx`
+- `src/components/audit/AuditDetailSheet.tsx`
+- `src/components/audit/AuditQuickChips.tsx`
+- `src/lib/auditExport.ts`
 
-- Fichiers modifiés : `src/pages/LineSynoptic.tsx`, `src/pages/LineConfig.tsx`
-- Nouveaux composants :
-  - `src/components/gmao/LineSynopticFilters.tsx`
-  - `src/components/gmao/SynopticEntityPanel.tsx` (le Sheet polymorphe)
-  - `src/components/gmao/SynopticMachineCard.tsx`
-  - `src/components/gmao/SynopticEquipmentCard.tsx`
-  - `src/components/gmao/SynopticOrganeChip.tsx`
-- Nouveau hook : `src/hooks/useLineSynopticData.ts` (fetch unique + agrégations mémoïsées + `refetch()`)
-- Création de ticket depuis le panneau : ouverture d'un Dialog inline qui POST sur `tickets` avec audit_log (auteur, valeurs)
-- Aucune migration SQL — toutes les colonnes nécessaires existent déjà (`organes.machine_id/equipement_id`, `pdr_entity_links`, `preventive_plans.equipement_id/organe_id`)
-- Drag & drop : `bun add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities`
+**Fichiers modifiés :**
+- `src/App.tsx` : route `/audit` protégée
+- `src/components/gmao/AppTopBar.tsx` : entrée menu
+- `src/pages/Apps.tsx` : carte Audit
+- `src/contexts/AuthContext.tsx` : `logAuthEvent` sur signIn/signOut/reset
+- `src/components/auth/ProtectedRoute.tsx` (ou équivalent) : `logAccessDenied`
+- Pages CRUD critiques (Phase 1) : injection `logAudit` après mutations — au minimum :
+  - `src/pages/parametres/UserAdmin.tsx`, `DocumentPermissionsAdmin.tsx`, `RolePermissionsAdmin.tsx`, `PdrStockPermissionsAdmin.tsx`
+  - `src/pages/PdrDetail.tsx` (stock movements) + composants Entry/Exit/Inventory/Correction
+  - `src/pages/TicketDetail.tsx`, `MachineDetail/Form`, `EquipmentDetail/Form`, `OrganeDetail/Form`, `PreventifDetail/Form`
+  - `src/pages/gpao/OfDetail.tsx`, `ConsumptionPage.tsx`, `ShiftScreen.tsx` (déclarations + corrections + arrêts)
+  - Hooks documents/images : `useEntityDocuments`, `useEntityImages`
 
-## 11. Préservation
+**Notes mémoire à mettre à jour après build :**
+- Nouvelle fiche `mem://features/audit-trail` — schéma audit_logs étendu, helper logAudit, sanitization, RLS par module, page /audit
+- Mise à jour `mem://auth/rbac-permissions` — nouveaux rôles `responsable_si`, `auditeur` + module permission `audit`
+- Mise à jour `mem://tech/architecture-security` — référence helper centralisé
 
-- Routes inchangées : `/lignes/:id` (synoptique) et `/lignes/:id/config`
-- Boutons retour conservent `useSmartBack`
-- Données existantes intactes (lecture seule sauf nouveaux UPDATE sort_order et equipements.line_id)
-- Tests existants non-impactés (le hook isole la logique testable séparément)
+---
 
-## Résultat attendu
+### Hors périmètre (à confirmer plus tard)
 
-Page `/lignes/:id` devient le tableau de bord central de la ligne : structure visuelle ordonnée, état temps réel de chaque actif, anomalies mises en évidence, panneau latéral riche, filtres puissants, utilisable en atelier sur tablette.
+- Capture IP réelle (nécessite edge function proxy ou trigger avec headers PostgREST) — laissée null en phase 1
+- Triggers DB automatiques sur toutes les tables (approche actuelle : log côté app pour avoir contexte user/description) — peut être ajouté plus tard pour un filet de sécurité
+- Purge automatique selon rétention — manuel pour le moment
+- Tentatives de login échouées : Supabase ne les expose pas côté client de façon fiable, on logge uniquement le retour error de signInWithPassword

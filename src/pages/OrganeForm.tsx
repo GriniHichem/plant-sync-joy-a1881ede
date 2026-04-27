@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ export default function OrganeForm() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const goBack = useSmartBack(id ? `/organes/${id}` : "/organes");
   const { toast } = useToast();
   const isEdit = !!id;
 
@@ -86,7 +88,7 @@ export default function OrganeForm() {
   return (
     <div className="space-y-4 max-w-3xl">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-5 w-5" /></Button>
+        <Button variant="ghost" size="icon" onClick={goBack}><ArrowLeft className="h-5 w-5" /></Button>
         <h1 className="text-2xl font-bold">{isEdit ? "Modifier organe" : "Nouvel organe"}</h1>
       </div>
 

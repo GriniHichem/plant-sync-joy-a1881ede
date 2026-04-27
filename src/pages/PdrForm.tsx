@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export default function PdrForm() {
   const { id } = useParams();
   const isNew = !id;
   const navigate = useNavigate();
+  const goBack = useSmartBack(isNew ? "/pdr" : `/pdr/${id}`);
   const { toast } = useToast();
   const [families, setFamilies] = useState<any[]>([]);
   const [machines, setMachines] = useState<any[]>([]);
@@ -187,7 +189,7 @@ export default function PdrForm() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(isNew ? "/pdr" : `/pdr/${id}`)} className="h-10 w-10">
+        <Button variant="ghost" size="icon" onClick={goBack} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">

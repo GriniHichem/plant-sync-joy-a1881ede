@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -25,7 +26,7 @@ export default function TicketsList() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const { user } = useAuth();
   const { toast } = useToast();
   const { canCreate } = usePermissions();

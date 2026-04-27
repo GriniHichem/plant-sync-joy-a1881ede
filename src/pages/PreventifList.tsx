@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,7 +28,7 @@ const FREQ_LABELS: Record<string, string> = {
 };
 
 export default function PreventifList() {
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const [searchParams] = useSearchParams();
   const { hasRole } = useAuth();
   const [plans, setPlans] = useState<any[]>([]);

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,7 +26,7 @@ const STATUT_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 export default function OrganesList() {
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const { canCreate } = usePermissions();
   const [rows, setRows] = useState<any[]>([]);
   const [search, setSearch] = useState("");

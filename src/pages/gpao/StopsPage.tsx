@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertTriangle } from "lucide-react";
@@ -17,7 +18,7 @@ const arretTypeLabels: Record<string, string> = {
 
 export default function StopsPage() {
   const [stops, setStops] = useState<any[]>([]);
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
 
   useEffect(() => {
     supabase.from("production_stops")

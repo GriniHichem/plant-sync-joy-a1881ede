@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +55,7 @@ export default function MachineForm() {
   const { id } = useParams();
   const isNew = !id;
   const navigate = useNavigate();
+  const goBack = useSmartBack(id ? `/machines/${id}` : "/machines");
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -261,7 +263,7 @@ export default function MachineForm() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(isNew ? "/machines" : `/machines/${id}`)} className="h-10 w-10">
+        <Button variant="ghost" size="icon" onClick={goBack} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">

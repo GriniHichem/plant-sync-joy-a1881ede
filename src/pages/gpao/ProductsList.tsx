@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Search, Package, Plus, Download } from "lucide-react";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { exportToCsv } from "@/lib/exportCsv";
@@ -18,7 +19,7 @@ import { CsvImporter } from "@/components/gpao/CsvImporter";
 import { Badge } from "@/components/ui/badge";
 
 export default function ProductsList() {
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const { toast } = useToast();
   const { canCreate } = usePermissions();
   const [products, setProducts] = useState<any[]>([]);

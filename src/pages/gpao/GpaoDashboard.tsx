@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Factory, Package, ClipboardList, TrendingUp, BarChart3, AlertTriangle, FolderTree, ShieldAlert, Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { Badge } from "@/components/ui/badge";
 import { DateRangeFilter } from "@/components/analytics/DateRangeFilter";
 import { KpiCardComparison } from "@/components/analytics/KpiCardComparison";
@@ -31,7 +32,7 @@ export default function GpaoDashboard() {
   const [stops, setStops] = useState<any[]>([]);
   const [families, setFamilies] = useState<any[]>([]);
   const [pdrList, setPdrList] = useState<any[]>([]);
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const df = useDateFilter("this_month");
 
   useEffect(() => {

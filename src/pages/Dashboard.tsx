@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Clock, Cog, CalendarCheck, Wrench, TrendingUp, Package, ShieldAlert, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { DateRangeFilter } from "@/components/analytics/DateRangeFilter";
 import { KpiCardComparison } from "@/components/analytics/KpiCardComparison";
 import { useDateFilter, filterByDateRange } from "@/hooks/useDateFilter";
@@ -16,7 +17,7 @@ export default function Dashboard() {
   const [preventivePlans, setPreventivePlans] = useState<any[]>([]);
   const [pdrList, setPdrList] = useState<any[]>([]);
   const [prevExecutions, setPrevExecutions] = useState<any[]>([]);
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const df = useDateFilter("this_month");
 
   useEffect(() => {

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +23,8 @@ import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
 
 export default function OfDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
+  const goBack = useSmartBack("/gpao/of");
   const { user } = useAuth();
   const { toast } = useToast();
   const [of, setOf] = useState<any>(null);
@@ -147,7 +150,7 @@ export default function OfDetail() {
   return (
     <div className="space-y-4 max-w-5xl">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/gpao/of")} className="h-10 w-10">
+        <Button variant="ghost" size="icon" onClick={goBack} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <EntityThumbnail

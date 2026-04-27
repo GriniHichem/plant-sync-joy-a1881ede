@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +39,8 @@ const CRIT_MAINT_LABELS: Record<string, string> = {
 
 export default function EquipmentDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
+  const goBack = useSmartBack("/equipements");
   const { canEdit } = usePermissions();
   const [equip, setEquip] = useState<any>(null);
   const [organes, setOrganes] = useState<any[]>([]);
@@ -62,7 +65,7 @@ export default function EquipmentDetail() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/equipements")} className="h-10 w-10">
+        <Button variant="ghost" size="icon" onClick={goBack} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         {entityImages.primaryImage && (

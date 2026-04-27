@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,8 +19,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const backTo = (location.state as any)?.from || "/tickets";
+  const goBack = useSmartBack("/tickets");
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
   const { canEdit, canDelete } = usePermissions();
@@ -137,7 +137,7 @@ export default function TicketDetail() {
     <div className={`space-y-4 ${isMobile ? "px-1" : "max-w-3xl"}`}>
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate(backTo)} className="h-9 w-9 shrink-0">
+        <Button variant="ghost" size="icon" onClick={goBack} className="h-9 w-9 shrink-0">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">

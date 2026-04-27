@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const goBack = useSmartBack("/gpao/produits");
   const { toast } = useToast();
   const [product, setProduct] = useState<any>(null);
   const [families, setFamilies] = useState<any[]>([]);
@@ -139,7 +141,7 @@ export default function ProductDetail() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/gpao/produits")} className="h-10 w-10">
+        <Button variant="ghost" size="icon" onClick={goBack} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         {entityImages.primaryImage && (

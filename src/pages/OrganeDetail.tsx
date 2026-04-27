@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +32,8 @@ const STATUT_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 
 export default function OrganeDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
+  const goBack = useSmartBack("/organes");
   const { toast } = useToast();
   const { canEdit, canDelete } = usePermissions();
   const [organe, setOrgane] = useState<any>(null);
@@ -73,7 +76,7 @@ export default function OrganeDetail() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/organes")}><ArrowLeft className="h-5 w-5" /></Button>
+        <Button variant="ghost" size="icon" onClick={goBack}><ArrowLeft className="h-5 w-5" /></Button>
         {entityImages.primaryImage && (
           <EntityThumbnail imageUrl={entityImages.primaryImage.image_url} alt={organe.designation} size="lg" rounded="lg" enableLightbox />
         )}

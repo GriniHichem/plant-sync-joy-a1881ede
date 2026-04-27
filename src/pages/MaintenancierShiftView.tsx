@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,7 +58,7 @@ function PriorityBadge({ priority }: { priority: string }) {
 
 export default function MaintenancierShiftView() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const [plans, setPlans] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

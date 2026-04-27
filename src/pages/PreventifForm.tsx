@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +27,7 @@ export default function PreventifForm() {
   const [searchParams] = useSearchParams();
   const isNew = !id;
   const navigate = useNavigate();
+  const goBack = useSmartBack(isNew ? "/preventif" : `/preventif/${id}`);
   const { toast } = useToast();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
@@ -210,7 +212,7 @@ export default function PreventifForm() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/preventif")} className="h-10 w-10">
+        <Button variant="ghost" size="icon" onClick={goBack} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">

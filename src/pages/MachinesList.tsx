@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -23,7 +24,7 @@ export default function MachinesList() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [familyFilter, setFamilyFilter] = useState<string>("all");
   const [lineFilter, setLineFilter] = useState<string>("all");
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const { canCreate } = usePermissions();
 
   useEffect(() => {

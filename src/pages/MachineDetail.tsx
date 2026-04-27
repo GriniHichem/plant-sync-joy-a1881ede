@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ const PRIORITY_LABELS: Record<number, string> = { 1: "Principale", 2: "Secondair
 
 export default function MachineDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const goBack = useSmartBack("/machines");
   const { canEdit } = usePermissions();
   const [machine, setMachine] = useState<any>(null);

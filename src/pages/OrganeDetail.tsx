@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ const STATUT_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 
 export default function OrganeDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const goBack = useSmartBack("/organes");
   const { toast } = useToast();
   const { canEdit, canDelete } = usePermissions();

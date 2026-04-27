@@ -42,11 +42,12 @@ export default function MachineDetail() {
   const [interventions, setInterventions] = useState<any[]>([]);
   const [lineAssignments, setLineAssignments] = useState<any[]>([]);
   const [linkedEquipments, setLinkedEquipments] = useState<any[]>([]);
+  const [organes, setOrganes] = useState<any[]>([]);
   const entityImages = useEntityImages("machine", id);
   useEffect(() => {
     if (!id) return;
     const load = async () => {
-      const [mRes, tRes, pdrRes, plansRes, docsRes, laRes, eqRes] = await Promise.all([
+      const [mRes, tRes, pdrRes, plansRes, docsRes, laRes, eqRes, oRes] = await Promise.all([
         supabase.from("machines").select("*, machine_families(name)").eq("id", id).single(),
         supabase.from("tickets").select("*, panne_types(name)").eq("machine_id", id).order("created_at", { ascending: false }),
         supabase.from("machine_pdr").select("*, pdr(*)").eq("machine_id", id),
@@ -54,6 +55,7 @@ export default function MachineDetail() {
         supabase.from("machine_documents").select("*").eq("machine_id", id).order("created_at", { ascending: false }),
         supabase.from("machine_line_assignments").select("*, production_lines(code, designation)").eq("machine_id", id).order("priority"),
         supabase.from("equipements").select("*").eq("machine_id", id).order("code"),
+        (supabase.from("organes" as any) as any).select("*").eq("machine_id", id).order("sort_order"),
       ]);
       setMachine(mRes.data);
       setTickets(tRes.data || []);
@@ -62,6 +64,7 @@ export default function MachineDetail() {
       setDocuments(docsRes.data || []);
       setLineAssignments(laRes.data || []);
       setLinkedEquipments(eqRes.data || []);
+      setOrganes((oRes.data as any) || []);
 
       if (tRes.data && tRes.data.length > 0) {
         const ticketIds = tRes.data.map((t: any) => t.id);
@@ -137,6 +140,9 @@ export default function MachineDetail() {
           </TabsTrigger>
           <TabsTrigger value="equipements" className="h-9">
             <Component className="h-3.5 w-3.5 mr-1" /> Équipements ({linkedEquipments.length})
+          </TabsTrigger>
+          <TabsTrigger value="organes" className="h-9">
+            <Component className="h-3.5 w-3.5 mr-1" /> Organes ({organes.length})
           </TabsTrigger>
         </TabsList>
 
@@ -470,6 +476,39 @@ export default function MachineDetail() {
                           {eq.statut?.replace("_", " ")}
                         </Badge>
                       </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="organes">
+          <Card>
+            <CardContent className="p-0">
+              <div className="flex justify-end p-3 border-b">
+                {canEdit("organes") && (
+                  <Button size="sm" onClick={() => navigate(`/organes/new?machine_id=${id}`)}>
+                    <Component className="h-4 w-4 mr-2" /> Ajouter un organe
+                  </Button>
+                )}
+              </div>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Code</TableHead><TableHead>Désignation</TableHead>
+                  <TableHead>Type</TableHead><TableHead>Statut</TableHead><TableHead>Criticité</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {organes.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Aucun organe</TableCell></TableRow>
+                  ) : organes.map((o: any) => (
+                    <TableRow key={o.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/organes/${o.id}`)}>
+                      <TableCell className="font-mono font-medium">{o.code}</TableCell>
+                      <TableCell>{o.designation}</TableCell>
+                      <TableCell><Badge variant="outline" className="text-xs capitalize">{o.type}</Badge></TableCell>
+                      <TableCell><Badge variant={o.statut === "en_service" ? "default" : o.statut === "en_panne" ? "destructive" : "secondary"} className="text-xs">{o.statut?.replace("_", " ")}</Badge></TableCell>
+                      <TableCell><Badge variant="outline" className="text-xs">{o.criticite}</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

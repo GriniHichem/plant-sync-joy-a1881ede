@@ -109,32 +109,86 @@ export type Database = {
       audit_logs: {
         Row: {
           action: string
+          action_label: string | null
+          action_type: string | null
+          archived_at: string | null
+          changed_fields: Json | null
           created_at: string
+          description: string | null
+          entity_code: string | null
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string | null
           id: string
+          ip_address: unknown
+          metadata: Json | null
+          module: string | null
           new_values: Json | null
           old_values: Json | null
           record_id: string | null
+          severity: string
+          source: string
+          status: string
           table_name: string
+          user_agent: string | null
+          user_email: string | null
+          user_full_name: string | null
           user_id: string | null
         }
         Insert: {
           action: string
+          action_label?: string | null
+          action_type?: string | null
+          archived_at?: string | null
+          changed_fields?: Json | null
           created_at?: string
+          description?: string | null
+          entity_code?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string | null
           id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          module?: string | null
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
+          severity?: string
+          source?: string
+          status?: string
           table_name: string
+          user_agent?: string | null
+          user_email?: string | null
+          user_full_name?: string | null
           user_id?: string | null
         }
         Update: {
           action?: string
+          action_label?: string | null
+          action_type?: string | null
+          archived_at?: string | null
+          changed_fields?: Json | null
           created_at?: string
+          description?: string | null
+          entity_code?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string | null
           id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          module?: string | null
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
+          severity?: string
+          source?: string
+          status?: string
           table_name?: string
+          user_agent?: string | null
+          user_email?: string | null
+          user_full_name?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -2744,6 +2798,10 @@ export type Database = {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
       }
+      has_audit_access: {
+        Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2751,6 +2809,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role:

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Menu, ChevronDown } from "lucide-react";
+import { Menu, ChevronDown, LayoutGrid } from "lucide-react";
 
 const gmaoItems = [
   { title: "Dashboard", url: "/", icon: IconDashboard },
@@ -157,6 +157,19 @@ function MobileNav() {
             <span className="text-[9px] font-semibold tracking-[0.2em] text-muted-foreground/60 uppercase mt-1">GMAO · GPAO</span>
           </div>
         </div>
+        <RRNavLink
+          to="/apps"
+          className={({ isActive: a }) =>
+            cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-md text-[14px] font-medium mb-2",
+              "text-foreground/75 hover:bg-accent hover:text-foreground",
+              a && "bg-primary/10 text-primary font-semibold"
+            )
+          }
+        >
+          <Menu size={18} />
+          Apps
+        </RRNavLink>
         {renderItems("Maintenance", gmaoItems)}
         <div className="my-3 h-px bg-border/60" />
         {renderItems("Production", gpaoItems)}
@@ -231,6 +244,20 @@ export function AppTopBar() {
 
         {/* Primary nav */}
         <nav className="hidden md:flex items-center gap-1">
+          <Button
+            asChild
+            variant="ghost"
+            className={cn(
+              "h-9 px-3 gap-2 text-[13px] font-semibold rounded-md",
+              "text-foreground/70 hover:text-foreground hover:bg-accent/60",
+              isActive(location.pathname, "/apps") && "text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary"
+            )}
+          >
+            <RRNavLink to="/apps">
+              <LayoutGrid size={16} />
+              <span className="hidden lg:inline">Apps</span>
+            </RRNavLink>
+          </Button>
           <MegaMenu label="Maintenance" GroupIcon={IconMaintenance} items={gmaoItems} active={isGmaoActive} />
           <MegaMenu label="Production" GroupIcon={IconProduction} items={gpaoItems} active={isGpaoActive} />
           <Button

@@ -55,6 +55,7 @@ import LineConfig from "@/pages/LineConfig";
 import NotFound from "@/pages/NotFound";
 import ResetPassword from "@/pages/ResetPassword";
 import OrganesList from "@/pages/OrganesList";
+import Apps from "@/pages/Apps";
 import OrganeForm from "@/pages/OrganeForm";
 import OrganeDetail from "@/pages/OrganeDetail";
 
@@ -92,6 +93,7 @@ const App = () => (
             <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
               <Route path="/" element={<Dashboard />} />
+              <Route path="/apps" element={<Apps />} />
               <Route path="/machines" element={<MachinesList />} />
               <Route path="/machines/new" element={<MachineForm />} />
               <Route path="/machines/:id" element={<MachineDetail />} />

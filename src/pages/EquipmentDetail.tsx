@@ -173,6 +173,33 @@ export default function EquipmentDetail() {
           </div>
         </TabsContent>
 
+        <TabsContent value="organes">
+          <Card>
+            <CardContent className="p-0">
+              <div className="flex justify-end p-3 border-b">
+                {canEdit("organes") && (
+                  <Button size="sm" onClick={() => navigate(`/organes/new?equipement_id=${id}`)}>
+                    <Component className="h-4 w-4 mr-2" /> Ajouter un organe
+                  </Button>
+                )}
+              </div>
+              <div className="p-3 space-y-2">
+                {organes.length === 0 ? (
+                  <p className="text-center py-6 text-muted-foreground text-sm">Aucun organe</p>
+                ) : organes.map((o: any) => (
+                  <div key={o.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/40 cursor-pointer" onClick={() => navigate(`/organes/${o.id}`)}>
+                    <div>
+                      <p className="font-mono text-sm font-medium">{o.code} — {o.designation}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{o.type} · {o.statut?.replace("_", " ")} · Criticité {o.criticite}</p>
+                    </div>
+                    <Badge variant={o.statut === "en_service" ? "default" : o.statut === "en_panne" ? "destructive" : "secondary"} className="text-xs">{o.statut?.replace("_", " ")}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="photos">
           <Card>
             <CardHeader><CardTitle className="text-base">Photos</CardTitle></CardHeader>

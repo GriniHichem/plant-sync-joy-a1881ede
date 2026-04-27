@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
-import { ArrowLeft, Edit, Cog, Factory } from "lucide-react";
+import { ArrowLeft, Edit, Cog, Factory, Component } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";

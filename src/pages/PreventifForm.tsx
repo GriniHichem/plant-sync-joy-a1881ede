@@ -143,6 +143,8 @@ export default function PreventifForm() {
       description: form.description.trim() || null,
       machine_id: form.machine_id,
       line_id: form.line_id || null,
+      equipement_id: form.equipement_id || null,
+      organe_id: form.organe_id || null,
       frequence: form.frequence,
       type_maintenance: form.type_maintenance,
       statut_plan: form.statut_plan,

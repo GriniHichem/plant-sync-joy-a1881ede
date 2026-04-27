@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Factory, Eye, Settings, Plus, CalendarCheck } from "lucide-react";
 
 export default function LinesList() {
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const [lines, setLines] = useState<any[]>([]);
   const [machineCounts, setMachineCounts] = useState<Record<string, number>>({});
 

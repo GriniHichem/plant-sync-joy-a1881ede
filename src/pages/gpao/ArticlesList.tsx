@@ -14,11 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 import { exportToCsv } from "@/lib/exportCsv";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { CsvImporter } from "@/components/gpao/CsvImporter";
 import { Badge } from "@/components/ui/badge";
 
 export default function ArticlesList() {
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const { toast } = useToast();
   const { canCreate } = usePermissions();
   const [articles, setArticles] = useState<any[]>([]);

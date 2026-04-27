@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ const STATUT_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 export default function EquipmentsList() {
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const { canCreate } = usePermissions();
   const [equipments, setEquipments] = useState<any[]>([]);
   const [lines, setLines] = useState<any[]>([]);

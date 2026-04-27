@@ -11,6 +11,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useNavigate } from "react-router-dom";
+import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 
 function KpiMini({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color?: string }) {
   return (
@@ -27,7 +28,7 @@ function KpiMini({ icon: Icon, label, value, color }: { icon: any; label: string
 }
 
 export default function PdrList() {
-  const navigate = useNavigate();
+  const navigate = useNavWithFrom();
   const { canCreate } = usePermissions();
   const [pdrList, setPdrList] = useState<any[]>([]);
   const [entityImages, setEntityImages] = useState<any[]>([]);

@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {
-  Activity, AlertTriangle, ShieldOff, Bug, LogIn,
+  Activity, ShieldOff, Bug, LogIn,
   ShieldAlert, UserCog, PackageMinus, Calendar,
+  type LucideIcon,
 } from "lucide-react";
 import type { AuditKpis } from "@/hooks/useAuditLogs";
 
@@ -19,7 +20,7 @@ export type KpiPreset =
 const ITEMS: Array<{
   key: keyof AuditKpis;
   label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
   accent: string;
   preset?: KpiPreset;
 }> = [

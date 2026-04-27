@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   Calendar, CalendarDays, CalendarRange, ShieldAlert, ShieldOff,
   UserCog, PackageMinus, Wrench, Trash2, Bug,
+  type LucideIcon,
 } from "lucide-react";
 import type { AuditFilters } from "@/hooks/useAuditLogs";
 
@@ -11,7 +12,7 @@ export type QuickPreset =
   | "critical" | "denied" | "user_role_changes"
   | "stock_movements" | "production_corrections" | "deletions" | "errors";
 
-const PRESETS: Array<{ key: QuickPreset; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; accent?: string }> = [
+const PRESETS: Array<{ key: QuickPreset; label: string; icon: LucideIcon; accent?: string }> = [
   { key: "today",  label: "Aujourd'hui",   icon: Calendar },
   { key: "week",   label: "Cette semaine", icon: CalendarDays },
   { key: "month",  label: "Ce mois",       icon: CalendarRange },

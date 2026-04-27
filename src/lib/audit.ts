@@ -275,6 +275,26 @@ export async function logAudit(params: LogAuditParams): Promise<void> {
     if (!row.user_id) return;
 
     await supabase.from("audit_logs").insert(row as never);
+
+    // Bridge: critical audit events → notification (avoid recursion: skip notifications module itself)
+    if (severity === "critical" && params.module !== "notifications") {
+      try {
+        const { triggerNotification } = await import("./notifications");
+        await triggerNotification({
+          module: "audit",
+          event_type: "audit_critical_event",
+          entity_type: params.entity_type,
+          entity_id: params.entity_id ?? null,
+          entity_code: params.entity_code ?? null,
+          entity_label: params.entity_label ?? null,
+          title: action_label,
+          message: description,
+          severity: "critical",
+          triggered_by_user_id: user?.id ?? null,
+          source: "audit",
+        });
+      } catch { /* never block */ }
+    }
   } catch (e) {
     // Never block business logic
     if (typeof console !== "undefined") console.warn("[audit] logAudit failed", e);

@@ -251,6 +251,64 @@ export default function LineConfig() {
           )}
         </CardContent>
       </Card>
+
+      {/* Equipements autonomes */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Équipements autonomes de la ligne ({lineEquipements.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <Select value={selectedEquip} onValueChange={setSelectedEquip}>
+              <SelectTrigger className="flex-1 h-11">
+                <SelectValue placeholder="Sélectionner un équipement à rattacher..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">— Choisir —</SelectItem>
+                {allEquipements.filter((e) => e.line_id !== id).map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.code} — {e.designation}{e.line_id ? " (déplacé d'une autre ligne)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleAddEquip} disabled={selectedEquip === "__none__"} className="h-11">
+              <Plus className="h-4 w-4 mr-2" /> Rattacher
+            </Button>
+          </div>
+
+          {lineEquipements.length === 0 ? (
+            <p className="text-center text-muted-foreground py-6 text-sm">
+              Aucun équipement rattaché directement à la ligne.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {lineEquipements.map((eq) => (
+                <div key={eq.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono text-sm font-bold truncate">{eq.code}</p>
+                    <p className="text-xs text-muted-foreground truncate">{eq.designation}</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs shrink-0">{eq.type}</Badge>
+                  <Badge
+                    variant={eq.statut === "en_service" ? "default" : eq.statut === "hors_service" ? "destructive" : "secondary"}
+                    className="text-xs shrink-0"
+                  >
+                    {eq.statut}
+                  </Badge>
+                  <Button
+                    variant="ghost" size="icon"
+                    className="h-8 w-8 text-destructive/70 hover:text-destructive shrink-0"
+                    onClick={() => handleRemoveEquip(eq.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

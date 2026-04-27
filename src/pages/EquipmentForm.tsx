@@ -140,6 +140,10 @@ export default function EquipmentForm() {
       toast({ title: "Code et désignation requis", variant: "destructive" });
       return;
     }
+    if (form.machine_id === "__none__" && form.line_id === "__none__") {
+      toast({ title: "Rattachement requis", description: "Un équipement doit être rattaché à une machine ou à une ligne de production.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const payload = {
       code: form.code.trim(),

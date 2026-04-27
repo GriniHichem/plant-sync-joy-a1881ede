@@ -107,7 +107,7 @@ export interface LineSynopticData {
   refetch: () => void;
 }
 
-const OPEN_TICKET_STATUSES = ["ouvert", "pris_en_charge", "en_cours"];
+const OPEN_TICKET_STATUSES = ["ouvert", "pris_en_charge", "en_cours"] as const;
 const CRITICAL_PRIORITIES = ["critique", "haute"];
 
 function isPdrCritical(pdr: PdrLinkRow["pdr"]) {

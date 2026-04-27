@@ -2762,6 +2762,8 @@ export type Database = {
         | "operateur"
         | "gestionnaire_magasin"
         | "bureau_methode"
+        | "responsable_si"
+        | "auditeur"
       approvisionnement_type: "local" | "importation" | "mixte"
       arret_type:
         | "panne"
@@ -2970,6 +2972,8 @@ export const Constants = {
         "operateur",
         "gestionnaire_magasin",
         "bureau_methode",
+        "responsable_si",
+        "auditeur",
       ],
       approvisionnement_type: ["local", "importation", "mixte"],
       arret_type: [

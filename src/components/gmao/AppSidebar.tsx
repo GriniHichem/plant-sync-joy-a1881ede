@@ -22,6 +22,7 @@ const gmaoItems = [
   { title: "Dashboard", url: "/", icon: IconDashboard },
   { title: "Machines", url: "/machines", icon: IconMachine },
   { title: "Équipements", url: "/equipements", icon: IconEquipment },
+  { title: "Organes", url: "/organes", icon: IconEquipment },
   { title: "Lignes", url: "/lignes", icon: IconFactory },
   { title: "Pièces (PDR)", url: "/pdr", icon: IconSpare },
   { title: "Tickets", url: "/tickets", icon: IconTicket },

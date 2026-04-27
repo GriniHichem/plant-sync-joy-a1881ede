@@ -54,6 +54,9 @@ import LineSynoptic from "@/pages/LineSynoptic";
 import LineConfig from "@/pages/LineConfig";
 import NotFound from "@/pages/NotFound";
 import ResetPassword from "@/pages/ResetPassword";
+import OrganesList from "@/pages/OrganesList";
+import OrganeForm from "@/pages/OrganeForm";
+import OrganeDetail from "@/pages/OrganeDetail";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +113,10 @@ const App = () => (
               <Route path="/equipements/new" element={<EquipmentForm />} />
               <Route path="/equipements/:id" element={<EquipmentDetail />} />
               <Route path="/equipements/:id/edit" element={<EquipmentForm />} />
+              <Route path="/organes" element={<OrganesList />} />
+              <Route path="/organes/new" element={<OrganeForm />} />
+              <Route path="/organes/:id" element={<OrganeDetail />} />
+              <Route path="/organes/:id/edit" element={<OrganeForm />} />
               {/* Lignes synoptique */}
               <Route path="/lignes" element={<LinesList />} />
               <Route path="/lignes/:id" element={<LineSynoptic />} />

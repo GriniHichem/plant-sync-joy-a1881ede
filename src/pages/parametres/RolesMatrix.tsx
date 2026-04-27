@@ -21,6 +21,7 @@ const MODULE_GROUPS = [
     icon: Wrench,
     modules: [
       { key: "machines", label: "Machines" },
+      { key: "organes", label: "Organes" },
       { key: "tickets", label: "Tickets" },
       { key: "pdr", label: "Pièces détachées" },
       { key: "preventif", label: "Préventif" },

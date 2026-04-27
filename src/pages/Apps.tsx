@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, X, ShieldCheck } from "lucide-react";
+import { Search, X, ShieldCheck, Bell } from "lucide-react";
 import {
   IconDashboard, IconMachine, IconEquipment, IconFactory, IconSpare,
   IconTicket, IconPreventive, IconShift, IconAnalytics, IconChart,
@@ -52,6 +52,7 @@ const MODULES: AppModule[] = [
   // ===== Configuration =====
   { title: "Paramètres", description: "Référentiels, utilisateurs et configuration", url: "/parametres", icon: IconSettings, category: "Configuration", accent: "from-slate-500/15 to-slate-500/5 text-slate-400" },
   { title: "Audit & Traçabilité", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: ShieldCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "audit", accent: "from-red-500/15 to-red-500/5 text-red-500" },
+  { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: Bell as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
 ];
 
 const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Production", "Configuration"];

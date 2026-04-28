@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { RuleEditorDialog } from "@/components/notifications/RuleEditorDialog";
 import { logAudit } from "@/lib/audit";
 import { SEVERITY_BADGE_CLASS } from "@/lib/notifications";
+import { findDuplicates } from "@/lib/ruleValidation";
 import { cn } from "@/lib/utils";
 
 interface Rule {

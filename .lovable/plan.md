@@ -1,168 +1,106 @@
-## Module Notifications avancées
+# SMTP self-hosted + Notifications email integration
 
-Système centralisé in-app : table `notifications` + règles configurables + préférences utilisateur + cloche dans la topbar + page `/notifications` + page `/parametres/notifications`. Déclencheurs métier branchés sur les mutations existantes, anti-doublon par `deduplication_key`, traçabilité dans le module Audit.
+## Context (already in place)
+- `app_settings` table exists (RLS: select=authenticated, write=admin) with keys `smtp_host/port/user/password/from_email/from_name`.
+- Edge function `send-email` already validates admin role server-side, reads SMTP config from `app_settings`, sends via `denomailer`, and logs to `audit_logs`. Verify_jwt=false with manual JWT check.
+- Notifications module is live: `notifications`, `notification_rules` tables, `triggerNotification()` helper, rules support `channels: ["in_app","email","push"]` (email channel is currently ignored).
+- No third-party email provider — pure SMTP, white-label.
 
-Email/Push : structure prête mais pas d'envoi réel dans cette itération (canal `in_app` opérationnel, autres flags persistés mais ignorés).
+## What changes
 
----
+### 1. Database (1 migration)
+Add app_settings rows (idempotent upsert via insert-tool, not migration):
+- `smtp_secure` (tls|ssl|none, default "tls")
+- `support_email`
+- `notif_email_enabled` (default "true")
+- `notif_rappel_jours_defaut` (default "3")
 
-### 1. Schéma DB (migration)
+New table `notification_email_log`:
+- `id, notification_id (nullable fk), recipient_email, recipient_user_id, subject, status (queued|sent|failed|skipped), error, sent_at, created_at, dedup_key`
+- RLS: admin + responsable_si full access; users select own (`recipient_user_id = auth.uid()`)
+- Index on `dedup_key`, `created_at desc`
 
-**Enum** `notification_severity`: info, low, medium, high, critical
-**Enum** `notification_status`: unread, read, archived
-**Enum** `notification_frequency`: immediate, grouped_hourly, grouped_daily
+New table `notification_deadline_tracking` (entities to watch for échéance reminders):
+- Reuses existing entities. No new table needed — cron will scan `tickets.echeance`, `preventif.next_due_date`, `ordres_fabrication.date_fin_prevue` and dedupe via `notification_email_log.dedup_key`.
 
-**Table `notifications`** (tous les champs demandés) + colonnes techniques :
-- `deduplication_key text` (indexée), `group_key text`, `rule_id uuid` (nullable)
-- `is_critical boolean default false` (notifications non masquables par préférences)
-- Contrainte logique : au moins un de `recipient_user_id` ou `recipient_role` non null
-- Indexes : `created_at desc`, `recipient_user_id`, `recipient_role`, `module`, `notification_type`, `severity`, `status`, `(entity_type, entity_id)`, `deduplication_key`
-- RLS :
-  - SELECT : `recipient_user_id = auth.uid()` OU (`recipient_role` ∈ rôles utilisateur via `has_role`) OU `has_role(admin/responsable_si)` OU `check_permission(uid,'notifications','view_all')`
-  - UPDATE (mark read/archive) : seul le destinataire ou admin
-  - INSERT : authenticated (les déclencheurs côté client tournent sous l'utilisateur acteur)
-  - DELETE : admin uniquement
+Trigger `notify_email_dispatch` on `notifications` AFTER INSERT:
+- If parent rule's `channels` jsonb contains `"email"` AND `notif_email_enabled = true`, call `pg_net.http_post` to `send-notification-email` edge function with notification id. (Async, non-blocking.)
+- Falls back gracefully if pg_net unavailable — front also invokes after `triggerNotification`.
 
-**Table `notification_rules`** : tous les champs demandés. RLS : SELECT authenticated, ALL réservé `admin`, `responsable_si`, et selon module à `resp_maintenance`/`resp_production` (fonction `can_manage_notification_rule(uid, module)`).
+### 2. Edge functions (4 total)
 
-**Table `user_notification_preferences`** : tous les champs demandés. RLS : un user gère ses propres prefs ; admin peut lire toutes.
+**Reuse `send-email`** as low-level SMTP transport — keep as-is.
 
-**Module permission `notifications`** ajouté dans `role_permissions` avec mapping :
-- view → `notifications.view_own`
-- create → `notifications.configure_rules`
-- edit → `notifications.manage_preferences` (toutes prefs) / `mark_read` / `archive`
-- delete → `notifications.view_all`
+**New `send-notification-email`** (`verify_jwt=false`, manual auth via service-role internal token OR admin JWT):
+- Body: `{ notification_id }` OR `{ recipient_email, subject, html, text, dedup_key }`.
+- Reads `notif_email_enabled` — if false, inserts log row `status=skipped` and returns 200.
+- If `notification_id`: loads notification, resolves recipient(s) — `recipient_user_id` → auth.users email; `recipient_role` → fan-out to all users having that role via `user_roles` + `auth.admin.listUsers()` cache.
+- Renders HTML template inline (header with `app_name` from settings, body with title+message+action_url, footer with `support_email`).
+- Calls SMTP directly via denomailer (same code pattern as existing `send-email`, factored into shared helper at top of file — no `_shared` import).
+- Inserts `notification_email_log` row per recipient with status.
+- Dedup: if same `dedup_key` exists with status=sent in last 24h → skip.
 
-**Fonction RPC `get_notifications_for_user(_uid)`** SECURITY DEFINER : renvoie notifications dont le user est destinataire direct ou via rôle, en respectant les préférences `muted` / `minimum_severity` (sauf `is_critical=true`).
+**New `send-test-email`** (`verify_jwt=false`, admin-only):
+- Body: `{ to }`. Sends fixed-content test email through SMTP. Returns precise SMTP error. Logs to `audit_logs`.
+- Effectively a thin wrapper — could be merged into existing `send-email` with `is_test=true`, but kept separate for clarity per user spec.
 
-**Données par défaut** : 10 règles seed (PDR rupture, PDR critique, machine_down, ticket_created, preventive_late, of_completed, production_stop_created ≥30min, consumption_correction, user_role_changed, audit_critical_event) — toutes actives, canal `in_app`.
+**New `check-deadlines`** (`verify_jwt=false`, validates internal cron secret header `x-cron-secret` against `app_settings.cron_secret`):
+- Reads `notif_rappel_jours_defaut` (N).
+- Scans:
+  - `tickets` where `status NOT IN ('resolu','ferme')` and `echeance` between today and today+N (rappel) or `echeance < today` (retard).
+  - `preventif` plans where `next_due_date` between today and today+N or overdue.
+  - `ordres_fabrication` where `date_fin_prevue` between today and today+N and not closed.
+- For each match → calls `triggerNotification` server-side via direct `notifications` insert + invokes `send-notification-email` with dedup_key `deadline:{entity_type}:{id}:{YYYY-MM-DD}`.
+- Returns summary `{scanned, sent, skipped}`.
 
----
+**`admin-save-smtp-password`**: NOT needed as a separate function — existing `app_settings` admin RLS already protects writes from authenticated admins, and the `is_secret=true` flag prevents the value from being exposed in the listing UI. Will document this in the admin page (admin client writes directly via supabase-js with their JWT — RLS gates it).
 
-### 2. Logique applicative
+If user insists on edge-function path for symmetry: trivial wrapper that upserts via service role. **Decision: skip it; use direct upsert under admin RLS** (simpler, equally secure, matches existing pattern in project).
 
-**`src/lib/notifications.ts`** :
-- Types `NotificationType`, `NotificationModule`, `NotificationSeverity`, `NotificationChannel`
-- `triggerNotification(event)` :
-  1. Charge les `notification_rules` actives pour `module` + `event_type`
-  2. Évalue les `conditions` JSONB (moteur simple : opérateurs `eq`, `lte`, `gte`, `in`, `gt`, `lt` sur champs de `event.data`)
-  3. Calcule destinataires : `target_roles` ∪ `target_users` − `excluded_users`
-  4. Calcule `deduplication_key` (template par event_type, ex `pdr_stock_out:{pdr_id}`)
-  5. Anti-doublon : skip si une notification avec même `deduplication_key` existe dans la fenêtre :
-     - immediate → 5 min
-     - grouped_hourly → 1 h (incrémente compteur dans `metadata.count`)
-     - grouped_daily → 24 h
-  6. Insert N lignes (une par destinataire user/role) avec `action_url` calculée (helper `buildEntityUrl`)
-  7. Marque `is_critical=true` si severity = critical et règle marquée critique
-- `markRead(id)`, `markAllRead()`, `archive(id)`, `getUnreadCount()`
-- Hook `useNotifications({ filters, page })` (React Query, refetch 30s)
-- Hook `useUnreadNotifications()` pour la cloche (limit 10, refetch 30s, realtime via Supabase channel sur insert)
-
-**Helper conditions** : moteur déterministe, pas de `eval`. Schéma JSON :
-```json
-{ "all": [ {"field":"duration_minutes","op":"gte","value":30} ] }
+### 3. config.toml
+Add blocks for the 3 new functions:
+```toml
+[functions.send-notification-email]
+verify_jwt = false
+[functions.send-test-email]
+verify_jwt = false
+[functions.check-deadlines]
+verify_jwt = false
 ```
 
-**Realtime** : `ALTER PUBLICATION supabase_realtime ADD TABLE notifications;` pour push instantané dans la cloche.
+### 4. Cron job (pg_cron)
+Schedule `check-deadlines` daily at 07:00 Africa/Algiers (=06:00 UTC) via `cron.schedule` calling `net.http_post` with the `x-cron-secret` header. Inserted via insert-tool so the secret stays out of source.
 
----
+### 5. Frontend
 
-### 3. Déclencheurs métier (Phase 1)
+**New page `src/pages/parametres/SmtpConfigAdmin.tsx`** route `/parametres/smtp` (admin only):
+- Section "Serveur SMTP": host, port, user, password (placeholder `••••••••` if `is_secret` row exists & non-empty; only sent on change), from_name, from_email, secure (tls/ssl/none) → save via admin upsert on `app_settings`.
+- Section "Test": email input + button → invokes `send-test-email`. Toast with detailed error.
+- Section "Notifications email": switches `notif_email_enabled`, numeric `notif_rappel_jours_defaut` (1-30), `support_email`.
 
-Ajout d'appels `triggerNotification(...)` après mutations réussies, en parallèle des `logAudit` existants :
+**Update `RuleEditorDialog`**: existing `channels` checkboxes (in_app/email/push) — ensure email checkbox is enabled and labeled "Email (SMTP)".
 
-| Module | Mutation | event_type | Sévérité |
-|---|---|---|---|
-| pdr_stock | mouvement provoquant `stock_actuel <= 0` | `pdr_stock_out` | critical |
-| pdr_stock | mouvement → `stock_actuel <= stock_min` | `pdr_stock_critical` | high |
-| machines | UPDATE statut → `en_panne` (machine critique) | `machine_down` | critical |
-| tickets | INSERT | `ticket_created` | medium |
-| tickets | UPDATE statut → résolu/fermé | `ticket_resolved`/`ticket_closed` | info |
-| preventif | (cron logique côté query) plan échu | `preventive_late` | high |
-| of | INSERT/UPDATE statut→termine | `of_created`/`of_completed` | info |
-| arrets | INSERT avec `duration_minutes ≥ 30` | `production_stop_created` | high |
-| consommations | correction | `consumption_correction` | medium |
-| users/roles | ajout/suppression rôle | `user_role_changed` | critical |
-| audit | logAudit avec severity=critical | `audit_critical_event` | critical |
+**Update `src/lib/notifications.ts` `triggerNotification`**: after inserting in-app rows, if any matching rule has `email` channel + `notif_email_enabled=true`, fire-and-forget `supabase.functions.invoke('send-notification-email', { body: { notification_id } })` for each inserted row. Errors swallowed (already in try/catch).
 
-`preventive_late` : pas de cron (hors périmètre Lovable) → vérifié à la demande dans un hook `usePreventiveLateChecker` exécuté au chargement du dashboard maintenance et de `/notifications`, avec dédup quotidienne par `plan_id`.
+**Add to `Parametres.tsx` / Apps**: a "Configuration SMTP & Emails" tile (admin only, icon `Mail`).
 
----
+### 6. Audit
+Each test/save action writes to `audit_logs` (already done in `send-email`; replicated in new functions).
 
-### 4. UI
+## Out of scope / clarifications
+- No bulk marketing — emails strictly transactional, triggered per-notification.
+- No HTML editor — fixed branded template using `app_name` + accent color.
+- Reuse current `denomailer` (no Resend/SendGrid). 100% self-hosted.
+- `admin-save-smtp-password` deliberately NOT created — direct admin-RLS upsert is equivalent and consistent with the codebase. If you want it strictly per spec, say so and I'll add it.
 
-**Cloche `NotificationBell`** (remplace le bouton actuel ligne 287-290 de `AppTopBar.tsx`) :
-- Badge nombre non lus (rouge si > 0, animate-pulse si critical)
-- Popover (Radix) ouvrant la liste des 10 dernières non lues
-- Chaque item : icône module, titre, message court, badge sévérité, timestamp relatif
-- Click item → mark read + navigate(`action_url`)
-- Footer : « Tout marquer comme lu » + « Voir tout » → `/notifications`
-
-**Page `/notifications`** (`src/pages/NotificationsPage.tsx`) :
-- 8 KPI cards (Total, Non lues, Critiques, Aujourd'hui, PDR, Maintenance, Production, Sécurité)
-- Filtres avancés (période, statut, module, type, sévérité, destinataire, rôle, entité, recherche texte) + bouton Réinitialiser (icône `RotateCcw` selon convention UI)
-- Table paginée serveur (20/page) avec skeleton loader, badges colorés, actions inline (mark read, archiver, ouvrir)
-- Sheet de détail (réutilise pattern `AuditDetailSheet`) : tous les champs + bouton « Ouvrir l'entité liée » via `useNavWithFrom`
-- Bouton « Configurer les règles » visible si `check_permission(uid,'notifications','create')`
-
-**Page `/parametres/notifications`** (`src/pages/parametres/NotificationRulesAdmin.tsx`) :
-- Liste des règles avec toggle actif/inactif inline
-- Dialog Create/Edit : nom, description, module (select), event_type (select dépendant du module), sévérité, rôles cibles (multi), users cibles/exclus (multi via `usersAdminQuery`), canaux (checkboxes), fréquence (radio), quiet hours (time inputs), conditions (éditeur JSON simple avec validation + preview lisible)
-- Actions create/update/delete/toggle → `logAudit` module=`notifications` action_type=`permission_change`/`update`
-
-**Carte « Notifications » ajoutée dans `Parametres.tsx`** (groupe « Sécurité & Accès »).
-
-**Préférences utilisateur** : section ajoutée dans le menu utilisateur `AppTopBar` (entrée « Mes notifications » → Sheet rapide pour toggle muted par module + minimum_severity).
-
----
-
-### 5. Intégration Audit
-
-Chaque action sur règles ou notification critique appelle `logAudit` :
-- `notification_rule_create/update/delete/toggle` → module=`notifications`, severity=`medium`
-- Archivage notification critique → `delete` + severity=`high`
-
-Dans `logAudit`, après insert si `severity=critical` → `triggerNotification({ event_type: 'audit_critical_event', ... })` (sans récursion, on n'audit pas l'envoi de la notification d'audit).
-
----
-
-### 6. Fichiers
-
-**Migrations** :
-- `supabase/migrations/{ts}_notifications_schema.sql` (tables, enums, indexes, RLS, fonction RPC, realtime publication)
-- `supabase/migrations/{ts}_notifications_default_rules.sql` (10 règles seed via INSERT)
-
-**Code créé** :
-- `src/lib/notifications.ts` (logique trigger, conditions engine, dédup, helpers URL)
-- `src/hooks/useNotifications.ts`, `src/hooks/useUnreadNotifications.ts`
-- `src/components/notifications/NotificationBell.tsx`
-- `src/components/notifications/NotificationItem.tsx`
-- `src/components/notifications/NotificationDetailSheet.tsx`
-- `src/components/notifications/NotificationFilters.tsx`
-- `src/components/notifications/NotificationKpiCards.tsx`
-- `src/components/notifications/UserPreferencesSheet.tsx`
-- `src/pages/NotificationsPage.tsx`
-- `src/pages/parametres/NotificationRulesAdmin.tsx`
-- `src/components/notifications/RuleEditorDialog.tsx`
-- `src/components/notifications/ConditionsEditor.tsx`
-
-**Code modifié** :
-- `src/App.tsx` : routes `/notifications` et `/parametres/notifications`
-- `src/components/gmao/AppTopBar.tsx` : remplacement bouton cloche + entrée menu user
-- `src/pages/Parametres.tsx` : carte « Notifications »
-- `src/lib/audit.ts` : hook automatique `audit_critical_event`
-- Pages CRUD critiques (Phase 1) : injection `triggerNotification` aux endroits ciblés (TicketDetail, PdrDetail mouvements stock, MachineForm/Detail status_change, OfDetail, StopsPage, ConsumptionPage, UsersAdmin role change)
-
-**Mémoires à mettre à jour après build** :
-- Nouvelle fiche `mem://features/notifications-system`
-- Mise à jour `mem://auth/rbac-permissions` (module `notifications` + 6 actions)
-- Mise à jour `mem://tech/architecture-security` (référence triggerNotification)
-
----
-
-### Hors périmètre (à demander explicitement plus tard)
-
-- Envoi email réel (utilisera `supabase/functions/send-email` existant)
-- Push notifications navigateur (Service Worker + VAPID)
-- Cron pour préventifs en retard (vérification déclenchée à la demande pour le moment)
-- Digest groupé envoyé à heure fixe (groupage stocké, mais consultable uniquement in-app)
+## Files touched
+- `supabase/migrations/<ts>_email_notifications.sql` (new tables, trigger, RLS)
+- `supabase/functions/send-notification-email/index.ts` (new)
+- `supabase/functions/send-test-email/index.ts` (new)
+- `supabase/functions/check-deadlines/index.ts` (new)
+- `supabase/config.toml` (3 new function blocks)
+- `src/pages/parametres/SmtpConfigAdmin.tsx` (new)
+- `src/App.tsx` (route)
+- `src/pages/Parametres.tsx` (tile)
+- `src/lib/notifications.ts` (email dispatch hook)
+- Insert-tool calls: seed new app_settings keys, schedule pg_cron.

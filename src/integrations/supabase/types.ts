@@ -936,6 +936,45 @@ export type Database = {
           },
         ]
       }
+      notification_email_log: {
+        Row: {
+          created_at: string
+          dedup_key: string | null
+          error: string | null
+          id: string
+          notification_id: string | null
+          recipient_email: string
+          recipient_user_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          dedup_key?: string | null
+          error?: string | null
+          id?: string
+          notification_id?: string | null
+          recipient_email: string
+          recipient_user_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+        }
+        Update: {
+          created_at?: string
+          dedup_key?: string | null
+          error?: string | null
+          id?: string
+          notification_id?: string | null
+          recipient_email?: string
+          recipient_user_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       notification_rules: {
         Row: {
           channels: Json

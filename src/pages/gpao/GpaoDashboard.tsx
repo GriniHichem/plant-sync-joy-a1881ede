@@ -121,11 +121,11 @@ export default function GpaoDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard GPAO</h1>
-          <p className="text-muted-foreground text-sm">Vue d'ensemble de la production</p>
+          <h1 className="text-xl md:text-2xl font-bold">Dashboard GPAO</h1>
+          <p className="text-muted-foreground text-xs md:text-sm">Vue d'ensemble de la production</p>
         </div>
         <DateRangeFilter {...df} />
       </div>
@@ -179,7 +179,7 @@ export default function GpaoDashboard() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -240,7 +240,7 @@ export default function GpaoDashboard() {
       </div>
 
       {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">

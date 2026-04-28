@@ -83,11 +83,11 @@ export default function Dashboard() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard GMAO</h1>
-          <p className="text-muted-foreground text-sm">Vue d'ensemble de la maintenance</p>
+          <h1 className="text-xl md:text-2xl font-bold">Dashboard GMAO</h1>
+          <p className="text-muted-foreground text-xs md:text-sm">Vue d'ensemble de la maintenance</p>
         </div>
         <DateRangeFilter {...df} />
       </div>
@@ -120,7 +120,7 @@ export default function Dashboard() {
       </div>
 
       {/* Row 3: Lists */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Tickets récents */}
         <Card>
           <CardHeader className="pb-3">

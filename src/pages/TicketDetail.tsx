@@ -481,6 +481,65 @@ export default function TicketDetail() {
         </StickyActionBar>
       )}
 
+      {canHandover && canEdit("tickets") && (
+        <Card className="border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-1.5">
+              <ArrowRightLeft className="h-4 w-4 text-amber-600" />
+              Passation / Libération
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Fin de shift ou blocage : transférez le ticket à un collègue ou libérez-le pour qu'un autre maintenancier puisse le reprendre.
+            </p>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Motif *</Label>
+              <Textarea
+                value={handoverMotif}
+                onChange={(e) => setHandoverMotif(e.target.value)}
+                placeholder="Fin de shift, attente pièce, expertise requise..."
+                className={isMobile ? "min-h-[60px]" : "min-h-[60px]"}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Transférer à (optionnel)</Label>
+              <Select value={transferTargetId} onValueChange={setTransferTargetId}>
+                <SelectTrigger className="h-10"><SelectValue placeholder="Choisir un maintenancier" /></SelectTrigger>
+                <SelectContent>
+                  {maintenanciers
+                    .filter((m) => m.user_id !== ticket.assignee_id)
+                    .map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
+              <Button
+                onClick={handleTransfer}
+                disabled={!transferTargetId || !handoverMotif.trim() || handoverBusy}
+                className="h-11 flex-1"
+                variant="default"
+              >
+                <ArrowRightLeft className="h-4 w-4 mr-2" />
+                Transférer
+              </Button>
+              <Button
+                onClick={handleRelease}
+                disabled={!handoverMotif.trim() || handoverBusy}
+                className="h-11 flex-1"
+                variant="outline"
+              >
+                <UserMinus className="h-4 w-4 mr-2" />
+                Libérer le ticket
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {canResolve && canEdit("tickets") && (
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Résolution</CardTitle></CardHeader>

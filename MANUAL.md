@@ -1054,6 +1054,8 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 - `/parametres/pannes`, `/parametres/document-categories`
 - `/parametres/lignes`, `/parametres/shifts`
 - `/parametres/general`, `/parametres/images`
+- `/parametres/notifications`, `/parametres/smtp`
+- `/notifications` (boîte de réception utilisateur)
 
 ### 12.2 Tables principales (BDD)
 

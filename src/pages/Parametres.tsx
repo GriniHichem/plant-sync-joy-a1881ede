@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock, Cog, Shield, Settings2, Database, Bell, Mail } from "lucide-react";
+import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock, Cog, Shield, Settings2, Database, Bell, Mail, CheckSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Section {
@@ -25,6 +25,7 @@ const groups: SectionGroup[] = [
       { title: "Permissions documents", description: "Droits d'accès aux documents par rôle et entité", icon: Lock, url: "/parametres/document-permissions" },
       { title: "Permissions PDR & Stock", description: "Fournisseurs, entrées, sorties, corrections, inventaires", icon: Package, url: "/parametres/pdr-stock-permissions" },
       { title: "Notifications", description: "Règles d'alertes par rôle, module et événement", icon: Bell, url: "/parametres/notifications" },
+      { title: "Validations", description: "Règles de validation a posteriori et bloquantes", icon: CheckSquare, url: "/parametres/validations" },
     ],
   },
   {

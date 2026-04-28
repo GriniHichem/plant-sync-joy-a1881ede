@@ -204,6 +204,8 @@ export type Database = {
           quantite: number
           shift_id: string | null
           unite: string
+          validation_request_id: string | null
+          validation_status: string | null
         }
         Insert: {
           article_id: string
@@ -215,6 +217,8 @@ export type Database = {
           quantite?: number
           shift_id?: string | null
           unite?: string
+          validation_request_id?: string | null
+          validation_status?: string | null
         }
         Update: {
           article_id?: string
@@ -226,6 +230,8 @@ export type Database = {
           quantite?: number
           shift_id?: string | null
           unite?: string
+          validation_request_id?: string | null
+          validation_status?: string | null
         }
         Relationships: [
           {
@@ -613,6 +619,8 @@ export type Database = {
           technicien_id: string
           ticket_id: string
           updated_at: string
+          validation_request_id: string | null
+          validation_status: string | null
         }
         Insert: {
           created_at?: string
@@ -625,6 +633,8 @@ export type Database = {
           technicien_id: string
           ticket_id: string
           updated_at?: string
+          validation_request_id?: string | null
+          validation_status?: string | null
         }
         Update: {
           created_at?: string
@@ -637,6 +647,8 @@ export type Database = {
           technicien_id?: string
           ticket_id?: string
           updated_at?: string
+          validation_request_id?: string | null
+          validation_status?: string | null
         }
         Relationships: [
           {
@@ -1716,6 +1728,7 @@ export type Database = {
       }
       pdr_stock_movements: {
         Row: {
+          applied: boolean
           created_at: string
           id: string
           modified_at: string | null
@@ -1733,8 +1746,11 @@ export type Database = {
           type: Database["public"]["Enums"]["mouvement_type"]
           updated_at: string
           user_id: string | null
+          validation_request_id: string | null
+          validation_status: string | null
         }
         Insert: {
+          applied?: boolean
           created_at?: string
           id?: string
           modified_at?: string | null
@@ -1752,8 +1768,11 @@ export type Database = {
           type: Database["public"]["Enums"]["mouvement_type"]
           updated_at?: string
           user_id?: string | null
+          validation_request_id?: string | null
+          validation_status?: string | null
         }
         Update: {
+          applied?: boolean
           created_at?: string
           id?: string
           modified_at?: string | null
@@ -1771,6 +1790,8 @@ export type Database = {
           type?: Database["public"]["Enums"]["mouvement_type"]
           updated_at?: string
           user_id?: string | null
+          validation_request_id?: string | null
+          validation_status?: string | null
         }
         Relationships: [
           {
@@ -2852,6 +2873,8 @@ export type Database = {
           temps_arret_minutes: number | null
           temps_intervention_minutes: number | null
           updated_at: string
+          validation_request_id: string | null
+          validation_status: string | null
         }
         Insert: {
           assignee_id?: string | null
@@ -2879,6 +2902,8 @@ export type Database = {
           temps_arret_minutes?: number | null
           temps_intervention_minutes?: number | null
           updated_at?: string
+          validation_request_id?: string | null
+          validation_status?: string | null
         }
         Update: {
           assignee_id?: string | null
@@ -2906,6 +2931,8 @@ export type Database = {
           temps_arret_minutes?: number | null
           temps_intervention_minutes?: number | null
           updated_at?: string
+          validation_request_id?: string | null
+          validation_status?: string | null
         }
         Relationships: [
           {
@@ -3022,6 +3049,251 @@ export type Database = {
         }
         Relationships: []
       }
+      validation_permissions: {
+        Row: {
+          approve: boolean
+          cancel: boolean
+          configure_rules: boolean
+          created_at: string
+          id: string
+          reject: boolean
+          role: string
+          submit: boolean
+          updated_at: string
+          view_all: boolean
+          view_own: boolean
+          view_technical_details: boolean
+        }
+        Insert: {
+          approve?: boolean
+          cancel?: boolean
+          configure_rules?: boolean
+          created_at?: string
+          id?: string
+          reject?: boolean
+          role: string
+          submit?: boolean
+          updated_at?: string
+          view_all?: boolean
+          view_own?: boolean
+          view_technical_details?: boolean
+        }
+        Update: {
+          approve?: boolean
+          cancel?: boolean
+          configure_rules?: boolean
+          created_at?: string
+          id?: string
+          reject?: boolean
+          role?: string
+          submit?: boolean
+          updated_at?: string
+          view_all?: boolean
+          view_own?: boolean
+          view_technical_details?: boolean
+        }
+        Relationships: []
+      }
+      validation_requests: {
+        Row: {
+          action_url: string | null
+          applied_at: string | null
+          archived_at: string | null
+          assigned_validator_role: string | null
+          assigned_validator_user_id: string | null
+          cancelled_at: string | null
+          changed_fields: Json | null
+          created_at: string
+          description: string | null
+          enforcement: Database["public"]["Enums"]["validation_enforcement"]
+          entity_code: string | null
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string | null
+          id: string
+          is_blocking: boolean
+          justification: string | null
+          metadata: Json | null
+          module: string
+          old_values: Json | null
+          priority: Database["public"]["Enums"]["validation_priority"]
+          proposed_values: Json | null
+          rejected_at: string | null
+          rejected_by_user_id: string | null
+          rejection_reason: string | null
+          request_type: string
+          requested_action: string
+          rule_id: string | null
+          source: string
+          status: Database["public"]["Enums"]["validation_status_enum"]
+          submitted_at: string | null
+          submitted_by_email: string | null
+          submitted_by_name: string | null
+          submitted_by_user_id: string | null
+          target_record_id: string | null
+          title: string
+          updated_at: string
+          validated_at: string | null
+          validated_by_user_id: string | null
+          validation_comment: string | null
+        }
+        Insert: {
+          action_url?: string | null
+          applied_at?: string | null
+          archived_at?: string | null
+          assigned_validator_role?: string | null
+          assigned_validator_user_id?: string | null
+          cancelled_at?: string | null
+          changed_fields?: Json | null
+          created_at?: string
+          description?: string | null
+          enforcement?: Database["public"]["Enums"]["validation_enforcement"]
+          entity_code?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string | null
+          id?: string
+          is_blocking?: boolean
+          justification?: string | null
+          metadata?: Json | null
+          module: string
+          old_values?: Json | null
+          priority?: Database["public"]["Enums"]["validation_priority"]
+          proposed_values?: Json | null
+          rejected_at?: string | null
+          rejected_by_user_id?: string | null
+          rejection_reason?: string | null
+          request_type: string
+          requested_action: string
+          rule_id?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["validation_status_enum"]
+          submitted_at?: string | null
+          submitted_by_email?: string | null
+          submitted_by_name?: string | null
+          submitted_by_user_id?: string | null
+          target_record_id?: string | null
+          title: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by_user_id?: string | null
+          validation_comment?: string | null
+        }
+        Update: {
+          action_url?: string | null
+          applied_at?: string | null
+          archived_at?: string | null
+          assigned_validator_role?: string | null
+          assigned_validator_user_id?: string | null
+          cancelled_at?: string | null
+          changed_fields?: Json | null
+          created_at?: string
+          description?: string | null
+          enforcement?: Database["public"]["Enums"]["validation_enforcement"]
+          entity_code?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string | null
+          id?: string
+          is_blocking?: boolean
+          justification?: string | null
+          metadata?: Json | null
+          module?: string
+          old_values?: Json | null
+          priority?: Database["public"]["Enums"]["validation_priority"]
+          proposed_values?: Json | null
+          rejected_at?: string | null
+          rejected_by_user_id?: string | null
+          rejection_reason?: string | null
+          request_type?: string
+          requested_action?: string
+          rule_id?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["validation_status_enum"]
+          submitted_at?: string | null
+          submitted_by_email?: string | null
+          submitted_by_name?: string | null
+          submitted_by_user_id?: string | null
+          target_record_id?: string | null
+          title?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by_user_id?: string | null
+          validation_comment?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_requests_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "validation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validation_rules: {
+        Row: {
+          action_type: string
+          auto_approve_if_low_risk: boolean
+          conditions: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enforcement: Database["public"]["Enums"]["validation_enforcement"]
+          entity_type: string | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          module: string
+          name: string
+          priority: Database["public"]["Enums"]["validation_priority"]
+          updated_at: string
+          updated_by: string | null
+          validator_roles: Json
+          validator_users: Json | null
+        }
+        Insert: {
+          action_type: string
+          auto_approve_if_low_risk?: boolean
+          conditions?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enforcement?: Database["public"]["Enums"]["validation_enforcement"]
+          entity_type?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          module: string
+          name: string
+          priority?: Database["public"]["Enums"]["validation_priority"]
+          updated_at?: string
+          updated_by?: string | null
+          validator_roles?: Json
+          validator_users?: Json | null
+        }
+        Update: {
+          action_type?: string
+          auto_approve_if_low_risk?: boolean
+          conditions?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enforcement?: Database["public"]["Enums"]["validation_enforcement"]
+          entity_type?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          module?: string
+          name?: string
+          priority?: Database["public"]["Enums"]["validation_priority"]
+          updated_at?: string
+          updated_by?: string | null
+          validator_roles?: Json
+          validator_users?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -3029,6 +3301,14 @@ export type Database = {
     Functions: {
       can_manage_notification_rule: {
         Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
+      can_manage_validation_rule: {
+        Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
+      can_validate_request: {
+        Args: { _request_id: string; _user_id: string }
         Returns: boolean
       }
       check_document_permission: {
@@ -3144,6 +3424,17 @@ export type Database = {
         | "en_cours"
         | "resolu"
         | "cloture"
+      validation_enforcement: "post_hoc" | "blocking"
+      validation_priority: "low" | "medium" | "high" | "critical"
+      validation_status_enum:
+        | "draft"
+        | "submitted"
+        | "pending_post_hoc"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+        | "applied"
+        | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3365,6 +3656,18 @@ export const Constants = {
         "en_cours",
         "resolu",
         "cloture",
+      ],
+      validation_enforcement: ["post_hoc", "blocking"],
+      validation_priority: ["low", "medium", "high", "critical"],
+      validation_status_enum: [
+        "draft",
+        "submitted",
+        "pending_post_hoc",
+        "approved",
+        "rejected",
+        "cancelled",
+        "applied",
+        "archived",
       ],
     },
   },

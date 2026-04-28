@@ -154,6 +154,22 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="px-2">
               <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive("/validations")} tooltip="Validations">
+                  <NavLink
+                    to="/validations"
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                      "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/60",
+                      isActive("/validations") && "sidebar-active-glow text-sidebar-primary-foreground"
+                    )}
+                    activeClassName=""
+                  >
+                    <IconPreventive size={18} className="shrink-0" />
+                    {!collapsed && <span>Validations</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/parametres")} tooltip="Paramètres">
                   <NavLink
                     to="/parametres"

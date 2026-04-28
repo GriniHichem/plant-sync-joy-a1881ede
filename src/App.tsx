@@ -62,6 +62,8 @@ import AuditPage from "@/pages/AuditPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import NotificationRulesAdmin from "@/pages/parametres/NotificationRulesAdmin";
 import SmtpConfigAdmin from "@/pages/parametres/SmtpConfigAdmin";
+import ValidationsPage from "@/pages/ValidationsPage";
+import ValidationRulesAdmin from "@/pages/parametres/ValidationRulesAdmin";
 
 const queryClient = new QueryClient();
 
@@ -158,6 +160,8 @@ const App = () => (
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/parametres/notifications" element={<NotificationRulesAdmin />} />
               <Route path="/parametres/smtp" element={<SmtpConfigAdmin />} />
+              <Route path="/validations" element={<ValidationsPage />} />
+              <Route path="/parametres/validations" element={<ValidationRulesAdmin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

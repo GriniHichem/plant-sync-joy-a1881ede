@@ -320,6 +320,19 @@ export default function TicketDetail() {
           {ticket.production_lines?.designation && <InfoItem label="Ligne" value={`${ticket.production_lines.code} — ${ticket.production_lines.designation}`} />}
           <InfoItem label="Déclaration" value={fmtDate(ticket.heure_declaration)} icon={<Clock className="h-3 w-3" />} mono />
           {ticket.heure_prise_en_charge && <InfoItem label="Prise en charge" value={fmtDate(ticket.heure_prise_en_charge)} icon={<User className="h-3 w-3" />} mono />}
+          {ticket.assignee_id && (
+            <div className="col-span-full">
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Pris en charge par</p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                <Badge variant="secondary" className="text-xs">{assigneeName || "—"} <span className="ml-1 opacity-70">(responsable)</span></Badge>
+                {collaborators.map((c) => (
+                  <Badge key={c.id} variant="outline" className="text-xs">
+                    {c.full_name} <span className="ml-1 opacity-70">({c.role_label === "co_intervenant" ? "co-intervenant" : "aide"})</span>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
           {ticket.heure_resolution && <InfoItem label="Résolution" value={fmtDate(ticket.heure_resolution)} icon={<Wrench className="h-3 w-3" />} mono />}
           {ticket.temps_arret_minutes != null && <InfoItem label="Temps d'arrêt" value={`${ticket.temps_arret_minutes} min`} highlight />}
           {ticket.temps_intervention_minutes != null && <InfoItem label="Temps intervention" value={`${ticket.temps_intervention_minutes} min`} mono />}

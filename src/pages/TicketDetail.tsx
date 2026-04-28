@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { checkValidationRequired, createValidationRequest } from "@/lib/validation";
 
 export default function TicketDetail() {
@@ -191,7 +192,7 @@ export default function TicketDetail() {
   const fmtDate = (d: string) => new Date(d).toLocaleString("fr-FR");
 
   return (
-    <div className={`space-y-4 ${isMobile ? "px-1" : "max-w-3xl"}`}>
+    <div className={`space-y-4 ${isMobile ? "pb-24" : "max-w-3xl"}`}>
       {/* Header */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={goBack} className="h-9 w-9 shrink-0">
@@ -231,11 +232,13 @@ export default function TicketDetail() {
         </CardContent>
       </Card>
 
-      {/* Actions */}
+      {/* Actions — sticky on mobile */}
       {canTakeCharge && canEdit("tickets") && (
-        <Button onClick={handleTakeCharge} className="w-full h-12">
-          <Wrench className="h-4 w-4 mr-2" /> Prendre en charge
-        </Button>
+        <StickyActionBar>
+          <Button onClick={handleTakeCharge} className="w-full h-12">
+            <Wrench className="h-4 w-4 mr-2" /> Prendre en charge
+          </Button>
+        </StickyActionBar>
       )}
 
       {canResolve && canEdit("tickets") && (
@@ -282,13 +285,17 @@ export default function TicketDetail() {
               )}
             </div>
 
-            <Button onClick={handleResolve} className="w-full h-12">Résoudre</Button>
+            <StickyActionBar>
+              <Button onClick={handleResolve} className="w-full h-12">Résoudre</Button>
+            </StickyActionBar>
           </CardContent>
         </Card>
       )}
 
       {canCloseTicket && (
-        <Button onClick={handleClose} variant="outline" className="w-full h-12">Clôturer le ticket</Button>
+        <StickyActionBar>
+          <Button onClick={handleClose} variant="outline" className="w-full h-12">Clôturer le ticket</Button>
+        </StickyActionBar>
       )}
 
       {/* Interventions */}

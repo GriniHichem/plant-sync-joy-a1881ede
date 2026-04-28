@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, User, Wrench, Factory, Package } from "lucide-react";
+import { ArrowLeft, Clock, User, Wrench, Factory, Package, Users, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -36,6 +36,13 @@ export default function TicketDetail() {
   const [newPdrId, setNewPdrId] = useState("");
   const [newPdrQte, setNewPdrQte] = useState("1");
 
+  // Co-intervenants
+  const [maintenanciers, setMaintenanciers] = useState<any[]>([]);
+  const [collaborators, setCollaborators] = useState<any[]>([]);
+  const [newCollabId, setNewCollabId] = useState("");
+  const [newCollabRole, setNewCollabRole] = useState<"aide" | "co_intervenant">("aide");
+  const [assigneeName, setAssigneeName] = useState<string>("");
+
   const loadTicket = async () => {
     if (!id) return;
     const { data } = await supabase
@@ -47,6 +54,14 @@ export default function TicketDetail() {
     if (data) {
       setCauseRacine(data.cause_racine || "");
       setSolution(data.solution || "");
+      // Resolve assignee name
+      if (data.assignee_id) {
+        const { data: prof } = await supabase
+          .from("profiles").select("first_name,last_name").eq("user_id", data.assignee_id).maybeSingle();
+        setAssigneeName(prof ? `${prof.first_name ?? ""} ${prof.last_name ?? ""}`.trim() : "");
+      } else {
+        setAssigneeName("");
+      }
     }
 
     const { data: intData } = await supabase
@@ -55,12 +70,80 @@ export default function TicketDetail() {
       .eq("ticket_id", id)
       .order("date_debut", { ascending: false });
     setInterventions(intData || []);
+
+    // Collaborators (active only)
+    const { data: collabs } = await supabase
+      .from("ticket_collaborators")
+      .select("id, user_id, role_label, added_at")
+      .eq("ticket_id", id)
+      .is("removed_at", null)
+      .order("added_at", { ascending: true });
+    if (collabs && collabs.length > 0) {
+      const userIds = collabs.map((c: any) => c.user_id);
+      const { data: profs } = await supabase
+        .from("profiles").select("user_id, first_name, last_name").in("user_id", userIds);
+      const profMap = new Map((profs || []).map((p: any) => [p.user_id, p]));
+      setCollaborators(collabs.map((c: any) => {
+        const p: any = profMap.get(c.user_id);
+        return { ...c, full_name: p ? `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() : "Utilisateur" };
+      }));
+    } else {
+      setCollaborators([]);
+    }
+  };
+
+  const loadMaintenanciers = async () => {
+    const { data: roles } = await supabase
+      .from("user_roles").select("user_id, role")
+      .in("role", ["maintenancier", "resp_maintenance"] as any);
+    const ids = Array.from(new Set((roles || []).map((r: any) => r.user_id)));
+    if (ids.length === 0) { setMaintenanciers([]); return; }
+    const { data: profs } = await supabase
+      .from("profiles").select("user_id, first_name, last_name").in("user_id", ids);
+    setMaintenanciers((profs || []).map((p: any) => ({
+      user_id: p.user_id,
+      full_name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "Utilisateur",
+    })));
   };
 
   useEffect(() => {
     loadTicket();
+    loadMaintenanciers();
     supabase.from("pdr").select("id, reference, designation, stock_actuel").eq("is_active", true).order("reference").then(({ data }) => setPdrList(data || []));
   }, [id]);
+
+  const addCollaborator = async () => {
+    if (!newCollabId || !id) return;
+    const { error } = await supabase.from("ticket_collaborators").insert({
+      ticket_id: id, user_id: newCollabId, role_label: newCollabRole, added_by: user?.id,
+    });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Collaborateur ajouté" });
+    setNewCollabId("");
+    setNewCollabRole("aide");
+    loadTicket();
+  };
+
+  const removeCollaborator = async (collabId: string) => {
+    const { error } = await supabase.from("ticket_collaborators")
+      .update({ removed_at: new Date().toISOString(), removed_by: user?.id })
+      .eq("id", collabId);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    loadTicket();
+  };
+
+  const toggleCollabRole = async (collabId: string, current: string) => {
+    const next = current === "aide" ? "co_intervenant" : "aide";
+    await supabase.from("ticket_collaborators").update({ role_label: next }).eq("id", collabId);
+    loadTicket();
+  };
+
 
   const handleTakeCharge = async () => {
     const now = new Date().toISOString();
@@ -170,6 +253,19 @@ export default function TicketDetail() {
           }
         }
       }
+      // Insert one "Collaboration" intervention per active collaborator
+      if (collaborators.length > 0) {
+        await supabase.from("interventions").insert(
+          collaborators.map((c) => ({
+            ticket_id: id!,
+            technicien_id: c.user_id,
+            description: `Collaboration (${c.role_label === "co_intervenant" ? "co-intervenant" : "aide"})`,
+            statut: "terminee" as any,
+            date_debut: ticket?.heure_prise_en_charge || now,
+            date_fin: now,
+          }))
+        );
+      }
     }
     toast({ title: "Ticket résolu" });
     setSelectedPdr([]);
@@ -224,6 +320,19 @@ export default function TicketDetail() {
           {ticket.production_lines?.designation && <InfoItem label="Ligne" value={`${ticket.production_lines.code} — ${ticket.production_lines.designation}`} />}
           <InfoItem label="Déclaration" value={fmtDate(ticket.heure_declaration)} icon={<Clock className="h-3 w-3" />} mono />
           {ticket.heure_prise_en_charge && <InfoItem label="Prise en charge" value={fmtDate(ticket.heure_prise_en_charge)} icon={<User className="h-3 w-3" />} mono />}
+          {ticket.assignee_id && (
+            <div className="col-span-full">
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Pris en charge par</p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                <Badge variant="secondary" className="text-xs">{assigneeName || "—"} <span className="ml-1 opacity-70">(responsable)</span></Badge>
+                {collaborators.map((c) => (
+                  <Badge key={c.id} variant="outline" className="text-xs">
+                    {c.full_name} <span className="ml-1 opacity-70">({c.role_label === "co_intervenant" ? "co-intervenant" : "aide"})</span>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
           {ticket.heure_resolution && <InfoItem label="Résolution" value={fmtDate(ticket.heure_resolution)} icon={<Wrench className="h-3 w-3" />} mono />}
           {ticket.temps_arret_minutes != null && <InfoItem label="Temps d'arrêt" value={`${ticket.temps_arret_minutes} min`} highlight />}
           {ticket.temps_intervention_minutes != null && <InfoItem label="Temps intervention" value={`${ticket.temps_intervention_minutes} min`} mono />}
@@ -252,6 +361,53 @@ export default function TicketDetail() {
             <div className="space-y-1">
               <Label className="text-xs">Solution *</Label>
               <Textarea value={solution} onChange={(e) => setSolution(e.target.value)} placeholder="Action corrective..." className={isMobile ? "min-h-[60px]" : ""} />
+            </div>
+
+            {/* Co-intervenants */}
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1"><Users className="h-3 w-3" /> Avec l'aide de</Label>
+              <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
+                <Select value={newCollabId} onValueChange={setNewCollabId}>
+                  <SelectTrigger className="h-10 flex-1"><SelectValue placeholder="Sélectionner un maintenancier" /></SelectTrigger>
+                  <SelectContent>
+                    {maintenanciers
+                      .filter((m) => m.user_id !== ticket.assignee_id && !collaborators.some((c) => c.user_id === m.user_id))
+                      .map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Select value={newCollabRole} onValueChange={(v) => setNewCollabRole(v as any)}>
+                    <SelectTrigger className="h-10 w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="aide">Aide</SelectItem>
+                      <SelectItem value="co_intervenant">Co-intervenant</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" className="h-10" onClick={addCollaborator} disabled={!newCollabId}>+</Button>
+                </div>
+              </div>
+              {collaborators.length > 0 && (
+                <div className="space-y-1">
+                  {collaborators.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between text-sm py-1.5 px-3 rounded bg-muted/50">
+                      <span className="truncate">{c.full_name}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge
+                          variant="outline"
+                          className="text-xs cursor-pointer hover:bg-accent"
+                          onClick={() => toggleCollabRole(c.id, c.role_label)}
+                          title="Cliquer pour changer le rôle"
+                        >
+                          {c.role_label === "co_intervenant" ? "co-intervenant" : "aide"}
+                        </Badge>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => removeCollaborator(c.id)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* PDR */}

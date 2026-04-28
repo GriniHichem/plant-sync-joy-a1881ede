@@ -1,80 +1,71 @@
-# Refonte UX/UI responsive — modules critiques mobile
+# Co-intervenants sur ticket de maintenance
 
-Objectif : rendre confortable l'usage **mobile (≤640px)** et **tablette (641–1024px)** sur les modules utilisés en atelier, sans toucher aux modules d'administration. Tablette traitée comme "desktop compact" (densité réduite, padding adapté), navigation burger conservée.
+Permettre à plusieurs maintenanciers de collaborer à la résolution d'un même ticket. Le maintenancier qui prend en charge reste **le responsable principal** (`assignee_id`), mais peut ajouter des **collaborateurs** (« Avec l'aide de »).
 
-## Modules ciblés
+## 1. Base de données
 
-1. **Shift Maintenance** (`/maintenance/shift`)
-2. **Tickets** : liste + détail + dialog création
-3. **Synoptique Ligne** (`/lignes/:id/synoptic`) + panneau d'entité
-4. **Dashboards** GMAO (`/`) et GPAO (`/gpao`)
-5. **Consommations** (`/gpao/consommations`)
-6. **Shift Production** (`/gpao/shift`)
-7. **TopBar** + **layout** global (paddings, header)
+Nouvelle table `ticket_collaborators` (1 ticket → N collaborateurs) :
 
-Modules **non touchés** : Paramètres, Audit, Notifications admin, Recettes, Familles, Form longs (Machine/PDR/OF), Journal interventions.
+| Colonne | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `ticket_id` | uuid | référence `tickets(id)` (cascade delete) |
+| `user_id` | uuid | l'utilisateur collaborateur |
+| `role_label` | text | `aide`, `co_intervenant` (défaut `aide`) |
+| `added_by` | uuid | qui l'a ajouté |
+| `added_at` | timestamptz | défaut now() |
+| `removed_at` | timestamptz nullable | soft-delete pour traçabilité |
 
-## Principes appliqués partout
+- **Unicité** : `(ticket_id, user_id)` quand `removed_at IS NULL`.
+- **RLS** :
+  - SELECT : authentifié.
+  - INSERT/UPDATE : `admin`, `resp_maintenance`, ou l'`assignee_id` du ticket (ne peut ajouter que des users ayant rôle `maintenancier`/`resp_maintenance`).
+  - Trigger d'audit (`audit_logs`) sur ajout/retrait — conforme à la règle Core.
+- À la résolution, on insère **une `intervention` par collaborateur** (statut `terminee`, description « Collaboration ») afin que l'historique et les KPI techniciens reflètent leur participation.
 
-- **3 patterns d'en-tête de page** standardisés via une logique commune :
-  - Mobile : titre court + sous-titre tronqué, actions principales en barre flottante bottom-sticky (FAB+), actions secondaires dans menu kebab.
-  - Tablette/Desktop : header inline actuel conservé, padding réduit (`px-4 md:px-5`).
-- **Filtres** : sur mobile, regroupés dans un Sheet "Filtres" déclenché par un bouton compact ; chips actifs visibles au-dessus pour retrait rapide. Tablette/desktop : barre inline existante.
-- **Tableaux — règle hybride** :
-  - **Cartes empilées** (pattern Tickets) pour : Shift Maintenance, Tickets, Préventif (déjà), Synoptique entité.
-  - **Tableau scroll-x + colonne sticky** (`code`/`numéro`) pour : Consommations, Dashboards (listes denses).
-- **Touch targets** : conserver règle 48px (h-12) sur boutons d'action critiques mobile, 40px (h-10) ailleurs.
-- **Dialogs** : sur mobile, bascule automatique vers `Drawer` (vaul) plein écran depuis le bas pour les dialogues d'action (création ticket, fermeture, choix shift). Conserver `Dialog` desktop.
-- **Sticky elements** : barre d'onglets (tabs) sticky sous le header sur mobile pour Shift et Tickets détail, pour ne pas devoir scroller jusqu'en haut.
+## 2. UI — `src/pages/TicketDetail.tsx`
 
-## Détails par module
+Dans la carte **Résolution** (visible quand `canResolve`), ajouter un bloc **« Avec l'aide de »** au-dessus des PDR :
 
-### 1. Shift Maintenance
-- En-tête condensé mobile (titre + statut shift courant en pill).
-- Tabs Curatif/Préventif **sticky** sous header.
-- Cartes de tâches : retirer colonnes peu utiles, garder priorité (pulse), machine, durée, action. Bouton action plein largeur en bas de carte mobile.
-- Pulse/animations conservées (memory `maintenance-shift-view`).
+```text
+┌─ Avec l'aide de ───────────────────────────┐
+│ [Sélectionner un maintenancier ▾] [+]      │
+│                                            │
+│ • Karim B.        (aide)        [×]        │
+│ • Sofiane M.      (co-intervenant) [×]     │
+└────────────────────────────────────────────┘
+```
 
-### 2. Tickets
-- **Liste** : conserver le pattern cartes mobile existant, ajouter chips de filtres actifs au-dessus + bouton "Filtres" qui ouvre Sheet.
-- **Détail** : tabs sticky, sections collapsables (Infos, Intervention, PDR, Documents, Historique). Boutons d'action principaux (Prendre en charge, Résoudre, Clôturer) en footer-sticky mobile.
-- **Création** : remplacer Dialog par Drawer plein hauteur mobile (déjà en partie), inputs h-12 minimum.
+- **Select** : liste les users ayant rôle `maintenancier` ou `resp_maintenance`, hors `assignee_id` et hors déjà ajoutés.
+- **Toggle rôle** par chip : `aide` ↔ `co_intervenant`.
+- **Mobile-first** : Select pleine largeur + bouton 48px ; chips empilés.
+- Ajout/retrait **immédiat** (persistance directe) — pas de bouton « Enregistrer » séparé. Toast de confirmation.
 
-### 3. Synoptique Ligne
-- Header de ligne compacté, sélecteur de ligne devient Select plein largeur mobile.
-- Blocs 240px conservés en scroll horizontal sur mobile (snap-x), barre d'aide en bas.
-- `SynopticEntityPanel` : devient Drawer bottom plein hauteur sur mobile au lieu de panneau latéral.
+Dans la carte **Informations**, ajouter un `InfoItem` « Pris en charge par » :
+- Principal : nom + badge `Responsable`.
+- En dessous : liste des collaborateurs avec leur libellé.
 
-### 4. Dashboards GMAO + GPAO
-- KPI grid : passer de `grid-cols-4` à `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` ; cartes KPI plus compactes, valeurs en `text-2xl` mobile.
-- Listes Top-N : tableau scroll-x avec colonne 1 sticky.
-- DateRangeFilter : passe en bouton compact qui ouvre Popover/Sheet sur mobile.
+Dans la carte **Historique interventions**, afficher les interventions des collaborateurs (déjà supporté par le rendu existant — on ajoute juste le nom du technicien).
 
-### 5. Consommations + Shift Production
-- Filtres dans Sheet mobile.
-- Tableau : scroll-x, colonne `Article`/`Produit` sticky, ligne saisie inline reste accessible (input compact).
-- Boutons "Valider/Corriger" toujours visibles en footer-sticky.
+## 3. Permissions / règles
 
-### 6. TopBar + AppLayout
-- `AppLayout` : `p-4 md:p-6` → `px-3 py-4 md:px-5 md:py-5 lg:p-6` pour gagner ~15px utile sur mobile.
-- TopBar : déjà bon (mobile testé). Ajustement mineur : badge rôle masqué <sm, `SearchTrigger` icône reste compacte.
+- Seul l'assignee, un `resp_maintenance` ou `admin` peut **gérer** la liste.
+- Tant que le ticket est `resolu`/`cloture`, la liste devient **lecture seule**.
+- Auto-exclusion : impossible d'ajouter le déclarant ou un non-maintenancier.
 
-## Composants partagés à créer
+## 4. Notifications
 
-- `src/components/responsive/PageHeader.tsx` : header standardisé (titre, sous-titre, actions desktop, fallback FAB mobile).
-- `src/components/responsive/FilterSheet.tsx` : wrapper Sheet "Filtres" + chips actifs + bouton reset.
-- `src/components/responsive/ResponsiveDialog.tsx` : Dialog desktop / Drawer mobile (basé sur `useIsMobile`).
-- `src/components/responsive/StickyActionBar.tsx` : barre d'actions footer-sticky safe-area mobile.
-- `src/components/responsive/ScrollTable.tsx` : wrapper Table avec scroll-x + 1ʳᵉ colonne sticky.
+Hook sur insertion `ticket_collaborators` → notification in-app au collaborateur ajouté : « Vous avez été ajouté en collaboration sur le ticket {numero} ». Utilise le système de règles existant (`notification_rules`, événement `ticket_collaborator_added`).
 
-## Hors scope (non touché)
+## 5. Hors scope
 
-- Pages Paramètres, Audit, Notifications admin, Validation rules.
-- Formulaires longs (MachineForm, PdrForm, OfForm, EquipmentForm) — peuvent être traités dans une seconde passe si demandé.
-- Aucune migration DB. Aucun changement de logique métier.
+- Pas de chat/discussion entre collaborateurs.
+- Pas de répartition de temps par collaborateur (le `temps_intervention_minutes` reste global).
+- Pas de modification rétroactive après clôture.
 
-## Critères de validation
+## Fichiers touchés
 
-- Sur viewport 375×812 : aucun débordement horizontal, tous les boutons d'action principaux atteignables sans scroll au-delà du fold.
-- Sur viewport 820×1180 (tablette) : même UX que desktop avec densité réduite, pas de cartes mobiles.
-- Tests Vitest existants doivent rester verts (pas de changement de logique).
+- **Migration SQL** : création `ticket_collaborators` + RLS + trigger audit.
+- `src/pages/TicketDetail.tsx` : bloc « Avec l'aide de », chargement collaborateurs, persistance, intervention par collaborateur à la résolution.
+- `src/pages/TicketsList.tsx` : badge « +N » à côté de l'assignee si collaborateurs (optionnel, petit).
+- Règle de notification seedée si non existante.

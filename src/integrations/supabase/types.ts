@@ -2900,6 +2900,39 @@ export type Database = {
           },
         ]
       }
+      ticket_collaborators: {
+        Row: {
+          added_at: string
+          added_by: string | null
+          id: string
+          removed_at: string | null
+          removed_by: string | null
+          role_label: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          added_by?: string | null
+          id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          role_label?: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          added_by?: string | null
+          id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          role_label?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           assignee_id: string | null

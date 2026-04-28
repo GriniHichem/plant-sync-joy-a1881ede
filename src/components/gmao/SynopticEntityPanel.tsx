@@ -8,6 +8,7 @@ import {
   ExternalLink, AlertTriangle, Wrench, Package, Plus, FileText, Component,
 } from "lucide-react";
 import { useNavWithFrom } from "@/hooks/useNavWithFrom";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type {
   EntityCounters, EntityKind, MachineRow, EquipementRow, OrganeRow,
   TicketRow, PreventivePlanRow, PdrLinkRow,
@@ -54,6 +55,7 @@ export function SynopticEntityPanel({
   onCreateTicket, onSelectOrgane,
 }: Props) {
   const nav = useNavWithFrom();
+  const isMobile = useIsMobile();
   if (!entity) return null;
 
   const e = entity.data;
@@ -75,7 +77,14 @@ export function SynopticEntityPanel({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
+      <SheetContent
+        side={isMobile ? "bottom" : "right"}
+        className={
+          isMobile
+            ? "w-full h-[92vh] p-0 flex flex-col rounded-t-xl"
+            : "w-full sm:max-w-md p-0 flex flex-col"
+        }
+      >
         <SheetHeader className="p-4 pb-3 border-b">
           <div className="flex items-start gap-3">
             {imageUrl ? (

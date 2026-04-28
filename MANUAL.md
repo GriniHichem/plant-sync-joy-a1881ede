@@ -1078,6 +1078,10 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 | `shift_modes`, `shift_time_slots`, `shift_teams`, `shift_settings` | Référentiel shifts |
 | `entity_documents`, `entity_images` | GED + galeries |
 | `document_categories` | Catégorisation documents |
+| `notifications` | Notifications in-app (titre, message, sévérité, destinataire, lu/non-lu) |
+| `notification_rules` | Règles configurables par évènement (canaux, sévérité, destinataires) |
+| `notification_email_log` | Journal des envois email (queued/sent/failed/skipped, déduplication 24 h) |
+| `app_settings` | Stockage clé/valeur (SMTP, flags globaux, secrets cron) |
 
 ### 12.3 Triggers PostgreSQL clés
 
@@ -1087,14 +1091,25 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 | `generate_ticket_numero` | Génère `TKT-00001`, `TKT-00002`… |
 | `generate_of_numero` | Génère `OF-00001`, `OF-00002`… |
 | `update_updated_at_column` | Met à jour `updated_at` à chaque modification |
+| `audit_critical_event` | Crée auto une notification in-app sur évènement critique |
+| `notify_email_dispatch` | Sur insert dans `notifications`, invoque `send-notification-email` via `pg_net` si la règle inclut le canal email |
 
-### 12.4 Changelog du manuel
+### 12.4 Edge functions
+
+| Function | Rôle |
+|----------|------|
+| `send-notification-email` | Envoi SMTP (par `notification_id` ou destinataire direct), déduplication, journalisation |
+| `send-test-email` | Test de configuration SMTP depuis l'UI Admin |
+| `check-deadlines` | Cron quotidien (06:00 UTC) : scanne tickets, préventifs et OF pour générer les notifications d'échéance |
+
+### 12.5 Changelog du manuel
 
 | Version | Date | Notes |
 |---------|------|-------|
 | 1.0 | 05/04/2026 | Version initiale (descriptif) |
-| **2.0** | **26/04/2026** | Réécriture exhaustive : workflows pas-à-pas, validations, exceptions, messages d'erreur exacts, cas particuliers, workflows transverses, annexes routes/tables/triggers |
+| 2.0 | 26/04/2026 | Réécriture exhaustive : workflows pas-à-pas, validations, exceptions, messages d'erreur exacts, cas particuliers, workflows transverses, annexes routes/tables/triggers |
+| **2.1** | **28/04/2026** | Ajout du chapitre **Notifications & Emails (SMTP self-hosted)** : configuration `/parametres/smtp`, règles `/parametres/notifications`, edge functions, cron quotidien, tables `notifications` / `notification_rules` / `notification_email_log` |
 
 ---
 
-*Document généré pour **PROD IN TIME — GMAO & GPAO** · Version manuel 2.0 · 26/04/2026*
+*Document généré pour **PROD IN TIME — GMAO & GPAO** · Version manuel 2.1 · 28/04/2026*

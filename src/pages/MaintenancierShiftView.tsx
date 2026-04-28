@@ -176,7 +176,7 @@ export default function MaintenancierShiftView() {
                         <div
                           key={item.id}
                           className="flex items-start gap-3 p-2.5 rounded-lg cursor-pointer hover:bg-destructive/5 border border-destructive/15 bg-destructive/[0.02] transition-colors"
-                          onClick={() => navigate(`/tickets/${item.id}`, { state: { from: "/shift-maintenance" } })}
+                          onClick={() => navigate(`/tickets/${item.id}`, { state: { from: "/maintenance/shift" } })}
                         >
                           <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">

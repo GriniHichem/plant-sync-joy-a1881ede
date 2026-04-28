@@ -412,6 +412,7 @@ export default function TicketDetail() {
 
   const canTakeCharge = ticket.statut === "ouvert" && (hasRole("maintenancier") || hasRole("resp_maintenance") || hasRole("admin"));
   const canResolve = (ticket.statut === "pris_en_charge" || ticket.statut === "en_cours") && (ticket.assignee_id === user?.id || hasRole("admin"));
+  const canHandover = (ticket.statut === "pris_en_charge" || ticket.statut === "en_cours") && (ticket.assignee_id === user?.id || hasRole("admin") || hasRole("resp_maintenance"));
   const canCloseTicket = ticket.statut === "resolu" && (hasRole("resp_maintenance") || hasRole("admin"));
 
   // Time helpers

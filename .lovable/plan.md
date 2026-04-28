@@ -1,136 +1,80 @@
+# Refonte UX/UI responsive — modules critiques mobile
 
-# Recherche Avancée — Moteur de recherche global
+Objectif : rendre confortable l'usage **mobile (≤640px)** et **tablette (641–1024px)** sur les modules utilisés en atelier, sans toucher aux modules d'administration. Tablette traitée comme "desktop compact" (densité réduite, padding adapté), navigation burger conservée.
 
-## Constat actuel
-Chaque liste a sa propre recherche locale (filtre côté client sur `code` + `designation`). Aucune recherche globale, aucune indexation plein-texte (FTS), aucune recherche dans : commentaires, notes d'intervention, journaux audit, notifications, rapports analytiques, mouvements PDR, OF, validations, etc. Les utilisateurs ne peuvent pas trouver "ce ticket que j'ai vu la semaine dernière" sans naviguer module par module.
+## Modules ciblés
 
-## Objectif
-Une seule barre de recherche, accessible partout (raccourci `⌘K` / `Ctrl+K`), capable de :
-- chercher par mot-clé dans **tous les modules** (machines, équipements, organes, lignes, PDR, tickets, interventions, OF, produits, articles, recettes, consommations, arrêts, préventif, utilisateurs, validations, notifications, audit, documents),
-- chercher dans le **contenu libre** (notes, descriptions, motifs, commentaires fournisseurs, raisons d'audit),
-- chercher **dans les rapports** (KPI exportés, journaux d'intervention, libellés audit),
-- proposer des **résultats groupés par module** avec aperçu, score de pertinence, badges (statut, criticité), et navigation directe vers la fiche.
+1. **Shift Maintenance** (`/maintenance/shift`)
+2. **Tickets** : liste + détail + dialog création
+3. **Synoptique Ligne** (`/lignes/:id/synoptic`) + panneau d'entité
+4. **Dashboards** GMAO (`/`) et GPAO (`/gpao`)
+5. **Consommations** (`/gpao/consommations`)
+6. **Shift Production** (`/gpao/shift`)
+7. **TopBar** + **layout** global (paddings, header)
 
-## Architecture cible
+Modules **non touchés** : Paramètres, Audit, Notifications admin, Recettes, Familles, Form longs (Machine/PDR/OF), Journal interventions.
 
-```text
-┌──────────────────────────────────────────────────┐
-│  TopBar  [ 🔍 Rechercher partout…  ⌘K ]          │
-└──────────────┬───────────────────────────────────┘
-               │ (ouvre)
-        ┌──────▼──────────────────────────┐
-        │ CommandPalette (Dialog)         │
-        │  • résultats live (debounce)    │
-        │  • groupés par module           │
-        │  • "Voir tous les résultats →"  │
-        └──────┬──────────────────────────┘
-               │
-        ┌──────▼──────────────────────────┐
-        │  /recherche?q=…&modules=…&…     │
-        │   page complète + facettes      │
-        └─────────────────────────────────┘
-```
+## Principes appliqués partout
 
-Backend = vue PostgreSQL `search_index` matérialisée logiquement (UNION ALL) + colonnes `tsvector` + RPC `global_search(q, modules[], filters)` qui :
-1. Tokenise la requête (FTS français + trigram fallback pour fautes de frappe),
-2. Filtre par module / date / statut / criticité,
-3. Respecte les RLS (fonction `SECURITY INVOKER` → l'utilisateur ne voit que ce qu'il peut voir),
-4. Renvoie : `module, entity_id, code, label, snippet (extrait surligné), score, severity, url, updated_at`.
+- **3 patterns d'en-tête de page** standardisés via une logique commune :
+  - Mobile : titre court + sous-titre tronqué, actions principales en barre flottante bottom-sticky (FAB+), actions secondaires dans menu kebab.
+  - Tablette/Desktop : header inline actuel conservé, padding réduit (`px-4 md:px-5`).
+- **Filtres** : sur mobile, regroupés dans un Sheet "Filtres" déclenché par un bouton compact ; chips actifs visibles au-dessus pour retrait rapide. Tablette/desktop : barre inline existante.
+- **Tableaux — règle hybride** :
+  - **Cartes empilées** (pattern Tickets) pour : Shift Maintenance, Tickets, Préventif (déjà), Synoptique entité.
+  - **Tableau scroll-x + colonne sticky** (`code`/`numéro`) pour : Consommations, Dashboards (listes denses).
+- **Touch targets** : conserver règle 48px (h-12) sur boutons d'action critiques mobile, 40px (h-10) ailleurs.
+- **Dialogs** : sur mobile, bascule automatique vers `Drawer` (vaul) plein écran depuis le bas pour les dialogues d'action (création ticket, fermeture, choix shift). Conserver `Dialog` desktop.
+- **Sticky elements** : barre d'onglets (tabs) sticky sous le header sur mobile pour Shift et Tickets détail, pour ne pas devoir scroller jusqu'en haut.
 
-## Phases
+## Détails par module
 
-### Phase 1 — Infra recherche (DB)
-- Activer extensions `pg_trgm` (déjà active) et `unaccent`.
-- Ajouter colonnes `search_vector tsvector` + index GIN sur tables principales : `machines, equipements, organes, lignes, pdr, tickets, interventions, ordres_fabrication, products, articles, recipes, consumptions, arrets, preventif_plans, notifications, audit_logs, validation_requests, entity_documents, pdr_stock_movements, pdr_family_suppliers`.
-- Triggers `tsvector_update` (config `french` + unaccent) sur INSERT/UPDATE rebuilding depuis `code, designation, description, notes, motif, ...`.
-- Backfill une fois pour les lignes existantes.
-- RPC `public.global_search(q text, modules text[] default null, date_from date default null, date_to date default null, severities text[] default null, limit_per_module int default 10)` :
-  - utilise `plainto_tsquery` + fallback `similarity()` ≥ 0.25 si <3 résultats,
-  - `ts_headline()` pour le snippet surligné,
-  - `SECURITY INVOKER` → RLS appliquée naturellement,
-  - tri : `ts_rank * recency_boost`.
-- RPC `public.search_suggest(q text)` pour autocomplete (top 8 codes/désignations/numéros).
+### 1. Shift Maintenance
+- En-tête condensé mobile (titre + statut shift courant en pill).
+- Tabs Curatif/Préventif **sticky** sous header.
+- Cartes de tâches : retirer colonnes peu utiles, garder priorité (pulse), machine, durée, action. Bouton action plein largeur en bas de carte mobile.
+- Pulse/animations conservées (memory `maintenance-shift-view`).
 
-### Phase 2 — Hook + couche client
-- `src/lib/search.ts` : `globalSearch()`, `searchSuggest()`, parsing requêtes avancées (`module:tickets statut:ouvert criticité:A "fuite huile"`).
-- `src/hooks/useGlobalSearch.ts` : `useQuery` avec debounce 250 ms, cache 30 s, abort sur changement.
-- Catalogue `src/lib/searchCatalog.ts` : mapping module → icône, route, formateur de snippet, badges affichés.
+### 2. Tickets
+- **Liste** : conserver le pattern cartes mobile existant, ajouter chips de filtres actifs au-dessus + bouton "Filtres" qui ouvre Sheet.
+- **Détail** : tabs sticky, sections collapsables (Infos, Intervention, PDR, Documents, Historique). Boutons d'action principaux (Prendre en charge, Résoudre, Clôturer) en footer-sticky mobile.
+- **Création** : remplacer Dialog par Drawer plein hauteur mobile (déjà en partie), inputs h-12 minimum.
 
-### Phase 3 — UI Command Palette (omnisearch)
-- `src/components/search/GlobalSearchPalette.tsx` basé sur `cmdk` (déjà inclus via shadcn `Command`).
-- Raccourci global `⌘K` / `Ctrl+K` + `/` (monté dans `App.tsx`).
-- Bouton 🔍 dans la `TopBar` (header), visible mobile + desktop.
-- Affichage : groupes par module, snippet surligné, badge statut, date relative, sous-texte "Entrer pour ouvrir / ⇧ Entrer pour ouvrir dans un onglet".
-- Historique des recherches récentes (`localStorage`, 8 dernières).
+### 3. Synoptique Ligne
+- Header de ligne compacté, sélecteur de ligne devient Select plein largeur mobile.
+- Blocs 240px conservés en scroll horizontal sur mobile (snap-x), barre d'aide en bas.
+- `SynopticEntityPanel` : devient Drawer bottom plein hauteur sur mobile au lieu de panneau latéral.
 
-### Phase 4 — Page /recherche (résultats complets + facettes)
-- `src/pages/SearchPage.tsx` :
-  - Barre principale avec opérateurs supportés affichés en astuce,
-  - Sidebar de **facettes** : Modules, Période (Aujourd'hui/7j/30j/Custom), Statuts, Criticité, Auteur, Tags,
-  - Résultats : tableau riche groupé (onglets par module + onglet "Tous"),
-  - Pagination par module (`limit_per_module` + "Voir plus dans Tickets →"),
-  - Export CSV des résultats (`/mnt/documents/recherche_export_*.csv`),
-  - URL synchronisée (`?q=&modules=&from=&to=&sev=`) partageable.
+### 4. Dashboards GMAO + GPAO
+- KPI grid : passer de `grid-cols-4` à `grid-cols-2 md:grid-cols-3 lg:grid-cols-4` ; cartes KPI plus compactes, valeurs en `text-2xl` mobile.
+- Listes Top-N : tableau scroll-x avec colonne 1 sticky.
+- DateRangeFilter : passe en bouton compact qui ouvre Popover/Sheet sur mobile.
 
-### Phase 5 — Recherche dans les rapports
-- Module "Rapports" indexé : libellés audit (`action_label, description, entity_label`), KPI snapshots, journaux d'intervention.
-- Vue `report_search_view` qui agrège : audit_logs (filtré par `has_audit_access`), interventions clôturées (avec extraits notes), OF terminés.
-- Résultat affiché avec badge "Rapport" + lien direct vers `/audit?id=…` ou `/maintenance/journal?intervention=…`.
+### 5. Consommations + Shift Production
+- Filtres dans Sheet mobile.
+- Tableau : scroll-x, colonne `Article`/`Produit` sticky, ligne saisie inline reste accessible (input compact).
+- Boutons "Valider/Corriger" toujours visibles en footer-sticky.
 
-### Phase 6 — Qualité & sécurité
-- Tests Vitest : tokenisation, opérateurs (`module:`, `statut:`, `"phrase exacte"`, `-exclusion`), parsing dates, fallback trigram.
-- Audit log automatique (`logAudit('search.executed', {q, modules, count})`) — sans stocker la requête en clair pour l'admin si elle contient des données sensibles (anonymisation > 100 chars).
-- Respect strict RLS via `SECURITY INVOKER`.
-- Limitation : 50 résultats / module / requête, requêtes < 200 chars, debounce serveur via `pg_sleep`-free.
+### 6. TopBar + AppLayout
+- `AppLayout` : `p-4 md:p-6` → `px-3 py-4 md:px-5 md:py-5 lg:p-6` pour gagner ~15px utile sur mobile.
+- TopBar : déjà bon (mobile testé). Ajustement mineur : badge rôle masqué <sm, `SearchTrigger` icône reste compacte.
 
-## Détails techniques
+## Composants partagés à créer
 
-**Opérateurs supportés**
-- `mot1 mot2` → AND
-- `"phrase exacte"` → match phrase
-- `-mot` → exclusion
-- `module:tickets` / `module:pdr,machines`
-- `statut:ouvert` `crit:A` `priorité:haute`
-- `from:2026-01-01 to:2026-04-30`
-- `auteur:jdupont` `numero:TKT-00123`
+- `src/components/responsive/PageHeader.tsx` : header standardisé (titre, sous-titre, actions desktop, fallback FAB mobile).
+- `src/components/responsive/FilterSheet.tsx` : wrapper Sheet "Filtres" + chips actifs + bouton reset.
+- `src/components/responsive/ResponsiveDialog.tsx` : Dialog desktop / Drawer mobile (basé sur `useIsMobile`).
+- `src/components/responsive/StickyActionBar.tsx` : barre d'actions footer-sticky safe-area mobile.
+- `src/components/responsive/ScrollTable.tsx` : wrapper Table avec scroll-x + 1ʳᵉ colonne sticky.
 
-**Pertinence**
-```
-score = ts_rank_cd(search_vector, query)
-      * (1 + 0.3 * is_exact_code_match)
-      * recency_decay(updated_at)   -- 1.0 < 7j, 0.7 < 30j, 0.4 sinon
-      + 0.2 * trigram_similarity    -- fallback fautes de frappe
-```
+## Hors scope (non touché)
 
-**Snippet** : `ts_headline('french', source_text, query, 'StartSel=<mark>,StopSel=</mark>,MaxWords=20,MinWords=8')`.
+- Pages Paramètres, Audit, Notifications admin, Validation rules.
+- Formulaires longs (MachineForm, PdrForm, OfForm, EquipmentForm) — peuvent être traités dans une seconde passe si demandé.
+- Aucune migration DB. Aucun changement de logique métier.
 
-## Fichiers prévus
+## Critères de validation
 
-**Migrations SQL**
-- `add_search_vectors_<entities>.sql` (colonnes + index GIN + triggers, par lot pour rester < 60 s)
-- `create_global_search_rpc.sql`
-- `create_report_search_view.sql`
-
-**Code**
-- `src/lib/search.ts`, `src/lib/searchCatalog.ts`, `src/lib/searchQueryParser.ts`
-- `src/hooks/useGlobalSearch.ts`, `src/hooks/useSearchSuggest.ts`
-- `src/components/search/GlobalSearchPalette.tsx`
-- `src/components/search/SearchResultItem.tsx`
-- `src/components/search/SearchFacets.tsx`
-- `src/components/search/SearchTrigger.tsx` (bouton TopBar)
-- `src/pages/SearchPage.tsx`
-- Modifs : `src/App.tsx` (route + raccourci global), `src/components/gmao/AppSidebar.tsx` (entrée "Recherche"), header layout.
-
-**Tests**
-- `src/test/search/query-parser.test.ts`
-- `src/test/search/catalog.test.ts`
-- `src/test/search/rank-scoring.test.ts`
-
-## Mémoire à enregistrer après implémentation
-- Convention : toute nouvelle table indexable doit ajouter `search_vector` + trigger + entrée dans `searchCatalog.ts`.
-- Raccourci global `⌘K` réservé à la palette de recherche.
-
-## Hors-scope (proposable plus tard)
-- Recherche sémantique (embeddings via Lovable AI),
-- Recherche dans le contenu OCR des PDF (Storage),
-- "Recherches sauvegardées" + alertes par email quand un nouveau résultat matche.
+- Sur viewport 375×812 : aucun débordement horizontal, tous les boutons d'action principaux atteignables sans scroll au-delà du fold.
+- Sur viewport 820×1180 (tablette) : même UX que desktop avec densité réduite, pas de cartes mobiles.
+- Tests Vitest existants doivent rester verts (pas de changement de logique).

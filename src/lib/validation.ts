@@ -101,7 +101,7 @@ export interface CreateValidationRequestPayload {
 // =============================================
 // Conditions matcher (simple OR/eq + numeric thresholds)
 // =============================================
-function matchConditions(
+export function matchConditions(
   conditions: Record<string, unknown> | null,
   context: Record<string, unknown> = {}
 ): boolean {

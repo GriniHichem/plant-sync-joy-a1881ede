@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { checkValidationRequired, createValidationRequest } from "@/lib/validation";
 
 export default function PdrDetail() {
   const { id } = useParams();

@@ -114,6 +114,67 @@ export const mockModeHistory = [
   },
 ];
 
+// =============================================
+// Notifications & Validations mock data
+// =============================================
+export const mockNotificationRules = [
+  {
+    id: "nr-1", name: "Tickets critiques", is_active: true,
+    module: "tickets", event_type: "ticket_created",
+    severity: "critical", is_critical: true,
+    target_roles: ["resp_maintenance", "admin"], target_users: [], excluded_users: [],
+    conditions: { any: [{ field: "priority", op: "in", value: ["high","critical"] }, { field: "machine_criticality", op: "eq", value: "A" }] },
+    channels: ["in_app","email"], frequency: "immediate",
+  },
+  {
+    id: "nr-2", name: "PDR rupture", is_active: true,
+    module: "pdr_stock", event_type: "pdr_stock_out",
+    severity: "critical", is_critical: true,
+    target_roles: ["resp_maintenance","gestionnaire_magasin"], target_users: [], excluded_users: [],
+    conditions: null, channels: ["in_app","email"], frequency: "immediate",
+  },
+  {
+    id: "nr-3", name: "Audit critique", is_active: true,
+    module: "audit", event_type: "audit_critical_event",
+    severity: "critical", is_critical: true,
+    target_roles: ["admin","responsable_si"], target_users: [], excluded_users: [],
+    conditions: null, channels: ["in_app","email"], frequency: "immediate",
+  },
+];
+
+export const mockValidationRules = [
+  {
+    id: "vr-1", name: "Correction PDR > 5%", module: "pdr_stock", entity_type: "pdr_movement",
+    action_type: "correction", enforcement: "blocking", is_active: true, is_required: true,
+    priority: "high", validator_roles: ["resp_maintenance","admin"], validator_users: [],
+    conditions: { ecart_seuil_pct: 5 }, auto_approve_if_low_risk: false,
+  },
+  {
+    id: "vr-2", name: "Clôture ticket critique", module: "tickets", entity_type: "ticket",
+    action_type: "close", enforcement: "post_hoc", is_active: true, is_required: false,
+    priority: "medium", validator_roles: ["resp_maintenance"], validator_users: [],
+    conditions: { priority: ["high","critical"] }, auto_approve_if_low_risk: false,
+  },
+  {
+    id: "vr-3", name: "Annulation OF", module: "of", entity_type: "of",
+    action_type: "cancel", enforcement: "blocking", is_active: true, is_required: true,
+    priority: "high", validator_roles: ["resp_production","admin"], validator_users: [],
+    conditions: null, auto_approve_if_low_risk: false,
+  },
+];
+
+export const mockNotifications = [
+  { id: "n-1", title: "Ticket critique", message: "TKT-00001", module: "tickets", notification_type: "ticket_created", severity: "critical", status: "unread", recipient_user_id: "user-1", recipient_role: null, created_at: "2026-04-28T10:00:00Z", rule_id: "nr-1", is_critical: true, deduplication_key: "ticket_created:tkt-1" },
+  { id: "n-2", title: "PDR rupture", message: "PDR-001", module: "pdr_stock", notification_type: "pdr_stock_out", severity: "critical", status: "read", recipient_user_id: "user-1", recipient_role: null, read_at: "2026-04-28T11:00:00Z", created_at: "2026-04-28T09:00:00Z", rule_id: "nr-2", is_critical: true },
+  { id: "n-3", title: "Doc ajouté", message: "", module: "documents", notification_type: "document_uploaded", severity: "info", status: "archived", recipient_user_id: "user-1", recipient_role: null, archived_at: "2026-04-28T08:00:00Z", created_at: "2026-04-28T07:00:00Z", is_critical: false },
+];
+
+export const mockValidationRequests = [
+  { id: "vrq-1", rule_id: "vr-1", module: "pdr_stock", entity_type: "pdr_movement", requested_action: "correction", status: "submitted", enforcement: "blocking", priority: "high", title: "Correction stock PDR-001", is_blocking: true, submitted_by_user_id: "user-1", created_at: "2026-04-28T10:00:00Z" },
+  { id: "vrq-2", rule_id: "vr-2", module: "tickets", entity_type: "ticket", requested_action: "close", status: "approved", enforcement: "post_hoc", priority: "medium", title: "Clôture TKT-00001", is_blocking: false, submitted_by_user_id: "user-1", validated_at: "2026-04-28T11:00:00Z", created_at: "2026-04-28T09:30:00Z" },
+  { id: "vrq-3", rule_id: "vr-3", module: "of", entity_type: "of", requested_action: "cancel", status: "rejected", enforcement: "blocking", priority: "high", title: "Annulation OF-00010", is_blocking: true, submitted_by_user_id: "user-1", rejected_at: "2026-04-28T12:00:00Z", rejection_reason: "Pas justifié", created_at: "2026-04-28T11:30:00Z" },
+];
+
 // Helper to create chainable mock query builder
 function createQueryBuilder(data: any) {
   const builder: any = {};
@@ -146,6 +207,10 @@ export function createMockSupabase() {
     audit_logs: [],
     shift_settings: [],
     shift_mode_slots: [],
+    notification_rules: mockNotificationRules,
+    validation_rules: mockValidationRules,
+    notifications: mockNotifications,
+    validation_requests: mockValidationRequests,
   };
 
   return {

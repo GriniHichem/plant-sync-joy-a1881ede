@@ -150,7 +150,7 @@ function defaultDedupKey(p: TriggerNotificationParams): string {
   return `${p.event_type}:${id}`;
 }
 
-function dedupWindowSince(freq: NotificationFrequency): string {
+export function dedupWindowSince(freq: NotificationFrequency): string {
   const now = Date.now();
   let ms = 5 * 60 * 1000;
   if (freq === "grouped_hourly") ms = 60 * 60 * 1000;

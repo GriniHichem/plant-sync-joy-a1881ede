@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useValidationPermissions } from "@/hooks/useValidationPermissions";
 import { RuleEditorDialog } from "@/components/validations/RuleEditorDialog";
 import { ENFORCEMENT_LABEL, PRIORITY_LABEL, PRIORITY_BADGE_CLASS, type ValidationRule } from "@/lib/validation";
 import { toast } from "@/hooks/use-toast";
+import { logAudit } from "@/lib/audit";
+import { findDuplicates } from "@/lib/ruleValidation";
 
 export default function ValidationRulesAdmin() {
   const perm = useValidationPermissions();
@@ -25,9 +27,47 @@ export default function ValidationRulesAdmin() {
   };
   useEffect(() => { void load(); }, []);
 
+  const duplicateIds = useMemo(() => {
+    const set = new Set<string>();
+    const dups = findDuplicates(
+      rules.map((r) => ({ id: r.id, module: r.module, conditions: r.conditions, is_active: r.is_active })),
+      (r) => (rules.find((x) => x.id === r.id)?.action_type ?? "")
+    );
+    dups.forEach((ids) => ids.forEach((id) => set.add(id)));
+    return set;
+  }, [rules]);
+
   const toggleActive = async (r: ValidationRule) => {
-    const { error } = await supabase.from("validation_rules").update({ is_active: !r.is_active } as never).eq("id", r.id);
+    const newVal = !r.is_active;
+    const { error } = await supabase.from("validation_rules").update({ is_active: newVal } as never).eq("id", r.id);
     if (error) { toast({ title: "Erreur", variant: "destructive" }); return; }
+    await logAudit({
+      action_type: "status_change",
+      module: "system",
+      entity_type: "validation_rule",
+      entity_id: r.id,
+      entity_label: r.name,
+      severity: "medium",
+      old_values: { is_active: r.is_active },
+      new_values: { is_active: newVal },
+    });
+    void load();
+  };
+
+  const remove = async (r: ValidationRule) => {
+    if (!confirm(`Supprimer la règle "${r.name}" ?`)) return;
+    const { error } = await supabase.from("validation_rules").delete().eq("id", r.id);
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    await logAudit({
+      action_type: "delete",
+      module: "system",
+      entity_type: "validation_rule",
+      entity_id: r.id,
+      entity_label: r.name,
+      severity: "high",
+      old_values: r as unknown as Record<string, unknown>,
+    });
+    toast({ title: "Règle supprimée" });
     void load();
   };
 
@@ -56,7 +96,14 @@ export default function ValidationRulesAdmin() {
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-medium">{r.name}</p>
+                    <p className="font-medium flex items-center gap-1.5">
+                      {r.name}
+                      {duplicateIds.has(r.id) && (
+                        <Badge variant="outline" className="text-[9px] border-orange-500/30 text-orange-600">
+                          Doublon
+                        </Badge>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">{r.module} / {r.action_type}</p>
                   </div>
                   <Switch checked={r.is_active} onCheckedChange={() => toggleActive(r)} />
@@ -71,9 +118,14 @@ export default function ValidationRulesAdmin() {
                     <Badge key={role} variant="secondary">{role.replace(/_/g, " ")}</Badge>
                   ))}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => { setEditing(r); setOpen(true); }}>
-                  <Pencil className="h-4 w-4 mr-2" /> Modifier
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setEditing(r); setOpen(true); }}>
+                    <Pencil className="h-4 w-4 mr-2" /> Modifier
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => remove(r)}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Supprimer
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

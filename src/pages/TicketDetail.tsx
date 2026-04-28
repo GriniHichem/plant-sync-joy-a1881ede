@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { checkValidationRequired, createValidationRequest } from "@/lib/validation";
 
 export default function TicketDetail() {
   const { id } = useParams();

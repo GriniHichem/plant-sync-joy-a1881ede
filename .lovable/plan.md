@@ -1,71 +1,77 @@
-# Co-intervenants sur ticket de maintenance
+## Objectif
 
-Permettre à plusieurs maintenanciers de collaborer à la résolution d'un même ticket. Le maintenancier qui prend en charge reste **le responsable principal** (`assignee_id`), mais peut ajouter des **collaborateurs** (« Avec l'aide de »).
+Permettre au maintenancier qui a pris en charge un ticket mais ne peut pas le résoudre (fin de shift) de :
+- **Transférer** le ticket à un autre maintenancier (passation nominative)
+- **Libérer** le ticket (le remettre dans le pool, statut `ouvert`, sans assigné)
 
-## 1. Base de données
+Couvre les deux scénarios métier de fin de poste.
 
-Nouvelle table `ticket_collaborators` (1 ticket → N collaborateurs) :
+## Comportement métier
 
-| Colonne | Type | Notes |
-|---|---|---|
-| `id` | uuid PK | |
-| `ticket_id` | uuid | référence `tickets(id)` (cascade delete) |
-| `user_id` | uuid | l'utilisateur collaborateur |
-| `role_label` | text | `aide`, `co_intervenant` (défaut `aide`) |
-| `added_by` | uuid | qui l'a ajouté |
-| `added_at` | timestamptz | défaut now() |
-| `removed_at` | timestamptz nullable | soft-delete pour traçabilité |
+### 1. Transférer à un autre maintenancier
+- Disponible si : statut = `pris_en_charge` ou `en_cours`, et user = `assignee_id` (ou admin / resp_maintenance)
+- Sélection du nouveau maintenancier (liste `maintenancier` + `resp_maintenance`)
+- Saisie obligatoire d'un **motif de passation** (raison fin de shift, blocage, etc.)
+- Effets :
+  - Clôture de l'intervention en cours du maintenancier sortant (`statut = transferee`, `date_fin = now`, note = motif)
+  - Création d'une nouvelle intervention pour le repreneur (`statut = en_cours`)
+  - `tickets.assignee_id` = nouveau maintenancier ; statut reste `pris_en_charge`
+  - `heure_prise_en_charge` conservée (pour ne pas fausser le KPI temps total) — le transfert est tracé séparément
+  - Les **collaborateurs** (table `ticket_collaborators`) sont conservés
+  - Notification in-app au repreneur (règle dédiée `ticket.transferred`)
+  - Audit log avec ancien/nouveau assigné + motif
 
-- **Unicité** : `(ticket_id, user_id)` quand `removed_at IS NULL`.
-- **RLS** :
-  - SELECT : authentifié.
-  - INSERT/UPDATE : `admin`, `resp_maintenance`, ou l'`assignee_id` du ticket (ne peut ajouter que des users ayant rôle `maintenancier`/`resp_maintenance`).
-  - Trigger d'audit (`audit_logs`) sur ajout/retrait — conforme à la règle Core.
-- À la résolution, on insère **une `intervention` par collaborateur** (statut `terminee`, description « Collaboration ») afin que l'historique et les KPI techniciens reflètent leur participation.
+### 2. Libérer le ticket
+- Mêmes conditions d'accès que Transférer
+- Saisie obligatoire d'un **motif de libération**
+- Effets :
+  - Clôture de l'intervention en cours (`statut = liberee`, note = motif)
+  - `tickets.assignee_id = null`, `statut = ouvert`, `heure_prise_en_charge = null`
+  - Collaborateurs conservés (peuvent rester pour info, mais le ticket redevient prenable par n'importe quel maintenancier)
+  - Notification in-app au rôle `maintenancier` + `resp_maintenance` (règle `ticket.released`)
+  - Audit log avec motif
 
-## 2. UI — `src/pages/TicketDetail.tsx`
+## Modifications techniques
 
-Dans la carte **Résolution** (visible quand `canResolve`), ajouter un bloc **« Avec l'aide de »** au-dessus des PDR :
+### Base de données (migration)
+- Ajouter à l'enum `intervention_statut` les valeurs `transferee` et `liberee` (si absentes — sinon utiliser `terminee` + flag dans `notes`).
+- Aucune nouvelle table requise — réutilisation de `interventions`, `audit_logs`, `notification_rules`.
+
+### UI — `src/pages/TicketDetail.tsx`
+Nouvelle carte **« Passation / Libération »** affichée quand `canTransferOrRelease` (assignee actuel + statut actif), située juste avant la carte Résolution :
 
 ```text
-┌─ Avec l'aide de ───────────────────────────┐
-│ [Sélectionner un maintenancier ▾] [+]      │
-│                                            │
-│ • Karim B.        (aide)        [×]        │
-│ • Sofiane M.      (co-intervenant) [×]     │
-└────────────────────────────────────────────┘
+┌─ Passation / Libération ──────────────┐
+│  [Transférer à]  [Select maintenanc.] │
+│  [Motif *]       [Textarea]           │
+│  [ Transférer ]  [ Libérer ticket ]   │
+└───────────────────────────────────────┘
 ```
 
-- **Select** : liste les users ayant rôle `maintenancier` ou `resp_maintenance`, hors `assignee_id` et hors déjà ajoutés.
-- **Toggle rôle** par chip : `aide` ↔ `co_intervenant`.
-- **Mobile-first** : Select pleine largeur + bouton 48px ; chips empilés.
-- Ajout/retrait **immédiat** (persistance directe) — pas de bouton « Enregistrer » séparé. Toast de confirmation.
+Handlers :
+- `handleTransfer(newUserId, motif)` — UPDATE ticket + close/open interventions + audit + notification
+- `handleRelease(motif)` — UPDATE ticket + close intervention + audit + notification
 
-Dans la carte **Informations**, ajouter un `InfoItem` « Pris en charge par » :
-- Principal : nom + badge `Responsable`.
-- En dessous : liste des collaborateurs avec leur libellé.
+Sur mobile : actions intégrées dans `StickyActionBar` en mode secondaire (boutons outline).
 
-Dans la carte **Historique interventions**, afficher les interventions des collaborateurs (déjà supporté par le rendu existant — on ajoute juste le nom du technicien).
+### Notifications (paramétrables)
+Deux nouveaux event_types ajoutés au catalogue (`src/lib/ruleCatalog.ts`) :
+- `ticket.transferred` — destinataire = nouveau assigné, sévérité `info`
+- `ticket.released` — destinataires = rôles `maintenancier`/`resp_maintenance`, sévérité `warning`
 
-## 3. Permissions / règles
+Règles seedées par défaut (actives, in_app uniquement).
 
-- Seul l'assignee, un `resp_maintenance` ou `admin` peut **gérer** la liste.
-- Tant que le ticket est `resolu`/`cloture`, la liste devient **lecture seule**.
-- Auto-exclusion : impossible d'ajouter le déclarant ou un non-maintenancier.
+### Audit
+Entrées `audit_logs` avec :
+- `module = "tickets"`, `action_type = "transfer"` ou `"release"`
+- `old_values = { assignee_id: ancien }`, `new_values = { assignee_id: nouveau | null }`
+- `description` = motif saisi
 
-## 4. Notifications
+### Permissions / RLS
+- Aucun changement RLS nécessaire — l'UPDATE de `tickets` reste autorisé pour admin / resp_maintenance / maintenancier.
+- Garde-fou côté UI : seul l'assigné courant (ou admin / resp_maintenance) voit les boutons.
 
-Hook sur insertion `ticket_collaborators` → notification in-app au collaborateur ajouté : « Vous avez été ajouté en collaboration sur le ticket {numero} ». Utilise le système de règles existant (`notification_rules`, événement `ticket_collaborator_added`).
-
-## 5. Hors scope
-
-- Pas de chat/discussion entre collaborateurs.
-- Pas de répartition de temps par collaborateur (le `temps_intervention_minutes` reste global).
-- Pas de modification rétroactive après clôture.
-
-## Fichiers touchés
-
-- **Migration SQL** : création `ticket_collaborators` + RLS + trigger audit.
-- `src/pages/TicketDetail.tsx` : bloc « Avec l'aide de », chargement collaborateurs, persistance, intervention par collaborateur à la résolution.
-- `src/pages/TicketsList.tsx` : badge « +N » à côté de l'assignee si collaborateurs (optionnel, petit).
-- Règle de notification seedée si non existante.
+## Hors-scope
+- Pas de file d'attente / shift planning automatique (le transfert reste manuel).
+- Pas de transfert en masse (un ticket à la fois).
+- Pas de modification du flow de prise en charge initial.

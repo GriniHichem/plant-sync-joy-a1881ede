@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, User, Wrench, Factory, Package, Users, X } from "lucide-react";
+import { ArrowLeft, Clock, User, Wrench, Factory, Package, Users, X, ArrowRightLeft, UserMinus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { checkValidationRequired, createValidationRequest } from "@/lib/validation";
+import { logAudit } from "@/lib/audit";
 
 export default function TicketDetail() {
   const { id } = useParams();
@@ -42,6 +43,11 @@ export default function TicketDetail() {
   const [newCollabId, setNewCollabId] = useState("");
   const [newCollabRole, setNewCollabRole] = useState<"aide" | "co_intervenant">("aide");
   const [assigneeName, setAssigneeName] = useState<string>("");
+
+  // Handover (transfer / release)
+  const [transferTargetId, setTransferTargetId] = useState("");
+  const [handoverMotif, setHandoverMotif] = useState("");
+  const [handoverBusy, setHandoverBusy] = useState(false);
 
   const loadTicket = async () => {
     if (!id) return;
@@ -151,6 +157,130 @@ export default function TicketDetail() {
     await supabase.from("interventions").insert({ ticket_id: id!, technicien_id: user?.id!, description: "Prise en charge", statut: "en_cours" as any });
     toast({ title: "Ticket pris en charge" });
     loadTicket();
+  };
+
+  const handleTransfer = async () => {
+    if (!transferTargetId || !handoverMotif.trim() || !id || !user) {
+      toast({ title: "Erreur", description: "Sélectionnez un maintenancier et saisissez un motif", variant: "destructive" });
+      return;
+    }
+    setHandoverBusy(true);
+    try {
+      const now = new Date().toISOString();
+      const targetProfile = maintenanciers.find((m) => m.user_id === transferTargetId);
+      const previousAssigneeId = ticket.assignee_id;
+
+      // 1. Close current active intervention as "transferee"
+      const activeIntervention = interventions.find((i) => i.statut === "en_cours" && i.technicien_id === previousAssigneeId);
+      if (activeIntervention) {
+        await supabase.from("interventions").update({
+          statut: "transferee" as any, date_fin: now,
+          notes: `Transfert vers ${targetProfile?.full_name || "—"} — Motif: ${handoverMotif}`,
+        }).eq("id", activeIntervention.id);
+      }
+
+      // 2. Reassign ticket (keep heure_prise_en_charge for KPI continuity)
+      await supabase.from("tickets").update({ assignee_id: transferTargetId }).eq("id", id);
+
+      // 3. Open new intervention for new assignee
+      await supabase.from("interventions").insert({
+        ticket_id: id, technicien_id: transferTargetId,
+        description: `Reprise après transfert (motif: ${handoverMotif})`,
+        statut: "en_cours" as any,
+      });
+
+      // 4. Audit
+      await logAudit({
+        action_type: "status_change", module: "tickets",
+        entity_type: "ticket", entity_id: id, entity_code: ticket.numero,
+        entity_label: ticket.description, action_label: "Transfert ticket",
+        description: `Transfert de ${assigneeName || "—"} vers ${targetProfile?.full_name || "—"} — ${handoverMotif}`,
+        old_values: { assignee_id: previousAssigneeId },
+        new_values: { assignee_id: transferTargetId },
+        metadata: { motif: handoverMotif, event: "ticket.transferred" },
+        severity: "medium",
+      });
+
+      // 5. In-app notification to new assignee
+      await supabase.from("notifications").insert({
+        notification_type: "ticket_transferred", module: "tickets",
+        title: `Ticket transféré : ${ticket.numero}`,
+        message: `${assigneeName || "Un maintenancier"} vous a transféré ce ticket. Motif : ${handoverMotif}`,
+        recipient_user_id: transferTargetId,
+        triggered_by_user_id: user.id,
+        entity_type: "ticket", entity_id: id, entity_code: ticket.numero,
+        entity_label: ticket.description,
+        action_url: `/tickets/${id}`,
+        severity: "info" as any,
+      });
+
+      toast({ title: "Ticket transféré", description: `Repris par ${targetProfile?.full_name || "—"}` });
+      setTransferTargetId(""); setHandoverMotif("");
+      loadTicket();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setHandoverBusy(false);
+    }
+  };
+
+  const handleRelease = async () => {
+    if (!handoverMotif.trim() || !id || !user) {
+      toast({ title: "Erreur", description: "Saisissez un motif de libération", variant: "destructive" });
+      return;
+    }
+    setHandoverBusy(true);
+    try {
+      const now = new Date().toISOString();
+      const previousAssigneeId = ticket.assignee_id;
+
+      // 1. Close current intervention as "liberee"
+      const activeIntervention = interventions.find((i) => i.statut === "en_cours" && i.technicien_id === previousAssigneeId);
+      if (activeIntervention) {
+        await supabase.from("interventions").update({
+          statut: "liberee" as any, date_fin: now,
+          notes: `Libération du ticket — Motif: ${handoverMotif}`,
+        }).eq("id", activeIntervention.id);
+      }
+
+      // 2. Release ticket back to pool
+      await supabase.from("tickets").update({
+        assignee_id: null, statut: "ouvert" as any, heure_prise_en_charge: null,
+      }).eq("id", id);
+
+      // 3. Audit
+      await logAudit({
+        action_type: "status_change", module: "tickets",
+        entity_type: "ticket", entity_id: id, entity_code: ticket.numero,
+        entity_label: ticket.description, action_label: "Libération ticket",
+        description: `Libération par ${assigneeName || "—"} — ${handoverMotif}`,
+        old_values: { assignee_id: previousAssigneeId, statut: ticket.statut },
+        new_values: { assignee_id: null, statut: "ouvert" },
+        metadata: { motif: handoverMotif, event: "ticket.released" },
+        severity: "medium",
+      });
+
+      // 4. Notify maintenance pool (resp_maintenance role)
+      await supabase.from("notifications").insert({
+        notification_type: "ticket_released", module: "tickets",
+        title: `Ticket libéré : ${ticket.numero}`,
+        message: `${assigneeName || "Un maintenancier"} a libéré ce ticket. Motif : ${handoverMotif}`,
+        recipient_role: "maintenancier",
+        triggered_by_user_id: user.id,
+        entity_type: "ticket", entity_id: id, entity_code: ticket.numero,
+        entity_label: ticket.description,
+        action_url: `/tickets/${id}`,
+        severity: "warning" as any,
+      });
+
+      toast({ title: "Ticket libéré", description: "Disponible pour reprise" });
+      setHandoverMotif("");
+      loadTicket();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setHandoverBusy(false);
+    }
   };
 
   const addPdr = () => {
@@ -282,6 +412,7 @@ export default function TicketDetail() {
 
   const canTakeCharge = ticket.statut === "ouvert" && (hasRole("maintenancier") || hasRole("resp_maintenance") || hasRole("admin"));
   const canResolve = (ticket.statut === "pris_en_charge" || ticket.statut === "en_cours") && (ticket.assignee_id === user?.id || hasRole("admin"));
+  const canHandover = (ticket.statut === "pris_en_charge" || ticket.statut === "en_cours") && (ticket.assignee_id === user?.id || hasRole("admin") || hasRole("resp_maintenance"));
   const canCloseTicket = ticket.statut === "resolu" && (hasRole("resp_maintenance") || hasRole("admin"));
 
   // Time helpers
@@ -348,6 +479,65 @@ export default function TicketDetail() {
             <Wrench className="h-4 w-4 mr-2" /> Prendre en charge
           </Button>
         </StickyActionBar>
+      )}
+
+      {canHandover && canEdit("tickets") && (
+        <Card className="border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-1.5">
+              <ArrowRightLeft className="h-4 w-4 text-amber-600" />
+              Passation / Libération
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Fin de shift ou blocage : transférez le ticket à un collègue ou libérez-le pour qu'un autre maintenancier puisse le reprendre.
+            </p>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Motif *</Label>
+              <Textarea
+                value={handoverMotif}
+                onChange={(e) => setHandoverMotif(e.target.value)}
+                placeholder="Fin de shift, attente pièce, expertise requise..."
+                className={isMobile ? "min-h-[60px]" : "min-h-[60px]"}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Transférer à (optionnel)</Label>
+              <Select value={transferTargetId} onValueChange={setTransferTargetId}>
+                <SelectTrigger className="h-10"><SelectValue placeholder="Choisir un maintenancier" /></SelectTrigger>
+                <SelectContent>
+                  {maintenanciers
+                    .filter((m) => m.user_id !== ticket.assignee_id)
+                    .map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
+              <Button
+                onClick={handleTransfer}
+                disabled={!transferTargetId || !handoverMotif.trim() || handoverBusy}
+                className="h-11 flex-1"
+                variant="default"
+              >
+                <ArrowRightLeft className="h-4 w-4 mr-2" />
+                Transférer
+              </Button>
+              <Button
+                onClick={handleRelease}
+                disabled={!handoverMotif.trim() || handoverBusy}
+                className="h-11 flex-1"
+                variant="outline"
+              >
+                <UserMinus className="h-4 w-4 mr-2" />
+                Libérer le ticket
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {canResolve && canEdit("tickets") && (

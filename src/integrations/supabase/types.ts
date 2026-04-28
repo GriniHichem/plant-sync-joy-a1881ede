@@ -3508,7 +3508,12 @@ export type Database = {
         | "semestriel"
         | "annuel"
       impact_ligne: "arret_complet" | "arret_partiel" | "degradation" | "aucun"
-      intervention_statut: "en_cours" | "terminee" | "annulee"
+      intervention_statut:
+        | "en_cours"
+        | "terminee"
+        | "annulee"
+        | "transferee"
+        | "liberee"
       machine_statut: "en_marche" | "arret" | "maintenance"
       mouvement_type: "entree" | "sortie" | "correction" | "inventaire"
       notification_frequency: "immediate" | "grouped_hourly" | "grouped_daily"
@@ -3737,7 +3742,13 @@ export const Constants = {
         "annuel",
       ],
       impact_ligne: ["arret_complet", "arret_partiel", "degradation", "aucun"],
-      intervention_statut: ["en_cours", "terminee", "annulee"],
+      intervention_statut: [
+        "en_cours",
+        "terminee",
+        "annulee",
+        "transferee",
+        "liberee",
+      ],
       machine_statut: ["en_marche", "arret", "maintenance"],
       mouvement_type: ["entree", "sortie", "correction", "inventaire"],
       notification_frequency: ["immediate", "grouped_hourly", "grouped_daily"],

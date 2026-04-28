@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Plus, Search, AlertTriangle, Download, RotateCcw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
+import { FilterSheet } from "@/components/responsive/FilterSheet";
 
 export default function TicketsList() {
   const [tickets, setTickets] = useState<any[]>([]);
@@ -81,8 +82,55 @@ export default function TicketsList() {
     return matchSearch && matchStatus && matchPriority;
   });
 
+  const resetFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setPriorityFilter("all");
+  };
+  const activeFilterCount =
+    (search.trim() ? 1 : 0) + (statusFilter !== "all" ? 1 : 0) + (priorityFilter !== "all" ? 1 : 0);
+
+  const FiltersForm = () => (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label className="text-xs">Recherche</Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="N° ou machine…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-11" />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Statut</Label>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous</SelectItem>
+            <SelectItem value="ouvert">Ouvert</SelectItem>
+            <SelectItem value="pris_en_charge">Pris en charge</SelectItem>
+            <SelectItem value="en_cours">En cours</SelectItem>
+            <SelectItem value="resolu">Résolu</SelectItem>
+            <SelectItem value="cloture">Clôturé</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Priorité</Label>
+        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+          <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes</SelectItem>
+            <SelectItem value="critique">Critique</SelectItem>
+            <SelectItem value="haute">Haute</SelectItem>
+            <SelectItem value="normale">Normale</SelectItem>
+            <SelectItem value="basse">Basse</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
   return (
-    <div className={`space-y-4 ${isMobile ? "px-1" : ""}`}>
+    <div className="space-y-4">
       {/* Header */}
       <div className={`flex items-center justify-between ${isMobile ? "flex-col items-stretch gap-2" : ""}`}>
         <div>
@@ -104,64 +152,79 @@ export default function TicketsList() {
             </Button>
           )}
           {canCreate("tickets") && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size={isMobile ? "sm" : "default"} className={isMobile ? "h-9 px-3" : "h-12 px-6"}>
-                  <Plus className="h-4 w-4 mr-1" /> {isMobile ? "Ticket" : "Nouveau ticket"}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className={isMobile ? "max-w-[95vw]" : "max-w-md"}>
-                <DialogHeader><DialogTitle>Nouveau ticket maintenance</DialogTitle></DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Machine *</Label>
-                    <Select value={newMachineId} onValueChange={setNewMachineId}>
-                      <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner une machine" /></SelectTrigger>
-                      <SelectContent>{machines.map((m) => <SelectItem key={m.id} value={m.id}>{m.code} — {m.designation}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Type de panne</Label>
-                    <Select value={newPanneTypeId} onValueChange={setNewPanneTypeId}>
-                      <SelectTrigger className="h-12"><SelectValue placeholder="Optionnel" /></SelectTrigger>
-                      <SelectContent>{panneTypes.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Priorité</Label>
-                    <Select value={newPriorite} onValueChange={setNewPriorite}>
-                      <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="basse">Basse</SelectItem>
-                        <SelectItem value="normale">Normale</SelectItem>
-                        <SelectItem value="haute">Haute</SelectItem>
-                        <SelectItem value="critique">Critique</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description *</Label>
-                    <Textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} placeholder="Décrivez le problème..." className="min-h-[80px]" />
-                  </div>
-                  <Button onClick={handleCreate} className="w-full h-12">Créer le ticket</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button
+              size={isMobile ? "sm" : "default"}
+              className={isMobile ? "h-11 w-full" : "h-12 px-6"}
+              onClick={() => setDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" /> {isMobile ? "Nouveau ticket" : "Nouveau ticket"}
+            </Button>
           )}
+          <ResponsiveDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            title="Nouveau ticket maintenance"
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Machine *</Label>
+                <Select value={newMachineId} onValueChange={setNewMachineId}>
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner une machine" /></SelectTrigger>
+                  <SelectContent>{machines.map((m) => <SelectItem key={m.id} value={m.id}>{m.code} — {m.designation}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Type de panne</Label>
+                <Select value={newPanneTypeId} onValueChange={setNewPanneTypeId}>
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Optionnel" /></SelectTrigger>
+                  <SelectContent>{panneTypes.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Priorité</Label>
+                <Select value={newPriorite} onValueChange={setNewPriorite}>
+                  <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basse">Basse</SelectItem>
+                    <SelectItem value="normale">Normale</SelectItem>
+                    <SelectItem value="haute">Haute</SelectItem>
+                    <SelectItem value="critique">Critique</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Description *</Label>
+                <Textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} placeholder="Décrivez le problème..." className="min-h-[80px]" />
+              </div>
+              <Button onClick={handleCreate} className="w-full h-12">Créer le ticket</Button>
+            </div>
+          </ResponsiveDialog>
         </div>
       </div>
 
       {/* Filters */}
       <Card>
         <CardHeader className="pb-2">
-          <div className={`flex gap-2 ${isMobile ? "flex-col" : "flex-row"}`}>
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-10" />
-            </div>
-            <div className={`flex gap-2 ${isMobile ? "" : ""}`}>
+          {isMobile ? (
+            <FilterSheet
+              activeCount={activeFilterCount}
+              onReset={activeFilterCount > 0 ? resetFilters : undefined}
+              activeChips={[
+                ...(search.trim() ? [{ key: "s", label: `« ${search} »`, onRemove: () => setSearch("") }] : []),
+                ...(statusFilter !== "all" ? [{ key: "st", label: `Statut: ${statusFilter.replace("_", " ")}`, onRemove: () => setStatusFilter("all") }] : []),
+                ...(priorityFilter !== "all" ? [{ key: "pr", label: `Priorité: ${priorityFilter}`, onRemove: () => setPriorityFilter("all") }] : []),
+              ]}
+            >
+              <FiltersForm />
+            </FilterSheet>
+          ) : (
+            <div className="flex gap-2 flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-10" />
+              </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className={`h-10 ${isMobile ? "flex-1" : "w-[140px]"}`}><SelectValue placeholder="Statut" /></SelectTrigger>
+                <SelectTrigger className="h-10 w-[140px]"><SelectValue placeholder="Statut" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous</SelectItem>
                   <SelectItem value="ouvert">Ouvert</SelectItem>
@@ -172,7 +235,7 @@ export default function TicketsList() {
                 </SelectContent>
               </Select>
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className={`h-10 ${isMobile ? "flex-1" : "w-[130px]"}`}><SelectValue placeholder="Priorité" /></SelectTrigger>
+                <SelectTrigger className="h-10 w-[130px]"><SelectValue placeholder="Priorité" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Toutes</SelectItem>
                   <SelectItem value="critique">Critique</SelectItem>
@@ -181,22 +244,13 @@ export default function TicketsList() {
                   <SelectItem value="basse">Basse</SelectItem>
                 </SelectContent>
               </Select>
-              {(search.trim() || statusFilter !== "all" || priorityFilter !== "all") && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-10 px-3 text-muted-foreground"
-                  onClick={() => {
-                    setSearch("");
-                    setStatusFilter("all");
-                    setPriorityFilter("all");
-                  }}
-                >
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" className="h-10 px-3 text-muted-foreground" onClick={resetFilters}>
                   <RotateCcw className="h-4 w-4 mr-1" /> Réinitialiser
                 </Button>
               )}
             </div>
-          </div>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {isMobile ? (

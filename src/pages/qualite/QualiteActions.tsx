@@ -323,19 +323,16 @@ export default function QualiteActions() {
     if (err) { toast({ title: "Erreur", description: err, variant: "destructive" }); return; }
     setSubmitting(true);
     const payload = buildQaInsertPayload(form, user.id);
-    const { data, error } = await supabase.from("quality_actions").insert(payload).select("*").single();
+    const { data, error } = await (supabase.from("quality_actions") as any).insert(payload).select("*").single();
     if (error) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
       setSubmitting(false);
       return;
     }
     await logAudit({
-      module: "qualite",
-      action: "create_quality_action",
-      action_label: "Création action qualité",
+      module: "qualite" as any,
       action_type: "create",
-      table_name: "quality_actions",
-      record_id: data.id,
+      action_label: "Création action qualité",
       entity_type: "quality_action",
       entity_id: data.id,
       entity_label: data.title,
@@ -345,7 +342,7 @@ export default function QualiteActions() {
     // Notification on assignment
     const notif = buildAssignmentNotificationPayload(data as any);
     if (notif) {
-      await supabase.from("notifications").insert({ ...notif, triggered_by_user_id: user.id });
+      await (supabase.from("notifications") as any).insert({ ...notif, triggered_by_user_id: user.id });
     }
     toast({ title: "Action créée" });
     setCreateOpen(false);
@@ -362,8 +359,8 @@ export default function QualiteActions() {
       return;
     }
     setSubmitting(true);
-    const { data, error } = await supabase
-      .from("quality_actions")
+    const { data, error } = await (supabase
+      .from("quality_actions") as any)
       .update(result)
       .eq("id", updateRow.id)
       .select("*")
@@ -374,12 +371,9 @@ export default function QualiteActions() {
       return;
     }
     await logAudit({
-      module: "qualite",
-      action: updateForm.status === "closed" ? "close_quality_action" : "update_quality_action",
-      action_label: updateForm.status === "closed" ? "Clôture action qualité" : "Mise à jour action qualité",
+      module: "qualite" as any,
       action_type: "update",
-      table_name: "quality_actions",
-      record_id: updateRow.id,
+      action_label: updateForm.status === "closed" ? "Clôture action qualité" : "Mise à jour action qualité",
       entity_type: "quality_action",
       entity_id: updateRow.id,
       entity_label: updateRow.title,
@@ -390,11 +384,11 @@ export default function QualiteActions() {
     // Notification on assignment change
     if (updateForm.responsible_user_id && updateForm.responsible_user_id !== updateRow.responsible_user_id) {
       const notif = buildAssignmentNotificationPayload(data as any);
-      if (notif) await supabase.from("notifications").insert({ ...notif, triggered_by_user_id: user.id });
+      if (notif) await (supabase.from("notifications") as any).insert({ ...notif, triggered_by_user_id: user.id });
     }
     if (updateForm.status === "closed") {
       const notif = buildClosedNotificationPayload(data as any);
-      if (notif) await supabase.from("notifications").insert({ ...notif, triggered_by_user_id: user.id });
+      if (notif) await (supabase.from("notifications") as any).insert({ ...notif, triggered_by_user_id: user.id });
     }
     toast({ title: "Action mise à jour" });
     setUpdateRow(null);

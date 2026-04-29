@@ -3,7 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/audit";
 
-type AppRole = "admin" | "resp_maintenance" | "maintenancier" | "resp_production" | "chef_ligne" | "operateur" | "gestionnaire_magasin" | "bureau_methode" | "responsable_si" | "auditeur";
+type AppRole = "admin" | "resp_maintenance" | "maintenancier" | "resp_production" | "chef_ligne" | "operateur" | "gestionnaire_magasin" | "bureau_methode" | "responsable_si" | "auditeur" | "controleur_qualite";
 
 interface Profile {
   id: string;

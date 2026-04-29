@@ -415,15 +415,33 @@ export default function TicketDetail() {
           }
         }
       }
-      // Insert one "Collaboration" intervention per active collaborator
-      if (collaborators.length > 0) {
+      // Close any still-open collaboration interventions (started at addCollaborator time)
+      const openCollabIntvIds = interventions
+        .filter((i) =>
+          i.statut === "en_cours" &&
+          i.technicien_id !== ticket?.assignee_id &&
+          (i.description || "").startsWith("Collaboration")
+        )
+        .map((i) => i.id);
+      if (openCollabIntvIds.length > 0) {
+        await supabase.from("interventions")
+          .update({ statut: "terminee" as any, date_fin: now })
+          .in("id", openCollabIntvIds);
+      }
+      // Safety net: for collaborators added BEFORE this fix (no open intervention), create a closed one
+      const collabsWithoutIntv = collaborators.filter(
+        (c) => !interventions.some((i) =>
+          i.technicien_id === c.user_id && (i.description || "").startsWith("Collaboration")
+        )
+      );
+      if (collabsWithoutIntv.length > 0) {
         await supabase.from("interventions").insert(
-          collaborators.map((c) => ({
+          collabsWithoutIntv.map((c) => ({
             ticket_id: id!,
             technicien_id: c.user_id,
             description: `Collaboration (${c.role_label === "co_intervenant" ? "co-intervenant" : "aide"})`,
             statut: "terminee" as any,
-            date_debut: ticket?.heure_prise_en_charge || now,
+            date_debut: c.added_at || ticket?.heure_prise_en_charge || now,
             date_fin: now,
           }))
         );

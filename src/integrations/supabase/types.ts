@@ -2901,6 +2901,78 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_indicators: {
+        Row: {
+          category: Database["public"]["Enums"]["quality_indicator_category"]
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          frequency_type: Database["public"]["Enums"]["quality_frequency_type"]
+          id: string
+          indicator_type: Database["public"]["Enums"]["quality_indicator_type"]
+          is_active: boolean
+          is_blocking: boolean
+          is_required: boolean
+          max_value: number | null
+          min_value: number | null
+          name: string
+          select_options: Json | null
+          target_value: number | null
+          tolerance_minus: number | null
+          tolerance_plus: number | null
+          unit: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["quality_indicator_category"]
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          frequency_type?: Database["public"]["Enums"]["quality_frequency_type"]
+          id?: string
+          indicator_type: Database["public"]["Enums"]["quality_indicator_type"]
+          is_active?: boolean
+          is_blocking?: boolean
+          is_required?: boolean
+          max_value?: number | null
+          min_value?: number | null
+          name: string
+          select_options?: Json | null
+          target_value?: number | null
+          tolerance_minus?: number | null
+          tolerance_plus?: number | null
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["quality_indicator_category"]
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          frequency_type?: Database["public"]["Enums"]["quality_frequency_type"]
+          id?: string
+          indicator_type?: Database["public"]["Enums"]["quality_indicator_type"]
+          is_active?: boolean
+          is_blocking?: boolean
+          is_required?: boolean
+          max_value?: number | null
+          min_value?: number | null
+          name?: string
+          select_options?: Json | null
+          target_value?: number | null
+          tolerance_minus?: number | null
+          tolerance_plus?: number | null
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       recipe_lines: {
         Row: {
           article_id: string
@@ -3968,6 +4040,22 @@ export type Database = {
         | "automatisme"
         | "instrumentation"
         | "autre"
+      quality_frequency_type:
+        | "hourly"
+        | "shift"
+        | "daily"
+        | "per_of"
+        | "per_lot"
+        | "manual"
+      quality_indicator_category:
+        | "produit_fini"
+        | "emballage"
+        | "process"
+        | "hygiene"
+        | "poids"
+        | "controle_visuel"
+        | "autre"
+      quality_indicator_type: "numeric" | "boolean" | "text" | "select"
       role_fonctionnel:
         | "alimentation"
         | "transformation"
@@ -4226,6 +4314,24 @@ export const Constants = {
         "instrumentation",
         "autre",
       ],
+      quality_frequency_type: [
+        "hourly",
+        "shift",
+        "daily",
+        "per_of",
+        "per_lot",
+        "manual",
+      ],
+      quality_indicator_category: [
+        "produit_fini",
+        "emballage",
+        "process",
+        "hygiene",
+        "poids",
+        "controle_visuel",
+        "autre",
+      ],
+      quality_indicator_type: ["numeric", "boolean", "text", "select"],
       role_fonctionnel: [
         "alimentation",
         "transformation",

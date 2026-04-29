@@ -20,13 +20,7 @@ const groups: SectionGroup[] = [
     label: "Sécurité & Accès",
     icon: Shield,
     items: [
-      { title: "Sécurité, Rôles & Accès (Hub)", description: "Hub centralisé : permissions, rôles, audit, contrôles globaux, self-hosting", icon: ShieldCheck, url: "/parametres/access-control" },
-      { title: "Utilisateurs", description: "Gérer les comptes et rôles", icon: Users, url: "/parametres/users" },
-      { title: "Matrice des rôles", description: "Permissions détaillées par rôle", icon: ShieldCheck, url: "/parametres/roles" },
-      { title: "Permissions documents", description: "Droits d'accès aux documents par rôle et entité", icon: Lock, url: "/parametres/document-permissions" },
-      { title: "Permissions PDR & Stock", description: "Fournisseurs, entrées, sorties, corrections, inventaires", icon: Package, url: "/parametres/pdr-stock-permissions" },
-      { title: "Notifications", description: "Règles d'alertes par rôle, module et événement", icon: Bell, url: "/parametres/notifications" },
-      { title: "Validations", description: "Règles de validation a posteriori et bloquantes", icon: CheckSquare, url: "/parametres/validations" },
+      { title: "Sécurité & Accès (App dédiée)", description: "Hub centralisé : utilisateurs, rôles, permissions, qualité, audit, contrôles globaux et self-hosting", icon: ShieldCheck, url: "/securite" },
     ],
   },
   {

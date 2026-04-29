@@ -178,7 +178,8 @@ export default function TicketDetail() {
   const handleTakeCharge = async () => {
     const now = new Date().toISOString();
     // Preserve original heure_prise_en_charge if it already exists (re-take after release)
-    const ticketUpdate: any = { statut: "pris_en_charge" as any, assignee_id: user?.id };
+    // assignment_status tracks the assignment lifecycle separately from the workflow `statut`.
+    const ticketUpdate: any = { statut: "pris_en_charge" as any, assignee_id: user?.id, assignment_status: "assigned" as any };
     if (!ticket?.heure_prise_en_charge) ticketUpdate.heure_prise_en_charge = now;
     await supabase.from("tickets").update(ticketUpdate).eq("id", id!);
     await supabase.from("interventions").insert({ ticket_id: id!, technicien_id: user?.id!, description: "Prise en charge", statut: "en_cours" as any });
@@ -207,7 +208,12 @@ export default function TicketDetail() {
       }
 
       // 2. Reassign ticket (keep heure_prise_en_charge for KPI continuity)
-      await supabase.from("tickets").update({ assignee_id: transferTargetId }).eq("id", id);
+      // assignment_status: 'transferred' marks the lifecycle event; will become 'assigned' again
+      // automatically next time the new assignee re-takes via handleTakeCharge if needed.
+      await supabase.from("tickets").update({
+        assignee_id: transferTargetId,
+        assignment_status: "transferred" as any,
+      }).eq("id", id);
 
       // 3. Open new intervention for new assignee
       await supabase.from("interventions").insert({
@@ -271,8 +277,11 @@ export default function TicketDetail() {
       }
 
       // 2. Release ticket back to pool (keep heure_prise_en_charge for KPI continuity if re-taken)
+      // statut returns to 'ouvert' (existing workflow), assignment_status records 'released'.
       await supabase.from("tickets").update({
-        assignee_id: null, statut: "ouvert" as any,
+        assignee_id: null,
+        statut: "ouvert" as any,
+        assignment_status: "released" as any,
       }).eq("id", id);
 
       // 3. Audit
@@ -480,6 +489,12 @@ export default function TicketDetail() {
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <StatusBadge type="ticket" value={ticket.statut} />
             <StatusBadge type="priority" value={ticket.priorite} />
+            {ticket.assignment_status === "transferred" && (
+              <Badge variant="outline" className="text-xs bg-info/10 text-info border-info/20">Transféré</Badge>
+            )}
+            {ticket.assignment_status === "released" && (
+              <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">Libéré</Badge>
+            )}
             {ticket.is_from_gpao && (
               <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-300">
                 <Factory className="h-3 w-3 mr-0.5" /> GPAO

@@ -1,86 +1,98 @@
-## Objectif
+# Cohérence des statuts tickets — audit + champ `assignment_status` dédié
 
-Empêcher l'envoi de saisies invalides depuis mobile/tablette en bloquant les boutons d'action et en affichant des erreurs inline **avant** l'appel Supabase, pour les trois cas critiques :
-- **Heure non autorisée** (créneau hors fenêtre de saisie)
-- **OF manquant** (déclaration sans Ordre de Fabrication actif)
-- **Ticket sans machine** (création de ticket maintenance)
+## Constat de l'audit
 
-## Constats actuels
+Le statut principal des tickets est défini par l'enum Postgres `ticket_statut` :
 
-Toutes les validations existantes sont **réactives** (toast après clic) et le bouton de soumission reste cliquable. Sur mobile (clic tactile, viewport étroit), cela cause des doubles envois et confusion.
-
-Fichiers concernés :
-- `src/pages/gpao/ShiftScreen.tsx` — `handleDeclareProduction` (heure), `handleStartShift` (OF/ligne), `handleCreateTicket` (machine)
-- `src/pages/TicketsList.tsx` — `handleCreate` (machine)
-- `src/pages/TicketDetail.tsx` — `handleResolve`, `handleTransfer`, `handleRelease`, `handleTakeCharge` (déjà traités précédemment, vérifier la cohérence mobile)
-
-## Modifications
-
-### 1. Schémas Zod centralisés (`src/lib/formValidation.ts` — nouveau)
-Créer des schémas réutilisables :
-```ts
-ticketCreateSchema     → machine_id (uuid requis), description (1..1000 chars trim), priorite enum
-productionDeclareSchema → of_id, slot_index (>=0), quantite_produite (>=0), quantite_rebut (>=0)
-shiftStartSchema       → team_id, slot_id, of_id, line_id (tous requis)
 ```
-Plus un helper `getFieldError(result, field)` pour l'affichage inline.
+ouvert | pris_en_charge | en_cours | resolu | cloture
+```
 
-### 2. ShiftScreen — Production hourly form
-- État local `formErrors` (Record<string,string>).
-- À chaque changement de champ : revalider le schéma → `formErrors`.
-- **Bouton « Déclarer »** : `disabled` si `selectedHourSlot === null` ou `!canEditSlot(slot)` ou erreurs Zod ou OF manquant.
-- Sous chaque champ (créneau, quantité) : `<p className="text-xs text-destructive">…</p>` inline.
-- **Banner rouge** persistant en haut du formulaire si :
-  - Aucun OF actif → "Sélectionnez un OF pour déclarer la production"
-  - Aucun créneau éditable disponible → "Aucune fenêtre horaire ouverte (règle Hour-1)"
-- Sur mobile : banner sticky sous le header pour rester visible en scroll.
+**`pris_en_charge` n'est PAS un nouveau terme** — il existe déjà depuis la migration initiale (`20260316172020`) et est utilisé partout de façon cohérente :
 
-### 3. ShiftScreen — Start shift form
-- Bouton « Démarrer » `disabled` tant que team_id, slot_id, OF, ligne_id ne sont pas tous remplis.
-- Erreurs inline sous chaque Select.
-- Si OF sans ligne assignée : message rouge **immédiat** sous le sélecteur d'OF (au lieu d'attendre le clic).
+- **DB** : enum `ticket_statut` + colonne `tickets.statut`
+- **UI** : `StatusBadge` (libellé "Pris en charge", couleur warning), filtres `TicketsList`, `MaintenancierShiftView`, `InterventionJournal`
+- **KPI / Dashboard** : `OPEN_TICKET_STATUSES = ["ouvert", "pris_en_charge", "en_cours"]` dans `useLineSynopticData`, agrégats tests
+- **Permissions** : `canResolve` / `canHandover` acceptent `pris_en_charge` OU `en_cours`
+- **Tests** : 9 fichiers couvrent les 5 statuts
 
-### 4. ShiftScreen — Create ticket dialog
-- Bouton « Créer ticket » `disabled` si `!ticketMachineId || ticketDescription.trim().length === 0`.
-- Compteur de caractères live (max 1000) sur la description.
-- Helper text rouge sous le sélecteur Machine si vide.
+→ **Aucun conflit existant**. Le workflow reste : `ouvert → pris_en_charge → en_cours (optionnel) → resolu → cloture`.
 
-### 5. TicketsList — Create ticket dialog
-- Mêmes règles que §4 + validation Zod (uuid pour machine, description 1..1000).
-- Bouton « Créer » désactivé tant que le formulaire est invalide.
-- Sur mobile : `ResponsiveDialog` (déjà utilisé) — s'assurer que les messages d'erreur restent visibles au-dessus du clavier virtuel (padding-bottom dynamique).
+## Le vrai besoin
 
-### 6. UX mobile/tablette
-- Touch targets : tous les `Button` de soumission gardent `h-12` (48px conforme thème industriel).
-- États visuels : `disabled` → opacité réduite + curseur not-allowed (déjà géré par `Button` shadcn).
-- Pas de submit on Enter dans les `Input` mobiles tant que invalide.
+Les flux récents (transfert, libération, collaboration) modifient `assignee_id` et créent des sous-statuts d'intervention (`transferee`, `liberee`), mais il n'existe **aucun champ pour tracer le cycle d'affectation lui-même**. Aujourd'hui on doit déduire "transféré" / "libéré" depuis l'historique d'audit.
 
-### 7. Audit / Tests
-- Aucune migration DB.
-- Ajouter `src/test/forms/form-validation.test.ts` : couvre les trois schémas Zod (cas valides/invalides).
+## Plan
+
+### 1. Migration : ajout d'un champ nullable `assignment_status`
+
+```sql
+CREATE TYPE public.ticket_assignment_status AS ENUM (
+  'unassigned',   -- assignee_id IS NULL et jamais pris
+  'assigned',     -- pris en charge (assignee_id renseigné)
+  'transferred',  -- réassigné à un autre maintenancier
+  'released'      -- libéré dans le pool (assignee_id remis à NULL)
+);
+
+ALTER TABLE public.tickets
+  ADD COLUMN assignment_status public.ticket_assignment_status;
+```
+
+- **Nullable** : aucune valeur imposée sur les anciens tickets, aucun défaut → zéro impact sur les filtres/KPI existants.
+- **Backfill léger** (one-shot) :
+  - `assignee_id IS NULL` et `statut IN ('ouvert')` → `unassigned`
+  - `assignee_id IS NOT NULL` et `statut IN ('pris_en_charge','en_cours')` → `assigned`
+  - autres → laisser `NULL` (statut terminal, info non pertinente)
+
+### 2. Mise à jour `TicketDetail.tsx` (write paths uniquement)
+
+Ajouter `assignment_status` à chaque action **sans toucher à `statut`** :
+
+| Action | `statut` (inchangé) | `assignment_status` (nouveau) |
+|---|---|---|
+| `handleTakeCharge` | `pris_en_charge` | `assigned` |
+| `handleTransfer` | inchangé | `transferred`, puis `assigned` après reprise |
+| `handleRelease` | `ouvert` | `released` |
+| `handleResolve` | `resolu` | inchangé (NULL ou dernière valeur) |
+
+### 3. UI — affichage non bloquant
+
+- `StatusBadge` reste piloté par `statut` (aucune modification visuelle existante).
+- Sur `TicketDetail`, ajouter un petit badge secondaire à côté du badge principal quand `assignment_status` ∈ {`transferred`, `released`} :
+  - `Transféré` (bg-info/10)
+  - `Libéré` (bg-warning/10)
+- **Pas** de nouveau filtre dans `TicketsList` (préserve l'UX existante). Le champ devient queryable pour le dashboard/analytics ultérieurement.
+
+### 4. Garde-fous
+
+- Aucune modification à : `OPEN_TICKET_STATUSES`, filtres `TicketsList`, KPI `Dashboard`, agrégats `AnalyticsPage`, requêtes `MaintenancierShiftView`.
+- Aucune modification à l'enum `ticket_statut` ni à l'enum `intervention_statut`.
+- Tests existants restent verts (ils n'utilisent pas `assignment_status`).
+
+### 5. Tests
+
+Nouveau fichier `src/test/gmao/ticket-assignment-status.test.ts` :
+- transition `unassigned → assigned` lors de la prise en charge
+- transition `assigned → transferred → assigned` après transfert
+- transition `assigned → released` après libération
+- `statut` jamais modifié par ces transitions hors workflow normal
+
+### 6. Mémoire
+
+Mettre à jour `mem://features/gmao-maintenance` : noter que `tickets.statut` (5 valeurs) est immuable et que le cycle d'affectation est porté par `assignment_status` (nullable, séparé).
 
 ## Détails techniques
 
 ```text
-src/lib/formValidation.ts         (NEW)
-  ├─ ticketCreateSchema (zod)
-  ├─ productionDeclareSchema (zod)
-  ├─ shiftStartSchema (zod)
-  └─ getFieldError() helper
-
-src/pages/gpao/ShiftScreen.tsx
-  ├─ useMemo(declareErrors) → blocks "Déclarer" button
-  ├─ useMemo(startShiftErrors) → blocks "Démarrer" button
-  ├─ useMemo(ticketErrors) → blocks "Créer ticket" button
-  └─ inline <FieldError /> components
-
-src/pages/TicketsList.tsx
-  └─ useMemo(createErrors) → blocks "Créer" button + inline errors
-
-src/test/forms/form-validation.test.ts (NEW)
+tickets
+├── statut           : ticket_statut    NOT NULL  (workflow métier — inchangé)
+└── assignment_status: ticket_assignment_status NULL (cycle d'affectation — nouveau)
 ```
 
-## Hors-scope
-- Pas de validation backend supplémentaire (RLS et triggers existants suffisent).
-- Pas de refonte des dialogs ni des layouts mobiles existants.
-- Pas de modification des règles métier (Hour-1, OF status, etc.) — juste leur exposition côté UI.
+Fichiers touchés :
+- `supabase/migrations/<new>.sql` — enum + colonne + backfill
+- `src/pages/TicketDetail.tsx` — 3 fonctions (`handleTakeCharge`, `handleTransfer`, `handleRelease`) + badge secondaire
+- `src/test/gmao/ticket-assignment-status.test.ts` — nouveau
+- `mem://features/gmao-maintenance` — note
+
+`src/integrations/supabase/types.ts` est régénéré automatiquement après migration.

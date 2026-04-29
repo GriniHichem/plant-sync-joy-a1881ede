@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Menu, ChevronDown, LayoutGrid } from "lucide-react";
+import { Menu, ChevronDown, LayoutGrid, ClipboardCheck, AlertTriangle, ListChecks, FileBarChart, GitBranch, Lock, CheckSquare, Cog, Activity, Sliders } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SearchTrigger } from "@/components/search/SearchTrigger";
 
@@ -47,7 +47,26 @@ const gpaoItems = [
   { title: "Arrêts", url: "/gpao/arrets", icon: IconStop },
 ];
 
-type NavItem = { title: string; url: string; icon: React.FC<{ size?: number; className?: string }> };
+const qualiteItems = [
+  { title: "Dashboard", url: "/qualite", icon: IconDashboard },
+  { title: "Contrôles", url: "/qualite/controles", icon: ClipboardCheck },
+  { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle },
+  { title: "Actions", url: "/qualite/actions", icon: ListChecks },
+  { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics },
+  { title: "OF Qualité", url: "/qualite/of", icon: IconOrder },
+  { title: "Recettes & BOM", url: "/qualite/recettes-nomenclatures", icon: IconRecipe },
+  { title: "Traçabilité", url: "/qualite/tracabilite", icon: GitBranch },
+  { title: "Rapports", url: "/qualite/rapports", icon: FileBarChart },
+];
+
+const configItems = [
+  { title: "Paramètres", url: "/parametres", icon: IconSettings },
+  { title: "Sécurité & Accès", url: "/securite", icon: Lock },
+  { title: "Validations", url: "/validations", icon: CheckSquare },
+  { title: "Audit & Traçabilité", url: "/audit", icon: Activity },
+];
+
+type NavItem = { title: string; url: string; icon: React.FC<any> };
 
 function isActive(currentPath: string, path: string) {
   return path === "/" ? currentPath === "/" : currentPath.startsWith(path);
@@ -60,7 +79,7 @@ function MegaMenu({
   active,
 }: {
   label: string;
-  GroupIcon: React.FC<{ size?: number; className?: string }>;
+  GroupIcon: React.FC<any>;
   items: NavItem[];
   active: boolean;
 }) {
@@ -176,19 +195,9 @@ function MobileNav() {
         <div className="my-3 h-px bg-border/60" />
         {renderItems("Production", gpaoItems)}
         <div className="my-3 h-px bg-border/60" />
-        <RRNavLink
-          to="/parametres"
-          className={({ isActive: a }) =>
-            cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-md text-[14px] font-medium",
-              "text-foreground/75 hover:bg-accent hover:text-foreground",
-              a && "bg-primary/10 text-primary font-semibold"
-            )
-          }
-        >
-          <IconSettings size={18} />
-          Paramètres
-        </RRNavLink>
+        {renderItems("Qualité", qualiteItems)}
+        <div className="my-3 h-px bg-border/60" />
+        {renderItems("Configuration", configItems)}
       </SheetContent>
     </Sheet>
   );
@@ -201,7 +210,8 @@ export function AppTopBar() {
 
   const isGmaoActive = gmaoItems.some((i) => isActive(location.pathname, i.url));
   const isGpaoActive = gpaoItems.some((i) => isActive(location.pathname, i.url));
-  const isSettingsActive = isActive(location.pathname, "/parametres");
+  const isQualiteActive = qualiteItems.some((i) => isActive(location.pathname, i.url));
+  const isConfigActive = configItems.some((i) => isActive(location.pathname, i.url));
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"
@@ -262,20 +272,8 @@ export function AppTopBar() {
           </Button>
           <MegaMenu label="Maintenance" GroupIcon={IconMaintenance} items={gmaoItems} active={isGmaoActive} />
           <MegaMenu label="Production" GroupIcon={IconProduction} items={gpaoItems} active={isGpaoActive} />
-          <Button
-            asChild
-            variant="ghost"
-            className={cn(
-              "h-9 px-3 gap-2 text-[13px] font-semibold rounded-md",
-              "text-foreground/70 hover:text-foreground hover:bg-accent/60",
-              isSettingsActive && "text-primary bg-primary/10 hover:bg-primary/15 hover:text-primary"
-            )}
-          >
-            <RRNavLink to="/parametres">
-              <IconSettings size={16} />
-              <span className="hidden lg:inline">Paramètres</span>
-            </RRNavLink>
-          </Button>
+          <MegaMenu label="Qualité" GroupIcon={ClipboardCheck} items={qualiteItems} active={isQualiteActive} />
+          <MegaMenu label="Configuration" GroupIcon={Cog} items={configItems} active={isConfigActive} />
         </nav>
 
         {/* Spacer */}

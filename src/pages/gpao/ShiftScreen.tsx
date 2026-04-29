@@ -322,6 +322,46 @@ export default function ShiftScreen() {
 
   const totalProduced = declarations.reduce((sum, d) => sum + (d.quantite_produite || 0), 0);
 
+  // ===================== Mobile/tablet inline form validation =====================
+  const ofLineId = selectedOf?.line_id || selectedOf?.production_lines?.id || "";
+
+  const startShiftErrors = useMemo(
+    () => getFieldErrors(shiftStartSchema, {
+      team_id: startTeamId,
+      slot_id: startSlotId,
+      of_id: selectedOf?.id || "",
+      line_id: ofLineId,
+    }),
+    [startTeamId, startSlotId, selectedOf?.id, ofLineId]
+  );
+  const canStartShift = isValid(startShiftErrors) && !startingShift;
+
+  const declareSlot = selectedHourSlot !== null ? hourlySlots[selectedHourSlot] : null;
+  const declareSlotEditable = declareSlot ? canEditSlot(declareSlot) : false;
+  const declareErrors = useMemo(
+    () => getFieldErrors(productionDeclareSchema, {
+      of_id: selectedOf?.id || "",
+      slot_index: selectedHourSlot ?? -1,
+      quantite_produite: parseNumericInput(declQte),
+      quantite_rebut: parseNumericInput(declRebut) || 0,
+      slot_editable: declareSlotEditable ? true : undefined,
+    }),
+    [selectedOf?.id, selectedHourSlot, declQte, declRebut, declareSlotEditable, hourlySlots]
+  );
+  const canDeclareProduction = isValid(declareErrors);
+
+  const ticketErrors = useMemo(
+    () => getFieldErrors(ticketCreateSchema, {
+      machine_id: ticketMachineId,
+      description: ticketDescription,
+      priorite: ticketPriorite,
+    }),
+    [ticketMachineId, ticketDescription, ticketPriorite]
+  );
+  const canCreateTicket = isValid(ticketErrors);
+
+  const noEditableSlot = hourlySlots.length > 0 && !hourlySlots.some((s) => canEditSlot(s));
+
   const handleSaveConsumptions = async () => {
     if (!selectedOf || !activeShift) return;
 

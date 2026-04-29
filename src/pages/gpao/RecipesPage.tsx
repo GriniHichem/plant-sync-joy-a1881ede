@@ -183,6 +183,100 @@ export default function RecipesPage() {
     load();
   };
 
+  const handleSetStatus = async (recipeId: string, status: "draft" | "active" | "archived") => {
+    const reason = window.prompt(`Motif (${status}) :`, "") ?? undefined;
+    const { error } = await (supabase as any).rpc("set_recipe_status", {
+      p_recipe_id: recipeId,
+      p_status: status,
+      p_reason: reason || null,
+    });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Recette ${status === "active" ? "activée" : status === "archived" ? "archivée" : "remise en brouillon"}` });
+      load();
+    }
+  };
+
+  const getStepsForRecipe = (recipeId: string) =>
+    recipeSteps.filter((s) => s.recipe_id === recipeId).sort((a, b) => a.step_order - b.step_order);
+
+  const resetStepForm = () => {
+    setStepEditId(null); setStepRecipeId(""); setStepOrder("1"); setStepTitle("");
+    setStepDescription(""); setStepDuration(""); setStepCcp(false);
+    setStepIndicatorId("__none__"); setStepProcessParam("");
+  };
+
+  const openAddStep = (recipeId: string) => {
+    const existing = getStepsForRecipe(recipeId);
+    const nextOrder = existing.reduce((m, s) => Math.max(m, s.step_order), 0) + 1;
+    resetStepForm();
+    setStepRecipeId(recipeId);
+    setStepOrder(String(nextOrder));
+    setStepDialogOpen(true);
+  };
+
+  const openEditStep = (s: any) => {
+    setStepEditId(s.id);
+    setStepRecipeId(s.recipe_id);
+    setStepOrder(String(s.step_order));
+    setStepTitle(s.title || "");
+    setStepDescription(s.description || "");
+    setStepDuration(s.expected_duration_minutes != null ? String(s.expected_duration_minutes) : "");
+    setStepCcp(!!s.critical_control_point);
+    setStepIndicatorId(s.quality_indicator_id || "__none__");
+    setStepProcessParam(s.process_parameter ? JSON.stringify(s.process_parameter, null, 2) : "");
+    setStepDialogOpen(true);
+  };
+
+  const handleSaveStep = async () => {
+    if (!stepTitle.trim()) {
+      toast({ title: "Titre obligatoire", variant: "destructive" });
+      return;
+    }
+    let processParam: any = null;
+    if (stepProcessParam.trim()) {
+      try { processParam = JSON.parse(stepProcessParam); }
+      catch { toast({ title: "Paramètres process: JSON invalide", variant: "destructive" }); return; }
+    }
+    const payload: any = {
+      recipe_id: stepRecipeId,
+      step_order: parseInt(stepOrder) || 1,
+      title: stepTitle.trim(),
+      description: stepDescription.trim() || null,
+      expected_duration_minutes: stepDuration ? parseFloat(stepDuration.replace(",", ".")) : null,
+      critical_control_point: stepCcp,
+      quality_indicator_id: stepIndicatorId === "__none__" ? null : stepIndicatorId,
+      process_parameter: processParam,
+    };
+    const { error } = stepEditId
+      ? await (supabase as any).from("recipe_steps").update(payload).eq("id", stepEditId)
+      : await (supabase as any).from("recipe_steps").insert(payload);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: stepEditId ? "Étape modifiée" : "Étape ajoutée" });
+      setStepDialogOpen(false);
+      resetStepForm();
+      load();
+    }
+  };
+
+  const handleDeleteStep = async (id: string) => {
+    if (!window.confirm("Supprimer cette étape ?")) return;
+    await (supabase as any).from("recipe_steps").delete().eq("id", id);
+    toast({ title: "Étape supprimée" });
+    load();
+  };
+
+  const openCompare = (productId: string) => {
+    const versions = recipesByProduct[productId]?.versions || [];
+    setCompareProductId(productId);
+    setCompareA(versions[0]?.id || "");
+    setCompareB(versions[1]?.id || "");
+    setCompareOpen(true);
+  };
+
   const openAddLine = (recipeId: string) => {
     setLineRecipeId(recipeId);
     setLineArticleId("");

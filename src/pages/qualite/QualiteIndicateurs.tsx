@@ -13,9 +13,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
-import { Plus, Edit, RotateCcw, Download, Search, Power, PowerOff, ClipboardCheck } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Edit, RotateCcw, Download, Search, Power, PowerOff, ClipboardCheck, Link2 } from "lucide-react";
 import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
+import QualityIndicatorAssignments from "@/components/qualite/QualityIndicatorAssignments";
 
 /** Parse decimal accepting both `.` and `,` as separator. Returns null if blank. */
 export const parseDecimal = (s: string): number | null => {
@@ -352,9 +354,18 @@ export default function QualiteIndicateurs() {
             <ClipboardCheck className="h-6 w-6 text-primary" />
             Indicateurs qualité
           </h1>
-          <p className="text-sm text-muted-foreground">Référentiel des indicateurs configurables</p>
+          <p className="text-sm text-muted-foreground">Référentiel & affectations des indicateurs configurables</p>
         </div>
-        <div className="flex gap-2">
+      </div>
+
+      <Tabs defaultValue="indicators" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="indicators"><ClipboardCheck className="h-4 w-4 mr-1" /> Indicateurs</TabsTrigger>
+          <TabsTrigger value="assignments"><Link2 className="h-4 w-4 mr-1" /> Affectations</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="indicators" className="space-y-4">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
             <Download className="h-4 w-4" /> Export CSV
           </Button>
@@ -364,7 +375,6 @@ export default function QualiteIndicateurs() {
             </Button>
           )}
         </div>
-      </div>
 
       <Card>
         <CardContent className="p-4 space-y-3">
@@ -475,6 +485,12 @@ export default function QualiteIndicateurs() {
           </Table>
         </CardContent>
       </Card>
+      </TabsContent>
+
+      <TabsContent value="assignments">
+        <QualityIndicatorAssignments />
+      </TabsContent>
+      </Tabs>
 
       <ResponsiveDialog
         open={open}

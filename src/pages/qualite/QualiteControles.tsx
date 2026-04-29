@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
 import { parseDecimal } from "@/pages/qualite/QualiteIndicateurs";
+import { notifyCheckOutOfTolerance } from "@/lib/qualityNotifications";
 
 const ALL = "__all__";
 const NONE = "__none__";
@@ -329,6 +330,9 @@ export default function QualiteControles() {
       severity: data.is_conform === false ? "low" : "info",
     });
     toast({ title: "Contrôle enregistré" });
+    if (data.is_conform === false) {
+      await notifyCheckOutOfTolerance({ entity_id: data.id, entity_label: currentIndicator?.code ?? null, of_label: ofLabel(form.of_id) });
+    }
     setOpen(false);
     setSaving(false);
     load();

@@ -26,6 +26,11 @@ const ROLE_LABELS: Record<string, string> = {
   operateur: "Opérateur",
   gestionnaire_magasin: "Gest. Magasin",
   bureau_methode: "Bureau Méthode",
+  responsable_si: "Responsable SI",
+  auditeur: "Auditeur",
+  controleur_qualite: "Contrôleur Qualité",
+  responsable_controle_qualite: "Resp. Contrôle Qualité",
+  directeur_qualite: "Directeur Qualité",
 };
 
 export default function UsersAdmin() {

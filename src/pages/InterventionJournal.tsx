@@ -142,6 +142,7 @@ export default function InterventionJournal() {
             status: intv.statut || t.statut,
             duration_minutes: durationMs,
             link: `/tickets/${t.id}`,
+            role: intv.role || null,
           });
         });
       }

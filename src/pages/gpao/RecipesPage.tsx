@@ -194,6 +194,13 @@ export default function RecipesPage() {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } else {
       toast({ title: `Recette ${status === "active" ? "activée" : status === "archived" ? "archivée" : "remise en brouillon"}` });
+      if (status === "active") {
+        const r = (recipes as any[]).find((x) => x.id === recipeId);
+        try {
+          const { notifyRecipeApproved } = await import("@/lib/qualityNotifications");
+          await notifyRecipeApproved({ entity_id: recipeId, entity_label: r?.name ?? null, version: r?.version ?? null });
+        } catch { /* notifications are best-effort */ }
+      }
       load();
     }
   };

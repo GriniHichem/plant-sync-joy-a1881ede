@@ -120,6 +120,10 @@ export default function BomTab() {
     const { error } = await (supabase as any).rpc("set_bom_status", { p_bom_id: bom.id, p_status: status, p_reason: reason });
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
     toast({ title: `Nomenclature ${BOM_STATUS_LABELS[status]}` });
+    try {
+      const { notifyBomChanged } = await import("@/lib/qualityNotifications");
+      await notifyBomChanged({ entity_id: bom.id, entity_label: `${bom.products?.code ?? ""} v${bom.version}`, version: bom.version, new_status: status });
+    } catch { /* best-effort */ }
     refresh();
   }
 

@@ -315,42 +315,54 @@ export type Database = {
       consumptions: {
         Row: {
           article_id: string
+          batch_number: string | null
           created_at: string
           declared_by: string | null
+          expiry_date: string | null
           id: string
+          lot_number: string | null
           notes: string | null
           of_id: string
           quantite: number
           search_vector: unknown
           shift_id: string | null
+          supplier_lot: string | null
           unite: string
           validation_request_id: string | null
           validation_status: string | null
         }
         Insert: {
           article_id: string
+          batch_number?: string | null
           created_at?: string
           declared_by?: string | null
+          expiry_date?: string | null
           id?: string
+          lot_number?: string | null
           notes?: string | null
           of_id: string
           quantite?: number
           search_vector?: unknown
           shift_id?: string | null
+          supplier_lot?: string | null
           unite?: string
           validation_request_id?: string | null
           validation_status?: string | null
         }
         Update: {
           article_id?: string
+          batch_number?: string | null
           created_at?: string
           declared_by?: string | null
+          expiry_date?: string | null
           id?: string
+          lot_number?: string | null
           notes?: string | null
           of_id?: string
           quantite?: number
           search_vector?: unknown
           shift_id?: string | null
+          supplier_lot?: string | null
           unite?: string
           validation_request_id?: string | null
           validation_status?: string | null

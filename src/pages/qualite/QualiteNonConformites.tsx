@@ -17,6 +17,7 @@ import { AlertOctagon, Plus, RotateCcw, Search, Download, Gavel, Lock, ListCheck
 import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
 import { parseDecimal } from "@/pages/qualite/QualiteIndicateurs";
+import { notifyNcCreated, notifyNcBlockedLot } from "@/lib/qualityNotifications";
 
 const ALL = "__all__";
 const NONE = "__none__";
@@ -375,6 +376,9 @@ export default function QualiteNonConformites() {
       severity: ncSeverityMeta(form.severity).audit,
     });
     toast({ title: "Non-conformité enregistrée", description: data.nc_number });
+    if (statusToSet === "declared") {
+      await notifyNcCreated({ entity_id: data.id, entity_code: data.nc_number, entity_label: data.title, severity: form.severity });
+    }
     setOpen(false);
     setSaving(false);
     load();
@@ -433,6 +437,9 @@ export default function QualiteNonConformites() {
     });
 
     toast({ title: "Décision enregistrée" });
+    if (decision === "bloquer_lot") {
+      await notifyNcBlockedLot({ entity_id: decisionFor.id, entity_code: decisionFor.nc_number ?? null, entity_label: decisionFor.title });
+    }
     setDecisionFor(null);
     setDecisionSaving(false);
     load();

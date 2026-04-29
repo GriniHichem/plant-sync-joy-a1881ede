@@ -3348,6 +3348,84 @@ export type Database = {
           },
         ]
       }
+      quality_control_point_lines: {
+        Row: {
+          control_point_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          production_line_id: string
+        }
+        Insert: {
+          control_point_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          production_line_id: string
+        }
+        Update: {
+          control_point_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          production_line_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_control_point_lines_control_point_id_fkey"
+            columns: ["control_point_id"]
+            isOneToOne: false
+            referencedRelation: "quality_control_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_control_point_lines_production_line_id_fkey"
+            columns: ["production_line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_control_point_ofs: {
+        Row: {
+          control_point_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          of_id: string
+        }
+        Insert: {
+          control_point_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          of_id: string
+        }
+        Update: {
+          control_point_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          of_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_control_point_ofs_control_point_id_fkey"
+            columns: ["control_point_id"]
+            isOneToOne: false
+            referencedRelation: "quality_control_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_control_point_ofs_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_control_points: {
         Row: {
           code: string
@@ -3358,6 +3436,7 @@ export type Database = {
           is_active: boolean
           label: string
           production_line_id: string | null
+          scope: string
           sort_order: number
           updated_at: string
           updated_by: string | null
@@ -3371,6 +3450,7 @@ export type Database = {
           is_active?: boolean
           label: string
           production_line_id?: string | null
+          scope?: string
           sort_order?: number
           updated_at?: string
           updated_by?: string | null
@@ -3384,6 +3464,7 @@ export type Database = {
           is_active?: boolean
           label?: string
           production_line_id?: string | null
+          scope?: string
           sort_order?: number
           updated_at?: string
           updated_by?: string | null

@@ -1,56 +1,116 @@
-# Module Non-conformités Qualité — état actuel et finalisation
+# Module Actions Qualité (CAPA)
 
-Le module a déjà été livré dans la dernière itération (table, page, workflow, tests). Ce plan **ne refait pas le travail** : il vérifie ce qui existe et complète les deux derniers détails demandés dans le brief.
+Suivi des actions curatives / correctives / préventives issues des non-conformités. Strictement isolé des tickets/interventions de maintenance — table dédiée `quality_actions`.
 
-## Ce qui existe déjà (vérifié dans le code)
+## 1. Migration DB
 
-### Base de données (migration `20260429145923_*.sql`)
-- Enums `nc_type` (10 valeurs), `nc_severity` (minor/major/critical), `nc_status` (9 valeurs), `nc_decision` (9 valeurs) — conformes au brief.
-- Table `quality_non_conformities` avec **tous les champs demandés** : `id`, `nc_number` (UNIQUE, auto), `created_at`, `updated_at`, `detected_at`, `declared_by`, liens nullable (`of_id`, `quality_check_id`, `product_id`, `production_line_id`, `shift_id`, `team_id`, `article_id`, `packaging_article_id`), `batch_number`, `lot_number`, `nc_type`, `nc_category`, `severity`, `status`, `title`, `description`, quantités, action immédiate, root_cause, décision (+ `decision_by`/`decision_at`), clôture (+ `closed_by`/`closed_at`), `validation_status` default `not_required`, `metadata` JSONB.
-- Trigger `trg_qnc_number` génère `NC-00001` automatiquement.
-- Trigger FTS sur `search_vector`.
-- Trigger validation : `closed_at`/`closed_by` obligatoires si `status='closed'`, `decision_at`/`decision_by` obligatoires si décision posée.
-- RLS : SELECT authentifié, INSERT/UPDATE pour admin / resp_production / chef_ligne / bureau_methode / controleur_qualite + auteur, DELETE admin.
-- Rôle `controleur_qualite` ajouté à `app_role`.
-- **Aucun trigger** sur `ordres_fabrication`, `consumptions`, `production_declarations`, `shifts`, `quality_checks`. Aucune écriture sur `ordres_fabrication.statut`.
+### Enums
+- `quality_action_type` : `curative`, `corrective`, `preventive`
+- `quality_action_status` : `open`, `in_progress`, `done`, `verified`, `closed`, `cancelled`
+- `quality_action_priority` : `low`, `medium`, `high`, `critical`
 
-### Page `/qualite/non-conformites` (`QualiteNonConformites.tsx`, 775 lignes)
-- Filtres : recherche libre, OF, type, sévérité, statut, plage de dates ; bouton **Réinitialiser** (`RotateCcw`) conditionnel.
-- Tableau : NC#, date, type, sévérité, statut, OF, produit, titre, décision, auteur.
-- Dialog **Nouvelle NC** (responsive) : identification + liens optionnels + quantités + action immédiate + boutons brouillon/déclarer.
-- Dialog **Décision & clôture** : sélecteur enum, commentaire, checkbox "Mettre quality_status OF à `bloque`" affichée **uniquement si décision = `bloquer_lot` ET `of_id` lié**, motif obligatoire ; appelle la RPC `set_of_quality_status` (jamais `statut`).
-- Pré-remplissage via `?from_check=<uuid>` (of_id, indicator, ligne, produit, quality_check_id).
-- Export CSV via `exportToCsv`.
-- Audit `logAudit` (module `qualite`, severity mappée minor→info / major→low / critical→high).
+### Table `quality_actions`
+Champs demandés :
+- `id` uuid PK, `nc_id` uuid nullable, `of_id` uuid nullable
+- `title` text NOT NULL, `description` text
+- `action_type` enum NOT NULL, `priority` enum NOT NULL default `medium`, `status` enum NOT NULL default `open`
+- `responsible_user_id` uuid nullable, `due_date` date nullable
+- `verification_comment` text nullable
+- `created_by` uuid (= `auth.uid()`), `created_at`/`updated_at` timestamptz
+- `closed_at` timestamptz nullable, `closed_by` uuid nullable
+- `verified_at` timestamptz nullable, `verified_by` uuid nullable
+- `search_vector` tsvector
 
-### Tests (`quality-non-conformities.test.ts`, 137 lignes)
-Couvrent : validation form, payload OF, payload emballage, parsing décimales (virgule/point), pré-remplissage `from_check`, décision `bloquer_lot` (RPC args corrects, **n'inclut jamais `statut` production**), clôture (commentaire requis, payload), filtres (type/sévérité/statut/date/recherche), mapping sévérité → audit.
+### Triggers
+- `quality_actions_validate` : whitelist enums (ceinture+bretelle), si `status='closed'` exige `verification_comment` non vide + remplit `closed_at`/`closed_by` ; si `status='verified'` remplit `verified_at`/`verified_by`. Met à jour `updated_at`.
+- `quality_actions_search_refresh` (FTS sur title/description/verification_comment).
 
-## Ce qui reste à faire
+**Aucun trigger** sur `tickets`, `interventions`, `ordres_fabrication`, `quality_non_conformities`. Liens via `nc_id`/`of_id` simplement uuid nullable, pas de FK CASCADE.
 
-### 1. Lien "Créer NC" depuis les contrôles hors tolérance
-Le plan original prévoit un bouton **"Créer NC"** (icône `AlertOctagon`) dans `src/pages/qualite/QualiteControles.tsx`, visible uniquement quand `is_conform === false`, qui redirige vers `/qualite/non-conformites?from_check=<id>`. À vérifier : le code de l'itération précédente l'a normalement ajouté ; sinon l'ajouter (≤ 15 lignes).
+### RLS
+- SELECT : tout authentifié.
+- INSERT/UPDATE : admin / resp_production / chef_ligne / bureau_methode / controleur_qualite / responsible_user_id = auth.uid() / created_by = auth.uid().
+- DELETE : admin uniquement.
 
-### 2. Exécution Vitest et vérification des régressions
-- Lancer `bunx vitest run src/test/qualite/quality-non-conformities.test.ts` pour confirmer les 7 groupes de tests.
-- Lancer la suite GPAO (`src/test/gpao/*`) pour confirmer qu'aucune régression sur Shift / OF / dashboard / consumptions.
-- Lancer la suite Qualité complète (`src/test/qualite/*`) : checks, indicateurs, OF tab, NC.
+### Indexes
+`(status)`, `(responsible_user_id)`, `(nc_id)`, `(due_date)`.
 
-### 3. Mémoire
+## 2. Page `/qualite/actions`
+
+Remplacer le placeholder `src/pages/qualite/QualiteActions.tsx`.
+
+**Filtres** : recherche libre, statut, responsable (select users), priorité, NC liée (texte sur nc_number), période `due_date`. Bouton **Réinitialiser** (`RotateCcw`) conditionnel.
+
+**Tableau** : titre, type, priorité (badge), statut (badge), responsable, échéance (badge rouge si en retard), NC liée (NC-#####), OF, créée le.
+
+**Bouton "Nouvelle action"** → `ResponsiveDialog` :
+- Section : NC (optionnel, select sur NC récentes), OF (optionnel), titre, description
+- Type, priorité, responsable, échéance
+- Bouton **Créer**
+
+**Dialog "Mettre à jour"** (depuis ligne) :
+- Sélecteur statut (open → in_progress → done → verified → closed) ou cancelled
+- Si statut = closed → champ `verification_comment` obligatoire
+- Possibilité d'éditer responsable / échéance / priorité
+- Boutons "Marquer terminée" (raccourci status=done), "Vérifier efficacité" (status=verified + commentaire), "Clôturer"
+
+**Export CSV** : toutes colonnes visibles.
+
+**Audit** : `logAudit` module `qualite`, entity_type `quality_action`, sur create / status_change / close. Sévérité : critical/high → `medium`, autres → `info`.
+
+## 3. Onglet "Actions" dans le détail NC
+
+Modifier `src/pages/qualite/QualiteNonConformites.tsx` (déjà 775 lignes — la page liste les NC dans une table) : remplacer le clic-ligne par un dialog/sheet de détail NC contenant deux onglets :
+- **Détails** (infos actuelles : décision, clôture, etc.)
+- **Actions** : liste des `quality_actions` où `nc_id = current.id` + bouton "Nouvelle action" pré-rempli avec `nc_id` et `of_id` de la NC.
+
+Alternative plus légère (préférée pour limiter la diff) : ajouter une mini-section "Actions liées" dans le dialog "Décision & clôture" existant + un raccourci "Créer action" (icône `ListTodo`) sur chaque ligne NC du tableau, qui redirige vers `/qualite/actions?from_nc=<nc_id>` (le dialog "Nouvelle action" se pré-remplit via query string).
+
+→ **Approche retenue** : raccourci par ligne NC + pré-remplissage `?from_nc=ID&from_of=OF_ID`. Plus simple, cohérent avec le pattern `?from_check=` déjà en place, et évite de réécrire la page NC.
+
+## 4. Notifications
+
+Trois `notification_rules` insérées via migration (event_type sous module `qualite`) :
+- `qualite_action_assigned` (severity `info`, in_app, immediate) → déclenché à la création / changement de `responsible_user_id`. Cible : `responsible_user_id`.
+- `qualite_action_overdue` (severity `medium`, in_app) → utilise le système d'événements existant ; déclenchement par `supabase/functions/check-deadlines` (déjà en place pour les tickets). Étendre la fonction pour scanner aussi `quality_actions` où `due_date < today AND status NOT IN ('done','verified','closed','cancelled')`.
+- `qualite_action_closed` (severity `info`, in_app) → déclenché à status=closed. Cible : créateur + responsable.
+
+Utilisation du pattern existant : insérer `notifications` côté client après l'update (cohérent avec NC). Pas de trigger DB sur notifications.
+
+## 5. Audit
+
+`logAudit` côté client à chaque opération (création, changement statut, clôture). Module `qualite`, entity_type `quality_action`, entity_label = title, entity_code = id court.
+
+## 6. Tests
+
+`src/test/qualite/quality-actions.test.ts` :
+- `validateActionForm` : titre obligatoire, type obligatoire
+- `buildActionInsertPayload` : champs nullable (nc_id/of_id), `created_by` injecté, status default `open`
+- `buildStatusUpdatePayload` : 
+  - status=closed → exige `verification_comment`, ajoute `closed_at`/`closed_by`
+  - status=verified → ajoute `verified_at`/`verified_by`
+  - n'inclut **jamais** `tickets`/`interventions`/`statut` production
+- `buildOverdueDetector` : retourne true si due_date < today ET status ouvert
+- `filterActions` : statut, responsable, priorité, période, NC, recherche + reset
+- Notifications : `buildAssignmentNotificationPayload` cible bien `recipient_user_id = responsible_user_id`, jamais `tickets`
+- Audit : sévérité critical/high → `medium`
+
+## 7. Garanties d'isolation
+
+- Table dédiée `quality_actions` : aucun conflit avec `interventions` (maintenance), `validation_requests`, `notification_rules.action_type` (qui est juste une colonne text).
+- Liens `nc_id`/`of_id` simplement uuid nullable, pas de FK CASCADE.
+- Aucun trigger sur `ordres_fabrication`, `tickets`, `interventions`, `quality_non_conformities`.
+- Code séparé : composant et hook préfixés `Quality*` / `quality_*`.
+
+## 8. Mémoire
+
 Mettre à jour `mem://features/qualite-module` avec :
-- table `quality_non_conformities` + 4 enums
-- règle d'or : NC ne touche jamais `statut` production ; seul `bloquer_lot` peut, sur consentement explicite, appeler `set_of_quality_status`
-- rôle `controleur_qualite` ajouté
-- pré-remplissage `?from_check=ID`
+- table `quality_actions` + 3 enums
+- workflow CAPA depuis NC (`?from_nc=ID&from_of=ID`)
+- 3 règles de notifications qualité
+- isolation stricte vs maintenance/tickets
 
-## Confirmation des garanties demandées
-
-- **Table créée** : oui (migration `20260429145923`).
-- **Workflow créé** : déclaration → décision → clôture, tous les états du brief couverts.
-- **Génération NC testée** : trigger `generate_nc_number` + tests payload.
-- **Pas de blocage production non voulu** : aucun trigger DB sur `ordres_fabrication`, aucune écriture sur `statut`. `quality_status` modifié uniquement via RPC explicite après opt-in utilisateur sur la décision `bloquer_lot`.
-
-## Hors scope (non touché)
-- `OfQualityTab` reste inchangé (le bouton "Créer NC" depuis l'OF reste désactivé pour cette itération).
-- Pas de notifications automatiques NC (peut être ajouté via `notification_rules` plus tard).
-- Pas de pièces jointes NC (réutilisera `entity-documents` plus tard).
+## Hors scope
+- Pas de dépendances entre actions (préalable / dépendant) — pourra venir plus tard.
+- Pas de pièces jointes (réutilisera `entity-documents` plus tard).
+- Pas d'intégration KPI dashboard qualité (séparé).

@@ -2910,6 +2910,72 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_actions: {
+        Row: {
+          action_type: Database["public"]["Enums"]["quality_action_type"]
+          closed_at: string | null
+          closed_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          nc_id: string | null
+          of_id: string | null
+          priority: Database["public"]["Enums"]["quality_action_priority"]
+          responsible_user_id: string | null
+          search_vector: unknown
+          status: Database["public"]["Enums"]["quality_action_status"]
+          title: string
+          updated_at: string
+          verification_comment: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["quality_action_type"]
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          nc_id?: string | null
+          of_id?: string | null
+          priority?: Database["public"]["Enums"]["quality_action_priority"]
+          responsible_user_id?: string | null
+          search_vector?: unknown
+          status?: Database["public"]["Enums"]["quality_action_status"]
+          title: string
+          updated_at?: string
+          verification_comment?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["quality_action_type"]
+          closed_at?: string | null
+          closed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          nc_id?: string | null
+          of_id?: string | null
+          priority?: Database["public"]["Enums"]["quality_action_priority"]
+          responsible_user_id?: string | null
+          search_vector?: unknown
+          status?: Database["public"]["Enums"]["quality_action_status"]
+          title?: string
+          updated_at?: string
+          verification_comment?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
       quality_checks: {
         Row: {
           comment: string
@@ -4466,6 +4532,15 @@ export type Database = {
         | "automatisme"
         | "instrumentation"
         | "autre"
+      quality_action_priority: "low" | "medium" | "high" | "critical"
+      quality_action_status:
+        | "open"
+        | "in_progress"
+        | "done"
+        | "verified"
+        | "closed"
+        | "cancelled"
+      quality_action_type: "curative" | "corrective" | "preventive"
       quality_frequency_type:
         | "hourly"
         | "shift"
@@ -4787,6 +4862,16 @@ export const Constants = {
         "instrumentation",
         "autre",
       ],
+      quality_action_priority: ["low", "medium", "high", "critical"],
+      quality_action_status: [
+        "open",
+        "in_progress",
+        "done",
+        "verified",
+        "closed",
+        "cancelled",
+      ],
+      quality_action_type: ["curative", "corrective", "preventive"],
       quality_frequency_type: [
         "hourly",
         "shift",

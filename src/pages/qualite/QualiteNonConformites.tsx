@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
-import { AlertOctagon, Plus, RotateCcw, Search, Download, Gavel, Lock } from "lucide-react";
+import { AlertOctagon, Plus, RotateCcw, Search, Download, Gavel, Lock, ListChecks } from "lucide-react";
 import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
 import { parseDecimal } from "@/pages/qualite/QualiteIndicateurs";
@@ -606,14 +606,21 @@ export default function QualiteNonConformites() {
                     <TableCell className="max-w-xs truncate">{r.title}</TableCell>
                     <TableCell className="text-xs">{r.decision ? ncDecisionLabel(r.decision) : "—"}</TableCell>
                     <TableCell>
-                      {canManage && r.status !== "closed" && r.status !== "cancelled" && (
-                        <Button size="sm" variant="outline" onClick={() => openDecision(r)} title="Décision / Clôture">
-                          <Gavel className="h-3.5 w-3.5" /> Action
+                      <div className="flex items-center gap-1">
+                        {canManage && r.status !== "closed" && r.status !== "cancelled" && (
+                          <Button size="sm" variant="outline" onClick={() => openDecision(r)} title="Décision / Clôture">
+                            <Gavel className="h-3.5 w-3.5" /> Action
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" asChild title="Créer une action qualité">
+                          <Link to={`/qualite/actions?from_nc=${r.id}${r.of_id ? `&from_of=${r.of_id}` : ""}`}>
+                            <ListChecks className="h-3.5 w-3.5" /> CAPA
+                          </Link>
                         </Button>
-                      )}
-                      {(r.status === "closed" || r.status === "cancelled") && (
-                        <Lock className="h-4 w-4 text-muted-foreground" />
-                      )}
+                        {(r.status === "closed" || r.status === "cancelled") && (
+                          <Lock className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

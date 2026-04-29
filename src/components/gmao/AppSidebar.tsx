@@ -76,6 +76,7 @@ export function AppSidebar() {
   const isGmaoActive = gmaoItems.some((i) => isActive(i.url));
   const isGpaoActive = gpaoItems.some((i) => isActive(i.url));
   const isQualiteActive = qualiteItems.some((i) => isActive(i.url));
+  const isAdminActive = adminItems.some((i) => isActive(i.url));
   const showQualite = canView("qualite");
 
   const displayName = profile

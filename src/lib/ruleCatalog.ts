@@ -227,4 +227,7 @@ export const ROLES = [
   "gestionnaire_magasin",
   "bureau_methode",
   "auditeur",
+  "controleur_qualite",
+  "responsable_controle_qualite",
+  "directeur_qualite",
 ] as const;

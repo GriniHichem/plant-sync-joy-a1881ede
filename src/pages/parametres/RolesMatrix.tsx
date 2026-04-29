@@ -61,6 +61,11 @@ const ROLES = [
   { key: "operateur", label: "Opérateur", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
   { key: "gestionnaire_magasin", label: "Gest. Magasin", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
   { key: "bureau_methode", label: "Bureau Méthode", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300" },
+  { key: "responsable_si", label: "Responsable SI", color: "bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300" },
+  { key: "auditeur", label: "Auditeur", color: "bg-zinc-100 text-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-300" },
+  { key: "controleur_qualite", label: "Contrôleur Qualité", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300" },
+  { key: "responsable_controle_qualite", label: "Resp. Contrôle Qualité", color: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300" },
+  { key: "directeur_qualite", label: "Directeur Qualité", color: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300" },
 ];
 
 const ACTIONS = [
@@ -71,7 +76,7 @@ const ACTIONS = [
 ];
 
 type ActionKey = (typeof ACTIONS)[number]["key"];
-type AppRoleType = "admin" | "chef_ligne" | "gestionnaire_magasin" | "maintenancier" | "operateur" | "resp_maintenance" | "resp_production" | "bureau_methode";
+type AppRoleType = "admin" | "chef_ligne" | "gestionnaire_magasin" | "maintenancier" | "operateur" | "resp_maintenance" | "resp_production" | "bureau_methode" | "responsable_si" | "auditeur" | "controleur_qualite" | "responsable_controle_qualite" | "directeur_qualite";
 
 interface PermRow {
   id?: string;

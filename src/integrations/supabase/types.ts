@@ -4639,6 +4639,8 @@ export type Database = {
         | "responsable_si"
         | "auditeur"
         | "controleur_qualite"
+        | "responsable_controle_qualite"
+        | "directeur_qualite"
       approvisionnement_type: "local" | "importation" | "mixte"
       arret_type:
         | "panne"
@@ -4955,6 +4957,8 @@ export const Constants = {
         "responsable_si",
         "auditeur",
         "controleur_qualite",
+        "responsable_controle_qualite",
+        "directeur_qualite",
       ],
       approvisionnement_type: ["local", "importation", "mixte"],
       arret_type: [

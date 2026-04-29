@@ -17,13 +17,6 @@ interface SectionGroup {
 
 const groups: SectionGroup[] = [
   {
-    label: "Sécurité & Accès",
-    icon: Shield,
-    items: [
-      { title: "Sécurité & Accès (App dédiée)", description: "Hub centralisé : utilisateurs, rôles, permissions, qualité, audit, contrôles globaux et self-hosting", icon: ShieldCheck, url: "/securite" },
-    ],
-  },
-  {
     label: "Référentiels & Classification",
     icon: Database,
     items: [

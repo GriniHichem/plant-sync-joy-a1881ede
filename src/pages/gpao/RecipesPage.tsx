@@ -647,6 +647,115 @@ export default function RecipesPage() {
           })}
         </div>
       )}
+
+      {/* Step dialog */}
+      <Dialog open={stepDialogOpen} onOpenChange={(o) => { setStepDialogOpen(o); if (!o) resetStepForm(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{stepEditId ? "Modifier l'étape" : "Nouvelle étape"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Ordre *</Label>
+                <Input type="number" min={1} value={stepOrder} onChange={(e) => setStepOrder(e.target.value)} className="h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>Durée (min)</Label>
+                <Input value={stepDuration} onChange={(e) => setStepDuration(e.target.value)} className="h-12" placeholder="ex: 15" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Titre *</Label>
+              <Input value={stepTitle} onChange={(e) => setStepTitle(e.target.value)} className="h-12" placeholder="Ex: Cuisson 85°C" />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={stepDescription} onChange={(e) => setStepDescription(e.target.value)} rows={2} />
+            </div>
+            <div className="space-y-2">
+              <Label>Paramètres process (JSON)</Label>
+              <Textarea
+                value={stepProcessParam}
+                onChange={(e) => setStepProcessParam(e.target.value)}
+                rows={3}
+                placeholder={'{"temp_c": 85, "pressure_bar": 2.5}'}
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="ccp"
+                type="checkbox"
+                checked={stepCcp}
+                onChange={(e) => setStepCcp(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="ccp" className="cursor-pointer">Point de contrôle critique (CCP)</Label>
+            </div>
+            <div className="space-y-2">
+              <Label>Indicateur qualité (optionnel)</Label>
+              <Select value={stepIndicatorId} onValueChange={setStepIndicatorId}>
+                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Aucun</SelectItem>
+                  {indicators.map((i) => <SelectItem key={i.id} value={i.id}>{i.code} — {i.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSaveStep} className="w-full h-12">{stepEditId ? "Enregistrer" : "Ajouter"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Compare versions dialog */}
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader><DialogTitle>Comparer deux versions</DialogTitle></DialogHeader>
+          {compareProductId && (() => {
+            const versions = recipesByProduct[compareProductId]?.versions || [];
+            const ra = versions.find((v) => v.id === compareA);
+            const rb = versions.find((v) => v.id === compareB);
+            const linesA = ra ? getLinesForRecipe(ra.id) : [];
+            const linesB = rb ? getLinesForRecipe(rb.id) : [];
+            const stepsA = ra ? getStepsForRecipe(ra.id) : [];
+            const stepsB = rb ? getStepsForRecipe(rb.id) : [];
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Select value={compareA} onValueChange={setCompareA}>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Version A" /></SelectTrigger>
+                    <SelectContent>{versions.map((v) => <SelectItem key={v.id} value={v.id}>v{v.version} — {v.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Select value={compareB} onValueChange={setCompareB}>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Version B" /></SelectTrigger>
+                    <SelectContent>{versions.map((v) => <SelectItem key={v.id} value={v.id}>v{v.version} — {v.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                  {[{ r: ra, lines: linesA, steps: stepsA }, { r: rb, lines: linesB, steps: stepsB }].map((side, i) => (
+                    <div key={i} className="space-y-3">
+                      <div className="text-sm font-semibold">{side.r ? `v${side.r.version} — ${side.r.name}` : "—"}</div>
+                      <div>
+                        <p className="text-xs uppercase text-muted-foreground mb-1">Articles</p>
+                        {side.lines.length === 0 ? <p className="text-xs text-muted-foreground">Aucun</p> :
+                          side.lines.map((l: any) => <div key={l.id} className="text-xs">{l.articles?.code} — {l.quantite} {l.unite}</div>)}
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase text-muted-foreground mb-1">Étapes</p>
+                        {side.steps.length === 0 ? <p className="text-xs text-muted-foreground">Aucune</p> :
+                          side.steps.map((s: any) => (
+                            <div key={s.id} className="text-xs">
+                              {s.step_order}. {s.title} {s.critical_control_point && <Badge variant="destructive" className="ml-1 text-[9px]">CCP</Badge>}
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

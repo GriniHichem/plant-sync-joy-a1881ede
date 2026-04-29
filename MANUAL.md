@@ -401,8 +401,36 @@ Voir [§9](#9-rôles--permissions). Actions contrôlées :
 
 Si un champ obligatoire manque → toast *« Cause racine et solution obligatoires »*.
 
+#### Collaboration multi-maintenanciers — « Avec l'aide de »
+Un ticket peut être résolu par plusieurs techniciens (2 ou 3 intervenants). Depuis la carte de résolution, l'assigné principal peut ajouter des **collaborateurs** :
+
+| Élément | Comportement |
+|---------|--------------|
+| Sélecteur maintenancier | Liste les profils `maintenancier` et `resp_maintenance` (hors assigné principal et hors collaborateurs déjà ajoutés) |
+| Rôle de collaboration | **Aide** (assistance ponctuelle) ou **Co-intervenant** (intervention conjointe) — bascule sur chaque ligne |
+| Suppression | Bouton X retire le collaborateur (soft-delete via `removed_at`) |
+| Carte d'information | Affiche l'assigné principal (badge **Lead**) et tous les collaborateurs actifs avec leur rôle |
+
+À la résolution du ticket, une **`intervention` distincte** est créée pour chaque collaborateur actif (en plus de celle de l'assigné principal), garantissant la traçabilité KPI individuelle (temps passé, participation, journal).
+
+**Permissions** : seuls l'assigné principal du ticket, `resp_maintenance` ou `admin` peuvent gérer les collaborateurs (RLS sur `ticket_collaborators`).
+
+#### Passation / Libération de ticket (fin de shift)
+Quand le maintenancier en charge ne peut pas résoudre le ticket avant la fin de son poste, deux actions sont disponibles dans la carte **« Passation / Libération »** (visible pour l'assigné, `resp_maintenance` ou `admin`) :
+
+| Action | Effet métier | Effet base |
+|--------|--------------|------------|
+| **Transférer à** | Passation nominative à un autre maintenancier (sélecteur). Le statut du ticket reste `pris_en_charge`. | Intervention sortante clôturée avec `statut = transferee` ; nouvelle intervention `en_cours` créée pour le repreneur ; `tickets.assignee_id` mis à jour ; collaborateurs conservés |
+| **Libérer le ticket** | Remet le ticket dans le pool, prenable par n'importe quel maintenancier. | `tickets.assignee_id = null`, `statut = ouvert`, `heure_prise_en_charge = null` ; intervention en cours clôturée avec `statut = liberee` |
+
+**Champ Motif obligatoire** dans les deux cas (raison fin de shift, blocage technique, manque de PDR…). Sans motif → toast d'erreur, action bloquée.
+
+**Traçabilité** :
+- Entrée `audit_logs` (`action_type = transfer` ou `release`) avec ancien/nouveau assigné et motif.
+- Notification in-app : `ticket.transferred` au repreneur, `ticket.released` aux rôles `maintenancier` et `resp_maintenance`.
+
 #### Mobile
-La résolution est **optimisée mobile** (formulaire vertical, gros boutons, scan rapide PDR).
+La résolution, la passation et la libération sont **optimisées mobile** (formulaire vertical, gros boutons, actions secondaires dans la `StickyActionBar`, scan rapide PDR).
 
 ---
 

@@ -452,6 +452,7 @@ export default function QualiteControles() {
                 <TableHead>Cible / Min-Max</TableHead>
                 <TableHead>Conformité</TableHead>
                 <TableHead>Commentaire</TableHead>
+                <TableHead className="w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

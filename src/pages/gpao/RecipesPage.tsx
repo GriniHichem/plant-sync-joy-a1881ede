@@ -58,6 +58,10 @@ export default function RecipesPage() {
   const [lineArticleId, setLineArticleId] = useState("");
   const [lineQte, setLineQte] = useState("");
   const [lineUnite, setLineUnite] = useState("kg");
+  const [lineItemType, setLineItemType] = useState<string>("raw_material");
+  const [lineWastePercent, setLineWastePercent] = useState("");
+  const [lineMandatory, setLineMandatory] = useState(true);
+  const [lineQualitySensitive, setLineQualitySensitive] = useState(false);
 
   // Expanded states
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
@@ -289,6 +293,10 @@ export default function RecipesPage() {
     setLineArticleId("");
     setLineQte("");
     setLineUnite("kg");
+    setLineItemType("raw_material");
+    setLineWastePercent("");
+    setLineMandatory(true);
+    setLineQualitySensitive(false);
     setLineDialogOpen(true);
   };
 
@@ -300,9 +308,13 @@ export default function RecipesPage() {
     const { error } = await supabase.from("recipe_lines").insert({
       recipe_id: lineRecipeId,
       article_id: lineArticleId,
-      quantite: parseFloat(lineQte),
+      quantite: parseFloat(lineQte.replace(",", ".")),
       unite: lineUnite,
-    });
+      item_type: lineItemType,
+      waste_percent: lineWastePercent ? parseFloat(lineWastePercent.replace(",", ".")) : null,
+      is_mandatory: lineMandatory,
+      is_quality_sensitive: lineQualitySensitive,
+    } as any);
     if (error) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } else {
@@ -396,6 +408,36 @@ export default function RecipesPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={lineItemType} onValueChange={setLineItemType}>
+                  <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="raw_material">Matière première</SelectItem>
+                    <SelectItem value="packaging">Emballage</SelectItem>
+                    <SelectItem value="label">Étiquette</SelectItem>
+                    <SelectItem value="carton">Carton</SelectItem>
+                    <SelectItem value="pallet">Palette</SelectItem>
+                    <SelectItem value="consumable">Consommable</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Perte %</Label>
+                <Input type="number" value={lineWastePercent} onChange={(e) => setLineWastePercent(e.target.value)} className="h-12" placeholder="0" step="0.01" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={lineMandatory} onChange={(e) => setLineMandatory(e.target.checked)} className="h-4 w-4" />
+                Composant obligatoire
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={lineQualitySensitive} onChange={(e) => setLineQualitySensitive(e.target.checked)} className="h-4 w-4" />
+                Qualité sensible (suivi renforcé en contrôle qualité)
+              </label>
             </div>
             <Button onClick={handleAddLine} className="w-full h-12">Ajouter</Button>
           </div>

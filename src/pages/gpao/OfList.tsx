@@ -39,6 +39,7 @@ export default function OfList() {
   const [newDateFin, setNewDateFin] = useState("");
   const [shiftModes, setShiftModes] = useState<any[]>([]);
   const [newShiftModeId, setNewShiftModeId] = useState("");
+  const [newRecipeId, setNewRecipeId] = useState("");
 
   const loadOfs = async () => {
     const { data } = await supabase.from("ordres_fabrication").select("*, products(designation, code), production_lines(designation, code), shift_modes(label, code)").order("created_at", { ascending: false });
@@ -49,7 +50,7 @@ export default function OfList() {
     loadOfs();
     supabase.from("products").select("*").eq("is_active", true).order("code").then(({ data }) => setProducts(data || []));
     supabase.from("production_lines").select("*").eq("is_active", true).order("code").then(({ data }) => setLines(data || []));
-    supabase.from("recipes").select("*").eq("is_active", true).then(({ data }) => setRecipes(data || []));
+    supabase.from("recipes").select("*").then(({ data }) => setRecipes(data || []));
     supabase.from("line_products").select("*").then(({ data }) => setLineProducts(data || []));
     supabase.from("shift_modes").select("*").eq("is_active", true).order("code").then(({ data }) => {
       setShiftModes(data || []);
@@ -77,16 +78,37 @@ export default function OfList() {
     }
   };
 
+  // Recipe versions for the selected product (sorted latest first; active prioritized)
+  const recipesForProduct = (recipes as any[])
+    .filter((r) => r.product_id === newProductId)
+    .sort((a, b) => {
+      const sa = (a.status === "active" || a.is_active) ? 0 : a.status === "draft" ? 1 : 2;
+      const sb = (b.status === "active" || b.is_active) ? 0 : b.status === "draft" ? 1 : 2;
+      if (sa !== sb) return sa - sb;
+      return (b.version || 0) - (a.version || 0);
+    });
+
+  // When product changes, auto-pick the most recent active version (or none)
+  useEffect(() => {
+    if (!newProductId) { setNewRecipeId(""); return; }
+    const candidate = recipesForProduct.find((r) => r.status === "active" || r.is_active) || recipesForProduct[0];
+    setNewRecipeId(candidate?.id || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newProductId, recipes.length]);
+
   const handleCreate = async () => {
     if (!newProductId || !newQte) {
       toast({ title: "Erreur", description: "Produit et quantité obligatoires", variant: "destructive" });
       return;
     }
-    const recipe = recipes.find((r) => r.product_id === newProductId);
+    if (recipesForProduct.length > 0 && !newRecipeId) {
+      toast({ title: "Erreur", description: "Sélectionnez la version de recette à suivre", variant: "destructive" });
+      return;
+    }
     const { error } = await supabase.from("ordres_fabrication").insert({
       numero: "",
       product_id: newProductId,
-      recipe_id: recipe?.id || null,
+      recipe_id: newRecipeId || null,
       line_id: newLineId || null,
       quantite_prevue: parseFloat(newQte),
       date_debut_prevue: newDateDebut || null,
@@ -99,7 +121,7 @@ export default function OfList() {
     } else {
       toast({ title: "OF créé" });
       setDialogOpen(false);
-      setNewProductId(""); setNewLineId(""); setNewQte(""); setNewDateDebut(""); setNewDateFin("");
+      setNewProductId(""); setNewLineId(""); setNewQte(""); setNewDateDebut(""); setNewDateFin(""); setNewRecipeId("");
       loadOfs();
     }
   };
@@ -161,6 +183,32 @@ export default function OfList() {
                   <SelectContent>{availableProducts.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.designation}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+              {newProductId && (
+                <div className="space-y-2">
+                  <Label>Version de recette à suivre {recipesForProduct.length > 0 && "*"}</Label>
+                  {recipesForProduct.length === 0 ? (
+                    <p className="text-xs text-destructive">Aucune recette n'existe pour ce produit. Créez-en une dans GPAO → Recettes.</p>
+                  ) : (
+                    <>
+                      <Select value={newRecipeId} onValueChange={setNewRecipeId}>
+                        <SelectTrigger className="h-12"><SelectValue placeholder="Choisir une version" /></SelectTrigger>
+                        <SelectContent>
+                          {recipesForProduct.map((r) => {
+                            const status = r.status || (r.is_active ? "active" : "archived");
+                            const label = status === "active" ? "Active" : status === "draft" ? "Brouillon" : "Archivée";
+                            return (
+                              <SelectItem key={r.id} value={r.id}>
+                                v{r.version} — {r.name} ({label})
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">La version est figée à la création de l'OF. Composants, étapes et contrôles qualité seront récupérés depuis cette version.</p>
+                    </>
+                  )}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Quantité prévue (kg) *</Label>
                 <Input type="number" value={newQte} onChange={(e) => setNewQte(e.target.value)} className="h-12" placeholder="0" />

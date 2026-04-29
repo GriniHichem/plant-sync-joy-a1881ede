@@ -118,6 +118,7 @@ export default function OfQualityTab({
   const [applicable, setApplicable] = useState<IndicatorRow[]>([]);
   const [checks, setChecks] = useState<CheckRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recipeInfo, setRecipeInfo] = useState<any | null>(null);
   const [statusValue, setStatusValue] = useState<string>(qualityStatus ?? "non_demarre");
   const [statusReason, setStatusReason] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
@@ -130,12 +131,15 @@ export default function OfQualityTab({
 
   const load = async () => {
     setLoading(true);
-    const [appRes, checksRes] = await Promise.all([
+    const [appRes, checksRes, recipeRes] = await Promise.all([
       (supabase as any).rpc("get_quality_indicators_for_of", { p_of_id: ofId }),
       (supabase as any).from("quality_checks").select("*").eq("of_id", ofId).order("control_time", { ascending: false }),
+      (supabase as any).rpc("get_recipe_for_of", { p_of_id: ofId }),
     ]);
     setApplicable(appRes.data || []);
     setChecks(checksRes.data || []);
+    const r = Array.isArray(recipeRes.data) ? recipeRes.data[0] : recipeRes.data;
+    setRecipeInfo(r || null);
     setLoading(false);
   };
 
@@ -284,6 +288,47 @@ export default function OfQualityTab({
               >
                 Mettre à jour
               </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recipe followed by this OF */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <span className="font-medium">Recette suivie</span>
+            {recipeInfo ? (
+              <>
+                <Badge variant="outline">v{recipeInfo.version}</Badge>
+                <Badge variant={recipeInfo.status === "active" ? "default" : recipeInfo.status === "draft" ? "outline" : "secondary"}>
+                  {recipeInfo.status === "active" ? "Active" : recipeInfo.status === "draft" ? "Brouillon" : "Archivée"}
+                </Badge>
+                <span className="text-sm text-muted-foreground">— {recipeInfo.recipe_name}</span>
+              </>
+            ) : (
+              <span className="text-sm text-destructive">Aucune recette liée à cet OF</span>
+            )}
+          </div>
+          {recipeInfo && Array.isArray(recipeInfo.quality_sensitive_components) && recipeInfo.quality_sensitive_components.length > 0 && (
+            <div>
+              <div className="text-xs uppercase text-muted-foreground mb-2">Composants qualité-sensibles ({recipeInfo.quality_sensitive_components.length})</div>
+              <div className="rounded border divide-y">
+                {recipeInfo.quality_sensitive_components.map((c: any) => (
+                  <div key={c.article_id} className="px-3 py-2 text-xs flex items-center gap-3 flex-wrap">
+                    <AlertTriangle className="h-3 w-3 text-destructive" />
+                    <span className="font-medium">{c.code}</span>
+                    <span className="text-muted-foreground">{c.designation}</span>
+                    <span className="ml-auto tabular-nums">{c.quantity} {c.unit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {recipeInfo && Array.isArray(recipeInfo.components) && (
+            <div className="mt-3 text-xs text-muted-foreground">
+              {recipeInfo.components.length} composant(s) au total · {Array.isArray(recipeInfo.steps) ? recipeInfo.steps.length : 0} étape(s)
             </div>
           )}
         </CardContent>

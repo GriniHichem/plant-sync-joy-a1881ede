@@ -3989,25 +3989,37 @@ export type Database = {
           article_id: string
           created_at: string
           id: string
+          is_mandatory: boolean
+          is_quality_sensitive: boolean
+          item_type: string
           quantite: number
           recipe_id: string
           unite: string
+          waste_percent: number | null
         }
         Insert: {
           article_id: string
           created_at?: string
           id?: string
+          is_mandatory?: boolean
+          is_quality_sensitive?: boolean
+          item_type?: string
           quantite?: number
           recipe_id: string
           unite?: string
+          waste_percent?: number | null
         }
         Update: {
           article_id?: string
           created_at?: string
           id?: string
+          is_mandatory?: boolean
+          is_quality_sensitive?: boolean
+          item_type?: string
           quantite?: number
           recipe_id?: string
           unite?: string
+          waste_percent?: number | null
         }
         Relationships: [
           {
@@ -5024,6 +5036,19 @@ export type Database = {
           tolerance_minus: number
           tolerance_plus: number
           unit: string
+        }[]
+      }
+      get_recipe_for_of: {
+        Args: { p_of_id: string }
+        Returns: {
+          components: Json
+          product_id: string
+          quality_sensitive_components: Json
+          recipe_id: string
+          recipe_name: string
+          status: string
+          steps: Json
+          version: number
         }[]
       }
       global_search: {

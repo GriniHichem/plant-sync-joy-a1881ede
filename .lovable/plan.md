@@ -1,100 +1,125 @@
 
-# Points de contrôle qualité — Liaison Lignes / OF
+# Fusion Recettes (production + qualité) + BOM en une seule recette versionnée
 
-## Contexte
+## Objectif
 
-L’écran actuel `/parametres/qualite/control-points` utilise le composant générique `QualityRefAdmin` avec un simple champ texte `production_line_id` (UUID à coller manuellement). De plus, le code lit `production_lines.nom` qui **n’existe pas** (la colonne s’appelle `designation`) → la liste de lignes est vide.
+Aujourd'hui le projet a **trois entités parallèles** pour la même réalité « comment on fabrique un produit » :
 
-La règle métier demandée : un point de contrôle peut être associé à **une ou plusieurs lignes**, **un ou plusieurs OF**, ou les **deux** (ex. poste “Sortie ligne” partagé par L1+L2 ; ou contrôle ad-hoc lié à un OF spécifique).
+1. `recipes` (+ `recipe_lines` + `recipe_steps`) — recette de production GPAO (`/gpao/recettes`).
+2. `recipes` lue côté Qualité (`/qualite/recettes-nomenclatures` onglet "Recettes") — même table mais consultée via le prisme qualité (CCP, indicateurs).
+3. `bill_of_materials` (+ `bom_items`) — nomenclature/BOM dédiée Qualité (onglet "Nomenclatures").
 
-## Modèle de données (migration additive)
+Chaque OF référence indépendamment `recipe_id` **et** `bom_id`. Le BOM est rarement renseigné, ce qui casse les rapports théoriques vs réels et oblige à dupliquer la matière première (déjà décrite dans `recipe_lines`).
 
-Garder `quality_control_points` (référentiel) + ajouter deux tables de liaison + un champ `scope`.
+**Cible** : une seule entité **Recette versionnée** qui porte à la fois la composition matière (ex-BOM) et le process (étapes/CCP/indicateurs). À la création d'un OF, on choisit **la version de recette à suivre**. L'app Qualité récupère automatiquement cette même version (composants + étapes + indicateurs sensibles), sans configuration séparée.
+
+## Modèle de données — migration additive (pas de drop)
+
+Garder `recipes` comme entité maître. Étendre `recipe_lines` avec les attributs BOM (déjà présents : `quantite`, `unite` ; à ajouter : `item_type`, `waste_percent`, `is_mandatory`, `is_quality_sensitive`). Ne pas casser `bill_of_materials` mais le marquer "legacy" et fournir une vue+RPC qui agrège tout depuis `recipes`/`recipe_lines`.
 
 ```sql
--- 1) Champ scope sur le référentiel
-ALTER TABLE quality_control_points
-  ADD COLUMN scope text NOT NULL DEFAULT 'global'
-    CHECK (scope IN ('global','line','of','mixed'));
+-- 1) Étendre recipe_lines avec les champs BOM
+ALTER TABLE public.recipe_lines
+  ADD COLUMN IF NOT EXISTS item_type text NOT NULL DEFAULT 'raw_material'
+    CHECK (item_type IN ('raw_material','packaging','label','carton','pallet','consumable')),
+  ADD COLUMN IF NOT EXISTS waste_percent numeric(6,4),
+  ADD COLUMN IF NOT EXISTS is_mandatory boolean NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS is_quality_sensitive boolean NOT NULL DEFAULT false;
 
--- (la colonne production_line_id reste pour rétro-compat, considérée legacy)
+-- 2) Marquer bill_of_materials comme legacy (lecture seule depuis l'UI)
+COMMENT ON TABLE public.bill_of_materials IS
+  'LEGACY — fusionné dans recipes/recipe_lines. Conservé pour historique uniquement.';
 
--- 2) Liaison Points ↔ Lignes (N..N)
-CREATE TABLE quality_control_point_lines (
-  id uuid PK default gen_random_uuid(),
-  control_point_id uuid REFERENCES quality_control_points(id) ON DELETE CASCADE,
-  production_line_id uuid REFERENCES production_lines(id) ON DELETE CASCADE,
-  created_at timestamptz default now(),
-  UNIQUE (control_point_id, production_line_id)
-);
+-- 3) Migration des données existantes : pour chaque BOM "active", copier ses items
+--    dans la dernière recette active du même produit (ou créer une recette si aucune).
+--    Script de backfill idempotent inclus dans la migration.
 
--- 3) Liaison Points ↔ OF (N..N)
-CREATE TABLE quality_control_point_ofs (
-  id uuid PK default gen_random_uuid(),
-  control_point_id uuid REFERENCES quality_control_points(id) ON DELETE CASCADE,
-  of_id uuid REFERENCES ordres_fabrication(id) ON DELETE CASCADE,
-  created_at timestamptz default now(),
-  UNIQUE (control_point_id, of_id)
-);
+-- 4) RPC unique pour la Qualité : composants + étapes + CCP d'une version de recette
+CREATE OR REPLACE FUNCTION public.get_recipe_for_of(p_of_id uuid)
+RETURNS TABLE (
+  recipe_id uuid, recipe_name text, version int, status text,
+  components jsonb,  -- [{article_id, code, designation, qty, unit, type, qs}]
+  steps jsonb,       -- [{order, title, ccp, indicator_id}]
+  quality_sensitive_components jsonb
+)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+  -- assemble depuis recipes + recipe_lines + recipe_steps via OF.recipe_id
+$$;
 ```
 
-RLS sur les deux tables : SELECT pour `authenticated`, mutations restreintes via `has_quality_permission(auth.uid(),'manage_assignments')` OU `has_role('admin')`. Audit log inclus.
+Ajout d'un trigger d'audit sur `recipe_lines` pour les nouveaux champs (`is_quality_sensitive` notamment).
 
-## Écran dédié
+## OF — choix explicite de la version
 
-Remplacer `QualiteControlPointsAdmin.tsx` par une page autonome (plus utiliser `QualityRefAdmin` pour ce ref). Layout :
+Aujourd'hui la création d'OF prend "n'importe quelle recette du produit" (`recipes.find((r) => r.product_id === newProductId)`), sans gérer les versions. À refondre :
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ ← Points de contrôle                            [+ Nouveau] │
-│ Postes/étapes où des contrôles qualité sont effectués       │
-├──────────────┬──────────────────────────────────────────────┤
-│  LISTE       │  DÉTAIL (panneau latéral)                    │
-│              │                                              │
-│ [search…]    │  Code  PC-01     Libellé  Sortie ligne       │
-│ ──────────   │  Description ……                              │
-│ ▸ PC-01      │  Portée : ◯ Global ◯ Lignes ◯ OF ◯ Mixte    │
-│   Sortie L.  │                                              │
-│ ▸ PC-02      │  ── Lignes liées (3) ──────── [+ Ajouter] ── │
-│   Pesée      │   • L01 — Conditionnement      [x]           │
-│ ▸ PC-03      │   • L02 — Embouteillage         [x]          │
-│   Étiquetage │                                              │
-│              │  ── OF liés (1) ─────────────  [+ Ajouter] ──│
-│              │   • OF-00123 (en cours)         [x]          │
-│              │                                              │
-│              │  Actif [●]  Ordre [10]   [Supprimer] [Save]  │
-└──────────────┴──────────────────────────────────────────────┘
-```
+- Champ obligatoire **"Version de recette à suivre"** dans le dialog `OfList → handleCreate`, peuplé avec les recettes `status='active'` du produit choisi (par défaut la plus récente). Possibilité de choisir une version `draft` pour OF de R&D (avec badge d'avertissement).
+- Stockage : `ordres_fabrication.recipe_id` (déjà existant). Le champ `bom_id` devient inutile : on le rend nullable+deprecated, et on le remplit automatiquement par trigger pour la rétro-compat des rapports actuels (`bom_id := (SELECT id FROM bill_of_materials WHERE product_id=NEW.product_id AND status='active' LIMIT 1)` — uniquement tant que `bill_of_materials` existe, sinon NULL).
+- Une fois l'OF créé, la version est figée : pas de changement automatique si une nouvelle version de recette est activée plus tard. Un bouton "Aligner sur la dernière version" est proposé (avec audit + raison) tant que l'OF est `planifie`.
 
-### Comportements
+## Côté Qualité — lecture transparente
 
-- **Portée (scope)** : radio rapide qui filtre l’UI mais reste informative ; les liens lignes/OF sont toujours autorisés tant que cohérents.
-- **Sélecteurs combobox** :
-  - Lignes : `production_lines` (code + designation, actives), multi-ajout.
-  - OF : recherche par `numero`, filtrée par défaut sur `statut in ('planifie','en_cours')` avec toggle « inclure clos ».
-- **Liste à gauche** : badge code + libellé, compteur de liens (ex. `2L · 1OF`), switch actif inline.
-- **Création** : dialog rapide (code, libellé, description, scope) puis ouverture en mode édition pour ajouter les liens.
-- **Suppression** : bloquée si des `quality_checks` y référent (vérification via count avant delete) → toast explicite.
+Tous les écrans qualité qui lisaient `bill_of_materials`/`bom_items` lisent désormais `recipes`/`recipe_lines` via la RPC `get_recipe_for_of(of_id)` :
 
-## Intégration / hooks
+- `OfQualityTab` → nouvelle section "Recette suivie" (nom, version, badge statut, lien vers la recette) + tableau des composants qualité-sensibles attendus.
+- `QualiteTracabilite` → remplace les jointures `bom_id/bom_items` par la RPC.
+- `QualiteRapports` (théorique vs réel) → utilise les `recipe_lines` de la recette de l'OF au lieu des `bom_items`.
+- `QualitySensitiveItemsTab` → liste les `recipe_lines` avec `is_quality_sensitive=true`, regroupées par produit/version.
+- `BomCompareTab` → devient "Comparer deux versions de recette" (composants + étapes côte à côte).
+- `RecipesQualityTab` (lecture qualité actuelle) → enrichi avec colonne "Composants" (déjà présente) + colonnes "type / qualité-sensible / perte%".
 
-- Hook `useControlPointLinks(cpId)` : retourne `{ lines, ofs, addLine, removeLine, addOf, removeOf }` avec invalidation react-query.
-- `getControlPointsForOf(ofId)` (utilitaire) : union des points liés à l’OF + ceux liés à sa ligne + ceux scope `global`. Sera réutilisé plus tard par les écrans de saisie de contrôles.
+## Refonte de l'écran Recettes (`/gpao/recettes`)
 
-## Audit
+`RecipesPage.tsx` reste l'écran maître mais étendu :
 
-Chaque mutation (create/update/delete CP, add/remove line, add/remove OF) → `audit_logs` module `qualite`, action `quality_control_point.*`.
+- Dans la table des composants d'une version, ajouter les colonnes : **Type** (matière/emballage/…), **Qté/u**, **Unité**, **Perte %**, **Obligatoire**, **Qualité sensible**.
+- Bouton "Dupliquer en nouvelle version" copie aussi les nouveaux champs.
+- Onglet/section "Étapes & contrôles" inchangée (déjà en place).
+- Permission de publier une version `active` reste : `admin` | `resp_production` | `bureau_methode` (RPC `set_recipe_status` existe déjà).
 
-## Fichiers touchés
+## Hub Qualité `/qualite/recettes-nomenclatures`
 
-- **Migration** : `supabase/migrations/<ts>_quality_control_point_links.sql` (colonne `scope` + 2 tables + RLS + index).
-- **Réécriture** : `src/pages/parametres/qualite/QualiteControlPointsAdmin.tsx` (écran dédié maître/détail).
-- **Nouveau** : `src/hooks/qualite/useControlPointLinks.ts`.
-- **Nouveau** : `src/lib/qualite/controlPoints.ts` (utilitaire `getControlPointsForOf`).
-- Aucun changement sur les autres référentiels.
+- Renommer en **"Recettes (Qualité)"**.
+- Supprimer l'onglet "Nomenclatures" (devenu redondant) et l'onglet "Articles qualité sensibles" passe en filtre/colonne dans l'onglet Recettes.
+- Garder l'onglet "Comparaison" (versions de recette).
+- Bandeau d'info : "La nomenclature fait partie de la recette. Pour la modifier, allez dans GPAO → Recettes."
 
-## Hors-scope (à confirmer plus tard)
+## Sidebar / paramètres
 
-- Drag & drop ordre.
-- Import CSV.
-- Liaison points ↔ recettes / familles produit (peut être ajoutée symétriquement si demandé).
+- Le hub `/parametres/qualite` reste mais retire toute mention BOM séparée.
+- Aucune nouvelle entrée de menu : tout passe par `/gpao/recettes` (édition) et `/qualite/recettes-nomenclatures` (lecture qualité).
+
+## Audit & notifications
+
+- Audit `recipe_lines.update` capture les bascules `is_quality_sensitive`.
+- Notification existante `notifyRecipeApproved` reste — `notifyBomChanged` devient obsolète (déclencheur supprimé).
+
+## Tests
+
+- Mettre à jour `src/test/qualite/rapports.test.ts` : la conso théorique se calcule depuis `recipe_lines`, plus depuis `bom_items`.
+- Nouveau test : `get_recipe_for_of(of_id)` retourne bien la version figée à la création de l'OF, même après publication d'une v+1.
+- Test UI : la création d'OF refuse de continuer sans version de recette sélectionnée.
+
+## Fichiers impactés
+
+**Migration** : `supabase/migrations/<ts>_merge_recipes_bom.sql` (ALTER + backfill + RPC `get_recipe_for_of` + trigger `bom_id` rétro-compat).
+
+**Modifié** :
+- `src/pages/gpao/RecipesPage.tsx` — nouvelles colonnes BOM dans le formulaire d'ajout de ligne et dans la table.
+- `src/pages/gpao/OfList.tsx` — sélecteur de version de recette obligatoire dans le dialog de création.
+- `src/pages/gpao/OfDetail.tsx` — bandeau "Recette suivie : v3 (active)" + bouton "Aligner sur dernière version".
+- `src/components/qualite/OfQualityTab.tsx` — nouvelle section "Recette suivie" + composants qualité-sensibles via RPC.
+- `src/pages/qualite/QualiteRecettesNomenclatures.tsx` — supprimer onglets Nomenclatures + Articles sensibles autonomes.
+- `src/pages/qualite/components/RecipesQualityTab.tsx` — afficher type/QS/perte sur les composants.
+- `src/pages/qualite/components/BomCompareTab.tsx` — renommer/refacto en "Comparer versions de recette".
+- `src/pages/qualite/QualiteTracabilite.tsx`, `QualiteRapports.tsx`, `components/RapportsHelpers.ts` — lire depuis recipe_lines.
+- `src/test/qualite/rapports.test.ts` + nouveaux tests.
+
+**Conservé en lecture seule (legacy)** :
+- `src/pages/qualite/components/BomTab.tsx`, `QualitySensitiveItemsTab.tsx`, `BomHelpers.ts` — soit supprimés, soit archivés sous `_legacy/`.
+
+## Hors-scope
+
+- Migration définitive (drop) de `bill_of_materials` : reportée à une PR ultérieure une fois la stabilité validée en prod.
+- Comparaison **inter-produits** de recettes.
+- Versionnage des étapes indépendant de la version recette.

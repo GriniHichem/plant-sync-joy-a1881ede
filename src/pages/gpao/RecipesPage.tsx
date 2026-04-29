@@ -66,17 +66,21 @@ export default function RecipesPage() {
   const canManage = hasRole("admin") || hasRole("resp_production");
 
   const load = async () => {
-    const [rRes, pRes, aRes, rlRes, ofRes] = await Promise.all([
+    const [rRes, pRes, aRes, rlRes, rsRes, qiRes, ofRes] = await Promise.all([
       supabase.from("recipes").select("*, products(code, designation)").order("name"),
       supabase.from("products").select("*").eq("is_active", true).order("code"),
       supabase.from("articles").select("*").eq("is_active", true).order("code"),
       supabase.from("recipe_lines").select("*, articles(code, designation, unite)").order("created_at"),
+      supabase.from("recipe_steps" as any).select("*").order("step_order"),
+      supabase.from("quality_indicators").select("id, code, name, indicator_type, unit").eq("is_active", true).order("code"),
       supabase.from("ordres_fabrication").select("id, numero, statut, recipe_id").not("recipe_id", "is", null),
     ]);
     setRecipes(rRes.data || []);
     setProducts(pRes.data || []);
     setArticles(aRes.data || []);
     setRecipeLines(rlRes.data || []);
+    setRecipeSteps((rsRes.data as any[]) || []);
+    setIndicators(qiRes.data || []);
     setLinkedOfs(ofRes.data || []);
   };
 

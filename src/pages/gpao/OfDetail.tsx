@@ -453,8 +453,7 @@ export default function OfDetail() {
             lineId={of.line_id ?? null}
             qualityStatus={of.quality_status ?? null}
             canManage={
-              hasRole("admin") || hasRole("resp_production") || hasRole("chef_ligne") ||
-              hasRole("controleur_qualite") || hasRole("bureau_methode")
+              hasRole("admin") || hasRole("resp_production") || hasRole("chef_ligne") || hasRole("bureau_methode")
             }
             onChanged={load}
           />

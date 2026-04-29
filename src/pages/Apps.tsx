@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, X, ShieldCheck, Bell } from "lucide-react";
+import { Search, X, ShieldCheck, Bell, ClipboardCheck, AlertTriangle, Wrench, FileText, GitBranch } from "lucide-react";
 import {
   IconDashboard, IconMachine, IconEquipment, IconFactory, IconSpare,
   IconTicket, IconPreventive, IconShift, IconAnalytics, IconChart,

@@ -22,7 +22,27 @@ export default function RecipesPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
   const [recipeLines, setRecipeLines] = useState<any[]>([]);
+  const [recipeSteps, setRecipeSteps] = useState<any[]>([]);
+  const [indicators, setIndicators] = useState<any[]>([]);
   const [linkedOfs, setLinkedOfs] = useState<any[]>([]);
+
+  // Step dialog
+  const [stepDialogOpen, setStepDialogOpen] = useState(false);
+  const [stepEditId, setStepEditId] = useState<string | null>(null);
+  const [stepRecipeId, setStepRecipeId] = useState("");
+  const [stepOrder, setStepOrder] = useState("1");
+  const [stepTitle, setStepTitle] = useState("");
+  const [stepDescription, setStepDescription] = useState("");
+  const [stepDuration, setStepDuration] = useState("");
+  const [stepCcp, setStepCcp] = useState(false);
+  const [stepIndicatorId, setStepIndicatorId] = useState<string>("__none__");
+  const [stepProcessParam, setStepProcessParam] = useState("");
+
+  // Compare dialog
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareProductId, setCompareProductId] = useState<string | null>(null);
+  const [compareA, setCompareA] = useState<string>("");
+  const [compareB, setCompareB] = useState<string>("");
 
   // Recipe dialog
   const [dialogOpen, setDialogOpen] = useState(false);

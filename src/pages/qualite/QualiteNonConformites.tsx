@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
-import { AlertOctagon, Plus, RotateCcw, Search, Download, Gavel, Lock } from "lucide-react";
+import { AlertOctagon, Plus, RotateCcw, Search, Download, Gavel, Lock, ListChecks } from "lucide-react";
 import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
 import { parseDecimal } from "@/pages/qualite/QualiteIndicateurs";

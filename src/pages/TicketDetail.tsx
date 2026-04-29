@@ -328,7 +328,9 @@ export default function TicketDetail() {
     }
     const now = new Date().toISOString();
     const tempsArret = ticket?.heure_declaration ? Math.round((new Date(now).getTime() - new Date(ticket.heure_declaration).getTime()) / 60000) : null;
-    const tempsIntervention = ticket?.heure_prise_en_charge ? Math.round((new Date(now).getTime() - new Date(ticket.heure_prise_en_charge).getTime()) / 60000) : null;
+    // Fallback: if no formal heure_prise_en_charge, use heure_declaration so the KPI is never null when resolving
+    const baselineForIntervention = ticket?.heure_prise_en_charge || ticket?.heure_declaration;
+    const tempsIntervention = baselineForIntervention ? Math.round((new Date(now).getTime() - new Date(baselineForIntervention).getTime()) / 60000) : null;
 
     const { data: updatedTicket } = await supabase.from("tickets").update({
       statut: "resolu" as any, heure_resolution: now, cause_racine: causeRacine, solution, temps_arret_minutes: tempsArret, temps_intervention_minutes: tempsIntervention,

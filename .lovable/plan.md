@@ -1,87 +1,116 @@
-# Affectation des indicateurs qualité (produit / famille / ligne / recette / OF)
+# Module Contrôles qualité par OF
 
-Approche **strictement additive** : nouvelle table d'association + nouvelle fonction SQL en lecture seule. Aucune modification des tables `ordres_fabrication`, `recipes`, `products`, `production_lines`, `product_families`, ni des modules Shift / GPAO / GMAO.
+Ajout strictement additif. Aucune modification de `ordres_fabrication`, `shifts`, `production_declarations`, `consumptions`, ni des dashboards GPAO.
 
-## 1. Migration BD
+## 1. Migration BD — `quality_checks`
 
-### Table `quality_indicator_assignments`
 ```text
-id                  uuid PK default gen_random_uuid()
-indicator_id        uuid NOT NULL → quality_indicators(id) ON DELETE CASCADE
-product_id          uuid NULL → products(id) ON DELETE CASCADE
-product_family_id   uuid NULL → product_families(id) ON DELETE CASCADE
-production_line_id  uuid NULL → production_lines(id) ON DELETE CASCADE
-recipe_id           uuid NULL → recipes(id) ON DELETE CASCADE
-is_required         boolean NOT NULL default false
-is_blocking         boolean NOT NULL default false
-frequency_type      quality_frequency_type NULL  (override de la fréquence indicateur)
-notes               text default ''
-created_by          uuid NULL
-updated_by          uuid NULL
-created_at          timestamptz default now()
-updated_at          timestamptz default now()
+id                       uuid PK default gen_random_uuid()
+of_id                    uuid NOT NULL → ordres_fabrication(id) ON DELETE CASCADE
+product_id               uuid NULL → products(id) ON DELETE SET NULL
+production_line_id       uuid NULL → production_lines(id) ON DELETE SET NULL
+shift_id                 uuid NULL → shifts(id) ON DELETE SET NULL
+team_id                  uuid NULL → shift_teams(id) ON DELETE SET NULL
+indicator_id             uuid NOT NULL → quality_indicators(id) ON DELETE RESTRICT
+measured_value_numeric   numeric NULL
+measured_value_text      text NULL
+measured_value_boolean   boolean NULL
+selected_value           text NULL              -- pour indicateurs "select"
+unit                     text NULL              -- snapshot au moment du contrôle
+target_value             numeric NULL           -- snapshot
+min_value                numeric NULL           -- snapshot
+max_value                numeric NULL           -- snapshot
+is_conform               boolean NULL           -- calculé côté trigger
+deviation_value          numeric NULL           -- mesuré - target
+deviation_percent        numeric NULL           -- (mesuré - target) / target * 100
+control_time             timestamptz NOT NULL DEFAULT now()
+controlled_by            uuid NULL
+comment                  text NOT NULL DEFAULT ''
+status                   text NOT NULL DEFAULT 'submitted'   -- draft|submitted|validated|rejected
+validation_status        text NOT NULL DEFAULT 'not_required' -- not_required|pending|approved|rejected
+validated_by             uuid NULL
+validated_at             timestamptz NULL
+created_at               timestamptz NOT NULL DEFAULT now()
+updated_at               timestamptz NOT NULL DEFAULT now()
 ```
 
-Règles & contraintes :
-- Trigger `updated_at`.
-- Trigger de validation : au moins une cible doit être définie OU toutes nulles (= portée globale explicite). Implémenté via trigger (pas CHECK) pour rester souple.
-- Index sur (indicator_id), (product_id), (product_family_id), (production_line_id), (recipe_id).
+Triggers / index :
+- `update_updated_at_column` sur UPDATE.
+- Trigger `quality_checks_compute_conformity()` AVANT INSERT/UPDATE :
+  - Si `indicator_type = numeric` et `measured_value_numeric` non null :
+    - `is_conform = (min_value IS NULL OR v >= min_value) AND (max_value IS NULL OR v <= max_value)`.
+    - `deviation_value = v - target_value` si `target_value` non null.
+    - `deviation_percent = (v - target) / target * 100` si target ≠ 0.
+  - Si `boolean` : `is_conform = measured_value_boolean`.
+  - Si `select` : `is_conform = NULL` (pas d'auto-évaluation).
+  - Si `text` : `is_conform = NULL`.
+- Trigger de validation des `status` / `validation_status` (whitelist).
+- Index : `(of_id)`, `(indicator_id)`, `(production_line_id)`, `(control_time DESC)`, `(is_conform)`.
 - RLS :
   - SELECT : authenticated.
-  - INSERT/UPDATE/DELETE : `admin`, `bureau_methode`, ou rôle disposant de `qualite_indicators.can_edit` (réutilise le module permission existant).
+  - INSERT/UPDATE : `admin`, `bureau_methode`, `resp_production`, `chef_ligne`, `controleur_qualite` (via has_role) — fallback sur `controlled_by = auth.uid()` autorisé pour l'auteur.
+  - DELETE : admin uniquement.
 
-### Fonction SQL `get_quality_indicators_for_of(p_of_id uuid)`
-- `LANGUAGE sql STABLE SECURITY INVOKER` — **lecture seule**, ne touche jamais à l'OF.
-- Récupère depuis `ordres_fabrication` : `product_id`, `recipe_id`, `line_id`, et la `family_id` du produit.
-- Retourne (TABLE) : toutes les colonnes utiles de `quality_indicators` actifs + colonnes d'assignation (`is_required`, `is_blocking`, `frequency_type` effective, `match_scope` ∈ {global, product, family, line, recipe}).
-- Inclut :
-  1. Indicateurs **globaux actifs** (= indicateur sans aucune assignation, OU assignation avec toutes cibles nulles).
-  2. Indicateurs assignés au `product_id` de l'OF.
-  3. Indicateurs assignés à la `family_id` du produit de l'OF.
-  4. Indicateurs assignés à la `line_id` de l'OF.
-  5. Indicateurs assignés à la `recipe_id` de l'OF.
-- DISTINCT par `indicator_id` avec priorité scope `recipe > product > family > line > global` pour `is_required`/`is_blocking`/`frequency_type` effectifs.
+**Aucun trigger n'est posé sur `ordres_fabrication`, `shifts`, `production_declarations`, `consumptions`.** L'OF n'est jamais bloqué.
 
-## 2. UI — `src/pages/qualite/QualiteIndicateurs.tsx`
+## 2. Page UI — `src/pages/qualite/QualiteControles.tsx`
 
-Ajout d'un système d'**onglets** (`Tabs` shadcn) :
-- **Onglet "Indicateurs"** : page actuelle inchangée.
-- **Onglet "Affectations"** :
-  - Filtre par indicateur, produit, famille, ligne, recette + bouton reset (RotateCcw).
-  - Tableau : Indicateur • Portée (badge: Global/Produit/Famille/Ligne/Recette) • Cible • Requis • Bloquant • Fréquence (override) • Actions.
-  - Bouton "+ Nouvelle affectation" → `ResponsiveDialog` :
-    - Select Indicateur (obligatoire, depuis `quality_indicators` actifs).
-    - Selects optionnels (avec sentinelle `__none__` → null) : Produit, Famille produit, Ligne, Recette.
-    - Switches `is_required`, `is_blocking`.
-    - Select fréquence override (option vide = hériter).
-    - Validation : au moins une cible OU explicite "Global".
-  - Édition / suppression avec confirmation.
-  - Audit via `logAudit` (module `parametres`, alias `qualite_indicator_assignments`).
+Remplace le placeholder existant. Sections :
 
-## 3. Permissions
-Réutilise le module existant `qualite_indicators` — pas de nouveau module nécessaire (les affectations sont gérées par les mêmes profils que les indicateurs).
+### Bandeau actions
+- Bouton "+ Nouveau contrôle".
+- Bouton Export CSV.
 
-## 4. Tests (`src/test/qualite/quality-indicator-assignments.test.ts`)
-- Validation de payload (au moins une cible ou explicitly global).
-- Filtres affectations (par indicateur/produit/ligne).
-- Logique de priorité de scope (recipe > product > family > line > global).
-- Mock de la fonction `get_quality_indicators_for_of` : retour combinant globaux + scope produit + scope ligne sans doublon.
-- Re-validation des routes existantes : `/gpao/of`, `/maintenance/shift`, `/gpao/recettes`, `/notifications`.
+### Filtres (Card)
+- Recherche texte (indicateur code/nom + commentaire).
+- Select OF (parmi OFs actifs `en_cours` / `planifie`).
+- Select Produit (alimenté depuis OFs filtrés).
+- Select Ligne.
+- Select Conformité : Tous / Conformes / Non conformes / Non évalués.
+- Plage de dates (date début / date fin sur `control_time`).
+- Bouton "Réinitialiser" conditionnel (RotateCcw).
 
-## 5. Garantie de non-régression
-- **Aucune** modification de `ordres_fabrication`, `recipes`, `products`, `production_declarations`, `shifts`.
-- La fonction `get_quality_indicators_for_of` est en `STABLE` / lecture seule, jamais appelée par Shift Production dans cette itération.
-- Aucun trigger n'est ajouté sur les tables existantes.
-- L'onglet Affectations n'est visible que sous le module `qualite_indicators` déjà gardé.
+### Tableau
+Colonnes : Date, OF, Produit, Ligne, Indicateur, Valeur (avec unité), Cible / Min-Max, Conformité (badge `Conforme` / `Non conforme` / `Hors tolérance` / `—`), Auteur, Actions.
+
+### Dialog "Nouveau contrôle" (`ResponsiveDialog`)
+1. Select **OF** obligatoire — depuis OFs actifs (`statut IN planifie/en_cours/...`).
+2. Affichage automatique (lecture seule) du Produit et de la Ligne de l'OF.
+3. Select **Indicateur** : appelle `get_quality_indicators_for_of(of_id)` à l'ouverture pour ne proposer que les indicateurs applicables (globaux + scope).
+4. Champ Valeur dynamique selon `indicator_type` :
+   - numeric → input décimal (`parseDecimal` accepte `.` et `,`)
+   - boolean → Switch
+   - select → Select avec `select_options`
+   - text → Textarea
+5. Snapshot affiché : unité, cible, min/max issus de l'indicateur (override d'assignation appliqué côté résolveur).
+6. Calcul de conformité **en temps réel** (preview) avant submit, miroir du trigger SQL.
+7. Champ Commentaire.
+8. À la soumission : insert dans `quality_checks` avec snapshots `unit/target/min/max`, `controlled_by = user.id`, `status = submitted`. Audit log via `logAudit` (module `parametres`, entity `quality_check`).
+
+## 3. Tests — `src/test/qualite/quality-checks.test.ts`
+- `computeConformity` numérique : conforme dans [min,max], non conforme hors plage, badge "Hors tolérance" si `tolerance_minus/plus` snapshot dépassée.
+- numérique sans min/max → `is_conform` = NULL.
+- boolean → reflète la valeur saisie.
+- select / text → `is_conform` = NULL.
+- `deviation_value` et `deviation_percent` calculés correctement (target=0 → percent NULL).
+- Validation : OF obligatoire, indicateur obligatoire, valeur obligatoire.
+- Filtrage liste (OF, ligne, conformité, plage dates, recherche texte).
+- Régression : aucun appel à `ordres_fabrication.update`, `consumptions.update`, `production_declarations.update` dans le module.
+
+## 4. Garantie de non-régression
+- Aucune modification de tables existantes.
+- Aucun trigger sur `ordres_fabrication` / `shifts` / `consumptions` / `production_declarations`.
+- La page Shift Production, le dashboard GPAO et les déclarations restent inchangés.
+- L'OF n'est jamais bloqué : `quality_checks.is_blocking` n'existe pas et aucune logique côté SQL ne lit cette table depuis les autres modules.
 
 ## Fichiers
-- **Nouveau** : `supabase/migrations/<timestamp>_quality_indicator_assignments.sql`
-- **Modifié** : `src/pages/qualite/QualiteIndicateurs.tsx` (ajout Tabs + section Affectations)
-- **Nouveau** : `src/test/qualite/quality-indicator-assignments.test.ts`
-- **Mis à jour** : `mem://features/qualite-module`
+- **Nouveau** : migration `quality_checks` + trigger conformité.
+- **Modifié** : `src/pages/qualite/QualiteControles.tsx` (remplace placeholder).
+- **Nouveau** : `src/test/qualite/quality-checks.test.ts`.
+- **Mise à jour** : `mem://features/qualite-module`.
 
 ## Confirmation finale (livrée après implémentation)
-- Table créée ✓
-- Fonction `get_quality_indicators_for_of` créée ✓
-- Tests exécutés ✓
-- Aucun impact sur OF / Shift / Recettes ✓
+- Table `quality_checks` créée ✓
+- Page `/qualite/controles` opérationnelle ✓
+- Calcul de conformité validé par tests ✓
+- Aucun blocage OF / Shift / Production / Consommations ✓

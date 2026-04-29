@@ -2936,6 +2936,9 @@ export type Database = {
       tickets: {
         Row: {
           assignee_id: string | null
+          assignment_status:
+            | Database["public"]["Enums"]["ticket_assignment_status"]
+            | null
           cause_racine: string | null
           created_at: string
           declarant_id: string | null
@@ -2966,6 +2969,9 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          assignment_status?:
+            | Database["public"]["Enums"]["ticket_assignment_status"]
+            | null
           cause_racine?: string | null
           created_at?: string
           declarant_id?: string | null
@@ -2996,6 +3002,9 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          assignment_status?:
+            | Database["public"]["Enums"]["ticket_assignment_status"]
+            | null
           cause_racine?: string | null
           created_at?: string
           declarant_id?: string | null
@@ -3547,6 +3556,11 @@ export type Database = {
         | "autre"
       shift_type: "matin" | "apres_midi" | "nuit"
       statut_pdr: "strategique" | "commune"
+      ticket_assignment_status:
+        | "unassigned"
+        | "assigned"
+        | "transferred"
+        | "released"
       ticket_priorite: "critique" | "haute" | "normale" | "basse"
       ticket_statut:
         | "ouvert"
@@ -3785,6 +3799,12 @@ export const Constants = {
       ],
       shift_type: ["matin", "apres_midi", "nuit"],
       statut_pdr: ["strategique", "commune"],
+      ticket_assignment_status: [
+        "unassigned",
+        "assigned",
+        "transferred",
+        "released",
+      ],
       ticket_priorite: ["critique", "haute", "normale", "basse"],
       ticket_statut: [
         "ouvert",

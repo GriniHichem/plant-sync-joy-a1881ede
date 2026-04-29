@@ -195,19 +195,9 @@ function MobileNav() {
         <div className="my-3 h-px bg-border/60" />
         {renderItems("Production", gpaoItems)}
         <div className="my-3 h-px bg-border/60" />
-        <RRNavLink
-          to="/parametres"
-          className={({ isActive: a }) =>
-            cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-md text-[14px] font-medium",
-              "text-foreground/75 hover:bg-accent hover:text-foreground",
-              a && "bg-primary/10 text-primary font-semibold"
-            )
-          }
-        >
-          <IconSettings size={18} />
-          Paramètres
-        </RRNavLink>
+        {renderItems("Qualité", qualiteItems)}
+        <div className="my-3 h-px bg-border/60" />
+        {renderItems("Configuration", configItems)}
       </SheetContent>
     </Sheet>
   );

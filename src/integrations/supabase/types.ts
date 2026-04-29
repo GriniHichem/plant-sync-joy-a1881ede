@@ -2901,6 +2901,139 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_checks: {
+        Row: {
+          comment: string
+          control_time: string
+          controlled_by: string | null
+          created_at: string
+          deviation_percent: number | null
+          deviation_value: number | null
+          id: string
+          indicator_id: string
+          is_conform: boolean | null
+          max_value: number | null
+          measured_value_boolean: boolean | null
+          measured_value_numeric: number | null
+          measured_value_text: string | null
+          min_value: number | null
+          of_id: string
+          product_id: string | null
+          production_line_id: string | null
+          selected_value: string | null
+          shift_id: string | null
+          status: string
+          target_value: number | null
+          team_id: string | null
+          unit: string | null
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+          validation_status: string
+        }
+        Insert: {
+          comment?: string
+          control_time?: string
+          controlled_by?: string | null
+          created_at?: string
+          deviation_percent?: number | null
+          deviation_value?: number | null
+          id?: string
+          indicator_id: string
+          is_conform?: boolean | null
+          max_value?: number | null
+          measured_value_boolean?: boolean | null
+          measured_value_numeric?: number | null
+          measured_value_text?: string | null
+          min_value?: number | null
+          of_id: string
+          product_id?: string | null
+          production_line_id?: string | null
+          selected_value?: string | null
+          shift_id?: string | null
+          status?: string
+          target_value?: number | null
+          team_id?: string | null
+          unit?: string | null
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_status?: string
+        }
+        Update: {
+          comment?: string
+          control_time?: string
+          controlled_by?: string | null
+          created_at?: string
+          deviation_percent?: number | null
+          deviation_value?: number | null
+          id?: string
+          indicator_id?: string
+          is_conform?: boolean | null
+          max_value?: number | null
+          measured_value_boolean?: boolean | null
+          measured_value_numeric?: number | null
+          measured_value_text?: string | null
+          min_value?: number | null
+          of_id?: string
+          product_id?: string | null
+          production_line_id?: string | null
+          selected_value?: string | null
+          shift_id?: string | null
+          status?: string
+          target_value?: number | null
+          team_id?: string | null
+          unit?: string | null
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_checks_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "quality_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_checks_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_checks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_checks_production_line_id_fkey"
+            columns: ["production_line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_checks_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_checks_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "shift_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_indicator_assignments: {
         Row: {
           created_at: string

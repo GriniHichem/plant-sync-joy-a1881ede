@@ -1,6 +1,7 @@
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 import {
   IconDashboard, IconMachine, IconEquipment, IconFactory, IconSpare,
@@ -9,6 +10,7 @@ import {
   IconConsumption, IconStop, IconSettings, IconLogout,
   IconMaintenance, IconProduction,
 } from "@/components/icons/IndustrialIcons";
+import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,

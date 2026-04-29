@@ -45,17 +45,32 @@ const gpaoItems = [
   { title: "Arrêts", url: "/gpao/arrets", icon: IconStop },
 ];
 
+const qualiteItems = [
+  { title: "Dashboard", url: "/qualite", icon: IconChart },
+  { title: "OF qualité", url: "/qualite/of", icon: IconOrder },
+  { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics },
+  { title: "Contrôles", url: "/qualite/controles", icon: ClipboardCheck },
+  { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle },
+  { title: "Actions", url: "/qualite/actions", icon: Wrench },
+  { title: "Recettes & nomenclatures", url: "/qualite/recettes-nomenclatures", icon: IconRecipe },
+  { title: "Traçabilité", url: "/qualite/tracabilite", icon: IconChart },
+  { title: "Rapports", url: "/qualite/rapports", icon: FileText },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { profile, roles, signOut } = useAuth();
+  const { canView } = usePermissions();
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
   const isGmaoActive = gmaoItems.some((i) => isActive(i.url));
   const isGpaoActive = gpaoItems.some((i) => isActive(i.url));
+  const isQualiteActive = qualiteItems.some((i) => isActive(i.url));
+  const showQualite = canView("qualite");
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"

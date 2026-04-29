@@ -134,6 +134,7 @@ export default function TicketDetail() {
       technicien_id: newCollabId,
       description: `Collaboration (${newCollabRole === "co_intervenant" ? "co-intervenant" : "aide"})`,
       statut: "en_cours" as any,
+      role: newCollabRole as any, // 'aide' | 'co_intervenant' — never inflates the failure count
       date_debut: collabRow?.added_at || now,
     });
     toast({ title: "Collaborateur ajouté" });

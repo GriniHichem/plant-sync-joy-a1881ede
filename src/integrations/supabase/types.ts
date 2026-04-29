@@ -2901,6 +2901,99 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_indicator_assignments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          frequency_type:
+            | Database["public"]["Enums"]["quality_frequency_type"]
+            | null
+          id: string
+          indicator_id: string
+          is_blocking: boolean
+          is_required: boolean
+          notes: string
+          product_family_id: string | null
+          product_id: string | null
+          production_line_id: string | null
+          recipe_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          frequency_type?:
+            | Database["public"]["Enums"]["quality_frequency_type"]
+            | null
+          id?: string
+          indicator_id: string
+          is_blocking?: boolean
+          is_required?: boolean
+          notes?: string
+          product_family_id?: string | null
+          product_id?: string | null
+          production_line_id?: string | null
+          recipe_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          frequency_type?:
+            | Database["public"]["Enums"]["quality_frequency_type"]
+            | null
+          id?: string
+          indicator_id?: string
+          is_blocking?: boolean
+          is_required?: boolean
+          notes?: string
+          product_family_id?: string | null
+          product_id?: string | null
+          production_line_id?: string | null
+          recipe_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_indicator_assignments_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "quality_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_indicator_assignments_product_family_id_fkey"
+            columns: ["product_family_id"]
+            isOneToOne: false
+            referencedRelation: "product_families"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_indicator_assignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_indicator_assignments_production_line_id_fkey"
+            columns: ["production_line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_indicator_assignments_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_indicators: {
         Row: {
           category: Database["public"]["Enums"]["quality_indicator_category"]
@@ -3905,6 +3998,29 @@ export type Database = {
         Returns: boolean
       }
       fts_build: { Args: { parts: string[] }; Returns: unknown }
+      get_quality_indicators_for_of: {
+        Args: { p_of_id: string }
+        Returns: {
+          assignment_id: string
+          category: string
+          code: string
+          description: string
+          effective_frequency_type: string
+          effective_is_blocking: boolean
+          effective_is_required: boolean
+          indicator_id: string
+          indicator_type: string
+          match_scope: string
+          max_value: number
+          min_value: number
+          name: string
+          select_options: Json
+          target_value: number
+          tolerance_minus: number
+          tolerance_plus: number
+          unit: string
+        }[]
+      }
       global_search: {
         Args: {
           date_from?: string

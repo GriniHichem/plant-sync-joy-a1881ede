@@ -1313,6 +1313,9 @@ export type Database = {
           line_id: string | null
           numero: string
           product_id: string
+          quality_status:
+            | Database["public"]["Enums"]["of_quality_status"]
+            | null
           quantite_prevue: number
           quantite_produite: number
           quantite_rebut: number
@@ -1335,6 +1338,9 @@ export type Database = {
           line_id?: string | null
           numero: string
           product_id: string
+          quality_status?:
+            | Database["public"]["Enums"]["of_quality_status"]
+            | null
           quantite_prevue?: number
           quantite_produite?: number
           quantite_rebut?: number
@@ -1357,6 +1363,9 @@ export type Database = {
           line_id?: string | null
           numero?: string
           product_id?: string
+          quality_status?:
+            | Database["public"]["Enums"]["of_quality_status"]
+            | null
           quantite_prevue?: number
           quantite_produite?: number
           quantite_rebut?: number
@@ -4195,6 +4204,14 @@ export type Database = {
           url: string
         }[]
       }
+      set_of_quality_status: {
+        Args: {
+          p_of_id: string
+          p_reason?: string
+          p_status: Database["public"]["Enums"]["of_quality_status"]
+        }
+        Returns: undefined
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       unaccent: { Args: { "": string }; Returns: string }
@@ -4269,6 +4286,16 @@ export type Database = {
       notification_frequency: "immediate" | "grouped_hourly" | "grouped_daily"
       notification_severity: "info" | "low" | "medium" | "high" | "critical"
       notification_status: "unread" | "read" | "archived"
+      of_quality_status:
+        | "non_demarre"
+        | "en_controle"
+        | "conforme"
+        | "conforme_sous_reserve"
+        | "non_conforme"
+        | "bloque"
+        | "libere"
+        | "rebute"
+        | "a_retraiter"
       of_statut: "planifie" | "en_cours" | "termine" | "annule"
       organe_impact_panne:
         | "arret_complet"
@@ -4540,6 +4567,17 @@ export const Constants = {
       notification_frequency: ["immediate", "grouped_hourly", "grouped_daily"],
       notification_severity: ["info", "low", "medium", "high", "critical"],
       notification_status: ["unread", "read", "archived"],
+      of_quality_status: [
+        "non_demarre",
+        "en_controle",
+        "conforme",
+        "conforme_sous_reserve",
+        "non_conforme",
+        "bloque",
+        "libere",
+        "rebute",
+        "a_retraiter",
+      ],
       of_statut: ["planifie", "en_cours", "termine", "annule"],
       organe_impact_panne: [
         "arret_complet",

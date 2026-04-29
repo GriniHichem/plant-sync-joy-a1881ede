@@ -366,7 +366,10 @@ export default function TicketDetail() {
       }
     } catch (e) { console.warn("[validation] ticket resolve check failed", e); }
 
-    const activeIntervention = interventions.find((i) => i.statut === "en_cours");
+    // Active intervention = the lead assignee's en_cours (not a collaborator's)
+    const activeIntervention = interventions.find(
+      (i) => i.statut === "en_cours" && i.technicien_id === ticket?.assignee_id
+    );
     if (activeIntervention) {
       await supabase.from("interventions").update({ statut: "terminee" as any, date_fin: now }).eq("id", activeIntervention.id);
       if (selectedPdr.length > 0) {

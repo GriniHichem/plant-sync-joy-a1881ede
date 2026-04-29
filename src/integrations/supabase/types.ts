@@ -199,6 +199,119 @@ export type Database = {
         }
         Relationships: []
       }
+      bill_of_materials: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          product_id: string
+          status: string
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+          version: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          product_id: string
+          status?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+          version?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          product_id?: string
+          status?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_of_materials_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bom_items: {
+        Row: {
+          article_id: string
+          bom_id: string
+          created_at: string
+          id: string
+          is_mandatory: boolean
+          is_quality_sensitive: boolean
+          item_type: string
+          notes: string | null
+          quantity_per_unit: number
+          unit: string
+          updated_at: string
+          waste_percent: number | null
+        }
+        Insert: {
+          article_id: string
+          bom_id: string
+          created_at?: string
+          id?: string
+          is_mandatory?: boolean
+          is_quality_sensitive?: boolean
+          item_type: string
+          notes?: string | null
+          quantity_per_unit?: number
+          unit?: string
+          updated_at?: string
+          waste_percent?: number | null
+        }
+        Update: {
+          article_id?: string
+          bom_id?: string
+          created_at?: string
+          id?: string
+          is_mandatory?: boolean
+          is_quality_sensitive?: boolean
+          item_type?: string
+          notes?: string | null
+          quantity_per_unit?: number
+          unit?: string
+          updated_at?: string
+          waste_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bom_items_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bom_items_bom_id_fkey"
+            columns: ["bom_id"]
+            isOneToOne: false
+            referencedRelation: "bill_of_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consumptions: {
         Row: {
           article_id: string
@@ -1302,6 +1415,7 @@ export type Database = {
       }
       ordres_fabrication: {
         Row: {
+          bom_id: string | null
           created_at: string
           created_by: string | null
           date_debut_prevue: string | null
@@ -1327,6 +1441,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bom_id?: string | null
           created_at?: string
           created_by?: string | null
           date_debut_prevue?: string | null
@@ -1352,6 +1467,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bom_id?: string | null
           created_at?: string
           created_by?: string | null
           date_debut_prevue?: string | null
@@ -4473,6 +4589,10 @@ export type Database = {
           score: number
           url: string
         }[]
+      }
+      set_bom_status: {
+        Args: { p_bom_id: string; p_reason?: string; p_status: string }
+        Returns: undefined
       }
       set_of_quality_status: {
         Args: {

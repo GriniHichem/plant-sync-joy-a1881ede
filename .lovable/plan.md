@@ -1,121 +1,119 @@
-# Recipe Versioning Enhancement (Non-destructive)
+# BOM (Nomenclature) Module — additive to Recipe & GPAO
 
 ## Current state (verified)
 
-- `recipes` exists with: `id, product_id, name, version (int, default 1), is_active (bool), created_at, updated_at, search_vector`.
-- `recipe_lines` exists with `recipe_id, article_id, quantite, unite`.
-- `ordres_fabrication.recipe_id` already references a recipe (existing OFs preserved).
-- `RecipesPage.tsx` (`/gpao/recettes`) already groups recipes by product and supports multiple versions.
-- `/qualite/recettes-nomenclatures` is currently a placeholder.
+- No `bill_of_materials` / `bom_items` tables exist.
+- `ordres_fabrication` already has `recipe_id` (no `bom_id`) — OFs will not be forced to use a BOM.
+- `articles`, `consumptions`, `recipes`, `recipe_lines` remain untouched.
+- `/qualite/recettes-nomenclatures` is a single-page recipe view that needs to be reorganized into tabs.
 
-The plan keeps every existing row, column and behavior intact. Only **additive** changes.
+Strict rule: purely additive. No NOT NULL, no DROP, no rename. Recipes ≠ BOM (Recipe = composition+process; BOM = sourceable items / packaging / quality-sensitivity).
 
 ---
 
-## 1. Database migration (additive only)
+## 1. Database migration (additive)
 
-### Extend `recipes` — all new columns nullable / safe defaults
-- `status text` default `'active'` (values: `draft`, `active`, `archived`) — backfilled from `is_active` (`true → 'active'`, `false → 'archived'`). `is_active` kept as-is for backward compatibility; a trigger will keep `is_active` and `status` in sync (status='active' ⇔ is_active=true).
-- `valid_from timestamptz` nullable
-- `valid_to timestamptz` nullable
-- `approved_by uuid` nullable
-- `approved_at timestamptz` nullable
-- `created_by uuid` nullable
-- `updated_by uuid` nullable
-- `notes text` nullable
-
-No NOT NULL added on existing columns. No data deleted. No rename.
-
-### New table `recipe_steps`
+### `bill_of_materials`
 ```
 id uuid pk
-recipe_id uuid not null references recipes(id) on delete cascade
-step_order int not null
-title text not null
+product_id uuid not null references products(id) on delete cascade
+version int not null default 1
+status text not null default 'draft' check (status in ('draft','active','archived'))
 description text
-process_parameter jsonb            -- e.g. {"temp_c":85,"pressure_bar":2.5}
-expected_duration_minutes numeric
-critical_control_point boolean default false
-quality_indicator_id uuid references quality_indicators(id) on delete set null
+valid_from timestamptz
+valid_to timestamptz
+created_by uuid
+approved_by uuid
+approved_at timestamptz
 created_at, updated_at timestamptz default now()
-created_by, updated_by uuid
-unique (recipe_id, step_order)
+unique (product_id, version)
 ```
 
-- RLS enabled. Read: authenticated. Write: `admin`, `resp_production`, `bureau_methode`, `controleur_qualite`.
-- Trigger to auto-update `updated_at`.
-- FTS on `title + description` (optional, follows existing pattern).
-- Audit log entries on insert/update/delete via existing `logAudit` helper from the UI.
+### `bom_items`
+```
+id uuid pk
+bom_id uuid not null references bill_of_materials(id) on delete cascade
+article_id uuid not null references articles(id) on delete restrict
+item_type text not null check (item_type in
+  ('raw_material','packaging','label','carton','pallet','consumable'))
+quantity_per_unit numeric not null default 0
+unit text not null default 'g'
+waste_percent numeric
+is_mandatory boolean not null default true
+is_quality_sensitive boolean not null default false
+notes text
+created_at, updated_at timestamptz default now()
+unique (bom_id, article_id, item_type)
+```
 
-### Helper RPC `set_recipe_status(p_recipe_id uuid, p_status text, p_reason text)`
-- SECURITY DEFINER, checks role `admin` / `resp_production` / `bureau_methode`.
-- Transitions: `draft → active`, `active → archived`, `archived → active` (re-activation allowed).
-- When activating: sets `status='active'`, `is_active=true`, `valid_from=coalesce(valid_from, now())`, `approved_by=auth.uid()`, `approved_at=now()`. Does **not** auto-archive other versions (keeps current "multiple active versions allowed" rule from memory).
-- When archiving: `status='archived'`, `is_active=false`, `valid_to=now()`. Does **not** touch any OF.
-- Inserts an `audit_logs` row with old/new values and reason.
+### `ordres_fabrication` — add `bom_id uuid` (nullable, no FK enforced action that breaks old OFs)
+- Pure ADD COLUMN IF NOT EXISTS. Existing OFs keep `bom_id = NULL` and continue to work exactly as before.
+
+### RLS
+- Read: any authenticated user.
+- Write `bill_of_materials` & `bom_items`: `admin`, `resp_production`, `bureau_methode`, `controleur_qualite`.
+
+### Triggers / RPC
+- `update_updated_at_column` trigger on both new tables.
+- RPC `set_bom_status(p_bom_id, p_status, p_reason)` mirroring `set_recipe_status`:
+  - SECURITY DEFINER, role-checked.
+  - Activate → `status='active'`, `valid_from=coalesce(...,now())`, clears `valid_to`, sets `approved_by/at`.
+  - Archive → `status='archived'`, `valid_to=now()`. Never touches OFs.
+  - Inserts `audit_logs` entry (module `gpao`, action `update_bom_status`).
 
 ### Critical guarantees
-- `ordres_fabrication.recipe_id` is unchanged — old OFs keep pointing to their (possibly archived) recipe.
-- No DELETE, no DROP, no NOT NULL tightening, no data migration that removes rows.
-- Existing `RecipesPage` queries (`select *`) keep working; new fields just appear in the payload.
+- No edits to `recipes`, `recipe_lines`, `articles`, `consumptions`, `ordres_fabrication.statut`, or any production logic.
+- `bom_id` on OFs is optional — old OFs unaffected, new OFs may opt in later (out of scope for this task).
 
 ---
 
-## 2. Code changes
+## 2. UI
 
-### `src/pages/gpao/RecipesPage.tsx` (extend, do not rewrite)
-- Show new `status` badge (`draft` / `active` / `archived`) alongside the existing `is_active` indicator.
-- Buttons per version (when `canManage`): **Activer**, **Archiver**, **Nouvelle version** (already exists), **Comparer versions**.
-- Comparison dialog: side-by-side recipe_lines + recipe_steps for two selected versions of the same product.
-- "Étapes" sub-section per version: list/add/edit/delete `recipe_steps` with order, CCP toggle, link to a `quality_indicators` row.
-- All actions go through the new RPC for status changes; lines/steps via direct table mutations with audit log.
-- Existing line management untouched.
+### `/qualite/recettes-nomenclatures` → restructure into 4 tabs
+- **Recettes** — current recipe view, untouched (extract into `<RecipesTabContent>` to keep the file readable).
+- **Nomenclatures** — full CRUD: list BOMs grouped by product (mirroring recipe layout), expand to see versions and `bom_items`.
+  - Create BOM (product + version + description).
+  - Add/edit/delete items: article picker, item_type select, quantity_per_unit, unit, waste_percent, is_mandatory, is_quality_sensitive.
+  - Activer / Archiver (via RPC).
+  - **Export CSV** of the active BOM (or any selected version).
+- **Comparaison** — choose two BOM versions of the same product → side-by-side diff (article list, quantities, waste, sensitivity flags).
+- **Articles qualité sensibles** — flat list of `bom_items` where `is_quality_sensitive=true`, joined to article + product + BOM version. Filterable by product/status.
 
-### `src/pages/qualite/QualiteRecettesNomenclatures.tsx` (replace placeholder)
-- Read-only quality view: list recipes grouped by product, expand to see versions, steps, CCPs, linked quality indicators.
-- Filter: status, product, has CCP, has linked indicator.
-- Link per CCP step opens the indicator detail in `/qualite/indicateurs`.
-- No write actions here (write stays in `/gpao/recettes`), avoiding duplication.
+### Permissions
+- Read: any authenticated user.
+- Write: `admin || resp_production || bureau_methode || controleur_qualite` (matches RLS).
 
-### Types
-- `src/integrations/supabase/types.ts` is auto-generated; will refresh after migration.
-- No edits to `client.ts`.
-
-### Audit & notifications
-- Use existing `logAudit` for step CRUD and status changes (RPC already logs).
-- No new notification rules required (can be added later if requested).
+### Audit
+- Use existing `logAudit` from UI for create/update/delete on BOM and items; status changes are audited inside the RPC.
 
 ---
 
-## 3. Tests (`src/test/gpao/recipe-versioning.test.ts` + extend existing)
+## 3. Tests (`src/test/qualite/bom.test.ts`)
 
-- Open existing recipe row → all new fields default correctly, no crash.
-- Create new version of an existing product (insert with same `product_id`, `version+1`) → both versions visible.
-- Activate version via RPC → `status='active'`, `is_active=true`, `approved_by/at` set.
-- Archive version → `status='archived'`, `is_active=false`, `valid_to` set; OF still resolves recipe by id.
-- Create OF with active recipe → unchanged behavior.
-- Open OF whose recipe is now `archived` → still loads recipe + lines (no filter on `is_active` in OF detail path).
-- Consumptions (`consumptions` table queries) untouched — verify existing GPAO consumption test still passes.
-- Shift Production screen — verify existing tests still pass (no schema break).
-- Insert/update/delete `recipe_steps` with CCP + indicator link.
+- Default `is_mandatory=true`, `is_quality_sensitive=false`.
+- Status lifecycle helper (`activate` sets `valid_from`, `archive` sets `valid_to`, never modifies OFs).
+- Item type whitelist (raw_material, packaging, label, carton, pallet, consumable).
+- CSV export shape (headers + one row per item, comma-decimal-safe numbers).
+- RPC payload contains no production status fields (`statut`, `quality_status`).
+- Quality-sensitive filter returns only items with the flag.
 
-Run full suite to confirm no regression in GPAO / Shift / Quality modules.
+Plus run the full suite to confirm GPAO/recipe/consumption tests stay green.
 
 ---
 
-## 4. Memory update
+## 4. Memory
 
-Update `mem://features/recipe-versioning` with:
-- New `status` lifecycle and `set_recipe_status` RPC.
-- `recipe_steps` table with `critical_control_point` + `quality_indicator_id`.
-- Rule: archiving never modifies OFs; old OFs retain their `recipe_id` pointer.
+Add `mem://features/bom-nomenclature` describing:
+- Recipes vs BOM separation.
+- Status lifecycle through `set_bom_status`.
+- BOM-item types and the `is_quality_sensitive` flag.
+- BOM is optional on OFs (`ordres_fabrication.bom_id` nullable).
 
 ---
 
 ## Confirmations after implementation
 
-- Migration purely additive — existing recipes & OFs preserved.
-- `/gpao/recettes` still works for all current users; new actions visible only to managers.
-- `/qualite/recettes-nomenclatures` becomes a real read-only quality view.
-- Versioning lifecycle (draft → active → archived) tested end-to-end.
-- No production blocking: status changes never touch `ordres_fabrication.statut`.
+- New tables created with RLS + lifecycle RPC.
+- BOM tied to product through `product_id`; multiple versions allowed; one or more may be active.
+- Existing recipes, articles, consumptions, OFs unchanged — no regressions in GPAO.
+- `/qualite/recettes-nomenclatures` shows 4 tabs (Recettes / Nomenclatures / Comparaison / Qualité sensibles) with full BOM CRUD and CSV export.

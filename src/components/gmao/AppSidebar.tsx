@@ -57,6 +57,12 @@ const qualiteItems = [
   { title: "Rapports", url: "/qualite/rapports", icon: FileText },
 ];
 
+const adminItems = [
+  { title: "Sécurité & Accès", url: "/securite", icon: Lock },
+  { title: "Validations", url: "/validations", icon: CheckSquare },
+  { title: "Paramètres", url: "/parametres", icon: IconSettings },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";

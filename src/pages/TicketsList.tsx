@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useNavWithFrom } from "@/hooks/useNavWithFrom";
@@ -18,6 +18,7 @@ import { exportToCsv } from "@/lib/exportCsv";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { FilterSheet } from "@/components/responsive/FilterSheet";
+import { ticketCreateSchema, getFieldErrors, isValid } from "@/lib/formValidation";
 
 export default function TicketsList() {
   const [tickets, setTickets] = useState<any[]>([]);

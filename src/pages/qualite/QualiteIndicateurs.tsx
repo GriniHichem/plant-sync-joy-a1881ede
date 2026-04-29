@@ -485,6 +485,12 @@ export default function QualiteIndicateurs() {
           </Table>
         </CardContent>
       </Card>
+      </TabsContent>
+
+      <TabsContent value="assignments">
+        <QualityIndicatorAssignments />
+      </TabsContent>
+      </Tabs>
 
       <ResponsiveDialog
         open={open}

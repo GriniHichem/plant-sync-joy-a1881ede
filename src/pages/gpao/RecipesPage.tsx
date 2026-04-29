@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, BookOpen, Trash2, Edit, ChevronDown, ChevronRight, Package, Copy, GitBranch } from "lucide-react";
+import { Plus, BookOpen, Trash2, Edit, ChevronDown, ChevronRight, Package, Copy, GitBranch, ListOrdered, AlertTriangle, ArchiveIcon, CheckCircle2, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
 

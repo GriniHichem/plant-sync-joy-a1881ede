@@ -222,6 +222,7 @@ export default function OfDetail() {
           <TabsTrigger value="stops" className="h-9"><AlertTriangle className="h-3.5 w-3.5 mr-1" /> Arrêts</TabsTrigger>
           <TabsTrigger value="tickets" className="h-9">Tickets</TabsTrigger>
           <TabsTrigger value="mode_history" className="h-9"><History className="h-3.5 w-3.5 mr-1" /> Historique Mode</TabsTrigger>
+          <TabsTrigger value="quality" className="h-9"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Qualité</TabsTrigger>
         </TabsList>
 
         {/* === HISTORIQUE SHIFTS === */}

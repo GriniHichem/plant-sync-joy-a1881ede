@@ -81,7 +81,7 @@ export function AppSidebar() {
   const renderGroup = (
     label: string,
     GroupIcon: React.ComponentType<{ size?: number | string; className?: string }>,
-    items: typeof gmaoItems,
+    items: { title: string; url: string; icon: React.ComponentType<{ size?: number | string; className?: string }> }[],
     defaultOpen: boolean,
   ) => (
     <SidebarGroup>

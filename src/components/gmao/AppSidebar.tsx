@@ -164,6 +164,13 @@ export function AppSidebar() {
 
         {renderGroup("Production", IconProduction, gpaoItems, isGpaoActive)}
 
+        {showQualite && (
+          <>
+            <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
+            {renderGroup("Qualité", ShieldCheck, qualiteItems, isQualiteActive)}
+          </>
+        )}
+
         <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
 
         {/* Settings */}

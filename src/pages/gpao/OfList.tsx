@@ -39,6 +39,7 @@ export default function OfList() {
   const [newDateFin, setNewDateFin] = useState("");
   const [shiftModes, setShiftModes] = useState<any[]>([]);
   const [newShiftModeId, setNewShiftModeId] = useState("");
+  const [newRecipeId, setNewRecipeId] = useState("");
 
   const loadOfs = async () => {
     const { data } = await supabase.from("ordres_fabrication").select("*, products(designation, code), production_lines(designation, code), shift_modes(label, code)").order("created_at", { ascending: false });

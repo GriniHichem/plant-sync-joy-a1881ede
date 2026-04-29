@@ -879,7 +879,16 @@ export type Database = {
       }
       machines: {
         Row: {
+          annee_fabrication: number | null
+          cadence_nominale: number | null
+          capacite_nominale: number | null
+          caracteristiques_techniques: Json | null
           code: string
+          code_erp: string | null
+          code_immobilisation: string | null
+          commentaire_technique: string | null
+          conditions_utilisation: string | null
+          consignes_securite: string | null
           created_at: string
           criticite: Database["public"]["Enums"]["criticite"]
           criticite_maintenance:
@@ -891,23 +900,49 @@ export type Database = {
           disponibilite_pdr:
             | Database["public"]["Enums"]["disponibilite_pdr"]
             | null
+          energie_utilisee: Database["public"]["Enums"]["energie_type"] | null
+          fabricant: string | null
           family_id: string | null
+          frequence_hz: number | null
+          hauteur_mm: number | null
           id: string
           impact_ligne: Database["public"]["Enums"]["impact_ligne"] | null
           is_active: boolean
+          largeur_mm: number | null
           localisation: string | null
+          longueur_mm: number | null
           marque: string | null
+          matiere_principale: string | null
           modele: string | null
+          niveau_risque: string | null
           numero_serie: string | null
+          poids_kg: number | null
+          pression_service_bar: number | null
+          puissance_kw: number | null
+          qr_code: string | null
+          reference_constructeur: string | null
           role_fonctionnel:
             | Database["public"]["Enums"]["role_fonctionnel"]
             | null
           search_vector: unknown
           statut: Database["public"]["Enums"]["machine_statut"]
+          tension_v: number | null
+          unite_cadence: string | null
+          unite_capacite: string | null
           updated_at: string
+          zone_installation: string | null
         }
         Insert: {
+          annee_fabrication?: number | null
+          cadence_nominale?: number | null
+          capacite_nominale?: number | null
+          caracteristiques_techniques?: Json | null
           code: string
+          code_erp?: string | null
+          code_immobilisation?: string | null
+          commentaire_technique?: string | null
+          conditions_utilisation?: string | null
+          consignes_securite?: string | null
           created_at?: string
           criticite?: Database["public"]["Enums"]["criticite"]
           criticite_maintenance?:
@@ -919,23 +954,49 @@ export type Database = {
           disponibilite_pdr?:
             | Database["public"]["Enums"]["disponibilite_pdr"]
             | null
+          energie_utilisee?: Database["public"]["Enums"]["energie_type"] | null
+          fabricant?: string | null
           family_id?: string | null
+          frequence_hz?: number | null
+          hauteur_mm?: number | null
           id?: string
           impact_ligne?: Database["public"]["Enums"]["impact_ligne"] | null
           is_active?: boolean
+          largeur_mm?: number | null
           localisation?: string | null
+          longueur_mm?: number | null
           marque?: string | null
+          matiere_principale?: string | null
           modele?: string | null
+          niveau_risque?: string | null
           numero_serie?: string | null
+          poids_kg?: number | null
+          pression_service_bar?: number | null
+          puissance_kw?: number | null
+          qr_code?: string | null
+          reference_constructeur?: string | null
           role_fonctionnel?:
             | Database["public"]["Enums"]["role_fonctionnel"]
             | null
           search_vector?: unknown
           statut?: Database["public"]["Enums"]["machine_statut"]
+          tension_v?: number | null
+          unite_cadence?: string | null
+          unite_capacite?: string | null
           updated_at?: string
+          zone_installation?: string | null
         }
         Update: {
+          annee_fabrication?: number | null
+          cadence_nominale?: number | null
+          capacite_nominale?: number | null
+          caracteristiques_techniques?: Json | null
           code?: string
+          code_erp?: string | null
+          code_immobilisation?: string | null
+          commentaire_technique?: string | null
+          conditions_utilisation?: string | null
+          consignes_securite?: string | null
           created_at?: string
           criticite?: Database["public"]["Enums"]["criticite"]
           criticite_maintenance?:
@@ -947,20 +1008,37 @@ export type Database = {
           disponibilite_pdr?:
             | Database["public"]["Enums"]["disponibilite_pdr"]
             | null
+          energie_utilisee?: Database["public"]["Enums"]["energie_type"] | null
+          fabricant?: string | null
           family_id?: string | null
+          frequence_hz?: number | null
+          hauteur_mm?: number | null
           id?: string
           impact_ligne?: Database["public"]["Enums"]["impact_ligne"] | null
           is_active?: boolean
+          largeur_mm?: number | null
           localisation?: string | null
+          longueur_mm?: number | null
           marque?: string | null
+          matiere_principale?: string | null
           modele?: string | null
+          niveau_risque?: string | null
           numero_serie?: string | null
+          poids_kg?: number | null
+          pression_service_bar?: number | null
+          puissance_kw?: number | null
+          qr_code?: string | null
+          reference_constructeur?: string | null
           role_fonctionnel?:
             | Database["public"]["Enums"]["role_fonctionnel"]
             | null
           search_vector?: unknown
           statut?: Database["public"]["Enums"]["machine_statut"]
+          tension_v?: number | null
+          unite_cadence?: string | null
+          unite_capacite?: string | null
           updated_at?: string
+          zone_installation?: string | null
         }
         Relationships: [
           {
@@ -1322,52 +1400,160 @@ export type Database = {
       }
       organes: {
         Row: {
+          caracteristiques_techniques: Json | null
           code: string
+          code_erp: string | null
+          code_immobilisation: string | null
+          commentaire_technique: string | null
+          consignes_securite: string | null
           created_at: string
           criticite: Database["public"]["Enums"]["criticite"]
+          debit: number | null
           description: string | null
           designation: string
+          diametre_ext: number | null
+          diametre_int: number | null
+          duree_vie_estimee_jours: number | null
+          epaisseur: number | null
           equipement_id: string | null
+          fabricant: string | null
+          filetage: string | null
+          frequence: number | null
+          frequence_inspection_jours: number | null
+          hauteur: number | null
           id: string
+          impact_panne:
+            | Database["public"]["Enums"]["organe_impact_panne"]
+            | null
+          intensite: number | null
           is_active: boolean
+          largeur: number | null
+          longueur: number | null
           machine_id: string | null
+          marque: string | null
+          matiere: string | null
+          modele: string | null
+          numero_serie: string | null
+          poids: number | null
+          pression: number | null
+          puissance: number | null
+          reference_constructeur: string | null
           search_vector: unknown
           sort_order: number
           statut: Database["public"]["Enums"]["organe_statut"]
+          temperature_max: number | null
+          temperature_min: number | null
+          tension: number | null
           type: Database["public"]["Enums"]["organe_type"]
+          type_connexion: string | null
+          unite_dimension: string | null
+          unite_poids: string | null
           updated_at: string
+          vitesse_rotation: number | null
         }
         Insert: {
+          caracteristiques_techniques?: Json | null
           code: string
+          code_erp?: string | null
+          code_immobilisation?: string | null
+          commentaire_technique?: string | null
+          consignes_securite?: string | null
           created_at?: string
           criticite?: Database["public"]["Enums"]["criticite"]
+          debit?: number | null
           description?: string | null
           designation: string
+          diametre_ext?: number | null
+          diametre_int?: number | null
+          duree_vie_estimee_jours?: number | null
+          epaisseur?: number | null
           equipement_id?: string | null
+          fabricant?: string | null
+          filetage?: string | null
+          frequence?: number | null
+          frequence_inspection_jours?: number | null
+          hauteur?: number | null
           id?: string
+          impact_panne?:
+            | Database["public"]["Enums"]["organe_impact_panne"]
+            | null
+          intensite?: number | null
           is_active?: boolean
+          largeur?: number | null
+          longueur?: number | null
           machine_id?: string | null
+          marque?: string | null
+          matiere?: string | null
+          modele?: string | null
+          numero_serie?: string | null
+          poids?: number | null
+          pression?: number | null
+          puissance?: number | null
+          reference_constructeur?: string | null
           search_vector?: unknown
           sort_order?: number
           statut?: Database["public"]["Enums"]["organe_statut"]
+          temperature_max?: number | null
+          temperature_min?: number | null
+          tension?: number | null
           type?: Database["public"]["Enums"]["organe_type"]
+          type_connexion?: string | null
+          unite_dimension?: string | null
+          unite_poids?: string | null
           updated_at?: string
+          vitesse_rotation?: number | null
         }
         Update: {
+          caracteristiques_techniques?: Json | null
           code?: string
+          code_erp?: string | null
+          code_immobilisation?: string | null
+          commentaire_technique?: string | null
+          consignes_securite?: string | null
           created_at?: string
           criticite?: Database["public"]["Enums"]["criticite"]
+          debit?: number | null
           description?: string | null
           designation?: string
+          diametre_ext?: number | null
+          diametre_int?: number | null
+          duree_vie_estimee_jours?: number | null
+          epaisseur?: number | null
           equipement_id?: string | null
+          fabricant?: string | null
+          filetage?: string | null
+          frequence?: number | null
+          frequence_inspection_jours?: number | null
+          hauteur?: number | null
           id?: string
+          impact_panne?:
+            | Database["public"]["Enums"]["organe_impact_panne"]
+            | null
+          intensite?: number | null
           is_active?: boolean
+          largeur?: number | null
+          longueur?: number | null
           machine_id?: string | null
+          marque?: string | null
+          matiere?: string | null
+          modele?: string | null
+          numero_serie?: string | null
+          poids?: number | null
+          pression?: number | null
+          puissance?: number | null
+          reference_constructeur?: string | null
           search_vector?: unknown
           sort_order?: number
           statut?: Database["public"]["Enums"]["organe_statut"]
+          temperature_max?: number | null
+          temperature_min?: number | null
+          tension?: number | null
           type?: Database["public"]["Enums"]["organe_type"]
+          type_connexion?: string | null
+          unite_dimension?: string | null
+          unite_poids?: string | null
           updated_at?: string
+          vitesse_rotation?: number | null
         }
         Relationships: [
           {
@@ -1446,81 +1632,192 @@ export type Database = {
       pdr: {
         Row: {
           approvisionnement: Database["public"]["Enums"]["approvisionnement_type"]
+          caracteristiques_techniques: Json | null
+          code_barres: string | null
+          code_erp: string | null
+          commentaire_technique: string | null
+          couleur: string | null
           created_at: string
+          criticite: Database["public"]["Enums"]["criticite"] | null
+          debit: number | null
           delai_approvisionnement: number
           description: string | null
           designation: string
           devise: string
+          diametre_ext: number | null
+          diametre_int: number | null
           duree_vie_max_jours: number | null
           duree_vie_min_jours: number | null
           emplacement: string | null
+          epaisseur: number | null
+          fabricant: string | null
           family_id: string | null
+          filetage: string | null
           fournisseur: string | null
+          frequence: number | null
+          hauteur: number | null
           id: string
+          intensite: number | null
           is_active: boolean
+          largeur: number | null
+          longueur: number | null
+          marque: string | null
+          matiere: string | null
+          modele: string | null
+          nombre_dents: number | null
+          pas: number | null
           pmp: number
+          poids: number | null
           point_commande: number
+          pression: number | null
           prix_unitaire: number | null
+          puissance: number | null
+          qr_code: string | null
           reference: string
+          reference_constructeur: string | null
           search_vector: unknown
+          sous_famille: string | null
           statut_pdr: Database["public"]["Enums"]["statut_pdr"]
           stock_actuel: number
           stock_max: number
           stock_min: number
           stock_securite: number
+          temperature_max: number | null
+          temperature_min: number | null
+          tension: number | null
+          type_connexion: string | null
+          type_signal: string | null
+          unite_dimension: string | null
+          unite_poids: string | null
+          unite_stock: string | null
           updated_at: string
+          vitesse_rotation: number | null
         }
         Insert: {
           approvisionnement?: Database["public"]["Enums"]["approvisionnement_type"]
+          caracteristiques_techniques?: Json | null
+          code_barres?: string | null
+          code_erp?: string | null
+          commentaire_technique?: string | null
+          couleur?: string | null
           created_at?: string
+          criticite?: Database["public"]["Enums"]["criticite"] | null
+          debit?: number | null
           delai_approvisionnement?: number
           description?: string | null
           designation: string
           devise?: string
+          diametre_ext?: number | null
+          diametre_int?: number | null
           duree_vie_max_jours?: number | null
           duree_vie_min_jours?: number | null
           emplacement?: string | null
+          epaisseur?: number | null
+          fabricant?: string | null
           family_id?: string | null
+          filetage?: string | null
           fournisseur?: string | null
+          frequence?: number | null
+          hauteur?: number | null
           id?: string
+          intensite?: number | null
           is_active?: boolean
+          largeur?: number | null
+          longueur?: number | null
+          marque?: string | null
+          matiere?: string | null
+          modele?: string | null
+          nombre_dents?: number | null
+          pas?: number | null
           pmp?: number
+          poids?: number | null
           point_commande?: number
+          pression?: number | null
           prix_unitaire?: number | null
+          puissance?: number | null
+          qr_code?: string | null
           reference: string
+          reference_constructeur?: string | null
           search_vector?: unknown
+          sous_famille?: string | null
           statut_pdr?: Database["public"]["Enums"]["statut_pdr"]
           stock_actuel?: number
           stock_max?: number
           stock_min?: number
           stock_securite?: number
+          temperature_max?: number | null
+          temperature_min?: number | null
+          tension?: number | null
+          type_connexion?: string | null
+          type_signal?: string | null
+          unite_dimension?: string | null
+          unite_poids?: string | null
+          unite_stock?: string | null
           updated_at?: string
+          vitesse_rotation?: number | null
         }
         Update: {
           approvisionnement?: Database["public"]["Enums"]["approvisionnement_type"]
+          caracteristiques_techniques?: Json | null
+          code_barres?: string | null
+          code_erp?: string | null
+          commentaire_technique?: string | null
+          couleur?: string | null
           created_at?: string
+          criticite?: Database["public"]["Enums"]["criticite"] | null
+          debit?: number | null
           delai_approvisionnement?: number
           description?: string | null
           designation?: string
           devise?: string
+          diametre_ext?: number | null
+          diametre_int?: number | null
           duree_vie_max_jours?: number | null
           duree_vie_min_jours?: number | null
           emplacement?: string | null
+          epaisseur?: number | null
+          fabricant?: string | null
           family_id?: string | null
+          filetage?: string | null
           fournisseur?: string | null
+          frequence?: number | null
+          hauteur?: number | null
           id?: string
+          intensite?: number | null
           is_active?: boolean
+          largeur?: number | null
+          longueur?: number | null
+          marque?: string | null
+          matiere?: string | null
+          modele?: string | null
+          nombre_dents?: number | null
+          pas?: number | null
           pmp?: number
+          poids?: number | null
           point_commande?: number
+          pression?: number | null
           prix_unitaire?: number | null
+          puissance?: number | null
+          qr_code?: string | null
           reference?: string
+          reference_constructeur?: string | null
           search_vector?: unknown
+          sous_famille?: string | null
           statut_pdr?: Database["public"]["Enums"]["statut_pdr"]
           stock_actuel?: number
           stock_max?: number
           stock_min?: number
           stock_securite?: number
+          temperature_max?: number | null
+          temperature_min?: number | null
+          tension?: number | null
+          type_connexion?: string | null
+          type_signal?: string | null
+          unite_dimension?: string | null
+          unite_poids?: string | null
+          unite_stock?: string | null
           updated_at?: string
+          vitesse_rotation?: number | null
         }
         Relationships: [
           {
@@ -1536,36 +1833,111 @@ export type Database = {
         Row: {
           commentaire: string | null
           created_at: string
+          criticite_sur_actif: Database["public"]["Enums"]["criticite"] | null
           entity_id: string
           entity_type: string
           id: string
           pdr_id: string
+          position_installation: string | null
           quantite_recommandee: number
           updated_at: string
         }
         Insert: {
           commentaire?: string | null
           created_at?: string
+          criticite_sur_actif?: Database["public"]["Enums"]["criticite"] | null
           entity_id: string
           entity_type: string
           id?: string
           pdr_id: string
+          position_installation?: string | null
           quantite_recommandee?: number
           updated_at?: string
         }
         Update: {
           commentaire?: string | null
           created_at?: string
+          criticite_sur_actif?: Database["public"]["Enums"]["criticite"] | null
           entity_id?: string
           entity_type?: string
           id?: string
           pdr_id?: string
+          position_installation?: string | null
           quantite_recommandee?: number
           updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "pdr_entity_links_pdr_id_fkey"
+            columns: ["pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdr_equivalences: {
+        Row: {
+          brand: string | null
+          created_at: string
+          created_by: string | null
+          equivalence_type: string
+          equivalent_pdr_id: string | null
+          external_reference: string | null
+          id: string
+          manufacturer: string | null
+          notes: string | null
+          pdr_id: string
+          updated_at: string
+          updated_by: string | null
+          validated_at: string | null
+          validated_by: string | null
+          validation_status: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          created_by?: string | null
+          equivalence_type?: string
+          equivalent_pdr_id?: string | null
+          external_reference?: string | null
+          id?: string
+          manufacturer?: string | null
+          notes?: string | null
+          pdr_id: string
+          updated_at?: string
+          updated_by?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_status?: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          created_by?: string | null
+          equivalence_type?: string
+          equivalent_pdr_id?: string | null
+          external_reference?: string | null
+          id?: string
+          manufacturer?: string | null
+          notes?: string | null
+          pdr_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_equivalences_equivalent_pdr_id_fkey"
+            columns: ["equivalent_pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_equivalences_pdr_id_fkey"
             columns: ["pdr_id"]
             isOneToOne: false
             referencedRelation: "pdr"
@@ -1896,17 +2268,29 @@ export type Database = {
       pdr_suppliers: {
         Row: {
           adresse: string | null
+          brand: string | null
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string
           created_by: string | null
+          currency: string | null
           delai_jours: number | null
           email: string | null
           id: string
+          is_active: boolean
           is_principal: boolean
+          last_purchase_date: string | null
+          last_purchase_price: number | null
+          manufacturer_reference: string | null
+          moq: number | null
           nom: string
           notes: string | null
+          packaging_unit: string | null
           pdr_id: string
           prix: number | null
           reference_fournisseur: string | null
+          supplier_designation: string | null
+          supplier_url: string | null
           tel: string | null
           updated_at: string
           updated_by: string | null
@@ -1915,17 +2299,29 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          brand?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           delai_jours?: number | null
           email?: string | null
           id?: string
+          is_active?: boolean
           is_principal?: boolean
+          last_purchase_date?: string | null
+          last_purchase_price?: number | null
+          manufacturer_reference?: string | null
+          moq?: number | null
           nom: string
           notes?: string | null
+          packaging_unit?: string | null
           pdr_id: string
           prix?: number | null
           reference_fournisseur?: string | null
+          supplier_designation?: string | null
+          supplier_url?: string | null
           tel?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -1934,17 +2330,29 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          brand?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
           delai_jours?: number | null
           email?: string | null
           id?: string
+          is_active?: boolean
           is_principal?: boolean
+          last_purchase_date?: string | null
+          last_purchase_price?: number | null
+          manufacturer_reference?: string | null
+          moq?: number | null
           nom?: string
           notes?: string | null
+          packaging_unit?: string | null
           pdr_id?: string
           prix?: number | null
           reference_fournisseur?: string | null
+          supplier_designation?: string | null
+          supplier_url?: string | null
           tel?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -3498,6 +3906,14 @@ export type Database = {
       criticite: "A" | "B" | "C"
       criticite_maintenance: "faible" | "moyenne" | "elevee" | "critique"
       disponibilite_pdr: "disponible" | "partiel" | "indisponible"
+      energie_type:
+        | "electrique"
+        | "pneumatique"
+        | "hydraulique"
+        | "vapeur"
+        | "gaz"
+        | "mixte"
+        | "autre"
       equipement_statut:
         | "en_service"
         | "hors_service"
@@ -3533,6 +3949,11 @@ export type Database = {
       notification_severity: "info" | "low" | "medium" | "high" | "critical"
       notification_status: "unread" | "read" | "archived"
       of_statut: "planifie" | "en_cours" | "termine" | "annule"
+      organe_impact_panne:
+        | "arret_complet"
+        | "arret_partiel"
+        | "degradation"
+        | "aucun"
       organe_statut:
         | "en_service"
         | "en_panne"
@@ -3735,6 +4156,15 @@ export const Constants = {
       criticite: ["A", "B", "C"],
       criticite_maintenance: ["faible", "moyenne", "elevee", "critique"],
       disponibilite_pdr: ["disponible", "partiel", "indisponible"],
+      energie_type: [
+        "electrique",
+        "pneumatique",
+        "hydraulique",
+        "vapeur",
+        "gaz",
+        "mixte",
+        "autre",
+      ],
       equipement_statut: [
         "en_service",
         "hors_service",
@@ -3774,6 +4204,12 @@ export const Constants = {
       notification_severity: ["info", "low", "medium", "high", "critical"],
       notification_status: ["unread", "read", "archived"],
       of_statut: ["planifie", "en_cours", "termine", "annule"],
+      organe_impact_panne: [
+        "arret_complet",
+        "arret_partiel",
+        "degradation",
+        "aucun",
+      ],
       organe_statut: [
         "en_service",
         "en_panne",

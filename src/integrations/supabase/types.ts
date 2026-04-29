@@ -3107,6 +3107,48 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_action_categories: {
+        Row: {
+          code: string
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       quality_actions: {
         Row: {
           action_type: Database["public"]["Enums"]["quality_action_type"]
@@ -3306,6 +3348,132 @@ export type Database = {
           },
         ]
       }
+      quality_control_points: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          label: string
+          production_line_id: string | null
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          production_line_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          production_line_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      quality_decision_reasons: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          decision_type: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          decision_type?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          decision_type?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      quality_defect_types: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          default_severity: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          default_severity?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          default_severity?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       quality_indicator_assignments: {
         Row: {
           created_at: string
@@ -3466,6 +3634,48 @@ export type Database = {
           tolerance_minus?: number | null
           tolerance_plus?: number | null
           unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      quality_nc_categories: {
+        Row: {
+          code: string
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          code: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          code?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -3651,6 +3861,45 @@ export type Database = {
           id?: string
           role?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      quality_units: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          symbol: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          symbol: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          symbol?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }

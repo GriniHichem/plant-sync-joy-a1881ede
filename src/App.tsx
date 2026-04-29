@@ -66,6 +66,13 @@ import NotificationRulesAdmin from "@/pages/parametres/NotificationRulesAdmin";
 import SmtpConfigAdmin from "@/pages/parametres/SmtpConfigAdmin";
 import ValidationsPage from "@/pages/ValidationsPage";
 import ValidationRulesAdmin from "@/pages/parametres/ValidationRulesAdmin";
+import QualiteParametresHub from "@/pages/parametres/qualite/QualiteParametresHub";
+import QualiteNcCategoriesAdmin from "@/pages/parametres/qualite/QualiteNcCategoriesAdmin";
+import QualiteActionCategoriesAdmin from "@/pages/parametres/qualite/QualiteActionCategoriesAdmin";
+import QualiteUnitsAdmin from "@/pages/parametres/qualite/QualiteUnitsAdmin";
+import QualiteControlPointsAdmin from "@/pages/parametres/qualite/QualiteControlPointsAdmin";
+import QualiteDefectTypesAdmin from "@/pages/parametres/qualite/QualiteDefectTypesAdmin";
+import QualiteDecisionReasonsAdmin from "@/pages/parametres/qualite/QualiteDecisionReasonsAdmin";
 import SearchPage from "@/pages/SearchPage";
 import { GlobalSearchProvider } from "@/components/search/GlobalSearchProvider";
 import QualiteDashboard from "@/pages/qualite/QualiteDashboard";
@@ -182,6 +189,13 @@ const App = () => (
               <Route path="/parametres/smtp" element={<SmtpConfigAdmin />} />
               <Route path="/validations" element={<ValidationsPage />} />
               <Route path="/parametres/validations" element={<ValidationRulesAdmin />} />
+              <Route path="/parametres/qualite" element={<QualiteParametresHub />} />
+              <Route path="/parametres/qualite/nc-categories" element={<QualiteNcCategoriesAdmin />} />
+              <Route path="/parametres/qualite/action-categories" element={<QualiteActionCategoriesAdmin />} />
+              <Route path="/parametres/qualite/units" element={<QualiteUnitsAdmin />} />
+              <Route path="/parametres/qualite/control-points" element={<QualiteControlPointsAdmin />} />
+              <Route path="/parametres/qualite/defect-types" element={<QualiteDefectTypesAdmin />} />
+              <Route path="/parametres/qualite/decision-reasons" element={<QualiteDecisionReasonsAdmin />} />
               <Route path="/recherche" element={<SearchPage />} />
               {/* Qualité & Traçabilité */}
               <Route path="/qualite" element={<QualiteDashboard />} />

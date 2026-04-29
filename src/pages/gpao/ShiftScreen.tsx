@@ -14,6 +14,14 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Plus, AlertTriangle, Clock, Ban, Check, Lock, Unlock, MessageSquare, Play, Beaker, ArrowRight } from "lucide-react";
+import {
+  ticketCreateSchema,
+  productionDeclareSchema,
+  shiftStartSchema,
+  getFieldErrors,
+  isValid,
+  parseNumericInput,
+} from "@/lib/formValidation";
 
 function deriveShiftType(heureDebut: string): "matin" | "apres_midi" | "nuit" {
   const h = parseInt(heureDebut.split(":")[0], 10);

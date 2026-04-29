@@ -66,11 +66,12 @@ const MODULES: AppModule[] = [
   { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: Bell as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
 ];
 
-const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Production", "Configuration"];
+const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Production", "Qualité", "Configuration"];
 
 const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: string }>> = {
   Maintenance: IconMaintenance,
   Production: IconProduction,
+  Qualité: ShieldCheck as unknown as React.FC<{ size?: number; className?: string }>,
   Configuration: IconSettings,
 };
 

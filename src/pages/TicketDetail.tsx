@@ -177,7 +177,10 @@ export default function TicketDetail() {
 
   const handleTakeCharge = async () => {
     const now = new Date().toISOString();
-    await supabase.from("tickets").update({ statut: "pris_en_charge" as any, assignee_id: user?.id, heure_prise_en_charge: now }).eq("id", id!);
+    // Preserve original heure_prise_en_charge if it already exists (re-take after release)
+    const ticketUpdate: any = { statut: "pris_en_charge" as any, assignee_id: user?.id };
+    if (!ticket?.heure_prise_en_charge) ticketUpdate.heure_prise_en_charge = now;
+    await supabase.from("tickets").update(ticketUpdate).eq("id", id!);
     await supabase.from("interventions").insert({ ticket_id: id!, technicien_id: user?.id!, description: "Prise en charge", statut: "en_cours" as any });
     toast({ title: "Ticket pris en charge" });
     loadTicket();

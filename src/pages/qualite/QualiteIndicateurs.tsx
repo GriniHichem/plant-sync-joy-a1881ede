@@ -16,7 +16,14 @@ import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { Plus, Edit, RotateCcw, Download, Search, Power, PowerOff, ClipboardCheck } from "lucide-react";
 import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
-import { parseDecimal } from "@/lib/utils";
+
+/** Parse decimal accepting both `.` and `,` as separator. Returns null if blank. */
+const parseDecimal = (s: string): number | null => {
+  const t = (s ?? "").toString().trim().replace(",", ".");
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+};
 
 export const INDICATOR_TYPES = [
   { value: "numeric", label: "Numérique" },

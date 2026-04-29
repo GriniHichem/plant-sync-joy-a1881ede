@@ -42,6 +42,7 @@ const groups: SectionGroup[] = [
       { title: "Paramétrage Qualité", description: "Catégories NC, types de défauts, unités, points de contrôle, motifs de décision…", icon: CheckSquare, url: "/parametres/qualite" },
     ],
   },
+  {
     label: "Configuration générale",
     icon: Settings2,
     items: [

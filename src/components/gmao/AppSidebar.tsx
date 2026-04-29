@@ -80,7 +80,7 @@ export function AppSidebar() {
 
   const renderGroup = (
     label: string,
-    GroupIcon: React.FC<{ size?: number }>,
+    GroupIcon: React.ComponentType<{ size?: number | string; className?: string }>,
     items: typeof gmaoItems,
     defaultOpen: boolean,
   ) => (

@@ -58,6 +58,10 @@ export default function RecipesPage() {
   const [lineArticleId, setLineArticleId] = useState("");
   const [lineQte, setLineQte] = useState("");
   const [lineUnite, setLineUnite] = useState("kg");
+  const [lineItemType, setLineItemType] = useState<string>("raw_material");
+  const [lineWastePercent, setLineWastePercent] = useState("");
+  const [lineMandatory, setLineMandatory] = useState(true);
+  const [lineQualitySensitive, setLineQualitySensitive] = useState(false);
 
   // Expanded states
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);

@@ -330,6 +330,50 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Charge par technicien — alimentée par interventions.role (multi-comptée par design) */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Charge par technicien</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Participation individuelle agrégée par interventions. Un ticket avec plusieurs intervenants apparaît sur chaque ligne concernée — sans gonfler le nombre de pannes.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {technicianWorkload.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Aucune intervention sur la période</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-xs text-muted-foreground">
+                        <th className="text-left py-2 pr-3 font-medium">Technicien</th>
+                        <th className="text-right py-2 px-3 font-medium tabular-nums">Interventions</th>
+                        <th className="text-right py-2 px-3 font-medium tabular-nums">Temps passé</th>
+                        <th className="text-center py-2 px-3 font-medium">Lead</th>
+                        <th className="text-center py-2 px-3 font-medium">Co-intervenant</th>
+                        <th className="text-center py-2 pl-3 font-medium">Aide</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {technicianWorkload.map((t) => (
+                        <tr key={t.name} className="border-b last:border-0">
+                          <td className="py-2 pr-3">{t.name}</td>
+                          <td className="text-right py-2 px-3 tabular-nums font-medium">{t.total}</td>
+                          <td className="text-right py-2 px-3 tabular-nums text-muted-foreground">
+                            {t.durationMin >= 60 ? `${Math.floor(t.durationMin / 60)}h ${t.durationMin % 60}m` : `${t.durationMin} min`}
+                          </td>
+                          <td className="text-center py-2 px-3 tabular-nums">{t.lead || "—"}</td>
+                          <td className="text-center py-2 px-3 tabular-nums">{t.co || "—"}</td>
+                          <td className="text-center py-2 pl-3 tabular-nums">{t.aide || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Production */}

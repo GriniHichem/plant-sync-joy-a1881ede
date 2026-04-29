@@ -3433,35 +3433,122 @@ export type Database = {
           },
         ]
       }
-      recipes: {
+      recipe_steps: {
         Row: {
           created_at: string
+          created_by: string | null
+          critical_control_point: boolean
+          description: string | null
+          expected_duration_minutes: number | null
           id: string
-          is_active: boolean
-          name: string
-          product_id: string
-          search_vector: unknown
+          process_parameter: Json | null
+          quality_indicator_id: string | null
+          recipe_id: string
+          step_order: number
+          title: string
           updated_at: string
-          version: number
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
+          critical_control_point?: boolean
+          description?: string | null
+          expected_duration_minutes?: number | null
           id?: string
-          is_active?: boolean
-          name: string
-          product_id: string
-          search_vector?: unknown
+          process_parameter?: Json | null
+          quality_indicator_id?: string | null
+          recipe_id: string
+          step_order: number
+          title: string
           updated_at?: string
-          version?: number
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
+          created_by?: string | null
+          critical_control_point?: boolean
+          description?: string | null
+          expected_duration_minutes?: number | null
+          id?: string
+          process_parameter?: Json | null
+          quality_indicator_id?: string | null
+          recipe_id?: string
+          step_order?: number
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_steps_quality_indicator_id_fkey"
+            columns: ["quality_indicator_id"]
+            isOneToOne: false
+            referencedRelation: "quality_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_steps_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          product_id: string
+          search_vector: unknown
+          status: string
+          updated_at: string
+          updated_by: string | null
+          valid_from: string | null
+          valid_to: string | null
+          version: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          product_id: string
+          search_vector?: unknown
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
+          version?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          notes?: string | null
           product_id?: string
           search_vector?: unknown
+          status?: string
           updated_at?: string
+          updated_by?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
           version?: number
         }
         Relationships: [
@@ -4393,6 +4480,10 @@ export type Database = {
           p_reason?: string
           p_status: Database["public"]["Enums"]["of_quality_status"]
         }
+        Returns: undefined
+      }
+      set_recipe_status: {
+        Args: { p_reason?: string; p_recipe_id: string; p_status: string }
         Returns: undefined
       }
       show_limit: { Args: never; Returns: number }

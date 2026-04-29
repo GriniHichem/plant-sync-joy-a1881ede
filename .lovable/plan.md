@@ -1,116 +1,121 @@
-# Module Actions Qualité (CAPA)
+# Recipe Versioning Enhancement (Non-destructive)
 
-Suivi des actions curatives / correctives / préventives issues des non-conformités. Strictement isolé des tickets/interventions de maintenance — table dédiée `quality_actions`.
+## Current state (verified)
 
-## 1. Migration DB
+- `recipes` exists with: `id, product_id, name, version (int, default 1), is_active (bool), created_at, updated_at, search_vector`.
+- `recipe_lines` exists with `recipe_id, article_id, quantite, unite`.
+- `ordres_fabrication.recipe_id` already references a recipe (existing OFs preserved).
+- `RecipesPage.tsx` (`/gpao/recettes`) already groups recipes by product and supports multiple versions.
+- `/qualite/recettes-nomenclatures` is currently a placeholder.
 
-### Enums
-- `quality_action_type` : `curative`, `corrective`, `preventive`
-- `quality_action_status` : `open`, `in_progress`, `done`, `verified`, `closed`, `cancelled`
-- `quality_action_priority` : `low`, `medium`, `high`, `critical`
+The plan keeps every existing row, column and behavior intact. Only **additive** changes.
 
-### Table `quality_actions`
-Champs demandés :
-- `id` uuid PK, `nc_id` uuid nullable, `of_id` uuid nullable
-- `title` text NOT NULL, `description` text
-- `action_type` enum NOT NULL, `priority` enum NOT NULL default `medium`, `status` enum NOT NULL default `open`
-- `responsible_user_id` uuid nullable, `due_date` date nullable
-- `verification_comment` text nullable
-- `created_by` uuid (= `auth.uid()`), `created_at`/`updated_at` timestamptz
-- `closed_at` timestamptz nullable, `closed_by` uuid nullable
-- `verified_at` timestamptz nullable, `verified_by` uuid nullable
-- `search_vector` tsvector
+---
 
-### Triggers
-- `quality_actions_validate` : whitelist enums (ceinture+bretelle), si `status='closed'` exige `verification_comment` non vide + remplit `closed_at`/`closed_by` ; si `status='verified'` remplit `verified_at`/`verified_by`. Met à jour `updated_at`.
-- `quality_actions_search_refresh` (FTS sur title/description/verification_comment).
+## 1. Database migration (additive only)
 
-**Aucun trigger** sur `tickets`, `interventions`, `ordres_fabrication`, `quality_non_conformities`. Liens via `nc_id`/`of_id` simplement uuid nullable, pas de FK CASCADE.
+### Extend `recipes` — all new columns nullable / safe defaults
+- `status text` default `'active'` (values: `draft`, `active`, `archived`) — backfilled from `is_active` (`true → 'active'`, `false → 'archived'`). `is_active` kept as-is for backward compatibility; a trigger will keep `is_active` and `status` in sync (status='active' ⇔ is_active=true).
+- `valid_from timestamptz` nullable
+- `valid_to timestamptz` nullable
+- `approved_by uuid` nullable
+- `approved_at timestamptz` nullable
+- `created_by uuid` nullable
+- `updated_by uuid` nullable
+- `notes text` nullable
 
-### RLS
-- SELECT : tout authentifié.
-- INSERT/UPDATE : admin / resp_production / chef_ligne / bureau_methode / controleur_qualite / responsible_user_id = auth.uid() / created_by = auth.uid().
-- DELETE : admin uniquement.
+No NOT NULL added on existing columns. No data deleted. No rename.
 
-### Indexes
-`(status)`, `(responsible_user_id)`, `(nc_id)`, `(due_date)`.
+### New table `recipe_steps`
+```
+id uuid pk
+recipe_id uuid not null references recipes(id) on delete cascade
+step_order int not null
+title text not null
+description text
+process_parameter jsonb            -- e.g. {"temp_c":85,"pressure_bar":2.5}
+expected_duration_minutes numeric
+critical_control_point boolean default false
+quality_indicator_id uuid references quality_indicators(id) on delete set null
+created_at, updated_at timestamptz default now()
+created_by, updated_by uuid
+unique (recipe_id, step_order)
+```
 
-## 2. Page `/qualite/actions`
+- RLS enabled. Read: authenticated. Write: `admin`, `resp_production`, `bureau_methode`, `controleur_qualite`.
+- Trigger to auto-update `updated_at`.
+- FTS on `title + description` (optional, follows existing pattern).
+- Audit log entries on insert/update/delete via existing `logAudit` helper from the UI.
 
-Remplacer le placeholder `src/pages/qualite/QualiteActions.tsx`.
+### Helper RPC `set_recipe_status(p_recipe_id uuid, p_status text, p_reason text)`
+- SECURITY DEFINER, checks role `admin` / `resp_production` / `bureau_methode`.
+- Transitions: `draft → active`, `active → archived`, `archived → active` (re-activation allowed).
+- When activating: sets `status='active'`, `is_active=true`, `valid_from=coalesce(valid_from, now())`, `approved_by=auth.uid()`, `approved_at=now()`. Does **not** auto-archive other versions (keeps current "multiple active versions allowed" rule from memory).
+- When archiving: `status='archived'`, `is_active=false`, `valid_to=now()`. Does **not** touch any OF.
+- Inserts an `audit_logs` row with old/new values and reason.
 
-**Filtres** : recherche libre, statut, responsable (select users), priorité, NC liée (texte sur nc_number), période `due_date`. Bouton **Réinitialiser** (`RotateCcw`) conditionnel.
+### Critical guarantees
+- `ordres_fabrication.recipe_id` is unchanged — old OFs keep pointing to their (possibly archived) recipe.
+- No DELETE, no DROP, no NOT NULL tightening, no data migration that removes rows.
+- Existing `RecipesPage` queries (`select *`) keep working; new fields just appear in the payload.
 
-**Tableau** : titre, type, priorité (badge), statut (badge), responsable, échéance (badge rouge si en retard), NC liée (NC-#####), OF, créée le.
+---
 
-**Bouton "Nouvelle action"** → `ResponsiveDialog` :
-- Section : NC (optionnel, select sur NC récentes), OF (optionnel), titre, description
-- Type, priorité, responsable, échéance
-- Bouton **Créer**
+## 2. Code changes
 
-**Dialog "Mettre à jour"** (depuis ligne) :
-- Sélecteur statut (open → in_progress → done → verified → closed) ou cancelled
-- Si statut = closed → champ `verification_comment` obligatoire
-- Possibilité d'éditer responsable / échéance / priorité
-- Boutons "Marquer terminée" (raccourci status=done), "Vérifier efficacité" (status=verified + commentaire), "Clôturer"
+### `src/pages/gpao/RecipesPage.tsx` (extend, do not rewrite)
+- Show new `status` badge (`draft` / `active` / `archived`) alongside the existing `is_active` indicator.
+- Buttons per version (when `canManage`): **Activer**, **Archiver**, **Nouvelle version** (already exists), **Comparer versions**.
+- Comparison dialog: side-by-side recipe_lines + recipe_steps for two selected versions of the same product.
+- "Étapes" sub-section per version: list/add/edit/delete `recipe_steps` with order, CCP toggle, link to a `quality_indicators` row.
+- All actions go through the new RPC for status changes; lines/steps via direct table mutations with audit log.
+- Existing line management untouched.
 
-**Export CSV** : toutes colonnes visibles.
+### `src/pages/qualite/QualiteRecettesNomenclatures.tsx` (replace placeholder)
+- Read-only quality view: list recipes grouped by product, expand to see versions, steps, CCPs, linked quality indicators.
+- Filter: status, product, has CCP, has linked indicator.
+- Link per CCP step opens the indicator detail in `/qualite/indicateurs`.
+- No write actions here (write stays in `/gpao/recettes`), avoiding duplication.
 
-**Audit** : `logAudit` module `qualite`, entity_type `quality_action`, sur create / status_change / close. Sévérité : critical/high → `medium`, autres → `info`.
+### Types
+- `src/integrations/supabase/types.ts` is auto-generated; will refresh after migration.
+- No edits to `client.ts`.
 
-## 3. Onglet "Actions" dans le détail NC
+### Audit & notifications
+- Use existing `logAudit` for step CRUD and status changes (RPC already logs).
+- No new notification rules required (can be added later if requested).
 
-Modifier `src/pages/qualite/QualiteNonConformites.tsx` (déjà 775 lignes — la page liste les NC dans une table) : remplacer le clic-ligne par un dialog/sheet de détail NC contenant deux onglets :
-- **Détails** (infos actuelles : décision, clôture, etc.)
-- **Actions** : liste des `quality_actions` où `nc_id = current.id` + bouton "Nouvelle action" pré-rempli avec `nc_id` et `of_id` de la NC.
+---
 
-Alternative plus légère (préférée pour limiter la diff) : ajouter une mini-section "Actions liées" dans le dialog "Décision & clôture" existant + un raccourci "Créer action" (icône `ListTodo`) sur chaque ligne NC du tableau, qui redirige vers `/qualite/actions?from_nc=<nc_id>` (le dialog "Nouvelle action" se pré-remplit via query string).
+## 3. Tests (`src/test/gpao/recipe-versioning.test.ts` + extend existing)
 
-→ **Approche retenue** : raccourci par ligne NC + pré-remplissage `?from_nc=ID&from_of=OF_ID`. Plus simple, cohérent avec le pattern `?from_check=` déjà en place, et évite de réécrire la page NC.
+- Open existing recipe row → all new fields default correctly, no crash.
+- Create new version of an existing product (insert with same `product_id`, `version+1`) → both versions visible.
+- Activate version via RPC → `status='active'`, `is_active=true`, `approved_by/at` set.
+- Archive version → `status='archived'`, `is_active=false`, `valid_to` set; OF still resolves recipe by id.
+- Create OF with active recipe → unchanged behavior.
+- Open OF whose recipe is now `archived` → still loads recipe + lines (no filter on `is_active` in OF detail path).
+- Consumptions (`consumptions` table queries) untouched — verify existing GPAO consumption test still passes.
+- Shift Production screen — verify existing tests still pass (no schema break).
+- Insert/update/delete `recipe_steps` with CCP + indicator link.
 
-## 4. Notifications
+Run full suite to confirm no regression in GPAO / Shift / Quality modules.
 
-Trois `notification_rules` insérées via migration (event_type sous module `qualite`) :
-- `qualite_action_assigned` (severity `info`, in_app, immediate) → déclenché à la création / changement de `responsible_user_id`. Cible : `responsible_user_id`.
-- `qualite_action_overdue` (severity `medium`, in_app) → utilise le système d'événements existant ; déclenchement par `supabase/functions/check-deadlines` (déjà en place pour les tickets). Étendre la fonction pour scanner aussi `quality_actions` où `due_date < today AND status NOT IN ('done','verified','closed','cancelled')`.
-- `qualite_action_closed` (severity `info`, in_app) → déclenché à status=closed. Cible : créateur + responsable.
+---
 
-Utilisation du pattern existant : insérer `notifications` côté client après l'update (cohérent avec NC). Pas de trigger DB sur notifications.
+## 4. Memory update
 
-## 5. Audit
+Update `mem://features/recipe-versioning` with:
+- New `status` lifecycle and `set_recipe_status` RPC.
+- `recipe_steps` table with `critical_control_point` + `quality_indicator_id`.
+- Rule: archiving never modifies OFs; old OFs retain their `recipe_id` pointer.
 
-`logAudit` côté client à chaque opération (création, changement statut, clôture). Module `qualite`, entity_type `quality_action`, entity_label = title, entity_code = id court.
+---
 
-## 6. Tests
+## Confirmations after implementation
 
-`src/test/qualite/quality-actions.test.ts` :
-- `validateActionForm` : titre obligatoire, type obligatoire
-- `buildActionInsertPayload` : champs nullable (nc_id/of_id), `created_by` injecté, status default `open`
-- `buildStatusUpdatePayload` : 
-  - status=closed → exige `verification_comment`, ajoute `closed_at`/`closed_by`
-  - status=verified → ajoute `verified_at`/`verified_by`
-  - n'inclut **jamais** `tickets`/`interventions`/`statut` production
-- `buildOverdueDetector` : retourne true si due_date < today ET status ouvert
-- `filterActions` : statut, responsable, priorité, période, NC, recherche + reset
-- Notifications : `buildAssignmentNotificationPayload` cible bien `recipient_user_id = responsible_user_id`, jamais `tickets`
-- Audit : sévérité critical/high → `medium`
-
-## 7. Garanties d'isolation
-
-- Table dédiée `quality_actions` : aucun conflit avec `interventions` (maintenance), `validation_requests`, `notification_rules.action_type` (qui est juste une colonne text).
-- Liens `nc_id`/`of_id` simplement uuid nullable, pas de FK CASCADE.
-- Aucun trigger sur `ordres_fabrication`, `tickets`, `interventions`, `quality_non_conformities`.
-- Code séparé : composant et hook préfixés `Quality*` / `quality_*`.
-
-## 8. Mémoire
-
-Mettre à jour `mem://features/qualite-module` avec :
-- table `quality_actions` + 3 enums
-- workflow CAPA depuis NC (`?from_nc=ID&from_of=ID`)
-- 3 règles de notifications qualité
-- isolation stricte vs maintenance/tickets
-
-## Hors scope
-- Pas de dépendances entre actions (préalable / dépendant) — pourra venir plus tard.
-- Pas de pièces jointes (réutilisera `entity-documents` plus tard).
-- Pas d'intégration KPI dashboard qualité (séparé).
+- Migration purely additive — existing recipes & OFs preserved.
+- `/gpao/recettes` still works for all current users; new actions visible only to managers.
+- `/qualite/recettes-nomenclatures` becomes a real read-only quality view.
+- Versioning lifecycle (draft → active → archived) tested end-to-end.
+- No production blocking: status changes never touch `ordres_fabrication.statut`.

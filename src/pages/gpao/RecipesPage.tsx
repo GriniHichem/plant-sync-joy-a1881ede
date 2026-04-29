@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, BookOpen, Trash2, Edit, ChevronDown, ChevronRight, Package, Copy, GitBranch } from "lucide-react";
+import { Plus, BookOpen, Trash2, Edit, ChevronDown, ChevronRight, Package, Copy, GitBranch, ListOrdered, AlertTriangle, ArchiveIcon, CheckCircle2, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
 
@@ -21,7 +22,27 @@ export default function RecipesPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [articles, setArticles] = useState<any[]>([]);
   const [recipeLines, setRecipeLines] = useState<any[]>([]);
+  const [recipeSteps, setRecipeSteps] = useState<any[]>([]);
+  const [indicators, setIndicators] = useState<any[]>([]);
   const [linkedOfs, setLinkedOfs] = useState<any[]>([]);
+
+  // Step dialog
+  const [stepDialogOpen, setStepDialogOpen] = useState(false);
+  const [stepEditId, setStepEditId] = useState<string | null>(null);
+  const [stepRecipeId, setStepRecipeId] = useState("");
+  const [stepOrder, setStepOrder] = useState("1");
+  const [stepTitle, setStepTitle] = useState("");
+  const [stepDescription, setStepDescription] = useState("");
+  const [stepDuration, setStepDuration] = useState("");
+  const [stepCcp, setStepCcp] = useState(false);
+  const [stepIndicatorId, setStepIndicatorId] = useState<string>("__none__");
+  const [stepProcessParam, setStepProcessParam] = useState("");
+
+  // Compare dialog
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareProductId, setCompareProductId] = useState<string | null>(null);
+  const [compareA, setCompareA] = useState<string>("");
+  const [compareB, setCompareB] = useState<string>("");
 
   // Recipe dialog
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -45,17 +66,21 @@ export default function RecipesPage() {
   const canManage = hasRole("admin") || hasRole("resp_production");
 
   const load = async () => {
-    const [rRes, pRes, aRes, rlRes, ofRes] = await Promise.all([
+    const [rRes, pRes, aRes, rlRes, rsRes, qiRes, ofRes] = await Promise.all([
       supabase.from("recipes").select("*, products(code, designation)").order("name"),
       supabase.from("products").select("*").eq("is_active", true).order("code"),
       supabase.from("articles").select("*").eq("is_active", true).order("code"),
       supabase.from("recipe_lines").select("*, articles(code, designation, unite)").order("created_at"),
+      supabase.from("recipe_steps" as any).select("*").order("step_order"),
+      supabase.from("quality_indicators").select("id, code, name, indicator_type, unit").eq("is_active", true).order("code"),
       supabase.from("ordres_fabrication").select("id, numero, statut, recipe_id").not("recipe_id", "is", null),
     ]);
     setRecipes(rRes.data || []);
     setProducts(pRes.data || []);
     setArticles(aRes.data || []);
     setRecipeLines(rlRes.data || []);
+    setRecipeSteps((rsRes.data as any[]) || []);
+    setIndicators(qiRes.data || []);
     setLinkedOfs(ofRes.data || []);
   };
 
@@ -156,6 +181,100 @@ export default function RecipesPage() {
   const handleToggleActive = async (r: any) => {
     await supabase.from("recipes").update({ is_active: !r.is_active }).eq("id", r.id);
     load();
+  };
+
+  const handleSetStatus = async (recipeId: string, status: "draft" | "active" | "archived") => {
+    const reason = window.prompt(`Motif (${status}) :`, "") ?? undefined;
+    const { error } = await (supabase as any).rpc("set_recipe_status", {
+      p_recipe_id: recipeId,
+      p_status: status,
+      p_reason: reason || null,
+    });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Recette ${status === "active" ? "activée" : status === "archived" ? "archivée" : "remise en brouillon"}` });
+      load();
+    }
+  };
+
+  const getStepsForRecipe = (recipeId: string) =>
+    recipeSteps.filter((s) => s.recipe_id === recipeId).sort((a, b) => a.step_order - b.step_order);
+
+  const resetStepForm = () => {
+    setStepEditId(null); setStepRecipeId(""); setStepOrder("1"); setStepTitle("");
+    setStepDescription(""); setStepDuration(""); setStepCcp(false);
+    setStepIndicatorId("__none__"); setStepProcessParam("");
+  };
+
+  const openAddStep = (recipeId: string) => {
+    const existing = getStepsForRecipe(recipeId);
+    const nextOrder = existing.reduce((m, s) => Math.max(m, s.step_order), 0) + 1;
+    resetStepForm();
+    setStepRecipeId(recipeId);
+    setStepOrder(String(nextOrder));
+    setStepDialogOpen(true);
+  };
+
+  const openEditStep = (s: any) => {
+    setStepEditId(s.id);
+    setStepRecipeId(s.recipe_id);
+    setStepOrder(String(s.step_order));
+    setStepTitle(s.title || "");
+    setStepDescription(s.description || "");
+    setStepDuration(s.expected_duration_minutes != null ? String(s.expected_duration_minutes) : "");
+    setStepCcp(!!s.critical_control_point);
+    setStepIndicatorId(s.quality_indicator_id || "__none__");
+    setStepProcessParam(s.process_parameter ? JSON.stringify(s.process_parameter, null, 2) : "");
+    setStepDialogOpen(true);
+  };
+
+  const handleSaveStep = async () => {
+    if (!stepTitle.trim()) {
+      toast({ title: "Titre obligatoire", variant: "destructive" });
+      return;
+    }
+    let processParam: any = null;
+    if (stepProcessParam.trim()) {
+      try { processParam = JSON.parse(stepProcessParam); }
+      catch { toast({ title: "Paramètres process: JSON invalide", variant: "destructive" }); return; }
+    }
+    const payload: any = {
+      recipe_id: stepRecipeId,
+      step_order: parseInt(stepOrder) || 1,
+      title: stepTitle.trim(),
+      description: stepDescription.trim() || null,
+      expected_duration_minutes: stepDuration ? parseFloat(stepDuration.replace(",", ".")) : null,
+      critical_control_point: stepCcp,
+      quality_indicator_id: stepIndicatorId === "__none__" ? null : stepIndicatorId,
+      process_parameter: processParam,
+    };
+    const { error } = stepEditId
+      ? await (supabase as any).from("recipe_steps").update(payload).eq("id", stepEditId)
+      : await (supabase as any).from("recipe_steps").insert(payload);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: stepEditId ? "Étape modifiée" : "Étape ajoutée" });
+      setStepDialogOpen(false);
+      resetStepForm();
+      load();
+    }
+  };
+
+  const handleDeleteStep = async (id: string) => {
+    if (!window.confirm("Supprimer cette étape ?")) return;
+    await (supabase as any).from("recipe_steps").delete().eq("id", id);
+    toast({ title: "Étape supprimée" });
+    load();
+  };
+
+  const openCompare = (productId: string) => {
+    const versions = recipesByProduct[productId]?.versions || [];
+    setCompareProductId(productId);
+    setCompareA(versions[0]?.id || "");
+    setCompareB(versions[1]?.id || "");
+    setCompareOpen(true);
   };
 
   const openAddLine = (recipeId: string) => {
@@ -309,13 +428,18 @@ export default function RecipesPage() {
                         {group.versions.length} version(s) · {activeCount} active(s) · {totalOfs} OF
                       </p>
                     </div>
-                    {canManage && (
-                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {group.versions.length >= 2 && (
+                        <Button variant="outline" size="sm" onClick={() => openCompare(prodId)}>
+                          <FileText className="h-3 w-3 mr-1" /> Comparer
+                        </Button>
+                      )}
+                      {canManage && (
                         <Button variant="outline" size="sm" onClick={() => openNewVersion(prodId)}>
                           <GitBranch className="h-3 w-3 mr-1" /> Nouvelle version
                         </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Versions list */}
@@ -337,33 +461,48 @@ export default function RecipesPage() {
                                 ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                                 : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <p className="text-sm font-medium">{r.name}</p>
                                   <Badge variant="outline" className="text-[10px]">v{r.version}</Badge>
-                                  <Badge variant={r.is_active ? "default" : "secondary"} className="text-[10px]">
-                                    {r.is_active ? "Active" : "Inactive"}
-                                  </Badge>
+                                  {(() => {
+                                    const status = (r.status as string) || (r.is_active ? "active" : "archived");
+                                    const variant = status === "active" ? "default" : status === "draft" ? "outline" : "secondary";
+                                    const label = status === "active" ? "Active" : status === "draft" ? "Brouillon" : "Archivée";
+                                    return <Badge variant={variant} className="text-[10px]">{label}</Badge>;
+                                  })()}
+                                  {r.approved_at && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      Approuvée {new Date(r.approved_at).toLocaleDateString()}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex items-center gap-1 shrink-0 text-xs text-muted-foreground" onClick={(e) => e.stopPropagation()}>
-                                <span>{lines.length} art. · {ofs.length} OF</span>
+                                <span>{lines.length} art. · {getStepsForRecipe(r.id).length} ét. · {ofs.length} OF</span>
                                 {canManage && (
                                   <>
                                     <Button variant="ghost" size="icon" className="h-7 w-7" title="Dupliquer" onClick={() => handleDuplicateVersion(r)}>
                                       <Copy className="h-3 w-3" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Modifier" onClick={() => openEdit(r)}>
                                       <Edit className="h-3 w-3" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggleActive(r)}>
-                                      <Badge variant="outline" className="text-[9px] cursor-pointer px-1">{r.is_active ? "Off" : "On"}</Badge>
-                                    </Button>
+                                    {(r.status || (r.is_active ? "active" : "archived")) !== "active" && (
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Activer" onClick={() => handleSetStatus(r.id, "active")}>
+                                        <CheckCircle2 className="h-3 w-3 text-primary" />
+                                      </Button>
+                                    )}
+                                    {(r.status || (r.is_active ? "active" : "archived")) !== "archived" && (
+                                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Archiver" onClick={() => handleSetStatus(r.id, "archived")}>
+                                        <ArchiveIcon className="h-3 w-3" />
+                                      </Button>
+                                    )}
                                   </>
                                 )}
                               </div>
                             </div>
 
-                            {/* Version expanded: composition + OFs */}
+                            {/* Version expanded: composition + steps + OFs */}
                             {isVersionExpanded && (
                               <div className="pl-16 pr-4 pb-4 space-y-3">
                                 {/* Composition */}
@@ -416,6 +555,72 @@ export default function RecipesPage() {
                                   )}
                                 </div>
 
+
+                                {/* Steps (process & CCP) */}
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground uppercase tracking-wide">
+                                      <ListOrdered className="h-3 w-3" /> Étapes & paramètres process
+                                    </p>
+                                    {canManage && (
+                                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => openAddStep(r.id)}>
+                                        <Plus className="h-3 w-3 mr-1" /> Étape
+                                      </Button>
+                                    )}
+                                  </div>
+                                  {getStepsForRecipe(r.id).length === 0 ? (
+                                    <p className="text-sm text-muted-foreground py-3 text-center bg-muted/30 rounded-lg">Aucune étape définie</p>
+                                  ) : (
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead className="w-12">#</TableHead>
+                                          <TableHead>Titre</TableHead>
+                                          <TableHead>Durée (min)</TableHead>
+                                          <TableHead>CCP</TableHead>
+                                          <TableHead>Indicateur qualité</TableHead>
+                                          {canManage && <TableHead className="w-16" />}
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {getStepsForRecipe(r.id).map((s) => {
+                                          const ind = indicators.find((i) => i.id === s.quality_indicator_id);
+                                          return (
+                                            <TableRow key={s.id}>
+                                              <TableCell className="tabular-nums">{s.step_order}</TableCell>
+                                              <TableCell className="text-sm">
+                                                <div className="font-medium">{s.title}</div>
+                                                {s.description && <div className="text-xs text-muted-foreground line-clamp-1">{s.description}</div>}
+                                              </TableCell>
+                                              <TableCell className="tabular-nums">{s.expected_duration_minutes ?? "—"}</TableCell>
+                                              <TableCell>
+                                                {s.critical_control_point ? (
+                                                  <Badge variant="destructive" className="text-[10px] gap-1"><AlertTriangle className="h-3 w-3" />CCP</Badge>
+                                                ) : <span className="text-xs text-muted-foreground">—</span>}
+                                              </TableCell>
+                                              <TableCell className="text-xs">
+                                                {ind ? `${ind.code} — ${ind.name}` : <span className="text-muted-foreground">—</span>}
+                                              </TableCell>
+                                              {canManage && (
+                                                <TableCell>
+                                                  <div className="flex gap-1">
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditStep(s)}>
+                                                      <Edit className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteStep(s.id)}>
+                                                      <Trash2 className="h-3 w-3 text-destructive" />
+                                                    </Button>
+                                                  </div>
+                                                </TableCell>
+                                              )}
+                                            </TableRow>
+                                          );
+                                        })}
+                                      </TableBody>
+                                    </Table>
+                                  )}
+                                </div>
+
                                 {/* Linked OFs */}
                                 {ofs.length > 0 && (
                                   <div>
@@ -442,6 +647,115 @@ export default function RecipesPage() {
           })}
         </div>
       )}
+
+      {/* Step dialog */}
+      <Dialog open={stepDialogOpen} onOpenChange={(o) => { setStepDialogOpen(o); if (!o) resetStepForm(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{stepEditId ? "Modifier l'étape" : "Nouvelle étape"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Ordre *</Label>
+                <Input type="number" min={1} value={stepOrder} onChange={(e) => setStepOrder(e.target.value)} className="h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>Durée (min)</Label>
+                <Input value={stepDuration} onChange={(e) => setStepDuration(e.target.value)} className="h-12" placeholder="ex: 15" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Titre *</Label>
+              <Input value={stepTitle} onChange={(e) => setStepTitle(e.target.value)} className="h-12" placeholder="Ex: Cuisson 85°C" />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={stepDescription} onChange={(e) => setStepDescription(e.target.value)} rows={2} />
+            </div>
+            <div className="space-y-2">
+              <Label>Paramètres process (JSON)</Label>
+              <Textarea
+                value={stepProcessParam}
+                onChange={(e) => setStepProcessParam(e.target.value)}
+                rows={3}
+                placeholder={'{"temp_c": 85, "pressure_bar": 2.5}'}
+                className="font-mono text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="ccp"
+                type="checkbox"
+                checked={stepCcp}
+                onChange={(e) => setStepCcp(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="ccp" className="cursor-pointer">Point de contrôle critique (CCP)</Label>
+            </div>
+            <div className="space-y-2">
+              <Label>Indicateur qualité (optionnel)</Label>
+              <Select value={stepIndicatorId} onValueChange={setStepIndicatorId}>
+                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Aucun</SelectItem>
+                  {indicators.map((i) => <SelectItem key={i.id} value={i.id}>{i.code} — {i.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSaveStep} className="w-full h-12">{stepEditId ? "Enregistrer" : "Ajouter"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Compare versions dialog */}
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader><DialogTitle>Comparer deux versions</DialogTitle></DialogHeader>
+          {compareProductId && (() => {
+            const versions = recipesByProduct[compareProductId]?.versions || [];
+            const ra = versions.find((v) => v.id === compareA);
+            const rb = versions.find((v) => v.id === compareB);
+            const linesA = ra ? getLinesForRecipe(ra.id) : [];
+            const linesB = rb ? getLinesForRecipe(rb.id) : [];
+            const stepsA = ra ? getStepsForRecipe(ra.id) : [];
+            const stepsB = rb ? getStepsForRecipe(rb.id) : [];
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Select value={compareA} onValueChange={setCompareA}>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Version A" /></SelectTrigger>
+                    <SelectContent>{versions.map((v) => <SelectItem key={v.id} value={v.id}>v{v.version} — {v.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Select value={compareB} onValueChange={setCompareB}>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Version B" /></SelectTrigger>
+                    <SelectContent>{versions.map((v) => <SelectItem key={v.id} value={v.id}>v{v.version} — {v.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                  {[{ r: ra, lines: linesA, steps: stepsA }, { r: rb, lines: linesB, steps: stepsB }].map((side, i) => (
+                    <div key={i} className="space-y-3">
+                      <div className="text-sm font-semibold">{side.r ? `v${side.r.version} — ${side.r.name}` : "—"}</div>
+                      <div>
+                        <p className="text-xs uppercase text-muted-foreground mb-1">Articles</p>
+                        {side.lines.length === 0 ? <p className="text-xs text-muted-foreground">Aucun</p> :
+                          side.lines.map((l: any) => <div key={l.id} className="text-xs">{l.articles?.code} — {l.quantite} {l.unite}</div>)}
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase text-muted-foreground mb-1">Étapes</p>
+                        {side.steps.length === 0 ? <p className="text-xs text-muted-foreground">Aucune</p> :
+                          side.steps.map((s: any) => (
+                            <div key={s.id} className="text-xs">
+                              {s.step_order}. {s.title} {s.critical_control_point && <Badge variant="destructive" className="ml-1 text-[9px]">CCP</Badge>}
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

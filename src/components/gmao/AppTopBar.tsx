@@ -66,7 +66,7 @@ const configItems = [
   { title: "Audit & Traçabilité", url: "/audit", icon: Activity },
 ];
 
-type NavItem = { title: string; url: string; icon: React.FC<{ size?: number; className?: string }> };
+type NavItem = { title: string; url: string; icon: React.FC<any> };
 
 function isActive(currentPath: string, path: string) {
   return path === "/" ? currentPath === "/" : currentPath.startsWith(path);

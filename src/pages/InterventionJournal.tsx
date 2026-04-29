@@ -396,6 +396,15 @@ export default function InterventionJournal() {
                           {e.type === "curative" ? "Curative" : "Préventive"}
                         </Badge>
                         {statusLabel(e.status)}
+                        {e.role === "lead" && (
+                          <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">Lead</Badge>
+                        )}
+                        {e.role === "co_intervenant" && (
+                          <Badge variant="outline" className="text-[10px] bg-info/10 text-info border-info/20">Co-intervenant</Badge>
+                        )}
+                        {e.role === "aide" && (
+                          <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-border">Aide</Badge>
+                        )}
                       </div>
                       {e.description && (
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{e.description}</p>

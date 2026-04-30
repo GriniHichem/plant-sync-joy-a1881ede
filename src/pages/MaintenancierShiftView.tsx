@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, ChevronRight, AlertTriangle, CalendarCheck, Factory, ShieldAlert, ClipboardCheck, Clock } from "lucide-react";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
+import { useMaintenanceShiftWorkload } from "@/hooks/useMaintenanceShiftWorkload";
 
 interface MachineGroup {
   machine: { id: string; code: string; designation: string };

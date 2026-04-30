@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ClipboardCheck, Save, ArrowLeft } from "lucide-react";
 import { logAudit } from "@/lib/audit";
 import { parseNumericInput } from "@/lib/formValidation";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 
 /**
  * Quick quality check entry — auto fills team_id, shift_id, quality_shift_id from active context.
@@ -33,8 +34,7 @@ export default function QualityShiftCheck() {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Load OFs running on covered lines
-  useEffect(() => {
+  const loadOfs = () => {
     if (!qualityShift) return;
     const lineIds = qualityShift.lines.map((l) => l.id);
     if (lineIds.length === 0) { setOfs([]); return; }
@@ -45,7 +45,20 @@ export default function QualityShiftCheck() {
       .eq("statut", "en_cours" as any)
       .order("numero")
       .then(({ data }) => setOfs(data ?? []));
-  }, [qualityShift]);
+  };
+
+  // Load OFs running on covered lines
+  useEffect(() => {
+    loadOfs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qualityShift?.id]);
+
+  useShiftRealtime(
+    `qual-ofs-${qualityShift?.id ?? "none"}`,
+    "ordres_fabrication",
+    loadOfs,
+    !!qualityShift?.id,
+  );
 
   useEffect(() => {
     if (!ofId) { setIndicators([]); return; }

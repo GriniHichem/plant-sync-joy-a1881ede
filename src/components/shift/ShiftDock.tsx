@@ -9,6 +9,7 @@ import {
   Ban,
   ListChecks,
   Activity,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,12 +26,12 @@ interface DockItem {
  * shows the most useful actions for the current shift kind.
  */
 export function ShiftDock() {
-  const { kind, productionShift, qualityShift } = useActiveShift();
+  const { kind, productionShift, maintenanceShift, qualityShift } = useActiveShift();
 
   const items: DockItem[] = (() => {
     if (kind === "production") {
       return [
-        { to: "/gpao/shift", label: "Accueil", icon: Home },
+        { to: "/gpao/shift/live", label: "Accueil", icon: Home },
         { to: "/gpao/shift/declarer", label: "Déclarer", icon: Activity, requireShift: true },
         { to: "/gpao/shift/arret", label: "Arrêt", icon: Ban, requireShift: true },
         { to: "/gpao/shift/ticket", label: "Ticket", icon: AlertTriangle, requireShift: true },
@@ -38,13 +39,14 @@ export function ShiftDock() {
     }
     if (kind === "maintenance") {
       return [
-        { to: "/maintenance/shift", label: "Mes tâches", icon: ListChecks },
-        { to: "/maintenance/shift/intervention", label: "Intervenir", icon: Wrench },
+        { to: "/maintenance/shift/live", label: "Mes tâches", icon: ListChecks },
+        { to: "/maintenance/shift/intervention", label: "Intervenir", icon: Wrench, requireShift: true },
+        { to: "/preventif", label: "Préventif", icon: CalendarClock, requireShift: true },
       ];
     }
     // quality
     return [
-      { to: "/qualite/shift", label: "Accueil", icon: Home },
+      { to: "/qualite/shift/live", label: "Accueil", icon: Home },
       { to: "/qualite/shift/check", label: "Contrôle", icon: ClipboardCheck, requireShift: true },
       { to: "/qualite/shift/nc", label: "NC", icon: AlertTriangle, requireShift: true },
       { to: "/qualite/shift/lignes", label: "Lignes", icon: Factory, requireShift: true },
@@ -54,14 +56,17 @@ export function ShiftDock() {
   const hasShift =
     (kind === "production" && !!productionShift) ||
     (kind === "quality" && !!qualityShift) ||
-    kind === "maintenance";
+    (kind === "maintenance" && !!maintenanceShift);
 
   return (
     <nav
       className="sticky bottom-0 z-30 border-t-2 border-border bg-card/95 backdrop-blur shadow-lg"
       aria-label="Actions du shift"
     >
-      <ul className="grid grid-cols-4 max-w-2xl mx-auto">
+      <ul
+        className="grid max-w-2xl mx-auto"
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
         {items.map((it) => {
           const Icon = it.icon;
           const disabled = it.requireShift && !hasShift;
@@ -69,7 +74,7 @@ export function ShiftDock() {
             <li key={it.to}>
               <NavLink
                 to={it.to}
-                end={it.to.endsWith("/shift")}
+                end={it.to.endsWith("/live")}
                 className={({ isActive }) =>
                   cn(
                     "flex flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] text-xs font-medium transition-colors",

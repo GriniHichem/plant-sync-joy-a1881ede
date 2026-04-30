@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, Maximize2, Minimize2, Wifi, WifiOff } from "lucide-react";
 import { useActiveShift, ShiftKind } from "@/contexts/ActiveShiftContext";
 import { ShiftDock } from "@/components/shift/ShiftDock";
+import { CloseShiftButton } from "@/components/shift/CloseShiftButton";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 
 const TITLES: Record<ShiftKind, string> = {
@@ -102,13 +103,15 @@ export function ShiftLayout({ children }: { children: ReactNode }) {
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggleFullscreen} title="Plein écran">
               {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
+            <CloseShiftButton />
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate("/apps")}
               className="h-9"
+              title="Quitter sans clôturer"
             >
-              <LogOut className="h-4 w-4 mr-1.5" /> Quitter
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>

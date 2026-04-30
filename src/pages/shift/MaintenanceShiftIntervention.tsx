@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Wrench, Save, ArrowLeft, ListChecks } from "lucide-react";
 import { logAudit } from "@/lib/audit";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 
 /**
  * Maintenance shift kiosk:
@@ -37,21 +38,25 @@ export default function MaintenanceShiftIntervention() {
   // List state (no ticketId)
   const [openTickets, setOpenTickets] = useState<any[]>([]);
 
+  const loadOpenTickets = () => {
+    if (!user) return;
+    supabase
+      .from("tickets")
+      .select("id, numero, description, priorite, statut, machines(id, code, designation)")
+      .in("statut", ["ouvert", "pris_en_charge"])
+      .or(`assignee_id.eq.${user.id},assignee_id.is.null`)
+      .order("created_at", { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        setOpenTickets(data ?? []);
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
     if (!ticketId) {
-      if (!user) return;
       setLoading(true);
-      supabase
-        .from("tickets")
-        .select("id, numero, description, priorite, statut, machines(id, code, designation)")
-        .in("statut", ["ouvert", "pris_en_charge"])
-        .or(`assignee_id.eq.${user.id},assignee_id.is.null`)
-        .order("created_at", { ascending: false })
-        .limit(50)
-        .then(({ data }) => {
-          setOpenTickets(data ?? []);
-          setLoading(false);
-        });
+      loadOpenTickets();
       return;
     }
     setLoading(true);
@@ -64,7 +69,15 @@ export default function MaintenanceShiftIntervention() {
         setTicket(data);
         setLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId, user]);
+
+  useShiftRealtime(
+    `maint-tickets-${user?.id ?? "anon"}`,
+    "tickets",
+    loadOpenTickets,
+    !ticketId && !!user,
+  );
 
   if (loading) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
 

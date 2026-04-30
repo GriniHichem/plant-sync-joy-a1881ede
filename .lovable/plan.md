@@ -69,7 +69,11 @@ But : que chaque opérateur, dans son app, fasse **tout son travail de shift** s
    - Realtime : abonner les listes (tickets, contrôles, déclarations) via `supabase.channel` pour rafraîchissement live sans rechargement.
    - Conserver les tests existants, retirer ceux liés à l'offline.
 
-**Livrables Phase 2** : 3 apps shift complètes, opérationnelles, live, isolées du reste de l'app.
+**Livrables Phase 2 (✅ FAIT)** : 3 apps shift complètes, opérationnelles, live, isolées du reste de l'app.
+- Bouton "Clôturer mon shift" (`CloseShiftButton`) dans le `ShiftLayout` pour les 3 kiosques.
+- Realtime activé (`useShiftRealtime`) sur `production_declarations`, `tickets`, `ordres_fabrication` (tables ajoutées à `supabase_realtime`).
+- Dock dynamique : Maintenance ajoute "Préventif" + tab disabled si pas de shift maintenance actif.
+- Auto-injection des IDs de contexte (shift, équipe, ligne, OF) déjà en place.
 
 ---
 

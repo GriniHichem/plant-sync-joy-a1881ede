@@ -34,12 +34,16 @@ export default function ProductionShiftTicket() {
   useEffect(() => {
     if (!productionShift?.line_id) return;
     supabase
-      .from("machines")
-      .select("id, code, designation")
+      .from("machine_line_assignments")
+      .select("machine_id, machines(id, code, designation, is_active)")
       .eq("line_id", productionShift.line_id)
-      .eq("is_active", true)
-      .order("code")
-      .then(({ data }) => setMachines(data ?? []));
+      .order("priority")
+      .then(({ data }) => {
+        const list = (data ?? [])
+          .map((r: any) => r.machines)
+          .filter((m: any) => m && m.is_active);
+        setMachines(list);
+      });
   }, [productionShift?.line_id]);
 
   if (!productionShift) {

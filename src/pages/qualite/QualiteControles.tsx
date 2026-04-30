@@ -197,6 +197,7 @@ export default function QualiteControles() {
   const { user } = useAuth();
   const { canCreate } = usePermissions();
   const { toast } = useToast();
+  const { shift: activeQualityShift } = useActiveQualityShift();
 
   const [rows, setRows] = useState<QcRow[]>([]);
   const [ofs, setOfs] = useState<OFRow[]>([]);

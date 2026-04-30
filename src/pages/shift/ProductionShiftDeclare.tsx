@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Activity, Save, ArrowLeft } from "lucide-react";
 import { logAudit } from "@/lib/audit";
 import { parseNumericInput } from "@/lib/formValidation";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 
 /**
  * Quick hourly production declaration — context-aware (auto OF + shift_id).
@@ -30,7 +31,7 @@ export default function ProductionShiftDeclare() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
+  const loadDeclarations = () => {
     if (!productionShift) return;
     supabase
       .from("production_declarations")
@@ -38,7 +39,20 @@ export default function ProductionShiftDeclare() {
       .eq("shift_id", productionShift.id)
       .order("heure_production", { ascending: true })
       .then(({ data }) => setDeclarations(data ?? []));
-  }, [productionShift]);
+  };
+
+  useEffect(() => {
+    loadDeclarations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productionShift?.id]);
+
+  useShiftRealtime(
+    `prod-decl-${productionShift?.id ?? "none"}`,
+    "production_declarations",
+    loadDeclarations,
+    !!productionShift?.id,
+    productionShift?.id ? `shift_id=eq.${productionShift.id}` : undefined,
+  );
 
   const previousHourSlot = useMemo(() => {
     if (!productionShift) return null;

@@ -91,6 +91,7 @@ export function ShiftLayout({ children }: { children: ReactNode }) {
             {elapsedLabel && (
               <Badge variant="outline" className="text-xs tabular-nums">{elapsedLabel}</Badge>
             )}
+            <ActiveShiftSwitcher />
           </div>
 
           <div className="flex-1" />

@@ -33,9 +33,9 @@ const MODULES: AppModule[] = [
   { title: "Organes", description: "Sous-ensembles techniques des machines/équipements", url: "/organes", icon: IconEquipment, category: "Maintenance", permissionModule: "organes", accent: "from-teal-500/15 to-teal-500/5 text-teal-500" },
   { title: "Lignes de production", description: "Synoptique interactif des lignes", url: "/lignes", icon: IconFactory, category: "Maintenance", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
   { title: "Pièces de rechange", description: "Catalogue PDR, stock et liens machines", url: "/pdr", icon: IconSpare, category: "Maintenance", permissionModule: "pdr", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
-  { title: "Tickets", description: "Demandes d'intervention et suivi en temps réel", url: "/tickets", icon: IconTicket, category: "Maintenance", permissionModule: "tickets", badge: "Live", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
+  { title: "Tickets", description: "Demandes d'intervention et suivi en temps réel", url: "/tickets", icon: IconTicket, category: "Maintenance", permissionModule: "tickets", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
   { title: "Maintenance préventive", description: "Plans, gammes et déclenchements automatiques", url: "/preventif", icon: IconPreventive, category: "Maintenance", permissionModule: "preventif", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
-  { title: "Shift Maintenance", description: "Vue opérationnelle du maintenancier", url: "/maintenance/shift", icon: IconShift, category: "Maintenance", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
+  { title: "Shift Maintenance", description: "Vue opérationnelle du maintenancier", url: "/maintenance/shift", icon: IconShift, category: "Maintenance", badge: "Live", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
   { title: "Journal d'interventions", description: "Historique consolidé des interventions", url: "/maintenance/journal", icon: IconMaintenance, category: "Maintenance", accent: "from-slate-500/15 to-slate-500/5 text-slate-400" },
   { title: "Analyse & KPI", description: "Indicateurs MTTR, MTBF, disponibilité", url: "/analytics", icon: IconAnalytics, category: "Maintenance", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
 

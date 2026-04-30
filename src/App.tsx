@@ -88,6 +88,13 @@ import QualiteRecettesNomenclatures from "@/pages/qualite/QualiteRecettesNomencl
 import QualiteTracabilite from "@/pages/qualite/QualiteTracabilite";
 import QualiteRapports from "@/pages/qualite/QualiteRapports";
 import QualiteShiftScreen from "@/pages/qualite/QualiteShiftScreen";
+import ProductionShiftDeclare from "@/pages/shift/ProductionShiftDeclare";
+import ProductionShiftStop from "@/pages/shift/ProductionShiftStop";
+import ProductionShiftTicket from "@/pages/shift/ProductionShiftTicket";
+import MaintenanceShiftIntervention from "@/pages/shift/MaintenanceShiftIntervention";
+import QualityShiftCheck from "@/pages/shift/QualityShiftCheck";
+import QualityShiftNc from "@/pages/shift/QualityShiftNc";
+import QualityShiftLines from "@/pages/shift/QualityShiftLines";
 
 const queryClient = new QueryClient();
 
@@ -114,7 +121,15 @@ function ProtectedRoutes() {
   );
 }
 
-function ProtectedShiftRoute({ kind }: { kind: "production" | "maintenance" | "quality" }) {
+function ProtectedShiftRoute({
+  kind,
+  children,
+  allowWithoutShift = false,
+}: {
+  kind: "production" | "maintenance" | "quality";
+  children: React.ReactNode;
+  allowWithoutShift?: boolean;
+}) {
   const { user, loading } = useAuth();
   if (loading) {
     return (
@@ -124,14 +139,10 @@ function ProtectedShiftRoute({ kind }: { kind: "production" | "maintenance" | "q
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
-  const Page =
-    kind === "production" ? <ShiftScreen /> :
-    kind === "maintenance" ? <MaintenancierShiftView /> :
-    <QualiteShiftScreen />;
   return (
     <ActiveShiftProvider kind={kind}>
       <ShiftLayout>
-        <ShiftGuard allowWithoutShift>{Page}</ShiftGuard>
+        <ShiftGuard allowWithoutShift={allowWithoutShift}>{children}</ShiftGuard>
       </ShiftLayout>
     </ActiveShiftProvider>
   );
@@ -147,10 +158,21 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            {/* Isolated shift apps — no global sidebar, focused kiosk-style UX */}
-            <Route path="/gpao/shift" element={<ProtectedShiftRoute kind="production" />} />
-            <Route path="/maintenance/shift" element={<ProtectedShiftRoute kind="maintenance" />} />
-            <Route path="/qualite/shift" element={<ProtectedShiftRoute kind="quality" />} />
+            {/* Isolated shift apps — kiosk-style, no global sidebar */}
+            {/* Production */}
+            <Route path="/gpao/shift" element={<ProtectedShiftRoute kind="production" allowWithoutShift><ShiftScreen /></ProtectedShiftRoute>} />
+            <Route path="/gpao/shift/declarer" element={<ProtectedShiftRoute kind="production"><ProductionShiftDeclare /></ProtectedShiftRoute>} />
+            <Route path="/gpao/shift/arret" element={<ProtectedShiftRoute kind="production"><ProductionShiftStop /></ProtectedShiftRoute>} />
+            <Route path="/gpao/shift/ticket" element={<ProtectedShiftRoute kind="production"><ProductionShiftTicket /></ProtectedShiftRoute>} />
+            {/* Maintenance */}
+            <Route path="/maintenance/shift" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenancierShiftView /></ProtectedShiftRoute>} />
+            <Route path="/maintenance/shift/intervention" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenanceShiftIntervention /></ProtectedShiftRoute>} />
+            <Route path="/maintenance/shift/intervention/:ticketId" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenanceShiftIntervention /></ProtectedShiftRoute>} />
+            {/* Quality */}
+            <Route path="/qualite/shift" element={<ProtectedShiftRoute kind="quality" allowWithoutShift><QualiteShiftScreen /></ProtectedShiftRoute>} />
+            <Route path="/qualite/shift/check" element={<ProtectedShiftRoute kind="quality"><QualityShiftCheck /></ProtectedShiftRoute>} />
+            <Route path="/qualite/shift/nc" element={<ProtectedShiftRoute kind="quality"><QualityShiftNc /></ProtectedShiftRoute>} />
+            <Route path="/qualite/shift/lignes" element={<ProtectedShiftRoute kind="quality"><QualityShiftLines /></ProtectedShiftRoute>} />
             <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
               <Route path="/" element={<Dashboard />} />

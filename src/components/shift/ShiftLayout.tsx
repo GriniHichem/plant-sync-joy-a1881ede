@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LogOut, Maximize2, Minimize2, Wifi, WifiOff } from "lucide-react";
 import { useActiveShift, ShiftKind } from "@/contexts/ActiveShiftContext";
+import { ShiftDock } from "@/components/shift/ShiftDock";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 
 const TITLES: Record<ShiftKind, string> = {
@@ -111,9 +112,11 @@ export function ShiftLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 px-3 md:px-6 py-4 md:py-6 max-w-7xl w-full mx-auto">
+      <main className="flex-1 px-3 md:px-6 py-4 md:py-6 pb-20 max-w-7xl w-full mx-auto">
         {children}
       </main>
+
+      <ShiftDock />
     </div>
   );
 }

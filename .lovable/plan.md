@@ -48,7 +48,16 @@ Principes communs :
 
 ---
 
-## Phase 2 — Actions in-shift cadrées (héritage automatique du contexte)
+## Phase 2 — Actions in-shift cadrées (héritage automatique du contexte) ✅ LIVRÉE
+
+**Livré** :
+- `ShiftDock` (bottom dock 56px touch targets) intégré au `ShiftLayout`.
+- Production : `/gpao/shift/declarer` (auto-déclaration heure-1), `/gpao/shift/arret`, `/gpao/shift/ticket` — tous auto-injectent `shift_id`, `line_id`, `of_id`.
+- Maintenance : `/maintenance/shift/intervention[/:ticketId]` — liste de tickets ouverts/assignés + formulaire plein-écran avec checkbox "clôturer maintenant" (cause racine + solution obligatoires si coché).
+- Qualité : `/qualite/shift/check` (auto `quality_shift_id`+`team_id`+`shift_id`+`production_line_id`, support numeric/boolean/select/text via `get_quality_indicators_for_of`), `/qualite/shift/nc`, `/qualite/shift/lignes`.
+- Toutes les actions tracées via `logAudit` avec `entity_type` métier et label "(kiosque shift)".
+
+
 
 **But** : tous les "actes métier" lancés depuis une app shift sont auto-rattachés et limités au périmètre du shift.
 

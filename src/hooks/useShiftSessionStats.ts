@@ -2,23 +2,54 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { ShiftKind } from "@/contexts/ActiveShiftContext";
 
+export interface ShiftKpi {
+  label: string;
+  value: number | string;
+  hint?: string;
+}
+
 export interface ShiftSessionStats {
   loading: boolean;
-  /** Production: declarations count + total quantity. Maintenance: tickets created on this shift. Quality: checks count. */
-  primary: { label: string; value: number | string };
-  secondary: { label: string; value: number | string };
-  tertiary?: { label: string; value: number | string };
+  primary: ShiftKpi;
+  secondary: ShiftKpi;
+  tertiary?: ShiftKpi;
+  /** Extra KPIs for downtime / intervention time / conformity */
+  extras: ShiftKpi[];
+}
+
+/** Format minutes -> "1h23" / "47 min". */
+function fmtMinutes(min: number): string {
+  if (!Number.isFinite(min) || min <= 0) return "0 min";
+  const m = Math.round(min);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return r === 0 ? `${h}h` : `${h}h${String(r).padStart(2, "0")}`;
+}
+
+/** Compute minute delta between two ISO timestamps; clamped to >= 0. */
+function diffMinutes(start?: string | null, end?: string | null): number {
+  if (!start || !end) return 0;
+  const a = new Date(start).getTime();
+  const b = new Date(end).getTime();
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return 0;
+  return (b - a) / 60000;
 }
 
 /**
  * Live KPIs for a single shift session, used by the responsable console.
- * Subscribes to the relevant child tables so values update in real time.
+ * Business rules (validated):
+ *  - Production: cumul arrêts (somme duree_minutes ou heure_fin-heure_debut, en cours = jusqu'à now()).
+ *  - Maintenance: temps d'intervention = somme(date_fin - date_debut) du technicien dans la fenêtre du shift,
+ *                 + temps d'arrêt = somme(temps_arret_minutes) des tickets clôturés sur la session.
+ *  - Qualité: taux de conformité = contrôles conformes / total contrôles validés (status != 'rejected').
  */
 export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null): ShiftSessionStats {
   const [stats, setStats] = useState<ShiftSessionStats>({
     loading: true,
     primary: { label: "—", value: 0 },
     secondary: { label: "—", value: 0 },
+    extras: [],
   });
 
   useEffect(() => {
@@ -27,89 +58,137 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
 
     async function load() {
       if (kind === "production") {
-        const [{ data: decl }, { count: stops }, { count: tickets }] = await Promise.all([
+        const [{ data: decl }, { data: stops }, { count: tickets }] = await Promise.all([
           supabase
             .from("production_declarations")
             .select("quantite_produite, quantite_rebut")
             .eq("shift_id", sessionId),
           supabase
             .from("production_stops")
-            .select("id", { count: "exact", head: true })
+            .select("duree_minutes, heure_debut, heure_fin")
             .eq("shift_id", sessionId),
           supabase
             .from("tickets")
             .select("id", { count: "exact", head: true })
             .eq("shift_id", sessionId),
         ]);
-        const total = (decl ?? []).reduce((s: number, d: any) => s + Number(d.quantite_produite || 0), 0);
-        const rebut = (decl ?? []).reduce((s: number, d: any) => s + Number(d.quantite_rebut || 0), 0);
+        const totalProd = (decl ?? []).reduce((s, d: any) => s + Number(d.quantite_produite || 0), 0);
+        const rebut = (decl ?? []).reduce((s, d: any) => s + Number(d.quantite_rebut || 0), 0);
+        const conforme = Math.max(totalProd - rebut, 0);
+        const conformite = totalProd > 0 ? Math.round((conforme / totalProd) * 100) : null;
+
+        const downtime = (stops ?? []).reduce((acc, s: any) => {
+          const d = Number(s.duree_minutes ?? 0);
+          if (d > 0) return acc + d;
+          return acc + diffMinutes(s.heure_debut, s.heure_fin ?? new Date().toISOString());
+        }, 0);
+
         if (cancelled) return;
         setStats({
           loading: false,
-          primary: { label: "Production", value: `${total} (${rebut} rebut)` },
-          secondary: { label: "Arrêts", value: stops ?? 0 },
+          primary: { label: "Production", value: totalProd, hint: `${rebut} rebut` },
+          secondary: { label: "Arrêts", value: stops?.length ?? 0, hint: fmtMinutes(downtime) },
           tertiary: { label: "Tickets", value: tickets ?? 0 },
+          extras: [
+            { label: "Temps d'arrêt", value: fmtMinutes(downtime) },
+            { label: "Conformité", value: conformite === null ? "—" : `${conformite}%`, hint: `${conforme}/${totalProd}` },
+          ],
         });
       } else if (kind === "maintenance") {
-        // No direct FK from interventions to maintenance_shifts; we count interventions by the maintainer in the shift window.
         const { data: shiftRow } = await supabase
           .from("maintenance_shifts" as any)
           .select("maintenancier_id, heure_debut, heure_fin")
           .eq("id", sessionId)
           .maybeSingle();
         if (!shiftRow) {
-          if (!cancelled) setStats({ loading: false, primary: { label: "Interventions", value: 0 }, secondary: { label: "Tickets clôturés", value: 0 } });
+          if (!cancelled)
+            setStats({
+              loading: false,
+              primary: { label: "Interventions", value: 0 },
+              secondary: { label: "Tickets clôturés", value: 0 },
+              extras: [],
+            });
           return;
         }
         const s = shiftRow as any;
         const endTs = s.heure_fin ?? new Date().toISOString();
-        const [{ count: interv }, { count: closed }] = await Promise.all([
+        const [{ data: interv }, { data: closedTickets }] = await Promise.all([
           supabase
             .from("interventions")
-            .select("id", { count: "exact", head: true })
+            .select("date_debut, date_fin, statut")
             .eq("technicien_id", s.maintenancier_id)
             .gte("date_debut", s.heure_debut)
             .lte("date_debut", endTs),
           supabase
             .from("tickets")
-            .select("id", { count: "exact", head: true })
+            .select("temps_arret_minutes, temps_intervention_minutes")
             .eq("statut", "ferme" as any)
             .gte("heure_resolution", s.heure_debut)
             .lte("heure_resolution", endTs),
         ]);
+
+        const intervCount = interv?.length ?? 0;
+        const intervMinutes = (interv ?? []).reduce(
+          (acc, i: any) => acc + diffMinutes(i.date_debut, i.date_fin ?? endTs),
+          0,
+        );
+        const closedCount = closedTickets?.length ?? 0;
+        const downtime = (closedTickets ?? []).reduce(
+          (acc, t: any) => acc + Number(t.temps_arret_minutes || 0),
+          0,
+        );
+        const ticketIntervMinutes = (closedTickets ?? []).reduce(
+          (acc, t: any) => acc + Number(t.temps_intervention_minutes || 0),
+          0,
+        );
+        // Use ticket-recorded intervention time when available, fallback to computed
+        const totalInterv = ticketIntervMinutes > 0 ? ticketIntervMinutes : intervMinutes;
+
         if (cancelled) return;
         setStats({
           loading: false,
-          primary: { label: "Interventions", value: interv ?? 0 },
-          secondary: { label: "Tickets clôturés", value: closed ?? 0 },
+          primary: { label: "Interventions", value: intervCount, hint: fmtMinutes(totalInterv) },
+          secondary: { label: "Tickets clôturés", value: closedCount },
+          tertiary: { label: "Temps d'arrêt", value: fmtMinutes(downtime) },
+          extras: [
+            { label: "Temps d'intervention", value: fmtMinutes(totalInterv) },
+            { label: "MTTR moy.", value: closedCount > 0 ? fmtMinutes(totalInterv / closedCount) : "—" },
+          ],
         });
       } else {
-        const [{ data: checks, count: checksCount }, { count: ncs }] = await Promise.all([
+        const [{ data: checks }, { count: ncs }] = await Promise.all([
           supabase
             .from("quality_checks" as any)
-            .select("is_conform", { count: "exact" })
+            .select("is_conform, status")
             .eq("quality_shift_id", sessionId),
           supabase
             .from("quality_non_conformities" as any)
             .select("id", { count: "exact", head: true })
             .eq("quality_shift_id", sessionId),
         ]);
-        const total = checksCount ?? 0;
-        const nonConf = (checks ?? []).filter((c: any) => c.is_conform === false).length;
-        const rate = total > 0 ? Math.round(((total - nonConf) / total) * 100) : null;
+        // Business rule: exclude rejected checks from the conformity rate
+        const valid = (checks ?? []).filter((c: any) => c.status !== "rejected");
+        const total = valid.length;
+        const nonConf = valid.filter((c: any) => c.is_conform === false).length;
+        const conform = total - nonConf;
+        const rate = total > 0 ? Math.round((conform / total) * 100) : null;
+
         if (cancelled) return;
         setStats({
           loading: false,
-          primary: { label: "Contrôles", value: total },
-          secondary: { label: "Conformité", value: rate === null ? "—" : `${rate}%` },
+          primary: { label: "Contrôles", value: checks?.length ?? 0, hint: `${total} validés` },
+          secondary: { label: "Conformité", value: rate === null ? "—" : `${rate}%`, hint: `${conform}/${total}` },
           tertiary: { label: "NC", value: ncs ?? 0 },
+          extras: [
+            { label: "Taux de conformité", value: rate === null ? "—" : `${rate}%` },
+            { label: "Non-conformes", value: nonConf },
+          ],
         });
       }
     }
 
     load();
 
-    // Realtime: refresh stats on relevant child table changes
     const tables =
       kind === "production"
         ? ["production_declarations", "production_stops", "tickets"]

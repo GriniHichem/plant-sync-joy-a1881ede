@@ -1244,6 +1244,62 @@ export type Database = {
           },
         ]
       }
+      maintenance_shifts: {
+        Row: {
+          created_at: string
+          date_shift: string
+          heure_debut: string
+          heure_fin: string | null
+          id: string
+          is_active: boolean
+          line_ids: string[]
+          maintenancier_id: string
+          observations: string | null
+          opened_by: string | null
+          shift_team_id: string | null
+          shift_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_shift?: string
+          heure_debut?: string
+          heure_fin?: string | null
+          id?: string
+          is_active?: boolean
+          line_ids?: string[]
+          maintenancier_id: string
+          observations?: string | null
+          opened_by?: string | null
+          shift_team_id?: string | null
+          shift_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_shift?: string
+          heure_debut?: string
+          heure_fin?: string | null
+          id?: string
+          is_active?: boolean
+          line_ids?: string[]
+          maintenancier_id?: string
+          observations?: string | null
+          opened_by?: string | null
+          shift_team_id?: string | null
+          shift_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_shifts_shift_team_id_fkey"
+            columns: ["shift_team_id"]
+            isOneToOne: false
+            referencedRelation: "shift_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_email_log: {
         Row: {
           created_at: string
@@ -4039,6 +4095,7 @@ export type Database = {
           id: string
           is_active: boolean
           observations: string | null
+          opened_by: string | null
           shift_team_id: string | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           updated_at: string
@@ -4052,6 +4109,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           observations?: string | null
+          opened_by?: string | null
           shift_team_id?: string | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           updated_at?: string
@@ -4065,6 +4123,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           observations?: string | null
+          opened_by?: string | null
           shift_team_id?: string | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
           updated_at?: string
@@ -4562,6 +4621,7 @@ export type Database = {
           line_id: string
           observations: string | null
           of_id: string
+          opened_by: string | null
           shift_team_id: string | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           statut: string
@@ -4580,6 +4640,7 @@ export type Database = {
           line_id: string
           observations?: string | null
           of_id: string
+          opened_by?: string | null
           shift_team_id?: string | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           statut?: string
@@ -4598,6 +4659,7 @@ export type Database = {
           line_id?: string
           observations?: string | null
           of_id?: string
+          opened_by?: string | null
           shift_team_id?: string | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
           statut?: string

@@ -95,6 +95,7 @@ import MaintenanceShiftIntervention from "@/pages/shift/MaintenanceShiftInterven
 import QualityShiftCheck from "@/pages/shift/QualityShiftCheck";
 import QualityShiftNc from "@/pages/shift/QualityShiftNc";
 import QualityShiftLines from "@/pages/shift/QualityShiftLines";
+import { ShiftHomePage } from "@/components/shift/ShiftHomePage";
 
 const queryClient = new QueryClient();
 

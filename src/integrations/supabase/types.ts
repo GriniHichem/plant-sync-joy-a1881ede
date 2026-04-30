@@ -3234,6 +3234,7 @@ export type Database = {
           of_id: string
           product_id: string | null
           production_line_id: string | null
+          quality_shift_id: string | null
           selected_value: string | null
           shift_id: string | null
           status: string
@@ -3263,6 +3264,7 @@ export type Database = {
           of_id: string
           product_id?: string | null
           production_line_id?: string | null
+          quality_shift_id?: string | null
           selected_value?: string | null
           shift_id?: string | null
           status?: string
@@ -3292,6 +3294,7 @@ export type Database = {
           of_id?: string
           product_id?: string | null
           production_line_id?: string | null
+          quality_shift_id?: string | null
           selected_value?: string | null
           shift_id?: string | null
           status?: string
@@ -3330,6 +3333,13 @@ export type Database = {
             columns: ["production_line_id"]
             isOneToOne: false
             referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_checks_quality_shift_id_fkey"
+            columns: ["quality_shift_id"]
+            isOneToOne: false
+            referencedRelation: "quality_shifts"
             referencedColumns: ["id"]
           },
           {
@@ -3790,6 +3800,7 @@ export type Database = {
           product_id: string | null
           production_line_id: string | null
           quality_check_id: string | null
+          quality_shift_id: string | null
           root_cause: string | null
           search_vector: unknown
           severity: Database["public"]["Enums"]["nc_severity"]
@@ -3828,6 +3839,7 @@ export type Database = {
           product_id?: string | null
           production_line_id?: string | null
           quality_check_id?: string | null
+          quality_shift_id?: string | null
           root_cause?: string | null
           search_vector?: unknown
           severity?: Database["public"]["Enums"]["nc_severity"]
@@ -3866,6 +3878,7 @@ export type Database = {
           product_id?: string | null
           production_line_id?: string | null
           quality_check_id?: string | null
+          quality_shift_id?: string | null
           root_cause?: string | null
           search_vector?: unknown
           severity?: Database["public"]["Enums"]["nc_severity"]
@@ -3877,7 +3890,15 @@ export type Database = {
           updated_at?: string
           validation_status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quality_non_conformities_quality_shift_id_fkey"
+            columns: ["quality_shift_id"]
+            isOneToOne: false
+            referencedRelation: "quality_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quality_permissions: {
         Row: {
@@ -3944,6 +3965,119 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quality_shift_lines: {
+        Row: {
+          production_line_id: string
+          quality_shift_id: string
+        }
+        Insert: {
+          production_line_id: string
+          quality_shift_id: string
+        }
+        Update: {
+          production_line_id?: string
+          quality_shift_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_shift_lines_production_line_id_fkey"
+            columns: ["production_line_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_shift_lines_quality_shift_id_fkey"
+            columns: ["quality_shift_id"]
+            isOneToOne: false
+            referencedRelation: "quality_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_shift_production_links: {
+        Row: {
+          linked_at: string
+          production_shift_id: string
+          quality_shift_id: string
+        }
+        Insert: {
+          linked_at?: string
+          production_shift_id: string
+          quality_shift_id: string
+        }
+        Update: {
+          linked_at?: string
+          production_shift_id?: string
+          quality_shift_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_shift_production_links_production_shift_id_fkey"
+            columns: ["production_shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_shift_production_links_quality_shift_id_fkey"
+            columns: ["quality_shift_id"]
+            isOneToOne: false
+            referencedRelation: "quality_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_shifts: {
+        Row: {
+          controller_id: string
+          created_at: string
+          date_shift: string
+          heure_debut: string
+          heure_fin: string | null
+          id: string
+          is_active: boolean
+          observations: string | null
+          shift_team_id: string | null
+          shift_type: Database["public"]["Enums"]["shift_type"]
+          updated_at: string
+        }
+        Insert: {
+          controller_id: string
+          created_at?: string
+          date_shift?: string
+          heure_debut?: string
+          heure_fin?: string | null
+          id?: string
+          is_active?: boolean
+          observations?: string | null
+          shift_team_id?: string | null
+          shift_type: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Update: {
+          controller_id?: string
+          created_at?: string
+          date_shift?: string
+          heure_debut?: string
+          heure_fin?: string | null
+          id?: string
+          is_active?: boolean
+          observations?: string | null
+          shift_team_id?: string | null
+          shift_type?: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_shifts_shift_team_id_fkey"
+            columns: ["shift_team_id"]
+            isOneToOne: false
+            referencedRelation: "shift_teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quality_units: {
         Row: {
@@ -5089,6 +5223,10 @@ export type Database = {
       is_audit_enabled: {
         Args: { _module: string; _role: string }
         Returns: boolean
+      }
+      quality_shift_refresh_links: {
+        Args: { p_quality_shift_id: string }
+        Returns: number
       }
       search_suggest: {
         Args: { max_results?: number; q: string }

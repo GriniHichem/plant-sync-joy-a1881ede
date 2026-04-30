@@ -5309,6 +5309,7 @@ export type Database = {
           entity_id: string
           entity_type: string
           label: string
+          match_quality: string
           matched_field: string
           url: string
         }[]

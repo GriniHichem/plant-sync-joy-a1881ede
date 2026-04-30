@@ -158,7 +158,7 @@ export default function QualiteShiftScreen() {
         entity_type: "quality_shift",
         entity_id: shift.id,
         action_label: "Clôture shift qualité",
-        reason: observations,
+        new_values: { observations },
       });
       toast({ title: "Shift qualité clôturé" });
       setOpenClose(false);

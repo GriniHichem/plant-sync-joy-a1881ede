@@ -5,21 +5,24 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, ClipboardCheck, Plus, Trash2, RotateCcw } from "lucide-react";
+import { ArrowLeft, ClipboardCheck, Plus, Trash2, RotateCcw, Globe } from "lucide-react";
 
 interface Profile { id: string; display_name: string | null; }
 interface Team { id: string; name: string; code: string; }
-interface LineRow { id: string; code: string; designation: string; }
+interface OFRow { id: string; numero: string; statut: string; ligne_id: string | null; line?: { code: string } | null; }
 interface Assignment {
   id: string;
   controller_id: string;
   shift_type: "matin" | "apres_midi" | "nuit";
   shift_team_id: string | null;
-  line_ids: string[];
+  of_ids: string[];
+  all_open_ofs: boolean;
+  line_ids: string[]; // legacy
 }
 
 const SHIFT_LABELS: Record<string, string> = {
@@ -35,7 +38,7 @@ export default function QualiteShiftPlanAdmin() {
   const [loading, setLoading] = useState(true);
   const [controllers, setControllers] = useState<Profile[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [lines, setLines] = useState<LineRow[]>([]);
+  const [openOfs, setOpenOfs] = useState<OFRow[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [filterController, setFilterController] = useState<string>(NONE);
 
@@ -44,14 +47,16 @@ export default function QualiteShiftPlanAdmin() {
 
   const load = async () => {
     setLoading(true);
-    const [a, t, l, c] = await Promise.all([
+    const [a, t, ofs, c] = await Promise.all([
       supabase.from("quality_shift_assignments" as any).select("*"),
       supabase.from("shift_teams").select("id, name, code").order("code"),
-      supabase.from("production_lines").select("id, code, designation").order("code"),
-      // contrôleurs et resp. CQ
+      supabase
+        .from("ordres_fabrication")
+        .select("id, numero, statut, ligne_id, production_lines(code)")
+        .eq("statut", "en_cours")
+        .order("numero"),
       supabase.rpc("get_users_with_role" as any, { _role: "controleur_qualite" }).then(async (res) => {
         if (res.error) {
-          // fallback : tous les profils
           const all = await supabase.from("profiles").select("id, display_name").order("display_name");
           return { data: all.data ?? [], error: null };
         }
@@ -60,7 +65,7 @@ export default function QualiteShiftPlanAdmin() {
     ]);
     setAssignments((a.data as any[]) ?? []);
     setTeams((t.data as any[]) ?? []);
-    setLines((l.data as any[]) ?? []);
+    setOpenOfs(((ofs.data as any[]) ?? []).map((o) => ({ ...o, line: o.production_lines })));
     setControllers((c.data as any[]) ?? []);
     setLoading(false);
   };
@@ -71,8 +76,8 @@ export default function QualiteShiftPlanAdmin() {
     controllers.find((u) => u.id === id)?.display_name ?? id.slice(0, 8);
   const teamLabel = (id: string | null) =>
     id ? (teams.find((t) => t.id === id)?.code ?? "—") : "—";
-  const lineLabels = (ids: string[]) =>
-    ids.map((id) => lines.find((l) => l.id === id)?.code ?? "?").join(", ") || "—";
+  const ofLabels = (ids: string[]) =>
+    ids.map((id) => openOfs.find((o) => o.id === id)?.numero ?? "?").join(", ") || "—";
 
   const filtered = filterController === NONE
     ? assignments
@@ -84,13 +89,15 @@ export default function QualiteShiftPlanAdmin() {
       controller_id: "",
       shift_type: "matin",
       shift_team_id: null,
+      of_ids: [],
+      all_open_ofs: false,
       line_ids: [],
     });
     setOpen(true);
   };
 
   const openEdit = (a: Assignment) => {
-    setEditing({ ...a });
+    setEditing({ ...a, of_ids: a.of_ids ?? [], line_ids: a.line_ids ?? [] });
     setOpen(true);
   };
 
@@ -100,11 +107,21 @@ export default function QualiteShiftPlanAdmin() {
       toast({ title: "Contrôleur requis", variant: "destructive" });
       return;
     }
+    if (!editing.all_open_ofs && editing.of_ids.length === 0) {
+      toast({
+        title: "Sélection requise",
+        description: "Choisis au moins un OF ou coche \"Tous les OFs ouverts\".",
+        variant: "destructive",
+      });
+      return;
+    }
     const payload = {
       controller_id: editing.controller_id,
       shift_type: editing.shift_type,
       shift_team_id: editing.shift_team_id,
-      line_ids: editing.line_ids,
+      of_ids: editing.all_open_ofs ? [] : editing.of_ids,
+      all_open_ofs: editing.all_open_ofs,
+      line_ids: [], // legacy nettoyé
     };
     const res = editing.id
       ? await supabase.from("quality_shift_assignments" as any).update(payload).eq("id", editing.id)
@@ -130,13 +147,13 @@ export default function QualiteShiftPlanAdmin() {
     load();
   };
 
-  const toggleLine = (lid: string) => {
+  const toggleOf = (oid: string) => {
     if (!editing) return;
     setEditing({
       ...editing,
-      line_ids: editing.line_ids.includes(lid)
-        ? editing.line_ids.filter((x) => x !== lid)
-        : [...editing.line_ids, lid],
+      of_ids: editing.of_ids.includes(oid)
+        ? editing.of_ids.filter((x) => x !== oid)
+        : [...editing.of_ids, oid],
     });
   };
 
@@ -152,7 +169,7 @@ export default function QualiteShiftPlanAdmin() {
             <h1 className="text-2xl font-bold">Plan shifts qualité</h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            Affecte les contrôleurs aux créneaux et lignes — les sessions qualité sont créées automatiquement à l'heure serveur (Africa/Algiers).
+            Affecte les contrôleurs aux créneaux et aux OFs (ou tous les OFs ouverts) — les sessions sont créées automatiquement à l'heure serveur (Africa/Algiers) et les lignes couvertes sont résolues dynamiquement à partir des OFs en cours.
           </p>
         </div>
         <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Affecter</Button>
@@ -200,8 +217,17 @@ export default function QualiteShiftPlanAdmin() {
                       <span className="font-medium">{controllerName(a.controller_id)}</span>
                       <Badge variant="secondary" className="text-xs">{SHIFT_LABELS[a.shift_type]}</Badge>
                       <Badge variant="outline" className="text-xs">Équipe {teamLabel(a.shift_team_id)}</Badge>
+                      {a.all_open_ofs && (
+                        <Badge variant="default" className="text-xs gap-1">
+                          <Globe className="h-3 w-3" /> Tous OFs ouverts
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 truncate">Lignes : {lineLabels(a.line_ids)}</p>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                      {a.all_open_ofs
+                        ? "Couverture : tous les OFs en cours au moment du shift."
+                        : `OFs : ${ofLabels(a.of_ids ?? [])}`}
+                    </p>
                   </div>
                   <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); remove(a.id); }}>
                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -267,21 +293,44 @@ export default function QualiteShiftPlanAdmin() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium">Lignes couvertes</label>
-                <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto p-2 border rounded">
-                  {lines.map((l) => (
-                    <label key={l.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={editing.line_ids.includes(l.id)}
-                        onChange={() => toggleLine(l.id)}
-                      />
-                      <span>{l.code} — {l.designation}</span>
-                    </label>
-                  ))}
+              <div className="rounded border p-3 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Tous les OFs ouverts</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Le contrôleur prend en charge tous les OFs en cours au démarrage du shift, ainsi que ceux ouverts pendant le shift.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={editing.all_open_ofs}
+                    onCheckedChange={(v) => setEditing({ ...editing, all_open_ofs: v, of_ids: v ? [] : editing.of_ids })}
+                  />
                 </div>
-                <p className="text-[11px] text-muted-foreground">{editing.line_ids.length} ligne(s) sélectionnée(s)</p>
+
+                {!editing.all_open_ofs && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium">OFs couverts</label>
+                    <div className="grid gap-1.5 max-h-56 overflow-auto p-2 border rounded bg-muted/20">
+                      {openOfs.length === 0 && (
+                        <p className="text-xs text-muted-foreground">Aucun OF en cours actuellement.</p>
+                      )}
+                      {openOfs.map((o) => (
+                        <label key={o.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editing.of_ids.includes(o.id)}
+                            onChange={() => toggleOf(o.id)}
+                          />
+                          <span className="font-mono">{o.numero}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {o.line?.code ? `· ${o.line.code}` : ""}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">{editing.of_ids.length} OF(s) sélectionné(s)</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

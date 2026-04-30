@@ -1179,6 +1179,10 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 | `notification_rules` | Règles configurables par évènement (canaux, sévérité, destinataires) |
 | `notification_email_log` | Journal des envois email (queued/sent/failed/skipped, déduplication 24 h) |
 | `app_settings` | Stockage clé/valeur (SMTP, flags globaux, secrets cron) |
+| `recipes`, `recipe_lines` | Recettes versionnées **unifiées** (composition matière + procédé, ex-BOM fusionnée) — colonnes `item_type`, `waste_percent`, `is_mandatory`, `is_quality_sensitive` |
+| `quality_units`, `quality_control_points`, `quality_nc_categories`, `quality_defect_types`, `quality_decision_reasons`, `quality_action_categories` | Référentiels Qualité paramétrables |
+| `quality_control_point_lines`, `quality_control_point_ofs` | Liaisons multi-lignes / multi-OF des points de contrôle |
+| `quality_checks`, `quality_non_conformities`, `quality_actions`, `quality_indicators`, `quality_indicator_assignments` | Données opérationnelles Qualité |
 
 ### 12.3 Triggers PostgreSQL clés
 

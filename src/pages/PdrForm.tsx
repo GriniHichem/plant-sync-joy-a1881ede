@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
+import { ExternalIdsCard } from "@/components/scanner/ExternalIdsCard";
 
 const APPRO_OPTIONS = [
   { value: "local", label: "Local" },
@@ -43,6 +44,7 @@ export default function PdrForm() {
     approvisionnement: "local",
     duree_vie_min_jours: null as number | null,
     duree_vie_max_jours: null as number | null,
+    code_erp: "", qr_code: "", code_barres: "",
   });
 
   useEffect(() => {
@@ -74,6 +76,9 @@ export default function PdrForm() {
             approvisionnement: (data as any).approvisionnement || "local",
             duree_vie_min_jours: (data as any).duree_vie_min_jours ?? null,
             duree_vie_max_jours: (data as any).duree_vie_max_jours ?? null,
+            code_erp: (data as any).code_erp || "",
+            qr_code: (data as any).qr_code || "",
+            code_barres: (data as any).code_barres || "",
           });
         }
       });
@@ -146,6 +151,9 @@ export default function PdrForm() {
       approvisionnement: form.approvisionnement,
       duree_vie_min_jours: form.duree_vie_min_jours || null,
       duree_vie_max_jours: form.duree_vie_max_jours || null,
+      code_erp: (form.code_erp || "").trim() || null,
+      qr_code: (form.qr_code || "").trim() || null,
+      code_barres: (form.code_barres || "").trim() || null,
     };
 
     let pdrId = id;

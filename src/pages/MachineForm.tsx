@@ -15,6 +15,7 @@ import { Constants } from "@/integrations/supabase/types";
 import { Badge } from "@/components/ui/badge";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { ExternalIdsCard } from "@/components/scanner/ExternalIdsCard";
 
 const ROLE_OPTIONS = [
   { value: "alimentation", label: "Alimentation" },
@@ -86,6 +87,8 @@ export default function MachineForm() {
     criticite_maintenance: "moyenne",
     impact_ligne: "aucun",
     disponibilite_pdr: "disponible",
+    code_erp: "",
+    qr_code: "",
   });
 
   useEffect(() => {
@@ -116,6 +119,8 @@ export default function MachineForm() {
             criticite_maintenance: (data as any).criticite_maintenance || "moyenne",
             impact_ligne: (data as any).impact_ligne || "aucun",
             disponibilite_pdr: (data as any).disponibilite_pdr || "disponible",
+            code_erp: (data as any).code_erp || "",
+            qr_code: (data as any).qr_code || "",
           });
         }
       });
@@ -159,6 +164,8 @@ export default function MachineForm() {
       criticite_maintenance: form.criticite_maintenance,
       impact_ligne: form.impact_ligne,
       disponibilite_pdr: form.disponibilite_pdr,
+      code_erp: form.code_erp.trim() || null,
+      qr_code: form.qr_code.trim() || null,
     };
 
     let machineId = id;
@@ -487,6 +494,12 @@ export default function MachineForm() {
               </CardContent>
             </Card>
           )}
+
+          <ExternalIdsCard
+            value={{ code_erp: (form as any).code_erp, qr_code: (form as any).qr_code }}
+            onChange={(v) => setForm({ ...form, code_erp: v.code_erp ?? "", qr_code: v.qr_code ?? "" } as any)}
+            fields={["code_erp", "qr_code"]}
+          />
         </div>
       </div>
     </div>

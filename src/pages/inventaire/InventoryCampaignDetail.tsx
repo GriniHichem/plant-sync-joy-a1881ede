@@ -43,7 +43,7 @@ export default function InventoryCampaignDetail() {
     setResults(map);
     setAssignments(((a as any) || []) as Assignment[]);
 
-    const ids = Array.from(new Set(((a as any) || []).map((x: any) => x.agent_id)));
+    const ids = Array.from(new Set(((a as any) || []).map((x: any) => x.agent_id as string))) as string[];
     if (ids.length > 0) {
       const { data: p } = await supabase.from("profiles").select("user_id,first_name,last_name").in("user_id", ids);
       const pm: Record<string, Profile> = {};

@@ -90,6 +90,11 @@ import QualiteRecettesNomenclatures from "@/pages/qualite/QualiteRecettesNomencl
 import QualiteTracabilite from "@/pages/qualite/QualiteTracabilite";
 import QualiteRapports from "@/pages/qualite/QualiteRapports";
 import QualiteShiftScreen from "@/pages/qualite/QualiteShiftScreen";
+import InventoryDashboard from "@/pages/inventaire/InventoryDashboard";
+import InventoryCampaignsList from "@/pages/inventaire/InventoryCampaignsList";
+import InventoryCampaignNew from "@/pages/inventaire/InventoryCampaignNew";
+import InventoryCampaignDetail from "@/pages/inventaire/InventoryCampaignDetail";
+import InventoryCountScreen from "@/pages/inventaire/InventoryCountScreen";
 import ProductionShiftDeclare from "@/pages/shift/ProductionShiftDeclare";
 import ProductionShiftStop from "@/pages/shift/ProductionShiftStop";
 import ProductionShiftTicket from "@/pages/shift/ProductionShiftTicket";
@@ -290,6 +295,12 @@ const App = () => (
               <Route path="/qualite/recettes-nomenclatures" element={<QualiteRecettesNomenclatures />} />
               <Route path="/qualite/tracabilite" element={<QualiteTracabilite />} />
               <Route path="/qualite/rapports" element={<QualiteRapports />} />
+              {/* Inventaire */}
+              <Route path="/inventaire" element={<InventoryDashboard />} />
+              <Route path="/inventaire/campagnes" element={<InventoryCampaignsList />} />
+              <Route path="/inventaire/campagnes/nouvelle" element={<InventoryCampaignNew />} />
+              <Route path="/inventaire/campagnes/:id" element={<InventoryCampaignDetail />} />
+              <Route path="/inventaire/compter/:campaignId" element={<InventoryCountScreen />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

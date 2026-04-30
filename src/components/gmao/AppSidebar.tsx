@@ -10,7 +10,7 @@ import {
   IconConsumption, IconStop, IconSettings, IconLogout,
   IconMaintenance, IconProduction,
 } from "@/components/icons/IndustrialIcons";
-import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer } from "lucide-react";
+import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -59,6 +59,11 @@ const qualiteItems = [
   { title: "Rapports", url: "/qualite/rapports", icon: FileText },
 ];
 
+const inventaireItems = [
+  { title: "Dashboard", url: "/inventaire", icon: IconDashboard },
+  { title: "Campagnes", url: "/inventaire/campagnes", icon: ClipboardList },
+];
+
 const adminItems = [
   { title: "Sécurité & Accès", url: "/securite", icon: Lock },
   { title: "Validations", url: "/validations", icon: CheckSquare },
@@ -79,7 +84,11 @@ export function AppSidebar() {
   const isGpaoActive = gpaoItems.some((i) => isActive(i.url));
   const isQualiteActive = qualiteItems.some((i) => isActive(i.url));
   const isAdminActive = adminItems.some((i) => isActive(i.url));
+  const isInventaireActive = inventaireItems.some((i) => isActive(i.url));
   const showQualite = canView("qualite");
+  const showInventaire = roles.includes("admin" as any)
+    || roles.includes("responsable_inventaire" as any)
+    || roles.includes("agent_inventaire" as any);
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"
@@ -177,6 +186,13 @@ export function AppSidebar() {
           <>
             <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
             {renderGroup("Qualité", ShieldCheck, qualiteItems, isQualiteActive)}
+          </>
+        )}
+
+        {showInventaire && (
+          <>
+            <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
+            {renderGroup("Inventaire", ClipboardList, inventaireItems, isInventaireActive)}
           </>
         )}
 

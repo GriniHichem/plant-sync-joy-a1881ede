@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, X, ScanLine } from "lucide-react";
+import { ScannerDialog } from "@/components/scanner/ScannerDialog";
 
 import {
   CommandDialog,
@@ -119,6 +120,8 @@ export function GlobalSearchPalette({ open, onOpenChange }: GlobalSearchPaletteP
     navigate(`/recherche?${params.toString()}`);
   };
 
+  const [scanOpen, setScanOpen] = useState(false);
+
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <div className="relative">
@@ -129,8 +132,17 @@ export function GlobalSearchPalette({ open, onOpenChange }: GlobalSearchPaletteP
           placeholder='Rechercher partout… (ex: "fuite huile", module:tickets crit:A)'
         />
         {(isFetching || isDebouncing) && (
-          <Loader2 className="absolute right-9 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="absolute right-16 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
         )}
+        <button
+          type="button"
+          onClick={() => setScanOpen(true)}
+          className="absolute right-9 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          aria-label="Scanner un code"
+          title="Scanner un QR ou un code-barres"
+        >
+          <ScanLine className="h-4 w-4" />
+        </button>
         {query && (
           <button
             type="button"
@@ -142,6 +154,16 @@ export function GlobalSearchPalette({ open, onOpenChange }: GlobalSearchPaletteP
           </button>
         )}
       </div>
+
+      <ScannerDialog
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onResolved={(r) => {
+          if (r.url) { onOpenChange(false); navigate(r.url); }
+        }}
+        onRawValue={(raw) => { setQuery(raw); }}
+        title="Scanner pour ouvrir une fiche"
+      />
 
       <CommandList className="max-h-[480px]">
         {/* Recherches récentes */}

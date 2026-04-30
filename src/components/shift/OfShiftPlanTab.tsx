@@ -114,6 +114,8 @@ export function OfShiftPlanTab({ ofId, ofStatut, autoGenerate, ofCreatedBy, onCh
           .eq("id", ofId);
         if (error) throw error;
         await logAudit({
+          action_type: "update",
+          module: "of",
           action: "of_auto_generate_shifts_toggled",
           entity_type: "ordres_fabrication",
           entity_id: ofId,
@@ -151,6 +153,8 @@ export function OfShiftPlanTab({ ofId, ofStatut, autoGenerate, ofCreatedBy, onCh
       }
 
       await logAudit({
+        action_type: "update",
+        module: "of",
         action: "of_shift_plan_updated",
         entity_type: "ordres_fabrication",
         entity_id: ofId,

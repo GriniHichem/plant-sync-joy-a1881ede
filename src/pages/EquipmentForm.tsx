@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save } from "lucide-react";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { ExternalIdsCard } from "@/components/scanner/ExternalIdsCard";
 
 const TYPE_OPTIONS = [
   { value: "capteur", label: "Capteur" },
@@ -70,6 +71,8 @@ interface FormState {
   criticite: string;
   criticite_maintenance: string;
   role_fonctionnel: string;
+  code_erp: string;
+  qr_code: string;
 }
 
 const INITIAL: FormState = {
@@ -78,6 +81,7 @@ const INITIAL: FormState = {
   marque: "", modele: "", numero_serie: "", localisation: "",
   date_mise_en_service: "", criticite: "C", criticite_maintenance: "moyenne",
   role_fonctionnel: "autre",
+  code_erp: "", qr_code: "",
 };
 
 export default function EquipmentForm() {
@@ -124,6 +128,8 @@ export default function EquipmentForm() {
             criticite: data.criticite,
             criticite_maintenance: data.criticite_maintenance || "moyenne",
             role_fonctionnel: data.role_fonctionnel || "autre",
+            code_erp: (data as any).code_erp || "",
+            qr_code: (data as any).qr_code || "",
           });
         }
       }
@@ -164,7 +170,9 @@ export default function EquipmentForm() {
       criticite: form.criticite as any,
       criticite_maintenance: form.criticite_maintenance as any,
       role_fonctionnel: form.role_fonctionnel as any,
-    };
+      code_erp: form.code_erp.trim() || null,
+      qr_code: form.qr_code.trim() || null,
+    } as any;
 
     const { error } = isEdit
       ? await supabase.from("equipements").update(payload).eq("id", id)

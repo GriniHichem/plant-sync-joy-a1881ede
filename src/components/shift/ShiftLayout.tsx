@@ -20,7 +20,7 @@ const ACCENTS: Record<ShiftKind, string> = {
 };
 
 export function ShiftLayout({ children }: { children: ReactNode }) {
-  const { kind, productionShift, qualityShift } = useActiveShift();
+  const { kind, productionShift, maintenanceShift, qualityShift } = useActiveShift();
   const navigate = useNavigate();
   const [fullscreen, setFullscreen] = useState(false);
   const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
@@ -51,6 +51,7 @@ export function ShiftLayout({ children }: { children: ReactNode }) {
 
   const startedAt =
     kind === "production" ? productionShift?.heure_debut :
+    kind === "maintenance" ? maintenanceShift?.heure_debut :
     kind === "quality" ? qualityShift?.heure_debut : null;
 
   const elapsedLabel = (() => {
@@ -64,6 +65,7 @@ export function ShiftLayout({ children }: { children: ReactNode }) {
 
   const teamLabel =
     kind === "production" ? productionShift?.team?.code :
+    kind === "maintenance" ? maintenanceShift?.team?.code :
     kind === "quality" ? qualityShift?.team?.code : null;
 
   return (

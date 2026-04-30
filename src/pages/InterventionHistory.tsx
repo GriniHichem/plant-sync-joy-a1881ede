@@ -353,8 +353,90 @@ export default function InterventionHistory() {
               </SelectContent>
             </Select>
 
+            {/* Date range */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("h-9 justify-start text-left font-normal text-xs", !dateFrom && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                  {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: fr }) : "Du"}
+                  {dateFrom && (
+                    <X
+                      className="ml-auto h-3 w-3 hover:text-foreground"
+                      onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={setDateFrom}
+                  disabled={(d) => (dateTo ? d > dateTo : false)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("h-9 justify-start text-left font-normal text-xs", !dateTo && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                  {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: fr }) : "Au"}
+                  {dateTo && (
+                    <X
+                      className="ml-auto h-3 w-3 hover:text-foreground"
+                      onClick={(e) => { e.stopPropagation(); setDateTo(undefined); }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={setDateTo}
+                  disabled={(d) => (dateFrom ? d < dateFrom : false)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Sort + reset row */}
+          <div className="flex items-center gap-2 flex-wrap pt-1">
+            <span className="text-xs text-muted-foreground mr-1">Trier par :</span>
+            {([
+              { f: "date" as const, label: "Date" },
+              { f: "machine" as const, label: "Machine" },
+              { f: "duration" as const, label: "Temps d'intervention" },
+            ]).map(({ f, label }) => {
+              const active = sortField === f;
+              return (
+                <Button
+                  key={f}
+                  variant={active ? "secondary" : "outline"}
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                  onClick={() => toggleSort(f)}
+                >
+                  {label}
+                  {active && (sortDir === "asc"
+                    ? <ArrowUp className="ml-1 h-3 w-3" />
+                    : <ArrowDown className="ml-1 h-3 w-3" />)}
+                </Button>
+              );
+            })}
             {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={resetFilters} className="h-9 px-3 text-muted-foreground">
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 px-3 text-muted-foreground ml-auto">
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Réinitialiser
               </Button>
             )}

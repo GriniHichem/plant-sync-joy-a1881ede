@@ -111,9 +111,11 @@ export function ShiftLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 px-3 md:px-6 py-4 md:py-6 max-w-7xl w-full mx-auto">
+      <main className="flex-1 px-3 md:px-6 py-4 md:py-6 pb-20 max-w-7xl w-full mx-auto">
         {children}
       </main>
+
+      <ShiftDock />
     </div>
   );
 }

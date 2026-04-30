@@ -31,6 +31,7 @@ const gmaoItems = [
   { title: "Préventif", url: "/preventif", icon: IconPreventive },
   { title: "Shift", url: "/maintenance/shift", icon: IconShift },
   { title: "Journal", url: "/maintenance/journal", icon: IconMaintenance },
+  { title: "Historique", url: "/maintenance/historique", icon: IconMaintenance },
   { title: "Analyse & KPI", url: "/analytics", icon: IconAnalytics },
 ];
 

@@ -94,6 +94,12 @@ export default function InterventionHistory() {
   const [filterMachine, setFilterMachine] = useState(ANY);
   const [filterLine, setFilterLine] = useState(ANY);
   const [filterTicket, setFilterTicket] = useState(ANY);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+
+  // Sort
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   // Data
   const [rows, setRows] = useState<InterventionRow[]>([]);
@@ -140,9 +146,9 @@ export default function InterventionHistory() {
   // Reset to first page when filters change
   useEffect(() => {
     setPage(0);
-  }, [search, filterShift, filterMachine, filterLine, filterTicket]);
+  }, [search, filterShift, filterMachine, filterLine, filterTicket, dateFrom, dateTo, sortField, sortDir]);
 
-  // Load interventions with server-side pagination + filters
+  // Load interventions with server-side pagination + filters + sort
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -157,21 +163,46 @@ export default function InterventionHistory() {
              machines(id, code, designation)
            )`,
           { count: "exact" },
-        )
-        .order("date_debut", { ascending: false, nullsFirst: false });
+        );
+
+      // Sorting
+      const ascending = sortDir === "asc";
+      if (sortField === "date") {
+        q = q.order("date_debut", { ascending, nullsFirst: false });
+      } else if (sortField === "duration") {
+        // Sort by ticket.temps_intervention_minutes (foreign table column)
+        q = q.order("temps_intervention_minutes", {
+          ascending,
+          nullsFirst: false,
+          foreignTable: "ticket",
+        });
+      } else if (sortField === "machine") {
+        // Sort by machine code via the joined machines relation
+        q = q.order("code", { ascending, nullsFirst: false, foreignTable: "ticket.machines" });
+      }
 
       if (filterTicket !== ANY) q = q.eq("ticket_id", filterTicket);
       if (filterShift !== ANY) q = q.eq("ticket.shift_id", filterShift);
       if (filterMachine !== ANY) q = q.eq("ticket.machine_id", filterMachine);
       if (filterLine !== ANY) q = q.eq("ticket.ligne_id", filterLine);
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        from.setHours(0, 0, 0, 0);
+        q = q.gte("date_debut", from.toISOString());
+      }
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        q = q.lte("date_debut", to.toISOString());
+      }
       if (search.trim()) {
         const s = `%${search.trim()}%`;
         q = q.or(`description.ilike.${s},ticket.numero.ilike.${s}`);
       }
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data, count, error } = await q.range(from, to);
+      const fromIdx = page * PAGE_SIZE;
+      const toIdx = fromIdx + PAGE_SIZE - 1;
+      const { data, count, error } = await q.range(fromIdx, toIdx);
       if (cancelled) return;
       if (error) {
         console.error("[InterventionHistory] load error", error);
@@ -186,7 +217,7 @@ export default function InterventionHistory() {
     return () => {
       cancelled = true;
     };
-  }, [page, search, filterShift, filterMachine, filterLine, filterTicket]);
+  }, [page, search, filterShift, filterMachine, filterLine, filterTicket, dateFrom, dateTo, sortField, sortDir]);
 
   const lineMap = useMemo(() => {
     const m: Record<string, string> = {};

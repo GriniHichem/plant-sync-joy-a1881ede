@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ExternalIdsCard } from "@/components/scanner/ExternalIdsCard";
 
 export default function OrganeForm() {
   const { id } = useParams();
@@ -31,6 +32,7 @@ export default function OrganeForm() {
     machine_id: params.get("machine_id") || "",
     equipement_id: params.get("equipement_id") || "",
     sort_order: 0,
+    code_erp: "", qr_code: "", code_barres: "",
   });
 
   useEffect(() => {
@@ -48,6 +50,7 @@ export default function OrganeForm() {
         type: d.type, statut: d.statut, criticite: d.criticite,
         machine_id: d.machine_id || "", equipement_id: d.equipement_id || "",
         sort_order: d.sort_order || 0,
+        code_erp: d.code_erp || "", qr_code: d.qr_code || "", code_barres: d.code_barres || "",
       });
       setParentKind(d.machine_id ? "machine" : "equipement");
     });
@@ -72,6 +75,9 @@ export default function OrganeForm() {
       machine_id: parentKind === "machine" ? form.machine_id : null,
       equipement_id: parentKind === "equipement" ? form.equipement_id : null,
       sort_order: Number(form.sort_order) || 0,
+      code_erp: form.code_erp.trim() || null,
+      qr_code: form.qr_code.trim() || null,
+      code_barres: form.code_barres.trim() || null,
     };
 
     const res = isEdit
@@ -166,6 +172,11 @@ export default function OrganeForm() {
           <div className="md:col-span-2"><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
         </CardContent>
       </Card>
+
+      <ExternalIdsCard
+        value={{ code_erp: form.code_erp, qr_code: form.qr_code, code_barres: form.code_barres }}
+        onChange={(v) => setForm({ ...form, code_erp: v.code_erp ?? "", qr_code: v.qr_code ?? "", code_barres: v.code_barres ?? "" })}
+      />
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={() => navigate(-1)}>Annuler</Button>

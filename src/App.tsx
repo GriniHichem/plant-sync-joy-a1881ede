@@ -108,6 +108,8 @@ const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();
+  const { isInventoryOnly } = useInventoryPermissions();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -121,6 +123,22 @@ function ProtectedRoutes() {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+
+  // Inventory-only users → isolated kiosk layout, restricted to inventaire / pdr / organes
+  if (isInventoryOnly) {
+    const p = location.pathname;
+    const allowed =
+      p === "/" ||
+      p.startsWith("/inventaire") ||
+      p.startsWith("/pdr") ||
+      p.startsWith("/organes");
+    if (!allowed) return <Navigate to="/inventaire" replace />;
+    return (
+      <GlobalSearchProvider>
+        <InventoryLayout />
+      </GlobalSearchProvider>
+    );
+  }
 
   return (
     <GlobalSearchProvider>

@@ -97,7 +97,11 @@ But : donner aux responsables une **vue temps réel** de leurs équipes en shift
    - Vérifier que `resp_production`, `resp_maintenance`, `resp_controle_qualite` ont bien `can_create` sur les tables shift correspondantes ; mise à jour `RolesMatrix` si besoin.
    - Toute ouverture/clôture/forçage logguée dans `audit_logs` avec `reason` obligatoire pour les forçages.
 
-**Livrables Phase 3** : supervision live, clôture contrôlée, bilan imprimable HTML, notifications + audit alignés.
+**Livrables Phase 3 (✅ FAIT)** : supervision live, clôture contrôlée, bilan imprimable HTML, notifications shift.
+- `useShiftSessionStats` + `ShiftSessionLiveStats` : KPIs par session avec realtime sur tables filles (déclarations/arrêts/tickets/interventions/contrôles/NC).
+- `ShiftSummaryDialog` : bilan imprimable HTML via `window.print` dans popup (pas de jsPDF).
+- Trigger SQL `notify_shift_event` sur `shifts`/`maintenance_shifts`/`quality_shifts` : notifie l'opérateur à l'ouverture, le responsable à la clôture, et l'opérateur si clôture forcée.
+- Console enrichie : bouton "Bilan" sur chaque session, force-close motivé, realtime sur la liste.
 
 ---
 

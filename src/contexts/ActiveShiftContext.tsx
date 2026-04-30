@@ -1,12 +1,14 @@
 import { createContext, useContext, ReactNode } from "react";
 import { useActiveProductionShift, ActiveProductionShift } from "@/hooks/useActiveProductionShift";
 import { useActiveQualityShift, ActiveQualityShift } from "@/hooks/useActiveQualityShift";
+import { useActiveMaintenanceShift, ActiveMaintenanceShift } from "@/hooks/useActiveMaintenanceShift";
 
 export type ShiftKind = "production" | "maintenance" | "quality";
 
 interface ActiveShiftContextValue {
   kind: ShiftKind;
   productionShift: ActiveProductionShift | null;
+  maintenanceShift: ActiveMaintenanceShift | null;
   qualityShift: ActiveQualityShift | null;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -21,17 +23,19 @@ export function useActiveShift() {
 }
 
 export function ActiveShiftProvider({ kind, children }: { kind: ShiftKind; children: ReactNode }) {
-  // For maintenance, we don't open a DB shift — we derive context from user assignments at runtime.
   const prod = useActiveProductionShift();
+  const maint = useActiveMaintenanceShift();
   const qual = useActiveQualityShift();
 
   const loading =
     (kind === "production" && prod.loading) ||
+    (kind === "maintenance" && maint.loading) ||
     (kind === "quality" && qual.loading) ||
     false;
 
   const refresh = async () => {
     if (kind === "production") await prod.refresh();
+    if (kind === "maintenance") await maint.refresh();
     if (kind === "quality") await qual.refresh();
   };
 
@@ -40,6 +44,7 @@ export function ActiveShiftProvider({ kind, children }: { kind: ShiftKind; child
       value={{
         kind,
         productionShift: prod.shift,
+        maintenanceShift: maint.shift,
         qualityShift: qual.shift,
         loading,
         refresh,

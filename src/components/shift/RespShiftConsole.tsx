@@ -212,6 +212,8 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
           .single();
         if (error) throw error;
         await logAudit({
+          action_type: "create",
+          module: "gpao",
           action: "shift_open_for_user",
           entity_type: "shifts",
           entity_id: data.id,
@@ -234,6 +236,8 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
           .single();
         if (error) throw error;
         await logAudit({
+          action_type: "create",
+          module: "interventions",
           action: "maintenance_shift_open",
           entity_type: "maintenance_shifts",
           entity_id: (data as any).id,
@@ -264,6 +268,8 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
           await supabase.from("quality_shift_lines" as any).insert(linkRows);
         }
         await logAudit({
+          action_type: "create",
+          module: "system",
           action: "quality_shift_open",
           entity_type: "quality_shifts",
           entity_id: qsId,
@@ -299,11 +305,13 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
         .eq("id", session.id);
       if (error) throw error;
       await logAudit({
+        action_type: "update",
+        module: kind === "production" ? "gpao" : kind === "maintenance" ? "interventions" : "system",
         action: "shift_force_close",
         entity_type: tableName,
         entity_id: session.id,
-        description: `Clôture forcée de la session shift ${kind}`,
-        reason,
+        description: `Clôture forcée de la session shift ${kind} — motif: ${reason}`,
+        metadata: { reason },
       });
       toast({ title: "Session clôturée" });
       loadSessions();

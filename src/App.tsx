@@ -159,18 +159,18 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            {/* Isolated shift apps — kiosk-style, no global sidebar */}
-            {/* Production */}
-            <Route path="/gpao/shift" element={<ProtectedShiftRoute kind="production" allowWithoutShift><ShiftScreen /></ProtectedShiftRoute>} />
+            {/* Isolated kiosk shift apps — no global sidebar (operator-only) */}
+            {/* Production kiosk */}
+            <Route path="/gpao/shift/live" element={<ProtectedShiftRoute kind="production" allowWithoutShift><ShiftScreen /></ProtectedShiftRoute>} />
             <Route path="/gpao/shift/declarer" element={<ProtectedShiftRoute kind="production"><ProductionShiftDeclare /></ProtectedShiftRoute>} />
             <Route path="/gpao/shift/arret" element={<ProtectedShiftRoute kind="production"><ProductionShiftStop /></ProtectedShiftRoute>} />
             <Route path="/gpao/shift/ticket" element={<ProtectedShiftRoute kind="production"><ProductionShiftTicket /></ProtectedShiftRoute>} />
-            {/* Maintenance */}
-            <Route path="/maintenance/shift" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenancierShiftView /></ProtectedShiftRoute>} />
+            {/* Maintenance kiosk */}
+            <Route path="/maintenance/shift/live" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenancierShiftView /></ProtectedShiftRoute>} />
             <Route path="/maintenance/shift/intervention" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenanceShiftIntervention /></ProtectedShiftRoute>} />
             <Route path="/maintenance/shift/intervention/:ticketId" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenanceShiftIntervention /></ProtectedShiftRoute>} />
-            {/* Quality */}
-            <Route path="/qualite/shift" element={<ProtectedShiftRoute kind="quality" allowWithoutShift><QualiteShiftScreen /></ProtectedShiftRoute>} />
+            {/* Quality kiosk */}
+            <Route path="/qualite/shift/live" element={<ProtectedShiftRoute kind="quality" allowWithoutShift><QualiteShiftScreen /></ProtectedShiftRoute>} />
             <Route path="/qualite/shift/check" element={<ProtectedShiftRoute kind="quality"><QualityShiftCheck /></ProtectedShiftRoute>} />
             <Route path="/qualite/shift/nc" element={<ProtectedShiftRoute kind="quality"><QualityShiftNc /></ProtectedShiftRoute>} />
             <Route path="/qualite/shift/lignes" element={<ProtectedShiftRoute kind="quality"><QualityShiftLines /></ProtectedShiftRoute>} />

@@ -58,6 +58,7 @@ const MODULES: AppModule[] = [
   { title: "Actions qualité", description: "Plans d'actions correctives et préventives", url: "/qualite/actions", icon: Wrench as unknown as React.FC<{ size?: number; className?: string }>, category: "Qualité", permissionModule: "qualite", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
   { title: "Recettes & Nomenclatures", description: "Versions recettes et BOM côté qualité", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, category: "Qualité", permissionModule: "qualite", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
   { title: "Traçabilité", description: "Fiche traçabilité complète par OF", url: "/qualite/tracabilite", icon: GitBranch as unknown as React.FC<{ size?: number; className?: string }>, category: "Qualité", permissionModule: "qualite", accent: "from-teal-500/15 to-teal-500/5 text-teal-500" },
+  { title: "Shift contrôle", description: "Saisie temps réel par contrôleur qualité", url: "/qualite/shift", icon: IconShift, category: "Qualité", permissionModule: "qualite", badge: "Live", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
   { title: "Rapports qualité", description: "Conformité, NC, actions, théorique vs réel", url: "/qualite/rapports", icon: FileText as unknown as React.FC<{ size?: number; className?: string }>, category: "Qualité", permissionModule: "qualite", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
 
   // ===== Configuration =====

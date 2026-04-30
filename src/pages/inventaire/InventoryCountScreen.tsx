@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Lock, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Lock, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
 import { ScanButton } from "@/components/scanner/ScanButton";
 
 type Family = { id: string; name: string };
@@ -109,10 +109,20 @@ export default function InventoryCountScreen() {
 
       {active ? (
         <Card><CardContent className="p-4 space-y-3">
-          <div>
-            <div className="text-xs text-muted-foreground">Article</div>
-            <div className="font-mono">{active.entity_code}</div>
-            <div className="text-sm">{active.entity_label}</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-xs text-muted-foreground">Article</div>
+              <div className="font-mono">{active.entity_code}</div>
+              <div className="text-sm">{active.entity_label}</div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(`/pdr/${active.entity_id}`, "_blank", "noopener")}
+              title="Ouvrir la fiche (image, fournisseur, équivalences) dans un nouvel onglet"
+            >
+              <ExternalLink className="h-4 w-4 mr-1" />Fiche
+            </Button>
           </div>
           {isLocked ? (
             <div className="rounded-md border bg-muted/40 p-3 flex items-center gap-2 text-sm">

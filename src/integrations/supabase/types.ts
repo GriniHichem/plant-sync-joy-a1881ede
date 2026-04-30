@@ -4085,6 +4085,47 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_shift_assignments: {
+        Row: {
+          controller_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          line_ids: string[]
+          shift_team_id: string | null
+          shift_type: Database["public"]["Enums"]["shift_type"]
+          updated_at: string
+        }
+        Insert: {
+          controller_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          line_ids?: string[]
+          shift_team_id?: string | null
+          shift_type: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Update: {
+          controller_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          line_ids?: string[]
+          shift_team_id?: string | null
+          shift_type?: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_shift_assignments_shift_team_id_fkey"
+            columns: ["shift_team_id"]
+            isOneToOne: false
+            referencedRelation: "shift_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_shift_lines: {
         Row: {
           production_line_id: string
@@ -5279,6 +5320,7 @@ export type Database = {
       }
       ensure_my_production_shift_session: { Args: never; Returns: string }
       ensure_my_production_shifts: { Args: never; Returns: string[] }
+      ensure_my_quality_shifts: { Args: never; Returns: string[] }
       ensure_production_shift_session: {
         Args: { p_of_id: string }
         Returns: string

@@ -84,6 +84,7 @@ import QualiteActions from "@/pages/qualite/QualiteActions";
 import QualiteRecettesNomenclatures from "@/pages/qualite/QualiteRecettesNomenclatures";
 import QualiteTracabilite from "@/pages/qualite/QualiteTracabilite";
 import QualiteRapports from "@/pages/qualite/QualiteRapports";
+import QualiteShiftScreen from "@/pages/qualite/QualiteShiftScreen";
 
 const queryClient = new QueryClient();
 

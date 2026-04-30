@@ -674,6 +674,7 @@ export type Database = {
       equipements: {
         Row: {
           code: string
+          code_erp: string | null
           created_at: string
           criticite: Database["public"]["Enums"]["criticite"]
           criticite_maintenance:
@@ -691,6 +692,7 @@ export type Database = {
           marque: string | null
           modele: string | null
           numero_serie: string | null
+          qr_code: string | null
           role_fonctionnel:
             | Database["public"]["Enums"]["role_fonctionnel"]
             | null
@@ -701,6 +703,7 @@ export type Database = {
         }
         Insert: {
           code: string
+          code_erp?: string | null
           created_at?: string
           criticite?: Database["public"]["Enums"]["criticite"]
           criticite_maintenance?:
@@ -718,6 +721,7 @@ export type Database = {
           marque?: string | null
           modele?: string | null
           numero_serie?: string | null
+          qr_code?: string | null
           role_fonctionnel?:
             | Database["public"]["Enums"]["role_fonctionnel"]
             | null
@@ -728,6 +732,7 @@ export type Database = {
         }
         Update: {
           code?: string
+          code_erp?: string | null
           created_at?: string
           criticite?: Database["public"]["Enums"]["criticite"]
           criticite_maintenance?:
@@ -745,6 +750,7 @@ export type Database = {
           marque?: string | null
           modele?: string | null
           numero_serie?: string | null
+          qr_code?: string | null
           role_fonctionnel?:
             | Database["public"]["Enums"]["role_fonctionnel"]
             | null
@@ -1664,6 +1670,7 @@ export type Database = {
         Row: {
           caracteristiques_techniques: Json | null
           code: string
+          code_barres: string | null
           code_erp: string | null
           code_immobilisation: string | null
           commentaire_technique: string | null
@@ -1699,6 +1706,7 @@ export type Database = {
           poids: number | null
           pression: number | null
           puissance: number | null
+          qr_code: string | null
           reference_constructeur: string | null
           search_vector: unknown
           sort_order: number
@@ -1716,6 +1724,7 @@ export type Database = {
         Insert: {
           caracteristiques_techniques?: Json | null
           code: string
+          code_barres?: string | null
           code_erp?: string | null
           code_immobilisation?: string | null
           commentaire_technique?: string | null
@@ -1751,6 +1760,7 @@ export type Database = {
           poids?: number | null
           pression?: number | null
           puissance?: number | null
+          qr_code?: string | null
           reference_constructeur?: string | null
           search_vector?: unknown
           sort_order?: number
@@ -1768,6 +1778,7 @@ export type Database = {
         Update: {
           caracteristiques_techniques?: Json | null
           code?: string
+          code_barres?: string | null
           code_erp?: string | null
           code_immobilisation?: string | null
           commentaire_technique?: string | null
@@ -1803,6 +1814,7 @@ export type Database = {
           poids?: number | null
           pression?: number | null
           puissance?: number | null
+          qr_code?: string | null
           reference_constructeur?: string | null
           search_vector?: unknown
           sort_order?: number
@@ -5289,6 +5301,17 @@ export type Database = {
       quality_shift_refresh_links: {
         Args: { p_quality_shift_id: string }
         Returns: number
+      }
+      resolve_scanned_code: {
+        Args: { p_code: string }
+        Returns: {
+          code: string
+          entity_id: string
+          entity_type: string
+          label: string
+          matched_field: string
+          url: string
+        }[]
       }
       search_suggest: {
         Args: { max_results?: number; q: string }

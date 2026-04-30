@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { OfStatusBadge } from "./GpaoDashboard";
-import { ArrowLeft, Play, CheckCircle, BarChart3, Package, AlertTriangle, Clock, Users, RefreshCw, History, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle, BarChart3, Package, AlertTriangle, Clock, Users, RefreshCw, History, ShieldCheck, CalendarClock } from "lucide-react";
+import { OfShiftPlanTab } from "@/components/shift/OfShiftPlanTab";
 import { useAuth } from "@/contexts/AuthContext";
 import OfQualityTab from "@/components/qualite/OfQualityTab";
 import { useToast } from "@/hooks/use-toast";
@@ -217,6 +218,7 @@ export default function OfDetail() {
       <Tabs defaultValue="shifts" className="space-y-4">
         <TabsList className="h-11 flex-wrap">
           <TabsTrigger value="shifts" className="h-9"><Users className="h-3.5 w-3.5 mr-1" /> Historique Shifts</TabsTrigger>
+          <TabsTrigger value="shift_plan" className="h-9"><CalendarClock className="h-3.5 w-3.5 mr-1" /> Plan Shifts</TabsTrigger>
           <TabsTrigger value="declarations" className="h-9"><BarChart3 className="h-3.5 w-3.5 mr-1" /> Production</TabsTrigger>
           <TabsTrigger value="consumptions" className="h-9"><Package className="h-3.5 w-3.5 mr-1" /> Consommations</TabsTrigger>
           <TabsTrigger value="stops" className="h-9"><AlertTriangle className="h-3.5 w-3.5 mr-1" /> Arrêts</TabsTrigger>
@@ -456,6 +458,17 @@ export default function OfDetail() {
               hasRole("admin") || hasRole("resp_production") || hasRole("chef_ligne") || hasRole("bureau_methode")
             }
             onChanged={load}
+          />
+        </TabsContent>
+
+        {/* === PLAN DE SHIFTS === */}
+        <TabsContent value="shift_plan">
+          <OfShiftPlanTab
+            ofId={of.id}
+            ofStatut={of.statut}
+            autoGenerate={of.auto_generate_shifts ?? true}
+            ofCreatedBy={of.created_by ?? null}
+            onChange={load}
           />
         </TabsContent>
       </Tabs>

@@ -35,6 +35,8 @@ export function useActiveProductionShift() {
       return;
     }
     setLoading(true);
+    // Auto-create today's session if user is assigned on an active OF for the current slot.
+    try { await supabase.rpc("ensure_my_production_shift_session" as any); } catch {}
     const today = new Date().toISOString().slice(0, 10);
     const { data } = await supabase
       .from("shifts")

@@ -1556,8 +1556,57 @@ export type Database = {
           },
         ]
       }
+      of_shift_assignments: {
+        Row: {
+          chef_ligne_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          of_id: string
+          shift_team_id: string
+          shift_type: Database["public"]["Enums"]["shift_type"]
+          updated_at: string
+        }
+        Insert: {
+          chef_ligne_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          of_id: string
+          shift_team_id: string
+          shift_type: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Update: {
+          chef_ligne_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          of_id?: string
+          shift_team_id?: string
+          shift_type?: Database["public"]["Enums"]["shift_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "of_shift_assignments_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "of_shift_assignments_shift_team_id_fkey"
+            columns: ["shift_team_id"]
+            isOneToOne: false
+            referencedRelation: "shift_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordres_fabrication: {
         Row: {
+          auto_generate_shifts: boolean
           bom_id: string | null
           created_at: string
           created_by: string | null
@@ -1584,6 +1633,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_generate_shifts?: boolean
           bom_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1610,6 +1660,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_generate_shifts?: boolean
           bom_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -5221,6 +5272,15 @@ export type Database = {
       check_permission: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
+      }
+      derive_shift_type_from_now: {
+        Args: never
+        Returns: Database["public"]["Enums"]["shift_type"]
+      }
+      ensure_my_production_shift_session: { Args: never; Returns: string }
+      ensure_production_shift_session: {
+        Args: { p_of_id: string }
+        Returns: string
       }
       fts_build: { Args: { parts: string[] }; Returns: unknown }
       get_quality_indicators_for_of: {

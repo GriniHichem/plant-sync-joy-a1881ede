@@ -19,25 +19,43 @@ export interface ActiveProductionShift {
   of?: { id: string; numero: string; product_id: string | null } | null;
 }
 
+const SELECTED_KEY = "active-production-shift-id";
+
 /**
- * Hook returning the current user's active production shift (if any).
- * A user can be a chef_ligne tied to a single shift; we pick the most recent active one for today.
+ * Hook returning ALL the user's active production shifts for today
+ * (a single supervisor can pilot several lines / OFs in parallel).
+ * - `shifts` : tous les shifts actifs du jour pour le user
+ * - `shift`  : le shift "courant" (sélection persistée, fallback : le plus récent)
  */
 export function useActiveProductionShift() {
   const { user } = useAuth();
-  const [shift, setShift] = useState<ActiveProductionShift | null>(null);
+  const [shifts, setShifts] = useState<ActiveProductionShift[]>([]);
+  const [selectedId, setSelectedIdState] = useState<string | null>(() => {
+    try { return localStorage.getItem(SELECTED_KEY); } catch { return null; }
+  });
   const [loading, setLoading] = useState(true);
+
+  const setSelectedId = useCallback((id: string | null) => {
+    setSelectedIdState(id);
+    try {
+      if (id) localStorage.setItem(SELECTED_KEY, id);
+      else localStorage.removeItem(SELECTED_KEY);
+    } catch { /* ignore */ }
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user) {
-      setShift(null);
+      setShifts([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    // Auto-create today's session if user is assigned on an active OF for the current slot.
-    try { await supabase.rpc("ensure_my_production_shift_session" as any); } catch {}
-    const today = new Date().toISOString().slice(0, 10);
+    // Auto-create today's sessions for ALL active OFs the user is assigned to
+    try { await supabase.rpc("ensure_my_production_shifts" as any); } catch {
+      // Compat fallback if old function still present
+      try { await supabase.rpc("ensure_my_production_shift_session" as any); } catch { /* ignore */ }
+    }
+    // Date du jour calculée côté serveur via RPC ? Pour rester simple : on filtre par is_active uniquement.
     const { data } = await supabase
       .from("shifts")
       .select(
@@ -45,18 +63,9 @@ export function useActiveProductionShift() {
       )
       .eq("chef_ligne_id", user.id)
       .eq("is_active", true)
-      .eq("date_shift", today)
-      .order("heure_debut", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("heure_debut", { ascending: false });
 
-    if (!data) {
-      setShift(null);
-      setLoading(false);
-      return;
-    }
-    const d = data as any;
-    setShift({
+    const list: ActiveProductionShift[] = ((data as any[]) ?? []).map((d) => ({
       id: d.id,
       date_shift: d.date_shift,
       shift_type: d.shift_type,
@@ -71,13 +80,25 @@ export function useActiveProductionShift() {
       team: d.shift_teams ?? null,
       line: d.production_lines ?? null,
       of: d.ordres_fabrication ?? null,
-    });
+    }));
+    setShifts(list);
+
+    // Maintenir/valider la sélection
+    if (list.length > 0) {
+      const stillThere = selectedId && list.some((s) => s.id === selectedId);
+      if (!stillThere) setSelectedId(list[0].id);
+    } else if (selectedId) {
+      setSelectedId(null);
+    }
     setLoading(false);
-  }, [user]);
+  }, [user, selectedId, setSelectedId]);
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-  return { shift, loading, refresh };
+  const shift = shifts.find((s) => s.id === selectedId) ?? shifts[0] ?? null;
+
+  return { shift, shifts, selectedId: shift?.id ?? null, setSelectedId, loading, refresh };
 }

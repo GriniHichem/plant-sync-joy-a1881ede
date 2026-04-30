@@ -6,6 +6,7 @@ import { LogOut, Maximize2, Minimize2, Wifi, WifiOff } from "lucide-react";
 import { useActiveShift, ShiftKind } from "@/contexts/ActiveShiftContext";
 import { ShiftDock } from "@/components/shift/ShiftDock";
 import { CloseShiftButton } from "@/components/shift/CloseShiftButton";
+import { ActiveShiftSwitcher } from "@/components/shift/ActiveShiftSwitcher";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 
 const TITLES: Record<ShiftKind, string> = {
@@ -90,6 +91,7 @@ export function ShiftLayout({ children }: { children: ReactNode }) {
             {elapsedLabel && (
               <Badge variant="outline" className="text-xs tabular-nums">{elapsedLabel}</Badge>
             )}
+            <ActiveShiftSwitcher />
           </div>
 
           <div className="flex-1" />

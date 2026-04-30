@@ -8,8 +8,12 @@ export type ShiftKind = "production" | "maintenance" | "quality";
 interface ActiveShiftContextValue {
   kind: ShiftKind;
   productionShift: ActiveProductionShift | null;
+  productionShifts: ActiveProductionShift[];
+  setProductionShiftId: (id: string | null) => void;
   maintenanceShift: ActiveMaintenanceShift | null;
   qualityShift: ActiveQualityShift | null;
+  qualityShifts: ActiveQualityShift[];
+  setQualityShiftId: (id: string | null) => void;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -44,8 +48,12 @@ export function ActiveShiftProvider({ kind, children }: { kind: ShiftKind; child
       value={{
         kind,
         productionShift: prod.shift,
+        productionShifts: prod.shifts,
+        setProductionShiftId: prod.setSelectedId,
         maintenanceShift: maint.shift,
         qualityShift: qual.shift,
+        qualityShifts: qual.shifts,
+        setQualityShiftId: qual.setSelectedId,
         loading,
         refresh,
       }}

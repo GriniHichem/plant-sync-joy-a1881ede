@@ -201,6 +201,7 @@ const App = () => (
               {/* Qualité & Traçabilité */}
               <Route path="/qualite" element={<QualiteDashboard />} />
               <Route path="/qualite/of" element={<QualiteOf />} />
+              <Route path="/qualite/shift" element={<QualiteShiftScreen />} />
               <Route path="/qualite/indicateurs" element={<QualiteIndicateurs />} />
               <Route path="/qualite/controles" element={<QualiteControles />} />
               <Route path="/qualite/non-conformites" element={<QualiteNonConformites />} />

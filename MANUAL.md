@@ -861,8 +861,34 @@ L'administration est organisée en **4 pôles** :
 | **Media / Images** (`/parametres/images`) | Taille maximale d'image (Mo) |
 | **Notifications** (`/parametres/notifications`) | Règles de notifications par module (sévérité, canaux, destinataires) |
 | **SMTP & Emails** (`/parametres/smtp`) | Configuration du serveur SMTP self-hosted, test d'envoi, paramètres globaux email |
+| **Contrôle d'accès** (`/parametres/access-control`) | Hub : rôles, permissions Qualité, audit, kill-switches, export portabilité (JSON / migration SQL) |
+
+### 6.5 Paramétrage Qualité
+
+**Route hub** : `/parametres/qualite` — centralise tous les référentiels du module Qualité.
+
+| Page | Route | Description |
+|------|-------|-------------|
+| **Hub Qualité** | `/parametres/qualite` | Tuiles d'accès aux référentiels qualité |
+| **Unités de mesure** | `/parametres/qualite/units` | Unités utilisées pour contrôles et indicateurs |
+| **Points de contrôle** | `/parametres/qualite/control-points` | Postes/étapes de contrôle, **scope** (`global` / `line` / `of` / `mixed`), liaisons multi-lignes et multi-OF |
+| **Catégories de NC** | `/parametres/qualite/nc-categories` | Catégorisation des non-conformités |
+| **Types de défauts** | `/parametres/qualite/defect-types` | Référentiel des défauts |
+| **Motifs de décision** | `/parametres/qualite/decision-reasons` | Justifications des décisions qualité |
+| **Catégories d'actions** | `/parametres/qualite/action-categories` | Catégories pour les actions correctives |
+
+**CRUD complet** sur chaque référentiel : ajout / édition / suppression, activation/désactivation inline, réordonnancement (sort_order), recherche.
+
+**Points de contrôle — architecture Master/Detail** :
+- Liste maîtresse avec compteurs de liaisons (lignes, OF) et badges de statut.
+- Panneau détail : métadonnées (code, libellé, ordre) + gestion des associations.
+- **Multi-lignes** : ajout via dropdown filtré.
+- **Multi-OF** : barre de recherche asynchrone avec toggle pour inclure les OF clôturés.
+- Tables de jointure : `quality_control_point_lines`, `quality_control_point_ofs`.
+- Permissions : mutation réservée à `admin`, `responsable_si` ou détenteurs de `manage_assignments` (Qualité).
 
 ---
+
 
 ## 6 bis. Notifications & Emails
 

@@ -348,6 +348,12 @@ export default function EquipmentForm() {
             </Button>
           </CardContent>
         </Card>
+
+        <ExternalIdsCard
+          value={{ code_erp: form.code_erp, qr_code: form.qr_code }}
+          onChange={(v) => setForm((f) => ({ ...f, code_erp: v.code_erp ?? "", qr_code: v.qr_code ?? "" }))}
+          fields={["code_erp", "qr_code"]}
+        />
       </div>
     </div>
   );

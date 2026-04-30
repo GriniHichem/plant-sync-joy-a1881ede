@@ -10,7 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  ArrowDown,
+  ArrowUp,
+  CalendarIcon,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -19,8 +24,12 @@ import {
   RotateCcw,
   Search,
   Wrench,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type SortField = "date" | "machine" | "duration";
+type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 20;
 const ANY = "__any__";

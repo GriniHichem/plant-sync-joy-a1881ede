@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
-import { Plus, Square, Clock, Loader2, RefreshCw, Users } from "lucide-react";
+import { Plus, Square, Clock, Loader2, RefreshCw, Users, FileText } from "lucide-react";
 import { logAudit } from "@/lib/audit";
+import { ShiftSessionLiveStats } from "@/components/shift/ShiftSessionLiveStats";
+import { ShiftSummaryDialog } from "@/components/shift/ShiftSummaryDialog";
 import type { ShiftKind } from "@/contexts/ActiveShiftContext";
 
 interface RespShiftConsoleProps {
@@ -54,6 +56,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [summarySession, setSummarySession] = useState<any | null>(null);
 
   // Form state
   const [operators, setOperators] = useState<any[]>([]);
@@ -388,39 +391,51 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
                 return (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between gap-3 p-3 border rounded-lg hover:bg-accent/30 transition"
+                    className="p-3 border rounded-lg hover:bg-accent/30 transition space-y-2"
                   >
-                    <div className="flex items-center gap-3 flex-wrap min-w-0">
-                      {s.is_active ? (
-                        <Badge variant="default" className="text-xs">
-                          <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse mr-1.5" />
-                          LIVE
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs">Clôturée</Badge>
-                      )}
-                      <div className="font-semibold text-sm">{operatorName}</div>
-                      {s.shift_teams && (
-                        <Badge variant="outline" className="text-xs">Équipe {s.shift_teams.code}</Badge>
-                      )}
-                      <Badge variant="outline" className="text-xs capitalize">{String(s.shift_type).replace("_", " ")}</Badge>
-                      {kind === "production" && s.production_lines && (
-                        <Badge variant="outline" className="text-xs">{s.production_lines.code}</Badge>
-                      )}
-                      {kind === "production" && s.ordres_fabrication && (
-                        <Badge variant="outline" className="text-xs">{s.ordres_fabrication.numero}</Badge>
-                      )}
-                      <div className="text-xs text-muted-foreground tabular-nums flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(s.heure_debut).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-3 flex-wrap min-w-0">
+                        {s.is_active ? (
+                          <Badge variant="default" className="text-xs">
+                            <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse mr-1.5" />
+                            LIVE
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">Clôturée</Badge>
+                        )}
+                        <div className="font-semibold text-sm">{operatorName}</div>
+                        {s.shift_teams && (
+                          <Badge variant="outline" className="text-xs">Équipe {s.shift_teams.code}</Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs capitalize">{String(s.shift_type).replace("_", " ")}</Badge>
+                        {kind === "production" && s.production_lines && (
+                          <Badge variant="outline" className="text-xs">{s.production_lines.code}</Badge>
+                        )}
+                        {kind === "production" && s.ordres_fabrication && (
+                          <Badge variant="outline" className="text-xs">{s.ordres_fabrication.numero}</Badge>
+                        )}
+                        <div className="text-xs text-muted-foreground tabular-nums flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(s.heure_debut).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                          {s.heure_fin && (
+                            <>→ {new Date(s.heure_fin).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => setSummarySession(s)}>
+                          <FileText className="h-3.5 w-3.5 mr-1.5" />
+                          Bilan
+                        </Button>
+                        {s.is_active && (
+                          <Button size="sm" variant="outline" onClick={() => handleForceClose(s)}>
+                            <Square className="h-3.5 w-3.5 mr-1.5" />
+                            Forcer clôture
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    {s.is_active && (
-                      <Button size="sm" variant="outline" onClick={() => handleForceClose(s)}>
-                        <Square className="h-3.5 w-3.5 mr-1.5" />
-                        Forcer clôture
-                      </Button>
-                    )}
+                    <ShiftSessionLiveStats kind={kind} sessionId={s.id} />
                   </div>
                 );
               })}

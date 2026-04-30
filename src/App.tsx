@@ -194,7 +194,15 @@ const App = () => (
               <Route path="/preventif/new" element={<PreventifForm />} />
               <Route path="/preventif/:id" element={<PreventifDetail />} />
               <Route path="/preventif/:id/edit" element={<PreventifForm />} />
-              {/* /maintenance/shift moved to isolated shift app (see ProtectedShiftRoute below) */}
+              {/* Maintenance shift home — managers see console, operators redirected to /maintenance/shift/live */}
+              <Route path="/maintenance/shift" element={
+                <ShiftHomePage
+                  kind="maintenance"
+                  operatorRedirect="/maintenance/shift/live"
+                  managerRoles={["admin", "resp_maintenance"]}
+                  operatorRoles={["maintenancier"]}
+                />
+              } />
               <Route path="/maintenance/journal" element={<InterventionJournal />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/equipements" element={<EquipmentsList />} />
@@ -217,7 +225,15 @@ const App = () => (
               <Route path="/gpao/produits/:id" element={<ProductDetail />} />
               <Route path="/gpao/articles" element={<ArticlesList />} />
               <Route path="/gpao/articles/:id" element={<ArticleDetail />} />
-              {/* /gpao/shift moved to isolated shift app (see ProtectedShiftRoute below) */}
+              {/* Production shift home — managers see console, operators redirected to /gpao/shift/live */}
+              <Route path="/gpao/shift" element={
+                <ShiftHomePage
+                  kind="production"
+                  operatorRedirect="/gpao/shift/live"
+                  managerRoles={["admin", "resp_production"]}
+                  operatorRoles={["chef_ligne", "operateur"]}
+                />
+              } />
               <Route path="/gpao/consommations" element={<ConsumptionPage />} />
               <Route path="/gpao/arrets" element={<StopsPage />} />
               <Route path="/gpao/recettes" element={<RecipesPage />} />

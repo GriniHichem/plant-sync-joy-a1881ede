@@ -19,6 +19,7 @@ import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
 import { parseDecimal } from "@/pages/qualite/QualiteIndicateurs";
 import { notifyCheckOutOfTolerance } from "@/lib/qualityNotifications";
+import { useActiveQualityShift } from "@/hooks/useActiveQualityShift";
 
 const ALL = "__all__";
 const NONE = "__none__";

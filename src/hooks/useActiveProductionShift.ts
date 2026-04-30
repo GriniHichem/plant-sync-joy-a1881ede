@@ -9,7 +9,7 @@ export interface ActiveProductionShift {
   shift_team_id: string | null;
   line_id: string | null;
   of_id: string | null;
-  chef_id: string | null;
+  chef_ligne_id: string | null;
   heure_debut: string;
   heure_fin: string | null;
   is_active: boolean;
@@ -41,7 +41,7 @@ export function useActiveProductionShift() {
       .select(
         "*, shift_teams(id, name, code, color), production_lines(id, code, designation), ordres_fabrication(id, numero, product_id)"
       )
-      .eq("chef_id", user.id)
+      .eq("chef_ligne_id", user.id)
       .eq("is_active", true)
       .eq("date_shift", today)
       .order("heure_debut", { ascending: false })
@@ -61,7 +61,7 @@ export function useActiveProductionShift() {
       shift_team_id: d.shift_team_id,
       line_id: d.line_id,
       of_id: d.of_id,
-      chef_id: d.chef_id,
+      chef_ligne_id: d.chef_ligne_id,
       heure_debut: d.heure_debut,
       heure_fin: d.heure_fin,
       is_active: d.is_active,

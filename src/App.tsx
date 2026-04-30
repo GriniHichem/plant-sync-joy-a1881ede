@@ -20,6 +20,7 @@ import PreventifForm from "@/pages/PreventifForm";
 import PreventifDetail from "@/pages/PreventifDetail";
 import MaintenancierShiftView from "@/pages/MaintenancierShiftView";
 import InterventionJournal from "@/pages/InterventionJournal";
+import InterventionHistory from "@/pages/InterventionHistory";
 import Parametres from "@/pages/Parametres";
 import UsersAdmin from "@/pages/parametres/UsersAdmin";
 import FamillesAdmin from "@/pages/parametres/FamillesAdmin";
@@ -204,6 +205,7 @@ const App = () => (
                 />
               } />
               <Route path="/maintenance/journal" element={<InterventionJournal />} />
+              <Route path="/maintenance/historique" element={<InterventionHistory />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/equipements" element={<EquipmentsList />} />
               <Route path="/equipements/new" element={<EquipmentForm />} />

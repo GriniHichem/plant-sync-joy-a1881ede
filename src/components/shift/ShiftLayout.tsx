@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { LogOut, Maximize2, Minimize2, Wifi, WifiOff } from "lucide-react";
 import { useActiveShift, ShiftKind } from "@/contexts/ActiveShiftContext";
 import { ShiftDock } from "@/components/shift/ShiftDock";
-import { ShiftQueueBadge } from "@/components/shift/ShiftQueueBadge";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 
 const TITLES: Record<ShiftKind, string> = {
@@ -93,7 +92,6 @@ export function ShiftLayout({ children }: { children: ReactNode }) {
           <div className="flex-1" />
 
           <div className="flex items-center gap-1.5">
-            <ShiftQueueBadge />
             {online ? (
               <Wifi className="h-4 w-4 text-success" aria-label="En ligne" />
             ) : (

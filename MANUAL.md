@@ -751,7 +751,33 @@ Depuis la version 2.2 du manuel, **les recettes de production et les nomenclatur
 
 ---
 
+### 4.9 Module Qualité
+
+**Route racine** : `/qualite`
+
+Module additif intégré aux OF et aux recettes unifiées.
+
+| Page | Route | Description |
+|------|-------|-------------|
+| Dashboard Qualité | `/qualite` | Vue d'ensemble KPI qualité |
+| Contrôles | `/qualite/controles` | Saisie et historique des contrôles |
+| Non-conformités | `/qualite/non-conformites` | Déclaration NC, catégories, gravité |
+| Actions correctives | `/qualite/actions` | Suivi des actions par catégorie |
+| Indicateurs | `/qualite/indicateurs` | Affectation et calcul des indicateurs |
+| OF Qualité | `/qualite/of` | Liste des OF avec onglet qualité |
+| Traçabilité | `/qualite/tracabilite` | Lots / composants sensibles par OF |
+| Recettes & Nomenclatures | `/qualite/recettes-nomenclatures` | Vue qualité (composants sensibles, comparaison versions) |
+| Rapports | `/qualite/rapports` | Exports Qualité |
+
+**Onglet Qualité d'un OF** (`OfQualityTab`) :
+- Section **« Recette suivie »** : version verrouillée + liste des composants `is_quality_sensitive`.
+- Saisie des contrôles aux **points de contrôle** rattachés à la ligne ou à l'OF.
+- Déclaration de non-conformités (catégories, motifs de décision, types de défauts paramétrables).
+
+---
+
 ## 5. Workflows transverses
+
 
 ### 5.1 Génération automatique de plan préventif depuis une PDR
 

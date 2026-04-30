@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, ListChecks, Ruler, MapPin, Bug, Gavel, ChevronRight, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, AlertTriangle, ListChecks, Ruler, MapPin, Bug, Gavel, ChevronRight, ClipboardCheck, CalendarClock } from "lucide-react";
 
 const ITEMS = [
   { title: "Catégories de non-conformité", description: "Familles pour classer les NC (produit, process, matière…)", icon: AlertTriangle, url: "/parametres/qualite/nc-categories" },
@@ -10,6 +10,7 @@ const ITEMS = [
   { title: "Points de contrôle", description: "Postes / stations où sont effectués les contrôles", icon: MapPin, url: "/parametres/qualite/control-points" },
   { title: "Types de défauts", description: "Catalogue des défauts avec gravité par défaut", icon: Bug, url: "/parametres/qualite/defect-types" },
   { title: "Motifs de décision NC", description: "Justifications pour rebut, retouche, dérogation…", icon: Gavel, url: "/parametres/qualite/decision-reasons" },
+  { title: "Plan shifts qualité", description: "Affecter les contrôleurs aux créneaux et lignes (auto-génération)", icon: CalendarClock, url: "/parametres/qualite/shift-plan" },
 ];
 
 export default function QualiteParametresHub() {

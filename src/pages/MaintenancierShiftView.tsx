@@ -1,7 +1,5 @@
-import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
 import { useNavWithFrom } from "@/hooks/useNavWithFrom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, ChevronRight, AlertTriangle, CalendarCheck, Factory, ShieldAlert, ClipboardCheck, Clock } from "lucide-react";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
+import { useMaintenanceShiftWorkload } from "@/hooks/useMaintenanceShiftWorkload";
 
 interface MachineGroup {
   machine: { id: string; code: string; designation: string };
@@ -59,47 +58,7 @@ function PriorityBadge({ priority }: { priority: string }) {
 export default function MaintenancierShiftView() {
   const { user } = useAuth();
   const navigate = useNavWithFrom();
-  const [plans, setPlans] = useState<any[]>([]);
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) return;
-    loadShiftTasks();
-  }, [user]);
-
-  const loadShiftTasks = async () => {
-    if (!user) return;
-    setLoading(true);
-
-    const { data: assignedPlanIds } = await supabase
-      .from("preventive_plan_assignees")
-      .select("plan_id")
-      .eq("user_id", user.id);
-
-    const planIds = (assignedPlanIds || []).map((a: any) => a.plan_id);
-
-    let loadedPlans: any[] = [];
-    if (planIds.length > 0) {
-      const { data } = await supabase
-        .from("preventive_plans")
-        .select("*, machines(id, code, designation), production_lines(id, code, designation)")
-        .in("id", planIds)
-        .eq("statut_plan", "valide")
-        .eq("is_active", true);
-      loadedPlans = data || [];
-    }
-
-    const { data: loadedTickets } = await supabase
-      .from("tickets")
-      .select("*, machines(id, code, designation), production_lines(id, code, designation)")
-      .in("statut", ["ouvert", "pris_en_charge"])
-      .or(`assignee_id.eq.${user.id},assignee_id.is.null`);
-
-    setPlans(loadedPlans);
-    setTickets(loadedTickets || []);
-    setLoading(false);
-  };
+  const { tickets, plans, loading, restrictedToShiftLines } = useMaintenanceShiftWorkload();
 
   // Collect all machine IDs for image fetching
   const allMachineIds = useMemo(() => {
@@ -248,6 +207,11 @@ export default function MaintenancierShiftView() {
           <p className="text-xs md:text-sm text-muted-foreground capitalize truncate">{today}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
+          {restrictedToShiftLines && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+              <Factory className="h-3 w-3" /> Filtré shift
+            </Badge>
+          )}
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
             <span className="text-xs font-medium tabular-nums">{tickets.length} curatif</span>

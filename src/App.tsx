@@ -77,6 +77,7 @@ import QualiteUnitsAdmin from "@/pages/parametres/qualite/QualiteUnitsAdmin";
 import QualiteControlPointsAdmin from "@/pages/parametres/qualite/QualiteControlPointsAdmin";
 import QualiteDefectTypesAdmin from "@/pages/parametres/qualite/QualiteDefectTypesAdmin";
 import QualiteDecisionReasonsAdmin from "@/pages/parametres/qualite/QualiteDecisionReasonsAdmin";
+import QualiteShiftPlanAdmin from "@/pages/parametres/qualite/QualiteShiftPlanAdmin";
 import SearchPage from "@/pages/SearchPage";
 import { GlobalSearchProvider } from "@/components/search/GlobalSearchProvider";
 import QualiteDashboard from "@/pages/qualite/QualiteDashboard";
@@ -268,6 +269,7 @@ const App = () => (
               <Route path="/parametres/qualite/control-points" element={<QualiteControlPointsAdmin />} />
               <Route path="/parametres/qualite/defect-types" element={<QualiteDefectTypesAdmin />} />
               <Route path="/parametres/qualite/decision-reasons" element={<QualiteDecisionReasonsAdmin />} />
+              <Route path="/parametres/qualite/shift-plan" element={<QualiteShiftPlanAdmin />} />
               <Route path="/recherche" element={<SearchPage />} />
               {/* Qualité & Traçabilité */}
               <Route path="/qualite" element={<QualiteDashboard />} />

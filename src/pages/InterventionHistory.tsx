@@ -10,7 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  ArrowDown,
+  ArrowUp,
+  CalendarIcon,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -19,8 +24,12 @@ import {
   RotateCcw,
   Search,
   Wrench,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type SortField = "date" | "machine" | "duration";
+type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 20;
 const ANY = "__any__";
@@ -85,6 +94,12 @@ export default function InterventionHistory() {
   const [filterMachine, setFilterMachine] = useState(ANY);
   const [filterLine, setFilterLine] = useState(ANY);
   const [filterTicket, setFilterTicket] = useState(ANY);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+
+  // Sort
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   // Data
   const [rows, setRows] = useState<InterventionRow[]>([]);
@@ -131,9 +146,9 @@ export default function InterventionHistory() {
   // Reset to first page when filters change
   useEffect(() => {
     setPage(0);
-  }, [search, filterShift, filterMachine, filterLine, filterTicket]);
+  }, [search, filterShift, filterMachine, filterLine, filterTicket, dateFrom, dateTo, sortField, sortDir]);
 
-  // Load interventions with server-side pagination + filters
+  // Load interventions with server-side pagination + filters + sort
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -148,21 +163,46 @@ export default function InterventionHistory() {
              machines(id, code, designation)
            )`,
           { count: "exact" },
-        )
-        .order("date_debut", { ascending: false, nullsFirst: false });
+        );
+
+      // Sorting
+      const ascending = sortDir === "asc";
+      if (sortField === "date") {
+        q = q.order("date_debut", { ascending, nullsFirst: false });
+      } else if (sortField === "duration") {
+        // Sort by ticket.temps_intervention_minutes (foreign table column)
+        q = q.order("temps_intervention_minutes", {
+          ascending,
+          nullsFirst: false,
+          foreignTable: "ticket",
+        });
+      } else if (sortField === "machine") {
+        // Sort by machine code via the joined machines relation
+        q = q.order("code", { ascending, nullsFirst: false, foreignTable: "ticket.machines" });
+      }
 
       if (filterTicket !== ANY) q = q.eq("ticket_id", filterTicket);
       if (filterShift !== ANY) q = q.eq("ticket.shift_id", filterShift);
       if (filterMachine !== ANY) q = q.eq("ticket.machine_id", filterMachine);
       if (filterLine !== ANY) q = q.eq("ticket.ligne_id", filterLine);
+      if (dateFrom) {
+        const from = new Date(dateFrom);
+        from.setHours(0, 0, 0, 0);
+        q = q.gte("date_debut", from.toISOString());
+      }
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        q = q.lte("date_debut", to.toISOString());
+      }
       if (search.trim()) {
         const s = `%${search.trim()}%`;
         q = q.or(`description.ilike.${s},ticket.numero.ilike.${s}`);
       }
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data, count, error } = await q.range(from, to);
+      const fromIdx = page * PAGE_SIZE;
+      const toIdx = fromIdx + PAGE_SIZE - 1;
+      const { data, count, error } = await q.range(fromIdx, toIdx);
       if (cancelled) return;
       if (error) {
         console.error("[InterventionHistory] load error", error);
@@ -177,7 +217,7 @@ export default function InterventionHistory() {
     return () => {
       cancelled = true;
     };
-  }, [page, search, filterShift, filterMachine, filterLine, filterTicket]);
+  }, [page, search, filterShift, filterMachine, filterLine, filterTicket, dateFrom, dateTo, sortField, sortDir]);
 
   const lineMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -191,7 +231,11 @@ export default function InterventionHistory() {
     filterShift !== ANY ||
     filterMachine !== ANY ||
     filterLine !== ANY ||
-    filterTicket !== ANY;
+    filterTicket !== ANY ||
+    !!dateFrom ||
+    !!dateTo ||
+    sortField !== "date" ||
+    sortDir !== "desc";
 
   function resetFilters() {
     setSearch("");
@@ -199,6 +243,19 @@ export default function InterventionHistory() {
     setFilterMachine(ANY);
     setFilterLine(ANY);
     setFilterTicket(ANY);
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setSortField("date");
+    setSortDir("desc");
+  }
+
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "machine" ? "asc" : "desc");
+    }
   }
 
   async function openAudit(row: InterventionRow) {
@@ -296,8 +353,90 @@ export default function InterventionHistory() {
               </SelectContent>
             </Select>
 
+            {/* Date range */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("h-9 justify-start text-left font-normal text-xs", !dateFrom && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                  {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: fr }) : "Du"}
+                  {dateFrom && (
+                    <X
+                      className="ml-auto h-3 w-3 hover:text-foreground"
+                      onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={setDateFrom}
+                  disabled={(d) => (dateTo ? d > dateTo : false)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("h-9 justify-start text-left font-normal text-xs", !dateTo && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                  {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: fr }) : "Au"}
+                  {dateTo && (
+                    <X
+                      className="ml-auto h-3 w-3 hover:text-foreground"
+                      onClick={(e) => { e.stopPropagation(); setDateTo(undefined); }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={setDateTo}
+                  disabled={(d) => (dateFrom ? d < dateFrom : false)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Sort + reset row */}
+          <div className="flex items-center gap-2 flex-wrap pt-1">
+            <span className="text-xs text-muted-foreground mr-1">Trier par :</span>
+            {([
+              { f: "date" as const, label: "Date" },
+              { f: "machine" as const, label: "Machine" },
+              { f: "duration" as const, label: "Temps d'intervention" },
+            ]).map(({ f, label }) => {
+              const active = sortField === f;
+              return (
+                <Button
+                  key={f}
+                  variant={active ? "secondary" : "outline"}
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                  onClick={() => toggleSort(f)}
+                >
+                  {label}
+                  {active && (sortDir === "asc"
+                    ? <ArrowUp className="ml-1 h-3 w-3" />
+                    : <ArrowDown className="ml-1 h-3 w-3" />)}
+                </Button>
+              );
+            })}
             {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={resetFilters} className="h-9 px-3 text-muted-foreground">
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 px-3 text-muted-foreground ml-auto">
                 <RotateCcw className="h-3.5 w-3.5 mr-1" /> Réinitialiser
               </Button>
             )}

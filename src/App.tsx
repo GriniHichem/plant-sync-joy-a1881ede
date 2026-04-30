@@ -57,6 +57,9 @@ import NotFound from "@/pages/NotFound";
 import ResetPassword from "@/pages/ResetPassword";
 import OrganesList from "@/pages/OrganesList";
 import Apps from "@/pages/Apps";
+import { ShiftLayout } from "@/components/shift/ShiftLayout";
+import { ShiftGuard } from "@/components/shift/ShiftGuard";
+import { ActiveShiftProvider } from "@/contexts/ActiveShiftContext";
 import SecurityHub from "@/pages/SecurityHub";
 import OrganeForm from "@/pages/OrganeForm";
 import OrganeDetail from "@/pages/OrganeDetail";
@@ -111,6 +114,29 @@ function ProtectedRoutes() {
   );
 }
 
+function ProtectedShiftRoute({ kind }: { kind: "production" | "maintenance" | "quality" }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/auth" replace />;
+  const Page =
+    kind === "production" ? <ShiftScreen /> :
+    kind === "maintenance" ? <MaintenancierShiftView /> :
+    <QualiteShiftScreen />;
+  return (
+    <ActiveShiftProvider kind={kind}>
+      <ShiftLayout>
+        <ShiftGuard allowWithoutShift>{Page}</ShiftGuard>
+      </ShiftLayout>
+    </ActiveShiftProvider>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -121,6 +147,10 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Isolated shift apps — no global sidebar, focused kiosk-style UX */}
+            <Route path="/gpao/shift" element={<ProtectedShiftRoute kind="production" />} />
+            <Route path="/maintenance/shift" element={<ProtectedShiftRoute kind="maintenance" />} />
+            <Route path="/qualite/shift" element={<ProtectedShiftRoute kind="quality" />} />
             <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
               <Route path="/" element={<Dashboard />} />
@@ -141,7 +171,7 @@ const App = () => (
               <Route path="/preventif/new" element={<PreventifForm />} />
               <Route path="/preventif/:id" element={<PreventifDetail />} />
               <Route path="/preventif/:id/edit" element={<PreventifForm />} />
-              <Route path="/maintenance/shift" element={<MaintenancierShiftView />} />
+              {/* /maintenance/shift moved to isolated shift app (see ProtectedShiftRoute below) */}
               <Route path="/maintenance/journal" element={<InterventionJournal />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/equipements" element={<EquipmentsList />} />
@@ -164,7 +194,7 @@ const App = () => (
               <Route path="/gpao/produits/:id" element={<ProductDetail />} />
               <Route path="/gpao/articles" element={<ArticlesList />} />
               <Route path="/gpao/articles/:id" element={<ArticleDetail />} />
-              <Route path="/gpao/shift" element={<ShiftScreen />} />
+              {/* /gpao/shift moved to isolated shift app (see ProtectedShiftRoute below) */}
               <Route path="/gpao/consommations" element={<ConsumptionPage />} />
               <Route path="/gpao/arrets" element={<StopsPage />} />
               <Route path="/gpao/recettes" element={<RecipesPage />} />
@@ -201,7 +231,7 @@ const App = () => (
               {/* Qualité & Traçabilité */}
               <Route path="/qualite" element={<QualiteDashboard />} />
               <Route path="/qualite/of" element={<QualiteOf />} />
-              <Route path="/qualite/shift" element={<QualiteShiftScreen />} />
+              {/* /qualite/shift moved to isolated shift app (see ProtectedShiftRoute below) */}
               <Route path="/qualite/indicateurs" element={<QualiteIndicateurs />} />
               <Route path="/qualite/controles" element={<QualiteControles />} />
               <Route path="/qualite/non-conformites" element={<QualiteNonConformites />} />

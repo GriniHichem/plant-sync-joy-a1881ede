@@ -4087,31 +4087,37 @@ export type Database = {
       }
       quality_shift_assignments: {
         Row: {
+          all_open_ofs: boolean
           controller_id: string
           created_at: string
           created_by: string | null
           id: string
           line_ids: string[]
+          of_ids: string[]
           shift_team_id: string | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           updated_at: string
         }
         Insert: {
+          all_open_ofs?: boolean
           controller_id: string
           created_at?: string
           created_by?: string | null
           id?: string
           line_ids?: string[]
+          of_ids?: string[]
           shift_team_id?: string | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           updated_at?: string
         }
         Update: {
+          all_open_ofs?: boolean
           controller_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
           line_ids?: string[]
+          of_ids?: string[]
           shift_team_id?: string | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
           updated_at?: string

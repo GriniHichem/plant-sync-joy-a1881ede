@@ -114,6 +114,29 @@ function ProtectedRoutes() {
   );
 }
 
+function ProtectedShiftRoute({ kind }: { kind: "production" | "maintenance" | "quality" }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/auth" replace />;
+  const Page =
+    kind === "production" ? <ShiftScreen /> :
+    kind === "maintenance" ? <MaintenancierShiftView /> :
+    <QualiteShiftScreen />;
+  return (
+    <ActiveShiftProvider kind={kind}>
+      <ShiftLayout>
+        <ShiftGuard allowWithoutShift>{Page}</ShiftGuard>
+      </ShiftLayout>
+    </ActiveShiftProvider>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

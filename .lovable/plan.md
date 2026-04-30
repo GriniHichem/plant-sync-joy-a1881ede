@@ -103,7 +103,17 @@ Restrictions :
 
 ---
 
-## Phase 3 — Polish opérationnel (UX kiosque + offline-friendly)
+## Phase 3 — Polish opérationnel (UX kiosque + offline-friendly) ✅ LIVRÉE
+
+**Livré** :
+- `src/lib/shiftOfflineQueue.ts` — file IndexedDB (idb-keyval) avec `enqueue`, `flush`, `insertOrQueue` (fallback automatique online → queue si réseau down).
+- `src/hooks/useShiftOfflineQueue.ts` — vue réactive + auto-flush sur l'évènement `online` + polling 15s.
+- `src/components/shift/ShiftQueueBadge.tsx` — badge "X en attente" + bouton sync, intégré dans la topbar `ShiftLayout`.
+- `src/lib/shiftReportPdf.ts` — bilan PDF (jsPDF + autotable) générique pour les 3 types de shift, multi-sections + KPIs + observations.
+- `src/hooks/useShiftSessionTimeout.ts` — toast d'avertissement après 8h (jamais d'auto-clôture).
+- Tests : `src/test/shift/offline-queue.test.ts` (6 ✓), `src/test/shift/report-pdf.test.ts` (2 ✓).
+
+**Reste optionnel** : intégration des appels `insertOrQueue` dans les sous-pages shift existantes (les inserts y sont actuellement directs), mode plein écran déjà présent dans `ShiftLayout`.
 
 **But** : rendre les apps utilisables en atelier, écrans tablette, conditions de bruit et coupures réseau.
 

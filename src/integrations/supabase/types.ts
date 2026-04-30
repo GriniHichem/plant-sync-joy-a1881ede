@@ -5277,6 +5277,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["shift_type"]
       }
+      ensure_my_production_shift_session: { Args: never; Returns: string }
       ensure_production_shift_session: {
         Args: { p_of_id: string }
         Returns: string

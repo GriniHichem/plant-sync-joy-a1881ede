@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, RotateCcw, Component } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ListScanButton } from "@/components/scanner/ListScanButton";
 
 const TYPE_LABELS: Record<string, string> = {
   mecanique: "Mécanique", electrique: "Électrique", pneumatique: "Pneumatique",
@@ -65,11 +66,14 @@ export default function OrganesList() {
           </h1>
           <p className="text-sm text-muted-foreground">Sous-ensembles fonctionnels des machines et équipements</p>
         </div>
-        {canCreate("organes") && (
-          <Button onClick={() => navigate("/organes/new")}>
-            <Plus className="h-4 w-4 mr-2" /> Nouvel organe
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ListScanButton allowedTypes={["organe"]} routeFor={(e) => `/organes/${e.entity_id}`} />
+          {canCreate("organes") && (
+            <Button onClick={() => navigate("/organes/new")}>
+              <Plus className="h-4 w-4 mr-2" /> Nouvel organe
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>

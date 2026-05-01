@@ -12,6 +12,7 @@ import { exportToCsv } from "@/lib/exportCsv";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useNavigate } from "react-router-dom";
 import { useNavWithFrom } from "@/hooks/useNavWithFrom";
+import { ListScanButton } from "@/components/scanner/ListScanButton";
 
 function KpiMini({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color?: string }) {
   return (
@@ -116,6 +117,11 @@ export default function PdrList() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-11" />
             </div>
+            <ListScanButton
+              allowedTypes={["pdr"]}
+              routeFor={(e) => `/pdr/${e.entity_id}`}
+              className="h-11"
+            />
             <Select value={filterFamily} onValueChange={setFilterFamily}>
               <SelectTrigger className="h-11 w-[160px]"><SelectValue placeholder="Famille" /></SelectTrigger>
               <SelectContent>

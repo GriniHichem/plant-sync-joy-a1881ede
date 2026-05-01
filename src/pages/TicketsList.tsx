@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { ListScanButton } from "@/components/scanner/ListScanButton";
 import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -163,6 +164,15 @@ export default function TicketsList() {
               <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
           )}
+          <ListScanButton
+            allowedTypes={["machine", "organe", "pdr"]}
+            routeFor={(e) =>
+              e.entity_type === "machine" ? `/machines/${e.entity_id}`
+              : e.entity_type === "organe" ? `/organes/${e.entity_id}`
+              : `/pdr/${e.entity_id}`
+            }
+            className={isMobile ? "h-11" : "h-12"}
+          />
           {canCreate("tickets") && (
             <Button
               size={isMobile ? "sm" : "default"}

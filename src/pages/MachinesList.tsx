@@ -13,6 +13,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { exportToCsv } from "@/lib/exportCsv";
 import { Badge } from "@/components/ui/badge";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
+import { ListScanButton } from "@/components/scanner/ListScanButton";
 
 export default function MachinesList() {
   const [machines, setMachines] = useState<any[]>([]);
@@ -83,6 +84,7 @@ export default function MachinesList() {
           ], "machines")}>
             <Download className="h-4 w-4 mr-1" /> CSV
           </Button>
+          <ListScanButton allowedTypes={["machine"]} routeFor={(e) => `/machines/${e.entity_id}`} className="h-12" />
           {canCreate("machines") && (
             <Button onClick={() => navigate("/machines/new")} className="h-12 px-6">
               <Plus className="h-4 w-4 mr-2" /> Ajouter

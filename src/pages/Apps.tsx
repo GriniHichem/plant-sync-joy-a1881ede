@@ -19,7 +19,7 @@ type AppModule = {
   description: string;
   url: string;
   icon: React.FC<{ size?: number; className?: string }>;
-  category: "Maintenance" | "Production" | "Qualité" | "Configuration";
+  category: "Maintenance" | "Production" | "Qualité" | "Inventaire" | "Configuration";
   permissionModule?: string;
   badge?: string;
   accent: string; // tailwind gradient classes

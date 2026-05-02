@@ -204,6 +204,8 @@ function MobileNav() {
         <div className="my-3 h-px bg-border/60" />
         {renderItems("Qualité", qualiteItems)}
         <div className="my-3 h-px bg-border/60" />
+        {renderItems("Inventaire", inventaireItems)}
+        <div className="my-3 h-px bg-border/60" />
         {renderItems("Configuration", configItems)}
       </SheetContent>
     </Sheet>

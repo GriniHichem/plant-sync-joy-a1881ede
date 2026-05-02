@@ -1,7 +1,7 @@
 # 📘 Manuel Utilisateur — PROD IN TIME (GMAO · GPAO)
 
-> Application industrielle intégrée de **gestion de maintenance** (GMAO), **gestion de production** (GPAO) et **qualité**.
-> Version manuel : **2.2** — Mise à jour : 30/04/2026
+> Application industrielle intégrée de **gestion de maintenance** (GMAO), **gestion de production** (GPAO), **qualité** et **inventaire**.
+> Version manuel : **2.3** — Mise à jour : 02/05/2026
 
 ---
 
@@ -1210,10 +1210,111 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 |---------|------|-------|
 | 1.0 | 05/04/2026 | Version initiale (descriptif) |
 | 2.0 | 26/04/2026 | Réécriture exhaustive : workflows pas-à-pas, validations, exceptions, messages d'erreur exacts, cas particuliers, workflows transverses, annexes routes/tables/triggers |
-| **2.1** | **28/04/2026** | Ajout du chapitre **Notifications & Emails (SMTP self-hosted)** : configuration `/parametres/smtp`, règles `/parametres/notifications`, edge functions, cron quotidien, tables `notifications` / `notification_rules` / `notification_email_log` |
-| **2.2** | **30/04/2026** | Ajout du **module Qualité** (§4.9) et du **paramétrage Qualité complet** (§6.5) : hub `/parametres/qualite`, CRUD des référentiels (unités, NC, défauts, motifs, actions), **points de contrôle Master/Detail** avec scope et liaisons multi-lignes/multi-OF. **Fusion Recettes ↔ BOM Qualité** : `recipe_lines` étendues (`item_type`, `waste_percent`, `is_quality_sensitive`), sélection de version obligatoire à la création d'OF, RPC `get_recipe_for_of`, onglet Qualité OF avec recette suivie. Ajout du hub **Contrôle d'accès** (`/parametres/access-control`) avec export portabilité JSON/SQL. |
+| 2.1 | 28/04/2026 | Notifications & Emails (SMTP self-hosted) — règles `/parametres/notifications`, edge functions, cron quotidien |
+| 2.2 | 30/04/2026 | Module Qualité (§4.9), paramétrage Qualité, fusion Recettes ↔ BOM, hub Contrôle d'accès, export portabilité |
+| **2.3** | **02/05/2026** | Voir §13 — Modifications récentes (Shift Qualité, Vue Maintenancier, Scanner global, Inventaire double comptage, isolation kiosques shift, génération auto sessions shift depuis OF) |
 
 ---
 
-*Document généré pour **PROD IN TIME — GMAO · GPAO · Qualité** · Version manuel 2.2 · 30/04/2026*
+## 13. Modifications récentes (v2.3)
+
+> Cette section consolide toutes les évolutions ajoutées entre le 30/04/2026 et le 02/05/2026.
+
+### 13.1 Shift Qualité (contrôleur)
+
+- Nouveau **shift contrôleur qualité** (`/qualite/shift`) calqué sur le shift production : équipes A/B/C, créneaux horaires, ouverture/clôture par responsable.
+- Administration : `/parametres/qualite/shift-plan` — affecte les contrôleurs aux équipes/créneaux.
+- Tous les contrôles qualité et NC saisis pendant un shift sont **automatiquement liés** à `shift_id`, `team_id`, `quality_shift_id`.
+- Notifications automatiques d'ouverture/clôture de shift via `audit_critical_event`.
+
+### 13.2 Vue Maintenancier (shift maintenance enrichi)
+
+- `MaintenancierShiftView.tsx` : tableau de bord temps réel pour le maintenancier en poste.
+  - Onglets **Curatif** (tickets) / **Préventif** (plans dûs).
+  - Animations *pulse* sur tickets neufs et indicateurs de retard (overdue).
+  - Hook `useMaintenanceShiftWorkload` agrège la charge en cours.
+- Création de tickets depuis le shift production : conserve les liens **OF / shift / équipe** et calcule automatiquement la **durée d'arrêt** entre déclaration et clôture.
+
+### 13.3 Scanner QR / Code-barres généralisé
+
+- Composant **`ScanButton`** (caméra ZXing) + RPC `resolve_scanned_code` (URL, UUID, code exact, préfixe).
+- Composant **`ListScanButton`** : navigation directe vers la fiche après résolution.
+- Boutons "Scanner" disponibles dans les listes :
+  - **PDR** (à côté de la recherche) — résout uniquement les PDR.
+  - **Organes**, **Machines**, **Tickets** (header de page) — résout l'entité concernée et redirige.
+- Règle : la résolution **automatique** ne se déclenche que sur correspondance forte (UUID/exact). Les correspondances faibles affichent une liste, jamais bloquantes.
+
+### 13.4 Génération automatique des sessions shift depuis les OF
+
+- Table `of_shift_assignments` + RPC `ensure_production_shift_session` :
+  - À l'ouverture d'un OF, les sessions shift correspondantes sont générées automatiquement selon le mode (3x8, 2x8, 1x8…).
+  - À la clôture d'un OF, les sessions associées sont **clôturées en cascade**.
+- Permet la déclaration de production "Heure -1" (saisie de l'heure écoulée pendant l'heure courante uniquement).
+
+### 13.5 Isolation des applications Shift (mode kiosque)
+
+- 3 applications shift (Production, Maintenance, Qualité) accessibles en **mode kiosque** piloté par les responsables.
+- KPIs en direct par session, **bilan HTML imprimable** en fin de shift.
+- Notifications automatiques d'ouverture/clôture.
+
+### 13.6 Module Inventaire (NOUVEAU)
+
+#### 13.6.1 Principe — double comptage avec arbitrage
+
+| Étape | Acteur | Action |
+|-------|--------|--------|
+| 1 | Responsable inventaire | Crée une campagne, définit le périmètre (familles/sous-familles PDR), affecte agents A et B avec scopes autorisés |
+| 2 | Agent A | Compte chaque article de son périmètre (saisie verrouillée à validation) |
+| 3 | Agent B | Compte indépendamment (comptage aveugle) |
+| 4 | Système | Si **A == B** → résultat **Conforme** (qty finale = A) |
+| 5 | Système | Si **A ≠ B** → bascule en **Arbitrage** pour Agent C |
+| 6 | Agent C | Recompte ; si C == A ou C == B → **Conforme** (qty finale = C) |
+| 7 | Système | Si C ≠ A et C ≠ B → **Recompte A&B** (incrémente `current_round`) |
+
+#### 13.6.2 Routes
+
+| Route | Rôle requis | Description |
+|-------|-------------|-------------|
+| `/inventaire` | responsable_inventaire / agent_inventaire / admin | Dashboard campagnes |
+| `/inventaire/campagnes` | idem | Liste des campagnes |
+| `/inventaire/campagnes/nouvelle` | responsable_inventaire | Création + matrice d'affectation A/B |
+| `/inventaire/campagnes/:id` | idem | Détail, suivi des écarts, arbitrage |
+| `/inventaire/campagnes/:id/compter` | agent_inventaire | Écran de comptage mobile (kiosque) |
+
+#### 13.6.3 Tables
+
+| Table | Description |
+|-------|-------------|
+| `inventory_campaigns` | Campagnes (auto-numérotées `INV-YYYYMM-####`) |
+| `inventory_assignments` | Affectations agents A/B/C par campagne |
+| `inventory_assignment_scopes` | Familles autorisées pour chaque agent |
+| `inventory_targets` | Snapshot des articles (PDR/organes) à compter avec qty système |
+| `inventory_counts` | Saisies individuelles (immuables après validation via trigger `tg_lock_inventory_counts`) |
+| `inventory_results` | Consolidation A/B/C avec statut (conforme, arbitrage, recompte) |
+
+#### 13.6.4 Sécurité
+
+- **RLS** : agents restreints à leur scope via `inv_assignment_authorized_families`.
+- **RPC `inv_register_count`** : seul point d'écriture, valide scope + statut campagne.
+- **Immuabilité** : trigger empêche tout `UPDATE`/`DELETE` sur un comptage validé.
+
+#### 13.6.5 Rôles dédiés et isolation
+
+- Nouveaux rôles `responsable_inventaire` et `agent_inventaire`.
+- Utilisateur "inventaire-only" (sans autre rôle GMAO/GPAO/Qualité) :
+  - Bascule automatique sur **`InventoryLayout`** (kiosque, top-bar minimal).
+  - Routes autorisées : `/inventaire/*`, `/pdr/*` (lecture seule), `/organes/*` (lecture seule).
+  - Toute autre URL redirige vers `/inventaire`.
+- Bouton **Fiche** sur chaque article en cours de comptage : ouvre la fiche PDR (image, fournisseur, équivalences) dans un nouvel onglet pour aider à l'identification visuelle.
+
+#### 13.6.6 Scanner intégré au comptage
+
+- Bouton **Scanner** sur l'écran de comptage : résout uniquement `pdr` et `organe`.
+- Si l'article scanné est **hors campagne** ou **hors scope agent** → toast d'erreur, jamais bloquant.
+- Si l'article est dans le scope → sélection automatique pour saisie de quantité.
+
+---
+
+*Document généré pour **PROD IN TIME — GMAO · GPAO · Qualité · Inventaire** · Version manuel 2.3 · 02/05/2026*
+
 

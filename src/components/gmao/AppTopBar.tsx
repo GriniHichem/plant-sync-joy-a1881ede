@@ -220,7 +220,12 @@ export function AppTopBar() {
   const isGmaoActive = gmaoItems.some((i) => isActive(location.pathname, i.url));
   const isGpaoActive = gpaoItems.some((i) => isActive(location.pathname, i.url));
   const isQualiteActive = qualiteItems.some((i) => isActive(location.pathname, i.url));
+  const isInventaireActive = inventaireItems.some((i) => isActive(location.pathname, i.url));
   const isConfigActive = configItems.some((i) => isActive(location.pathname, i.url));
+
+  const showInventaire = roles.includes("admin" as any)
+    || roles.includes("responsable_inventaire" as any)
+    || roles.includes("agent_inventaire" as any);
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"

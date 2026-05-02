@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { Menu, ChevronDown, LayoutGrid, ClipboardCheck, AlertTriangle, ListChecks, FileBarChart, GitBranch, Lock, CheckSquare, Cog, Activity, Sliders, ClipboardList } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SearchTrigger } from "@/components/search/SearchTrigger";
-import { useQualityPermissions } from "@/hooks/useQualityPermissions";
+
 
 const gmaoItems = [
   { title: "Dashboard", url: "/", icon: IconDashboard },

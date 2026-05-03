@@ -8,13 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, FileText, Package, Wrench, CalendarCheck, Clock, Factory, Component, ImageIcon } from "lucide-react";
+import { ArrowLeft, Edit, FileText, Package, Wrench, CalendarCheck, Clock, Factory, Component, ImageIcon, MapPin } from "lucide-react";
 import { EntityDocumentManager } from "@/components/documents/EntityDocumentManager";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PdrPositionsManager } from "@/components/pdr/PdrPositionsManager";
 
 const ROLE_LABELS: Record<string, string> = {
   alimentation: "Alimentation", transformation: "Transformation", dosage: "Dosage",
@@ -40,6 +42,8 @@ export default function MachineDetail() {
   const [machine, setMachine] = useState<any>(null);
   const [tickets, setTickets] = useState<any[]>([]);
   const [pdrList, setPdrList] = useState<any[]>([]);
+  const [pdrLinks, setPdrLinks] = useState<any[]>([]);
+  const [positionDialog, setPositionDialog] = useState<{ linkId: string; label: string } | null>(null);
   const [plans, setPlans] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [interventions, setInterventions] = useState<any[]>([]);
@@ -50,10 +54,11 @@ export default function MachineDetail() {
   useEffect(() => {
     if (!id) return;
     const load = async () => {
-      const [mRes, tRes, pdrRes, plansRes, docsRes, laRes, eqRes, oRes] = await Promise.all([
+      const [mRes, tRes, pdrRes, linksRes, plansRes, docsRes, laRes, eqRes, oRes] = await Promise.all([
         supabase.from("machines").select("*, machine_families(name)").eq("id", id).single(),
         supabase.from("tickets").select("*, panne_types(name)").eq("machine_id", id).order("created_at", { ascending: false }),
         supabase.from("machine_pdr").select("*, pdr(*)").eq("machine_id", id),
+        (supabase.from("pdr_entity_links" as any) as any).select("id, pdr_id").eq("entity_type", "machine").eq("entity_id", id),
         supabase.from("preventive_plans").select("*").eq("machine_id", id),
         supabase.from("machine_documents").select("*").eq("machine_id", id).order("created_at", { ascending: false }),
         supabase.from("machine_line_assignments").select("*, production_lines(code, designation)").eq("machine_id", id).order("priority"),
@@ -63,6 +68,7 @@ export default function MachineDetail() {
       setMachine(mRes.data);
       setTickets(tRes.data || []);
       setPdrList(pdrRes.data || []);
+      setPdrLinks((linksRes.data as any) || []);
       setPlans(plansRes.data || []);
       setDocuments(docsRes.data || []);
       setLineAssignments(laRes.data || []);

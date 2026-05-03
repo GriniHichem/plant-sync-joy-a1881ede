@@ -18,6 +18,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { checkValidationRequired, createValidationRequest } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { InterventionPdrLineEditor, type InterventionPdrLine } from "@/components/pdr/InterventionPdrLineEditor";
+import { CAUSE_OPTIONS } from "@/components/pdr/InterventionPdrLineEditor";
 
 export default function TicketDetail() {
   const { id } = useParams();
@@ -33,9 +36,9 @@ export default function TicketDetail() {
   const [solution, setSolution] = useState("");
 
   const [pdrList, setPdrList] = useState<any[]>([]);
-  const [selectedPdr, setSelectedPdr] = useState<{ pdr_id: string; quantite: number }[]>([]);
-  const [newPdrId, setNewPdrId] = useState("");
-  const [newPdrQte, setNewPdrQte] = useState("1");
+  const [selectedPdr, setSelectedPdr] = useState<InterventionPdrLine[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingResolve, setPendingResolve] = useState<null | (() => Promise<void>)>(null);
 
   // Co-intervenants
   const [maintenanciers, setMaintenanciers] = useState<any[]>([]);
@@ -321,16 +324,17 @@ export default function TicketDetail() {
     }
   };
 
-  const addPdr = () => {
-    if (!newPdrId) return;
+  const addPdrLine = (line: InterventionPdrLine) => {
     setSelectedPdr((prev) => {
-      if (prev.find((p) => p.pdr_id === newPdrId)) return prev;
-      return [...prev, { pdr_id: newPdrId, quantite: parseInt(newPdrQte) || 1 }];
+      // de-dup by (pdr, position) so same PDR can target multiple positions
+      const key = `${line.pdr_id}::${line.position_id || ""}`;
+      if (prev.find((p) => `${p.pdr_id}::${p.position_id || ""}` === key)) return prev;
+      return [...prev, line];
     });
-    setNewPdrId(""); setNewPdrQte("1");
   };
 
-  const removePdr = (pdrId: string) => setSelectedPdr((prev) => prev.filter((p) => p.pdr_id !== pdrId));
+  const removePdrLine = (pdrId: string, positionId?: string | null) =>
+    setSelectedPdr((prev) => prev.filter((p) => !(p.pdr_id === pdrId && (p.position_id || null) === (positionId || null))));
 
   const handleResolve = async () => {
     if (!causeRacine || !solution) {
@@ -384,7 +388,16 @@ export default function TicketDetail() {
     if (activeIntervention) {
       await supabase.from("interventions").update({ statut: "terminee" as any, date_fin: now }).eq("id", activeIntervention.id);
       if (selectedPdr.length > 0) {
-        await supabase.from("intervention_pdr").insert(selectedPdr.map((p) => ({ intervention_id: activeIntervention.id, pdr_id: p.pdr_id, quantite: p.quantite })));
+        await supabase.from("intervention_pdr").insert(selectedPdr.map((p) => ({
+          intervention_id: activeIntervention.id,
+          pdr_id: p.pdr_id,
+          quantite: p.quantite,
+          position_id: p.position_id ?? null,
+          compteur_fin: p.compteur_fin ?? null,
+          cause_remplacement: p.cause_remplacement ?? null,
+          commentaire_technique: p.commentaire_technique ?? null,
+          compteur_initial_new: p.compteur_initial_new ?? null,
+        } as any)));
         for (const p of selectedPdr) {
           const pdrItem = pdrList.find((x) => x.id === p.pdr_id);
           if (pdrItem) {
@@ -668,30 +681,39 @@ export default function TicketDetail() {
               )}
             </div>
 
-            {/* PDR */}
+            {/* PDR utilisées (avec sélection de position si applicable) */}
             <div className="space-y-2">
               <Label className="text-xs flex items-center gap-1"><Package className="h-3 w-3" /> Pièces utilisées</Label>
-              <div className={`flex gap-2 ${isMobile ? "flex-col" : ""}`}>
-                <Select value={newPdrId} onValueChange={setNewPdrId}>
-                  <SelectTrigger className="h-10 flex-1"><SelectValue placeholder="Sélectionner une pièce" /></SelectTrigger>
-                  <SelectContent>{pdrList.map((p) => <SelectItem key={p.id} value={p.id}>{p.reference} — {p.designation} ({p.stock_actuel})</SelectItem>)}</SelectContent>
-                </Select>
-                <div className="flex gap-2">
-                  <Input type="number" value={newPdrQte} onChange={(e) => setNewPdrQte(e.target.value)} className="h-10 w-16" min="1" placeholder="Qté" />
-                  <Button variant="outline" size="sm" className="h-10" onClick={addPdr} disabled={!newPdrId}>+</Button>
-                </div>
-              </div>
+              <InterventionPdrLineEditor
+                pdrList={pdrList}
+                machineId={ticket.machine_id}
+                equipementId={ticket.equipement_id}
+                onAdd={addPdrLine}
+              />
               {selectedPdr.length > 0 && (
                 <div className="space-y-1">
                   {selectedPdr.map((sp) => {
                     const pdr = pdrList.find((p) => p.id === sp.pdr_id);
+                    const causeLabel = sp.cause_remplacement ? CAUSE_OPTIONS.find((c) => c.value === sp.cause_remplacement)?.label : null;
                     return (
-                      <div key={sp.pdr_id} className="flex items-center justify-between text-sm py-1.5 px-3 rounded bg-muted/50">
-                        <span className="truncate">{pdr?.reference} — {pdr?.designation}</span>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="tabular-nums font-medium">×{sp.quantite}</span>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => removePdr(sp.pdr_id)}>×</Button>
+                      <div key={`${sp.pdr_id}-${sp.position_id || ""}`} className="text-sm py-1.5 px-3 rounded bg-muted/50">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate">{pdr?.reference} — {pdr?.designation}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="tabular-nums font-medium">×{sp.quantite}</span>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive"
+                              onClick={() => removePdrLine(sp.pdr_id, sp.position_id)}>×</Button>
+                          </div>
                         </div>
+                        {sp.position_label && (
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            Position : <span className="font-medium">{sp.position_label}</span>
+                            {causeLabel && <> · {causeLabel}</>}
+                            {sp.compteur_fin != null && sp.compteur_max != null && (
+                              <> · {sp.compteur_fin.toFixed(0)}/{sp.compteur_max} {sp.unite || ""}</>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -700,11 +722,46 @@ export default function TicketDetail() {
             </div>
 
             <StickyActionBar>
-              <Button onClick={handleResolve} className="w-full h-12">Résoudre</Button>
+              <Button onClick={() => {
+                const positionLines = selectedPdr.filter((p) => p.position_id);
+                if (positionLines.length > 0) { setConfirmOpen(true); }
+                else { handleResolve(); }
+              }} className="w-full h-12">Résoudre</Button>
             </StickyActionBar>
           </CardContent>
         </Card>
       )}
+
+      {/* Confirmation de remplacement de positions */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Confirmer le remplacement</DialogTitle></DialogHeader>
+          <div className="space-y-2 text-sm">
+            {selectedPdr.filter((sp) => sp.position_id).map((sp) => {
+              const pdr = pdrList.find((p) => p.id === sp.pdr_id);
+              const stockApres = pdr ? Math.max(0, pdr.stock_actuel - sp.quantite) : 0;
+              return (
+                <div key={`${sp.pdr_id}-${sp.position_id}`} className="rounded border p-2 bg-muted/40">
+                  <div><span className="text-muted-foreground">PDR :</span> <span className="font-medium">{pdr?.reference}</span></div>
+                  <div><span className="text-muted-foreground">Machine :</span> {ticket?.machines?.designation || "—"}</div>
+                  <div><span className="text-muted-foreground">Position :</span> <span className="font-medium">{sp.position_label}</span></div>
+                  {sp.compteur_fin != null && (
+                    <div><span className="text-muted-foreground">Compteur actuel :</span> <span className="tabular-nums">{sp.compteur_fin.toFixed(0)} {sp.unite || ""}</span></div>
+                  )}
+                  {sp.compteur_max != null && (
+                    <div><span className="text-muted-foreground">Durée max :</span> <span className="tabular-nums">{sp.compteur_max} {sp.unite || ""}</span></div>
+                  )}
+                  <div><span className="text-muted-foreground">Stock après :</span> <span className="tabular-nums">{stockApres}</span></div>
+                </div>
+              );
+            })}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Annuler</Button>
+            <Button onClick={async () => { setConfirmOpen(false); await handleResolve(); }}>Confirmer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {canCloseTicket && (
         <StickyActionBar>

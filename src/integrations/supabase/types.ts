@@ -785,24 +785,45 @@ export type Database = {
       }
       intervention_pdr: {
         Row: {
+          cause_remplacement: string | null
+          commentaire_technique: string | null
+          compteur_fin: number | null
+          compteur_initial_new: number | null
           created_at: string
           id: string
           intervention_id: string
           pdr_id: string
+          photo_apres_path: string | null
+          photo_avant_path: string | null
+          position_id: string | null
           quantite: number
         }
         Insert: {
+          cause_remplacement?: string | null
+          commentaire_technique?: string | null
+          compteur_fin?: number | null
+          compteur_initial_new?: number | null
           created_at?: string
           id?: string
           intervention_id: string
           pdr_id: string
+          photo_apres_path?: string | null
+          photo_avant_path?: string | null
+          position_id?: string | null
           quantite?: number
         }
         Update: {
+          cause_remplacement?: string | null
+          commentaire_technique?: string | null
+          compteur_fin?: number | null
+          compteur_initial_new?: number | null
           created_at?: string
           id?: string
           intervention_id?: string
           pdr_id?: string
+          photo_apres_path?: string | null
+          photo_avant_path?: string | null
+          position_id?: string | null
           quantite?: number
         }
         Relationships: [
@@ -819,6 +840,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pdr"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_pdr_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "pdr_install_positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_pdr_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "pdr_position_status"
+            referencedColumns: ["position_id"]
           },
         ]
       }

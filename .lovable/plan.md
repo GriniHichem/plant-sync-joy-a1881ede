@@ -1,169 +1,157 @@
 
-# PDR — Suivi par positions d'installation (hybride)
+# Workflow d'intervention PDR avec sélection de position
 
 ## Principe directeur
-- Une **seule référence PDR stock** (ex. ROBINET-DN50) — jamais multipliée.
-- Le suivi physique se fait via **positions d'installation** rattachées à un lien `pdr_entity_links` (Machine ou Équipement).
-- Stock, mouvements, tickets, préventif et GPAO **inchangés**. La position devient un *attribut additionnel* de la consommation.
+- Étendre, sans casser, le workflow actuel `intervention_pdr` (TicketDetail) et `preventive_executions.pdr_used` (PreventifDetail).
+- Si la PDR a des **positions actives** sur la machine/équipement du ticket ou du plan : la sélection de position devient **obligatoire** par ligne de PDR consommée.
+- Sinon : comportement actuel inchangé (juste pdr + quantité).
+- Stock : aucune modification de la logique de décrémentation existante (`pdr.stock_actuel` + `pdr_stock_movements`).
 
-## 1) Schéma base de données (nouvelle migration)
+## 1) Schéma BDD — additif
 
-### Table `pdr_install_positions`
-Une ligne = une position physique sur un actif pour une PDR donnée.
+### Extension `intervention_pdr`
+Colonnes nullables ajoutées :
 ```
-id uuid pk
-link_id uuid fk → pdr_entity_links(id) on delete cascade   -- (pdr_id, entity_type, entity_id)
-position_index int not null         -- ordre d'affichage
-designation text not null
-description text
-marker_x numeric    -- coordonnées 0-100 sur image principale (null = pas de repère)
-marker_y numeric
-statut text not null default 'active'  -- active | inactive | supprimee
--- Règles de durée de vie (par position, override possible du lien)
-lifespan_mode text not null default 'time'   -- time | production | mixte | none
-seuil_min numeric
-seuil_max numeric
-seuil_alerte_pct numeric default 80
-unite_mesure text                  -- 'h', 'jours', 'unités', etc.
-production_rule text               -- 'complete' | 'reparti' | 'coefficient' | 'manuel'
-production_coefficient numeric default 1
-compteur_manuel numeric            -- pour mode 'manuel'
-created_at, updated_at, created_by, updated_by
+position_id            uuid FK → pdr_install_positions(id) ON DELETE SET NULL
+compteur_fin           numeric  -- snapshot du compteur de la position au moment du remplacement
+cause_remplacement     text     -- usure | casse | fuite | preventif | amelioration | non_conformite | autre
+commentaire_technique  text
+photo_avant_path       text     -- storage path bucket entity-images
+photo_apres_path       text
+compteur_initial_new   numeric DEFAULT 0  -- compteur de départ du nouveau cycle
 ```
-Contraintes:
-- `unique (link_id, position_index)` 
-- check `statut in ('active','inactive','supprimee')`
-- check `lifespan_mode in ('time','production','mixte','none')`
-- check `production_rule in ('complete','reparti','coefficient','manuel') or null`
-- trigger validation: si `lifespan_mode in ('production','mixte')` alors `production_rule` requis ; `seuil_max >= seuil_min` ; pas de suppression physique si historique existe (voir §3).
 
-### Extension `pdr_instances` (suivi par position, additif)
-Ajouter colonnes nullables:
+### Trigger `tg_intervention_pdr_lifecycle` (AFTER INSERT)
+Quand `position_id` n'est pas null :
+1. Marquer la `pdr_instances` active sur cette position en `replaced` :
+   `date_remplacement = now()`, `notes` enrichies (cause + commentaire), conserve l'historique.
+2. Insérer une nouvelle `pdr_instances` :
+   `pdr_id`, `machine_id`/`equipement_id` dérivés du `pdr_entity_links` de la position, `position_id`, `intervention_id`, `ticket_id` (depuis l'intervention parente), `installed_by = auth.uid()`,
+   `compteur_pose_at = NEW.compteur_initial_new` (0 par défaut → nouveau cycle), `statut = 'active'`.
+3. Audit log standard `pdr_instance / replaced` avec valeurs avant/après.
+
+### Trigger `tg_preventive_execution_pdr_lifecycle` (AFTER INSERT/UPDATE)
+Lit `pdr_used` JSONB ; pour chaque entrée contenant `position_id`, applique la même logique que ci‑dessus en référant `preventive_execution_id` au lieu de `intervention_id`.
+
+### Vue `pdr_position_status` — déjà existante
+Réutilisée telle quelle pour le compteur courant, le pourcentage et `niveau` (vert/orange/rouge).
+
+## 2) UI — composant partagé `PdrPositionPicker`
+
+Nouveau : `src/components/pdr/PdrPositionPicker.tsx`. Props :
 ```
-position_id uuid fk → pdr_install_positions(id) on delete set null
-compteur_pose_at numeric    -- snapshot du compteur production au moment de la pose
+{ pdrId, machineId?, equipementId?, value: PositionPickValue, onChange, required }
 ```
-Aucune migration de données : les instances existantes restent rattachées seulement à machine/equipement/organe.
+Comportement :
+- Charge `pdr_entity_links` pour `(pdr_id, entity)` puis `pdr_install_positions` actives via `usePdrPositions`.
+- **Si aucune position** : pas de rendu (mode legacy preserved → champ optionnel).
+- **Si positions** :
+  - **Tabs**: « Liste » + « Image ».
+  - **Liste** : cartes 48px+, chaque ligne = désignation, badge couleur (vert/orange/rouge), barre de progression `pct_consomme`, compteur actuel / max + unité, dernière date de changement (depuis `pdr_instances.date_installation` MAX), dernier motif (depuis `intervention_pdr.cause_remplacement`).
+  - **Image** : réutilise `EntityThumbnail`/`useEntityImages` pour l'image principale de l'actif. Overlay SVG : un cercle par position aux coordonnées `marker_x/marker_y` (0–100%), couleur selon `niveau`, tap → sélection + tooltip. Pinch‑zoom natif via CSS `touch-action: pinch-zoom`.
+  - Liste de secours toujours visible sous l'image (mobile‑first).
 
-### Vue `pdr_position_status` (read-only, calculée)
-Retourne pour chaque position active:
-- `current_pdr_instance_id`, `pdr_id`, `date_pose`
-- `compteur_actuel` (calculé selon `lifespan_mode` + `production_rule`)
-- `compteur_max` (= `seuil_max`)
-- `pct_consomme`, `compteur_restant`
-- `niveau` (`vert` <60%, `orange` 60-90%, `rouge` >90% ou dépassé)
-- `last_ticket_id`, `last_preventive_plan_id`
+## 3) UI — intégration dans le workflow ticket
 
-Calcul production:
-- récupère la somme `quantite_produite` de `production_declarations` validées (jointes via `shifts.line_id` → ligne de la machine) entre `date_pose` et `now()`
-- mode `complete` → somme brute
-- mode `reparti` → somme / nb positions actives sur la même PDR/lien
-- mode `coefficient` → somme × `production_coefficient`
-- mode `manuel` → `compteur_manuel`
+`src/pages/TicketDetail.tsx` (zone PDR ligne 324–333 + 386–399) :
+- Remplacer la mini‑form actuelle par un sous‑composant `InterventionPdrLineEditor` qui enchaîne :
+  1. Select PDR (existing).
+  2. Quantité (existing).
+  3. `<PdrPositionPicker pdrId machineId={ticket.machine_id} equipementId={...} required={hasPositions} />`.
+  4. Cause de remplacement (Select obligatoire si position) — enum: `usure_normale | casse | fuite | preventif | amelioration | non_conformite | autre`.
+  5. Commentaire technique (Textarea).
+  6. Photo avant / Photo après (uploads optionnels via `EntityImageUploader` → bucket `entity-images`, scope `intervention_pdr`).
+  7. Compteur initial du nouveau cycle (numeric, défaut 0).
+- Avant validation, **dialog "Confirmer le remplacement"** affichant :
+  ```
+  PDR : ROBINET-DN50
+  Machine : Remplisseuse L1
+  Équipement : Bloc dosage
+  Position : Robinet voie 3
+  Compteur actuel : 480 000 unités
+  Durée max : 500 000 unités
+  Stock après : N − qte
+  ```
+- À `handleResolve` :
+  - L'`insert intervention_pdr` inclut désormais `position_id`, `compteur_fin` (= `get_position_counter` snapshot), `cause_remplacement`, `commentaire_technique`, photos, `compteur_initial_new`.
+  - Le trigger DB clôt l'ancien cycle et ouvre le nouveau (§1).
+  - Décrémentation stock + `pdr_stock_movements` : **inchangée**.
 
-### Fonction `get_position_counter(position_id uuid) returns numeric`
-Encapsule la logique pour réutilisation côté UI / triggers d'alerte.
+Validation côté client (Zod) : si la PDR a des positions actives → `position_id` + `cause_remplacement` requis ; sinon optionnels.
 
-### Audit
-Triggers `audit_logs` standard sur INSERT/UPDATE/DELETE de `pdr_install_positions` + sur changement de `position_id` dans `pdr_instances` (motif obligatoire pour soft-delete).
+## 4) UI — intégration dans le workflow préventif
 
-### RLS
-- SELECT : tout authentifié (cohérent avec `pdr_entity_links`).
-- INSERT/UPDATE/DELETE : `admin`, `resp_maintenance`, `maintenancier`, `gestionnaire_magasin` (mêmes rôles que `pdr_entity_links`).
+`src/pages/PreventifDetail.tsx` :
+- Dans le dialogue d'exécution (`execPdrUsed`), pour chaque PDR cochée afficher le même `PdrPositionPicker` (machine/équipement = ceux du plan). Stocker dans le JSONB `pdr_used` : `{ pdr_id, quantite, position_id, compteur_fin, cause_remplacement, commentaire, photo_avant, photo_apres, compteur_initial_new }`.
+- Le trigger `tg_preventive_execution_pdr_lifecycle` (§1) gère la clôture/relance de cycle.
+- Décrémentation stock préventif : conserver le code existant.
 
-## 2) Onglet PDR enrichi (Machine + Équipement)
+## 5) Alertes & raccourcis depuis position
 
-Fichiers : `src/pages/MachineDetail.tsx`, `src/pages/EquipmentDetail.tsx`.
+Dans `PdrPositionsManager` (existant) et `PdrPositionPicker` :
+- Badge orange si `pct_consomme >= seuil_alerte_pct`.
+- Badge rouge si `pct_consomme >= 100` ou `compteur_actuel > compteur_max`.
+- Boutons d'action contextuels (visibles uniquement orange/rouge) :
+  - **Créer ticket** → `navigate('/tickets/new?machine=...&pdr=...&position=...')` (params transportés via querystring, préremplit le formulaire ticket).
+  - **Créer plan préventif** → `navigate('/preventif/new?machine=...&source_pdr=...&position=...')`.
 
-Pour chaque ligne PDR de l'onglet PDR existant, ajouter:
-- Switch **« Activer le suivi par positions »** (toggle = au moins 1 position existe).
-- Si activé : bouton **« Gérer positions »** ouvre un nouveau composant `PdrPositionsManager`.
+## 6) Mode "heures" et "unités"
 
-Nouveau composant `src/components/pdr/PdrPositionsManager.tsx`:
-- Tableau des positions (désignation, statut, compteur %, dernier changement).
-- Boutons : Ajouter / Modifier / Désactiver / Supprimer (logique).
-- Onglet « Image » : affiche l'image principale de l'actif (réutilise `useEntityImages`) avec markers SVG cliquables/draggables (coordonnées 0-100 %). Tooltip = désignation. Liste textuelle alternative en dessous (mobile-first).
-- Pour chaque position : édition inline du `lifespan_mode`, seuils, `production_rule`, coefficient, unité.
+Le calcul est déjà encapsulé dans `get_position_counter` (heures via `lifespan_mode='time'`, unités via `production` + `production_rule`). UI du picker affiche :
+- mode heures → "heures consommées / max / restantes".
+- mode unités → "unités consommées / max / restantes" + libellé règle (`complète` / `répartie` / `coefficient ×N` / `manuelle`).
 
-Hook `src/hooks/usePdrPositions.ts` :
-- `usePdrPositions(linkId)` → liste + statuts calculés (via vue).
-- mutations : `createPosition`, `updatePosition`, `softDeletePosition`, `setPositionMarker`.
+## 7) Sécurité, non‑régression, audit
 
-## 3) Validations (côté DB + Zod côté UI)
+- Toutes les nouvelles colonnes sont **nullables** ; les flux sans position continuent à fonctionner à l'identique.
+- Le trigger lifecycle ne s'exécute **que** si `position_id IS NOT NULL`.
+- RLS : aucune politique nouvelle requise (les tables touchées ont déjà des policies maintenance).
+- Audit (`audit_logs`) : entrées au moment de l'insert `intervention_pdr` avec position, et clôture de cycle PDR.
+- Historique immuable : on ne supprime jamais une `pdr_instances`, on la passe en `replaced`.
 
-- Position `active` → `designation` non vide (DB + Zod).
-- Suppression physique impossible si `EXISTS (SELECT 1 FROM pdr_instances WHERE position_id = ...)` → forcer `statut = 'supprimee'` à la place. Trigger `BEFORE DELETE` qui RAISE EXCEPTION.
-- Compteurs jamais négatifs : check `compteur_manuel >= 0`, `seuil_min >= 0`, `seuil_max >= 0`.
-- `seuil_max >= seuil_min` (cohérent avec mémoire data-integrity-rules).
-- `lifespan_mode in ('production','mixte')` ⇒ `production_rule not null`.
-- Historique immuable : pas d'UPDATE/DELETE sur `pdr_instances` sauf champs métier explicites (déjà géré par RLS — vérifier et durcir via trigger si besoin).
+## 8) Stockage photos
 
-## 4) Intégration consommation PDR (workflow tickets / interventions)
+Réutilisation du bucket existant `entity-images` avec préfixes :
+- `intervention_pdr/<intervention_id>/before-<uuid>.jpg`
+- `intervention_pdr/<intervention_id>/after-<uuid>.jpg`
+Compression Canvas via le hook `useImageMaxSize` existant.
 
-Quand une PDR est consommée dans une intervention sur une machine où `pdr_install_positions` existe :
-- Dans `intervention_pdr` form (UI) : si la PDR a des positions sur cet actif, **demander la position cible** (Select obligatoire).
-- À la création de `pdr_instances` : enregistrer `position_id` + `compteur_pose_at` (snapshot via `get_position_counter`).
-- L'instance précédente sur cette position passe automatiquement en `statut='replaced'` (pattern existant `pdr_instances.statut`).
-- **Stock inchangé** : la décrémentation reste pilotée par les mouvements existants.
-
-Fichiers concernés (lecture seule, ajout d'un champ Select) :
-- `src/pages/TicketDetail.tsx` (zone intervention_pdr)
-- `src/pages/InterventionJournal.tsx`
-
-## 5) Affichage statut position
-
-Dans `PdrPositionsManager` et dans la fiche PDR (`src/pages/PdrDetail.tsx` → nouvel onglet « Positions installées »):
-- PDR installée (lien vers fiche PDR)
-- Date dernière pose, dernier changement
-- Compteur actuel / max + barre de progression colorée (vert/orange/rouge)
-- % consommé, compteur restant
-- Lien vers dernier ticket / plan préventif (déjà disponibles via `pdr_instances.ticket_id` + jointure préventif)
-
-## 6) Déclenchement préventif (cohérent avec mémoire `pdr-lifespan-management`)
-
-Les positions en `niveau='rouge'` doivent apparaître dans le flux existant de génération de plans préventifs **draft** (réutilise la logique actuelle, juste élargie pour scanner aussi `pdr_install_positions` en plus de `pdr_instances`). Aucun nouveau workflow utilisateur — juste une source supplémentaire pour le job existant.
-
-## 7) Plan d'implémentation
+## 9) Plan d'implémentation
 
 ```text
 Étape 1 — Migration SQL
-  ├─ table pdr_install_positions + contraintes + RLS
-  ├─ alter pdr_instances add position_id, compteur_pose_at
-  ├─ vue pdr_position_status + fonction get_position_counter
-  └─ triggers validation + audit + soft-delete
+  ├─ ALTER intervention_pdr add columns
+  ├─ trigger tg_intervention_pdr_lifecycle
+  └─ trigger tg_preventive_execution_pdr_lifecycle
 
-Étape 2 — Hooks et types
-  ├─ src/hooks/usePdrPositions.ts
-  └─ src/lib/pdrPositionStatus.ts (helpers couleurs/calculs front)
+Étape 2 — Composant partagé
+  ├─ src/components/pdr/PdrPositionPicker.tsx
+  └─ src/components/pdr/PositionImageMarkers.tsx (overlay SVG cliquable)
 
-Étape 3 — UI gestion positions
-  ├─ src/components/pdr/PdrPositionsManager.tsx
-  ├─ src/components/pdr/PositionImageMarkers.tsx (SVG sur image)
-  └─ src/components/pdr/PositionForm.tsx (création/édition)
+Étape 3 — Editor de ligne PDR
+  └─ src/components/pdr/InterventionPdrLineEditor.tsx
+     (PDR + qte + position + cause + commentaire + photos + compteur init)
 
-Étape 4 — Intégration onglets PDR existants
-  ├─ MachineDetail.tsx : switch + bouton Gérer positions
-  ├─ EquipmentDetail.tsx : idem
-  └─ PdrDetail.tsx : nouvel onglet « Positions installées »
+Étape 4 — Intégration TicketDetail
+  ├─ Remplacer mini-form PDR par InterventionPdrLineEditor
+  ├─ Dialog "Confirmer remplacement"
+  └─ handleResolve : insert enrichi + trigger DB
 
-Étape 5 — Saisie consommation avec position
-  ├─ TicketDetail.tsx : Select position si applicable
-  └─ InterventionJournal.tsx : idem
+Étape 5 — Intégration PreventifDetail
+  ├─ PdrPositionPicker dans execPdrUsed
+  └─ JSONB pdr_used enrichi
 
-Étape 6 — Mise à jour mémoire
-  └─ mem://features/pdr-lifespan-management : ajouter section positions
+Étape 6 — Alertes & raccourcis
+  ├─ Badges niveau dans le picker
+  └─ Boutons "Créer ticket / Créer plan" depuis position en alerte
+
+Étape 7 — Mémoire & MANUAL.md
+  └─ Mettre à jour mem://features/pdr-install-positions
 ```
 
-## 8) Garanties non-régression
+## 10) Garanties
 
-- **Stock** : aucune nouvelle écriture dans `pdr` ni `pdr_stock_movements`. Les positions ne touchent jamais le stock.
-- **Tickets / Interventions** : `position_id` est nullable et ignoré si absent → tout flux existant continue.
-- **GPAO** : lecture seule de `production_declarations` via vue. Aucune modification.
-- **Préventif** : la génération de drafts est étendue (additif), pas modifiée.
-- **Audit** : tous les CRUD positions + changements d'instance auditer via le pattern `audit_logs` existant (auteur, motif, valeurs avant/après).
-
-## 9) Points techniques notables
-
-- Les markers d'image utilisent des coordonnées **relatives 0-100** pour rester valides quel que soit le DPR/zoom.
-- Le calcul `production` joint `production_declarations → shifts → line_id` car la PDR est rattachée à une machine, qui est rattachée à une `production_lines`. Si la machine n'a pas de ligne, le mode `production` retombe sur compteur manuel + warning UI.
-- La vue `pdr_position_status` est recalculée à chaque SELECT (pas de matérialisation) — coût acceptable au volume attendu (<10k positions). Index sur `pdr_instances(position_id)` pour les jointures.
+- Stock, mouvements, KPIs ticket/préventif : **inchangés**.
+- Interventions sans position : aucun changement de comportement.
+- PDR sans positions actives sur l'actif : pas d'obligation, pas de friction.
+- Historique des cycles préservé via `pdr_instances` + traces `intervention_pdr.cause_remplacement`/`compteur_fin`.

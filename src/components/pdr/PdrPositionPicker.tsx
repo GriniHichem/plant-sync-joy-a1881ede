@@ -42,6 +42,7 @@ export function PdrPositionPicker({
 }: Props) {
   const [linkId, setLinkId] = useState<string | null>(null);
   const [statuses, setStatuses] = useState<PdrPositionStatus[]>([]);
+  const [markers, setMarkers] = useState<Record<string, { x: number | null; y: number | null }>>({});
   const [lastChanges, setLastChanges] = useState<Record<string, { date: string | null; cause: string | null }>>({});
   const [loading, setLoading] = useState(false);
 
@@ -77,17 +78,19 @@ export function PdrPositionPicker({
       setStatuses(active);
 
       const positionIds = active.map((s: any) => s.position_id);
-      if (positionIds.length === 0) { setLastChanges({}); setLoading(false); return; }
-      const { data: ipRows } = await supabase
-        .from("intervention_pdr" as any)
-        .select("position_id, cause_remplacement, created_at")
-        .in("position_id", positionIds)
-        .order("created_at", { ascending: false });
+      if (positionIds.length === 0) { setLastChanges({}); setMarkers({}); setLoading(false); return; }
+      const [ipRes, posRes] = await Promise.all([
+        supabase.from("intervention_pdr" as any).select("position_id, cause_remplacement, created_at")
+          .in("position_id", positionIds).order("created_at", { ascending: false }),
+        (supabase.from("pdr_install_positions" as any) as any).select("id, marker_x, marker_y").in("id", positionIds),
+      ]);
       const map: Record<string, { date: string | null; cause: string | null }> = {};
-      (ipRows as any[] | null)?.forEach((r) => {
+      (ipRes.data as any[] | null)?.forEach((r) => {
         if (!map[r.position_id]) map[r.position_id] = { date: r.created_at, cause: r.cause_remplacement };
       });
-      if (alive) { setLastChanges(map); setLoading(false); }
+      const mk: Record<string, { x: number | null; y: number | null }> = {};
+      (posRes.data as any[] | null)?.forEach((r) => { mk[r.id] = { x: r.marker_x, y: r.marker_y }; });
+      if (alive) { setLastChanges(map); setMarkers(mk); setLoading(false); }
     })();
     return () => { alive = false; };
   }, [linkId]);
@@ -96,10 +99,8 @@ export function PdrPositionPicker({
     onAvailabilityChange?.(statuses.length > 0);
   }, [statuses.length, onAvailabilityChange]);
 
-  const { primaryImages } = useEntityPrimaryImages(
-    entityType ? [{ type: entityType as any, id: entityId! }] : [],
-  );
-  const imageUrl = entityId ? primaryImages.get(entityId) : null;
+  const primaryImages = useEntityPrimaryImages(entityType || "machine", entityId ? [entityId] : []);
+  const imageUrl = entityId ? primaryImages[entityId] : null;
 
   const select = (s: PdrPositionStatus) => {
     onChange({
@@ -189,15 +190,16 @@ export function PdrPositionPicker({
               <img src={imageUrl} alt="Plan asset" className="block w-full h-auto select-none" />
               <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
                 {statuses
-                  .filter((s) => s.position_id && (s as any).marker_x != null && (s as any).marker_y != null)
-                  .map((s: any) => {
+                  .map((s) => ({ s, m: markers[s.position_id] }))
+                  .filter(({ m }) => m && m.x != null && m.y != null)
+                  .map(({ s, m }) => {
                     const isSel = value?.position_id === s.position_id;
                     return (
                       <g key={s.position_id} style={{ pointerEvents: "auto", cursor: disabled ? "default" : "pointer" }}
                          onClick={() => !disabled && select(s)}>
-                        <circle cx={s.marker_x} cy={s.marker_y} r={isSel ? 2.4 : 1.8}
+                        <circle cx={m!.x as number} cy={m!.y as number} r={isSel ? 2.4 : 1.8}
                                 strokeWidth={0.4} className={NIVEAU_DOT[s.niveau]} />
-                        <text x={s.marker_x} y={s.marker_y - 2.5} fontSize={1.6}
+                        <text x={m!.x as number} y={(m!.y as number) - 2.5} fontSize={1.6}
                               textAnchor="middle" className="fill-foreground font-medium select-none">
                           {s.designation}
                         </text>

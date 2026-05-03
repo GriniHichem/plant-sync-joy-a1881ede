@@ -324,16 +324,17 @@ export default function TicketDetail() {
     }
   };
 
-  const addPdr = () => {
-    if (!newPdrId) return;
+  const addPdrLine = (line: InterventionPdrLine) => {
     setSelectedPdr((prev) => {
-      if (prev.find((p) => p.pdr_id === newPdrId)) return prev;
-      return [...prev, { pdr_id: newPdrId, quantite: parseInt(newPdrQte) || 1 }];
+      // de-dup by (pdr, position) so same PDR can target multiple positions
+      const key = `${line.pdr_id}::${line.position_id || ""}`;
+      if (prev.find((p) => `${p.pdr_id}::${p.position_id || ""}` === key)) return prev;
+      return [...prev, line];
     });
-    setNewPdrId(""); setNewPdrQte("1");
   };
 
-  const removePdr = (pdrId: string) => setSelectedPdr((prev) => prev.filter((p) => p.pdr_id !== pdrId));
+  const removePdrLine = (pdrId: string, positionId?: string | null) =>
+    setSelectedPdr((prev) => prev.filter((p) => !(p.pdr_id === pdrId && (p.position_id || null) === (positionId || null))));
 
   const handleResolve = async () => {
     if (!causeRacine || !solution) {

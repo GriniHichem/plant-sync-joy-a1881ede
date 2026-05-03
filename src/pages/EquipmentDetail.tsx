@@ -111,6 +111,7 @@ export default function EquipmentDetail() {
         <TabsList className="h-11">
           <TabsTrigger value="info" className="h-9">Informations</TabsTrigger>
           <TabsTrigger value="organes" className="h-9">Organes ({organes.length})</TabsTrigger>
+          <TabsTrigger value="pdr" className="h-9"><Package className="h-3.5 w-3.5 mr-1" /> PDR ({pdrLinks.length})</TabsTrigger>
           <TabsTrigger value="photos" className="h-9">Photos</TabsTrigger>
           <TabsTrigger value="documents" className="h-9">Documents</TabsTrigger>
         </TabsList>

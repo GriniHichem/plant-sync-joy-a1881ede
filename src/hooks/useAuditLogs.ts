@@ -186,16 +186,6 @@ export function useAuditKpis(refreshKey: number = 0) {
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
     const todayIso = todayStart.toISOString();
 
-    const head = (build: (q: ReturnType<typeof supabase.from>) => unknown) => {
-      const base = supabase.from("audit_logs").select("*", { count: "exact", head: true });
-      return (build(base) as unknown as Promise<{ count: number | null }>);
-    };
-
-    Promise.all([
-      head((q) => (q as { is: (c: string, v: null) => unknown }).is("archived_at", null)),
-      head((q) => (q as { is: (c: string, v: null) => unknown; gte: (c: string, v: string) => unknown }).is("archived_at", null) && (q as never)),
-    ]).catch(() => null);
-
     // Use direct supabase calls per metric for clarity
     Promise.all([
       supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null),

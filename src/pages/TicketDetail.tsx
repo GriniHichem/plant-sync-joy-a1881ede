@@ -18,6 +18,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { checkValidationRequired, createValidationRequest } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { InterventionPdrLineEditor, type InterventionPdrLine } from "@/components/pdr/InterventionPdrLineEditor";
+import { CAUSE_OPTIONS } from "@/components/pdr/InterventionPdrLineEditor";
 
 export default function TicketDetail() {
   const { id } = useParams();
@@ -33,9 +36,9 @@ export default function TicketDetail() {
   const [solution, setSolution] = useState("");
 
   const [pdrList, setPdrList] = useState<any[]>([]);
-  const [selectedPdr, setSelectedPdr] = useState<{ pdr_id: string; quantite: number }[]>([]);
-  const [newPdrId, setNewPdrId] = useState("");
-  const [newPdrQte, setNewPdrQte] = useState("1");
+  const [selectedPdr, setSelectedPdr] = useState<InterventionPdrLine[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingResolve, setPendingResolve] = useState<null | (() => Promise<void>)>(null);
 
   // Co-intervenants
   const [maintenanciers, setMaintenanciers] = useState<any[]>([]);

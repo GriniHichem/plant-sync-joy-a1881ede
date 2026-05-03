@@ -388,7 +388,16 @@ export default function TicketDetail() {
     if (activeIntervention) {
       await supabase.from("interventions").update({ statut: "terminee" as any, date_fin: now }).eq("id", activeIntervention.id);
       if (selectedPdr.length > 0) {
-        await supabase.from("intervention_pdr").insert(selectedPdr.map((p) => ({ intervention_id: activeIntervention.id, pdr_id: p.pdr_id, quantite: p.quantite })));
+        await supabase.from("intervention_pdr").insert(selectedPdr.map((p) => ({
+          intervention_id: activeIntervention.id,
+          pdr_id: p.pdr_id,
+          quantite: p.quantite,
+          position_id: p.position_id ?? null,
+          compteur_fin: p.compteur_fin ?? null,
+          cause_remplacement: p.cause_remplacement ?? null,
+          commentaire_technique: p.commentaire_technique ?? null,
+          compteur_initial_new: p.compteur_initial_new ?? null,
+        } as any)));
         for (const p of selectedPdr) {
           const pdrItem = pdrList.find((x) => x.id === p.pdr_id);
           if (pdrItem) {

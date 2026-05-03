@@ -8,12 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/gmao/StatusBadge";
-import { ArrowLeft, Edit, Cog, Factory, Component } from "lucide-react";
+import { ArrowLeft, Edit, Cog, Factory, Component, Package, MapPin } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { EntityDocumentManager } from "@/components/documents/EntityDocumentManager";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PdrPositionsManager } from "@/components/pdr/PdrPositionsManager";
 
 const TYPE_LABELS: Record<string, string> = {
   capteur: "Capteur", actionneur: "Actionneur", convoyeur: "Convoyeur",
@@ -44,6 +47,8 @@ export default function EquipmentDetail() {
   const { canEdit } = usePermissions();
   const [equip, setEquip] = useState<any>(null);
   const [organes, setOrganes] = useState<any[]>([]);
+  const [pdrLinks, setPdrLinks] = useState<any[]>([]);
+  const [positionDialog, setPositionDialog] = useState<{ linkId: string; label: string } | null>(null);
   const entityImages = useEntityImages("equipement", id);
   useEffect(() => {
     if (!id) return;
@@ -58,6 +63,10 @@ export default function EquipmentDetail() {
       .eq("equipement_id", id)
       .order("sort_order")
       .then(({ data }: any) => setOrganes(data || []));
+    (supabase.from("pdr_entity_links" as any) as any)
+      .select("id, pdr_id, quantite_recommandee, pdr(reference, designation, stock_actuel, stock_min)")
+      .eq("entity_type", "equipement").eq("entity_id", id)
+      .then(({ data }: any) => setPdrLinks(data || []));
   }, [id]);
 
   if (!equip) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;

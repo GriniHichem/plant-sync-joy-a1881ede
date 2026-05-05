@@ -13,6 +13,7 @@ import {
   IconConsumption, IconStop, IconSettings, IconMaintenance, IconProduction,
 } from "@/components/icons/IndustrialIcons";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 type AppModule = {
   title: string;

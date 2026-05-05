@@ -368,6 +368,7 @@ export function AppTopBar() {
           </DropdownMenu>
         </div>
       </div>
+      {isRealAdmin && <ImpersonationDialog open={impersonationOpen} onOpenChange={setImpersonationOpen} />}
     </header>
   );
 }

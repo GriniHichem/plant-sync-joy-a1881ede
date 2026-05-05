@@ -227,6 +227,21 @@ export default function UsersAdmin() {
                   <Label>Mot de passe *</Label>
                   <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-12" minLength={6} placeholder="Min. 6 caractères" />
                 </div>
+                <div className="space-y-2">
+                  <Label>Poste</Label>
+                  <Input value={newPoste} onChange={(e) => setNewPoste(e.target.value)} className="h-12" placeholder="Ex: Technicien maintenance" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Rôle initial</Label>
+                  <Select value={newRole} onValueChange={setNewRole}>
+                    <SelectTrigger className="h-12"><SelectValue placeholder="Aucun (à attribuer plus tard)" /></SelectTrigger>
+                    <SelectContent>
+                      {Constants.public.Enums.app_role.map((r) => (
+                        <SelectItem key={r} value={r}>{ROLE_LABELS[r] || r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button onClick={handleCreateUser} disabled={creating} className="w-full h-12">
                   {creating ? "Création..." : "Créer l'utilisateur"}
                 </Button>

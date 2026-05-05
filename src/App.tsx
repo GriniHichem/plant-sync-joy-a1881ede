@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { AppLayout } from "@/components/gmao/AppLayout";
 import { InventoryLayout } from "@/components/inventaire/InventoryLayout";
 import { useInventoryPermissions } from "@/hooks/useInventoryPermissions";

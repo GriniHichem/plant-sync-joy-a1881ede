@@ -64,6 +64,8 @@ export default function UsersAdmin() {
   const [newPassword, setNewPassword] = useState("");
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
+  const [newPoste, setNewPoste] = useState("");
+  const [newRole, setNewRole] = useState("");
   const [creating, setCreating] = useState(false);
 
   const load = async () => {

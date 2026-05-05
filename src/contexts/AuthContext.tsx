@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/audit";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 
 type AppRole = "admin" | "resp_maintenance" | "maintenancier" | "resp_production" | "chef_ligne" | "operateur" | "gestionnaire_magasin" | "bureau_methode" | "responsable_si" | "auditeur" | "controleur_qualite" | "responsable_controle_qualite" | "directeur_qualite" | "responsable_inventaire" | "agent_inventaire";
 
@@ -19,8 +20,10 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   roles: AppRole[];
+  realRoles: AppRole[];
   loading: boolean;
   hasRole: (role: AppRole) => boolean;
+  isImpersonating: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -35,9 +38,10 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [realProfile, setRealProfile] = useState<Profile | null>(null);
+  const [realRoles, setRealRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const { impersonation } = useImpersonation();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -54,8 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }, 0);
       } else {
-        setProfile(null);
-        setRoles([]);
+        setRealProfile(null);
+        setRealRoles([]);
       }
     });
 
@@ -78,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select("*")
       .eq("user_id", userId)
       .single();
-    if (data) setProfile(data as Profile);
+    if (data) setRealProfile(data as Profile);
   }
 
   async function fetchRoles(userId: string) {
@@ -86,23 +90,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    if (data) setRoles(data.map((r) => r.role as AppRole));
+    if (data) setRealRoles(data.map((r) => r.role as AppRole));
   }
 
-  const hasRole = (role: AppRole) => roles.includes(role);
+  // Effective values: when impersonating, override roles & profile
+  const effectiveRoles: AppRole[] = impersonation
+    ? (impersonation.targetRoles as AppRole[])
+    : realRoles;
+
+  const effectiveProfile: Profile | null = impersonation && impersonation.targetProfile
+    ? {
+        id: impersonation.targetProfile.user_id,
+        user_id: impersonation.targetProfile.user_id,
+        first_name: impersonation.targetProfile.first_name ?? "",
+        last_name: impersonation.targetProfile.last_name ?? "",
+        poste: impersonation.targetProfile.poste,
+        avatar_url: impersonation.targetProfile.avatar_url,
+      }
+    : realProfile;
+
+  const hasRole = (role: AppRole) => effectiveRoles.includes(role);
 
   const signOut = async () => {
-    // Log BEFORE signOut so user_id is still available for RLS insert
     try { await logAuthEvent("logout", { email: user?.email ?? undefined }); } catch { /* ignore */ }
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
-    setProfile(null);
-    setRoles([]);
+    setRealProfile(null);
+    setRealRoles([]);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, roles, loading, hasRole, signOut }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      profile: effectiveProfile,
+      roles: effectiveRoles,
+      realRoles,
+      loading,
+      hasRole,
+      isImpersonating: !!impersonation,
+      signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

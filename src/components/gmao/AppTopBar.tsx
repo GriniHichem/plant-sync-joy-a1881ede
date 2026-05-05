@@ -1,6 +1,8 @@
 import { NavLink as RRNavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { ImpersonationDialog } from "@/components/admin/ImpersonationDialog";
+import { Eye } from "lucide-react";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 import {
   IconDashboard, IconMachine, IconEquipment, IconFactory, IconSpare,

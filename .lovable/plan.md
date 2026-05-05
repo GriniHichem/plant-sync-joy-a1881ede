@@ -1,79 +1,42 @@
 ## Objectif
 
-Permettre à un **admin** de choisir un utilisateur depuis la barre de navigation et de **voir l'app comme cet utilisateur** (mêmes menus, mêmes permissions, mêmes accès) sans changer de session. C'est un **mode aperçu / bac à sable** : aucune action effectuée n'est réellement appliquée — toutes les écritures sont bloquées et les données saisies sont temporaires.
+Refondre **Matrice modules** (`/securite?section=matrix`) pour permettre une configuration **fiable, complète et productive** des permissions par rôle, alignée avec ce que l'app utilise réellement.
 
-## Comportement attendu
+## Problèmes actuels
 
-1. Bouton **"Voir comme"** dans la topbar, visible uniquement si `hasRole('admin')`.
-2. Dialog de sélection d'utilisateur (recherche par nom / email / rôle, liste depuis `profiles` + `user_roles`).
-3. Après sélection : un **bandeau orange persistant** en haut de l'écran indique
-   `Mode aperçu — Vous voyez comme {Nom} ({rôle}). Aucune modification n'est enregistrée.` avec bouton **"Quitter le mode aperçu"**.
-4. Toute la navigation, les menus (Apps, Maintenance, Production, Qualité, Inventaire, Configuration) et les boutons d'action utilisent les rôles + permissions de l'utilisateur cible.
-5. Toutes les **mutations Supabase** (insert/update/delete + `functions.invoke`) sont **interceptées et bloquées** avec un toast "Mode aperçu : action non enregistrée". Les lectures restent normales.
-6. L'état d'aperçu est stocké en `sessionStorage` (perdu à la fermeture d'onglet) — jamais en base.
+1. **Modules incomplets** : `equipements`, `lignes`, `qualite`, `inventaire`, `audit`, `validations`, `notifications` ne figurent pas dans la matrice alors qu'ils sont vérifiés dans `Apps.tsx` et les hooks. Conséquence : un rôle ne peut pas voir ces apps même bien configuré.
+2. **Rôles incomplets** : `responsable_inventaire` et `agent_inventaire` (présents dans l'enum) sont absents de la liste.
+3. **Sauvegarde dangereuse** : `DELETE … neq id 0…` puis `INSERT` → si l'INSERT échoue après le DELETE, **toutes les permissions sont perdues**. Doit être un `upsert` sur `(role, module)`.
+4. **Matrice vide à l'init** : aucun bouton pour pré-remplir des profils raisonnables → l'admin doit tout cocher à la main pour 16 rôles × 18 modules × 4 actions = 1152 cases.
+5. **Pas de cohérence** : on peut activer "Supprimer" sans "Voir" → permission morte.
+6. **Pas de productivité** : impossible de copier les droits d'un rôle vers un autre, pas de filtre/recherche, pas de regroupement par famille de rôle.
 
-## Implémentation technique
+## Améliorations
 
-### 1. Nouveau contexte `ImpersonationContext`
-Fichier : `src/contexts/ImpersonationContext.tsx`
-- État : `{ targetUserId, targetProfile, targetRoles } | null`
-- Méthodes : `startImpersonation(userId)`, `stopImpersonation()`
-- Charge `profiles` + `user_roles` du user cible quand activé.
-- Persiste dans `sessionStorage` (clé `impersonation_target`).
+### Fonctionnel
+- **Modules complets** alignés sur `Apps.tsx` + nav, regroupés en 5 familles : Maintenance, Production, Qualité, Inventaire, Système & Gouvernance.
+- **Tous les rôles** (15) regroupés par famille métier : Direction, Maintenance, Production, Qualité, Logistique.
+- **Presets recommandés** par rôle (admin = full, auditeur = lecture seule globale, opérateur = limité, etc.) :
+  - Bouton **"Initialiser les presets"** quand la matrice est vide (carte primaire bien visible).
+  - Bouton **"Appliquer presets globaux"** (avec dialog de confirmation).
+  - Bouton **"Preset recommandé"** par rôle.
+- **Copier d'un rôle** : sélecteur dans chaque rôle pour cloner les permissions d'un autre.
+- **Tout effacer** par rôle.
+- **Cohérence auto** : activer C/M/D force `can_view = true` + bandeau d'avertissement si incohérences existantes.
+- **Sauvegarde sûre** via `upsert(onConflict: "role,module")` — plus de delete destructif.
 
-### 2. Adapter `useAuth` et `usePermissions`
-- `AuthContext` : exposer `effectiveRoles` et `effectiveProfile` calculés ainsi :
-  - si impersonation active → roles/profile du cible
-  - sinon → roles/profile réels
-- Garder `roles` réels accessibles séparément (`realRoles`) pour la check admin.
-- `hasRole()` utilise `effectiveRoles`.
-- `usePermissions` consomme déjà `roles` via `useAuth` → fonctionne automatiquement.
+### UX
+- Recherche de rôle + filtre par famille.
+- Regroupement visuel des rôles par famille.
+- Conserve toggles individuels, actions rapides (V/C/M/S sur tous), plein accès, expand/collapse all.
+- Stats par rôle (X/Y permissions, %), résumé V/C/M/S quand replié.
 
-### 3. Garde-fou écritures (read-only sandbox)
-Fichier : `src/lib/impersonationGuard.ts`
-- Wrapper qui patche `supabase.from(...).insert/update/delete/upsert` et `supabase.functions.invoke` quand impersonation active.
-- Retourne `{ data: null, error: { message: 'Mode aperçu' } }` + déclenche `toast.warning("Mode aperçu : action non enregistrée")`.
-- Activé/désactivé via le contexte.
+### Sécurité
+- Reste accessible aux `admin` uniquement.
+- Le mode aperçu (impersonation) bloque déjà les écritures via le guard global.
 
-### 4. UI Topbar
-Dans `src/components/gmao/AppTopBar.tsx` :
-- Ajouter un bouton `Voir comme` (icône `Eye`) entre Search et NotificationBell, visible si `realRoles.includes('admin')`.
-- Ouvre `<ImpersonationDialog />` (nouveau composant).
-- Si impersonation active : afficher avatar + nom du user cible avec badge orange "APERÇU" et bouton X.
+## Fichier modifié
 
-### 5. Dialog de sélection
-Fichier : `src/components/admin/ImpersonationDialog.tsx`
-- Liste paginée + champ recherche.
-- Requête : `profiles` joint avec `user_roles` (groupé), exclut l'admin courant.
-- Affiche : avatar / nom / email / liste des rôles.
-- Clic → `startImpersonation(userId)` + ferme + redirige `/apps`.
+- `src/pages/parametres/RolesMatrix.tsx` — réécriture complète (~500 lignes).
 
-### 6. Bandeau global
-Fichier : `src/components/admin/ImpersonationBanner.tsx`
-- Monté dans `AppLayout` au-dessus de la topbar.
-- Sticky, fond orange (`bg-orange-500/15` + bordure), texte explicite + bouton "Quitter le mode aperçu".
-
-### 7. Branchement
-- `App.tsx` : envelopper l'app avec `<ImpersonationProvider>` (à l'intérieur de `<AuthProvider>`).
-- `AppLayout` : insérer `<ImpersonationBanner />`.
-- `Apps.tsx` et `usePermissions` continuent de fonctionner sans changement (ils lisent `roles` du contexte).
-
-## Sécurité
-
-- **Côté serveur** rien ne change : RLS reste basée sur le vrai `auth.uid()`. L'impersonation est purement visuelle/UI.
-- Le garde-fou bloque les écritures côté client pour éviter qu'un admin modifie quelque chose en pensant être en mode aperçu.
-- Cette approche n'est pas une véritable impersonation auth (qui exigerait un edge function avec service role + signature) — c'est un mode aperçu UX, ce qui correspond exactement à la demande.
-
-## Fichiers
-
-Créés :
-- `src/contexts/ImpersonationContext.tsx`
-- `src/lib/impersonationGuard.ts`
-- `src/components/admin/ImpersonationDialog.tsx`
-- `src/components/admin/ImpersonationBanner.tsx`
-
-Modifiés :
-- `src/contexts/AuthContext.tsx` (effectiveRoles/Profile + realRoles)
-- `src/components/gmao/AppTopBar.tsx` (bouton "Voir comme" + indicateur)
-- `src/components/gmao/AppLayout.tsx` (bandeau)
-- `src/App.tsx` (provider)
+Aucune migration DB nécessaire (la table `role_permissions` a déjà `(role, module)` unique implicite via la contrainte enum + index, et l'`upsert` fonctionne).

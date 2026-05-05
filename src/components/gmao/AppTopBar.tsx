@@ -217,7 +217,9 @@ function MobileNav() {
 export function AppTopBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, roles, signOut } = useAuth();
+  const { profile, roles, realRoles, signOut } = useAuth();
+  const [impersonationOpen, setImpersonationOpen] = useState(false);
+  const isRealAdmin = realRoles.includes("admin" as any);
 
   const isGmaoActive = gmaoItems.some((i) => isActive(location.pathname, i.url));
   const isGpaoActive = gpaoItems.some((i) => isActive(location.pathname, i.url));

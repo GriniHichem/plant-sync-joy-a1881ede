@@ -143,31 +143,31 @@ export default function UsersAdmin() {
 
   const handleCreateUser = async () => {
     if (!newEmail || !newPassword || !newFirstName || !newLastName) {
-      toast({ title: "Veuillez remplir tous les champs", variant: "destructive" });
+      toast({ title: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });
       return;
     }
     setCreating(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email: newEmail,
-        password: newPassword,
-        options: {
-          data: { first_name: newFirstName, last_name: newLastName },
-          emailRedirectTo: window.location.origin,
+      const { data, error } = await supabase.functions.invoke("admin-create-user", {
+        body: {
+          email: newEmail,
+          password: newPassword,
+          first_name: newFirstName,
+          last_name: newLastName,
+          poste: newPoste || null,
+          role: newRole || null,
         },
       });
       if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
       toast({
         title: "Utilisateur créé",
-        description: "Un email de confirmation a été envoyé à " + newEmail,
+        description: (data as any)?.warning ?? `${newEmail} est actif et prêt à se connecter.`,
       });
       setCreateDialogOpen(false);
-      setNewEmail("");
-      setNewPassword("");
-      setNewFirstName("");
-      setNewLastName("");
-      // Reload after a short delay to allow trigger to create profile
-      setTimeout(load, 2000);
+      setNewEmail(""); setNewPassword(""); setNewFirstName("");
+      setNewLastName(""); setNewPoste(""); setNewRole("");
+      load();
     } catch (error: any) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {

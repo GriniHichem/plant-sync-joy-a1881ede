@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useNavigate } from "react-router-dom";
 import { CalendarCheck, Wrench, Search, Filter, CalendarIcon, X, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 type JournalEntry = {
   id: string;
@@ -228,11 +229,30 @@ export default function InterventionJournal() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Journal des interventions</h1>
-        <p className="text-muted-foreground text-sm">
-          Historique complet — {filtered.length} intervention(s)
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold">Journal des interventions</h1>
+          <p className="text-muted-foreground text-sm">
+            Historique complet — {filtered.length} intervention(s)
+          </p>
+        </div>
+        <ExportCsvButton
+          data={filtered}
+          columns={[
+            { key: "date", label: "Date" },
+            { key: "type", label: "Type" },
+            { key: "title", label: "Titre" },
+            { key: "description", label: "Description" },
+            { key: "machine_code", label: "Machine code" },
+            { key: "machine_name", label: "Machine" },
+            { key: "line_name", label: "Ligne" },
+            { key: "user_name", label: "Intervenant" },
+            { key: "status", label: "Statut" },
+            { key: "duration_minutes", label: "Durée (min)" },
+            { key: "role", label: "Rôle" },
+          ]}
+          filename="journal_interventions"
+        />
       </div>
 
       {/* Type tabs */}

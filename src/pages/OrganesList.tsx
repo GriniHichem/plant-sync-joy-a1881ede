@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, RotateCcw, Component } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ListScanButton } from "@/components/scanner/ListScanButton";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 const TYPE_LABELS: Record<string, string> = {
   mecanique: "Mécanique", electrique: "Électrique", pneumatique: "Pneumatique",
@@ -68,6 +69,19 @@ export default function OrganesList() {
         </div>
         <div className="flex items-center gap-2">
           <ListScanButton allowedTypes={["organe"]} routeFor={(e) => `/organes/${e.entity_id}`} />
+          <ExportCsvButton
+            data={filtered}
+            columns={[
+              { key: "code", label: "Code" },
+              { key: "designation", label: "Désignation" },
+              { key: "type", label: "Type", format: (v) => TYPE_LABELS[v] || v || "" },
+              { key: "statut", label: "Statut", format: (v) => STATUT_LABELS[v] || v || "" },
+              { key: "criticite", label: "Criticité" },
+              { key: "machines.code", label: "Machine parent" },
+              { key: "equipements.code", label: "Équipement parent" },
+            ]}
+            filename="organes"
+          />
           {canCreate("organes") && (
             <Button onClick={() => navigate("/organes/new")}>
               <Plus className="h-4 w-4 mr-2" /> Nouvel organe

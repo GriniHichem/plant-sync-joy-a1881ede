@@ -6,6 +6,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useInventoryCampaigns } from "@/hooks/useInventoryCampaigns";
 import { useInventoryPermissions } from "@/hooks/useInventoryPermissions";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Brouillon", cls: "bg-muted text-muted-foreground" },
@@ -29,9 +30,22 @@ export default function InventoryCampaignsList() {
           </Button>
           <h1 className="text-2xl font-bold">Campagnes d'inventaire</h1>
         </div>
-        {canManage && (
-          <Button asChild><Link to="/inventaire/campagnes/nouvelle"><Plus className="h-4 w-4 mr-1" />Nouvelle</Link></Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportCsvButton
+            data={campaigns as any[]}
+            columns={[
+              { key: "code", label: "Code" },
+              { key: "label", label: "Libellé" },
+              { key: "status", label: "Statut", format: (v) => STATUS[v]?.label || v || "" },
+              { key: "date_debut", label: "Début" },
+              { key: "date_fin_prevue", label: "Fin prévue" },
+            ]}
+            filename="campagnes_inventaire"
+          />
+          {canManage && (
+            <Button asChild><Link to="/inventaire/campagnes/nouvelle"><Plus className="h-4 w-4 mr-1" />Nouvelle</Link></Button>
+          )}
+        </div>
       </div>
 
       <Card>

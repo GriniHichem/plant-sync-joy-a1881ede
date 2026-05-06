@@ -14,6 +14,7 @@ import { Plus, BookOpen, Trash2, Edit, ChevronDown, ChevronRight, Package, Copy,
 import { Textarea } from "@/components/ui/textarea";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 export default function RecipesPage() {
   const { hasRole } = useAuth();
@@ -337,43 +338,58 @@ export default function RecipesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Recettes & Nomenclatures</h1>
           <p className="text-muted-foreground">{productGroups.length} produit(s) · {recipes.length} version(s) au total</p>
         </div>
-        {canManage && (
-          <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Nouvelle recette</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>{editId ? "Modifier" : parentProductId ? "Nouvelle version" : "Nouvelle recette"}</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Nom *</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} className="h-12" placeholder="Ex: Harissa épicée v2" />
-                </div>
-                {!parentProductId && (
+        <div className="flex items-center gap-2">
+          <ExportCsvButton
+            data={recipes}
+            columns={[
+              { key: "name", label: "Nom" },
+              { key: "version", label: "Version" },
+              { key: "products.code", label: "Produit code" },
+              { key: "products.designation", label: "Produit" },
+              { key: "status", label: "Statut" },
+              { key: "is_active", label: "Actif", format: (v) => (v ? "Oui" : "Non") },
+              { key: "created_at", label: "Créée le" },
+            ]}
+            filename="recettes"
+          />
+          {canManage && (
+            <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
+              <DialogTrigger asChild>
+                <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Nouvelle recette</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{editId ? "Modifier" : parentProductId ? "Nouvelle version" : "Nouvelle recette"}</DialogTitle></DialogHeader>
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Produit *</Label>
-                    <Select value={productId} onValueChange={setProductId}>
-                      <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                      <SelectContent>
-                        {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.designation}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <Label>Nom *</Label>
+                    <Input value={name} onChange={(e) => setName(e.target.value)} className="h-12" placeholder="Ex: Harissa épicée v2" />
                   </div>
-                )}
-                <div className="space-y-2">
-                  <Label>N° Version</Label>
-                  <Input type="number" value={version} onChange={(e) => setVersion(e.target.value)} className="h-12" min={1} />
+                  {!parentProductId && (
+                    <div className="space-y-2">
+                      <Label>Produit *</Label>
+                      <Select value={productId} onValueChange={setProductId}>
+                        <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                        <SelectContent>
+                          {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.designation}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label>N° Version</Label>
+                    <Input type="number" value={version} onChange={(e) => setVersion(e.target.value)} className="h-12" min={1} />
+                  </div>
+                  <Button onClick={handleSaveRecipe} className="w-full h-12">{editId ? "Enregistrer" : "Créer"}</Button>
                 </div>
-                <Button onClick={handleSaveRecipe} className="w-full h-12">{editId ? "Enregistrer" : "Créer"}</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {/* Add line dialog */}

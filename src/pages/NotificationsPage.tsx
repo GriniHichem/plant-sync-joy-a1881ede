@@ -14,6 +14,7 @@ import { markAllNotificationsRead, markNotificationRead, archiveNotification, SE
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 const DEFAULT_FILTERS: NotificationFilters = { status: "all" };
 
@@ -80,6 +81,20 @@ export default function NotificationsPage() {
           <p className="text-sm text-muted-foreground">Centre des alertes et événements importants</p>
         </div>
         <div className="flex items-center gap-2">
+          <ExportCsvButton
+            data={rows}
+            columns={[
+              { key: "created_at", label: "Date" },
+              { key: "title", label: "Titre" },
+              { key: "message", label: "Message" },
+              { key: "module", label: "Module" },
+              { key: "entity_code", label: "Code entité" },
+              { key: "entity_label", label: "Entité" },
+              { key: "severity", label: "Sévérité" },
+              { key: "status", label: "Statut" },
+            ]}
+            filename="notifications"
+          />
           <Button variant="outline" size="sm" onClick={handleMarkAll}>
             <CheckCheck size={14} />
             Tout marquer lu

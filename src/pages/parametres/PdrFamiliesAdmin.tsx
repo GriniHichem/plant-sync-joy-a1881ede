@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Edit, FolderTree, Plus, Shield, Trash2, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 const APPRO_OPTIONS = [
   { value: "local", label: "Local" },
@@ -171,6 +172,18 @@ export default function PdrFamiliesAdmin() {
           <h1 className="text-2xl font-bold">Familles PDR</h1>
           <p className="text-muted-foreground">{families.length} famille(s)</p>
         </div>
+        <ExportCsvButton
+          data={families}
+          columns={[
+            { key: "name", label: "Nom" },
+            { key: "description", label: "Description" },
+            { key: "approvisionnement", label: "Approvisionnement", format: (v) => approLabel(v) },
+            { key: "statut_default", label: "Statut défaut", format: (v) => statutLabel(v) },
+            { key: "parent_id", label: "Parent ID" },
+            { key: "is_active", label: "Actif", format: (v) => (v ? "Oui" : "Non") },
+          ]}
+          filename="familles_pdr"
+        />
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Ajouter</Button>

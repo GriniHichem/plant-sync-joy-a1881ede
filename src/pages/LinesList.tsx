@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Factory, Eye, Settings, Plus, CalendarCheck } from "lucide-react";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 export default function LinesList() {
   const navigate = useNavWithFrom();
@@ -39,6 +40,17 @@ export default function LinesList() {
           </h1>
           <p className="text-muted-foreground">{lines.length} ligne(s) — Vue synoptique</p>
         </div>
+        <ExportCsvButton
+          data={lines.map((l) => ({ ...l, machines_count: machineCounts[l.id] || 0 }))}
+          columns={[
+            { key: "code", label: "Code" },
+            { key: "designation", label: "Désignation" },
+            { key: "atelier", label: "Atelier" },
+            { key: "machines_count", label: "Machines" },
+            { key: "is_active", label: "Actif", format: (v) => (v ? "Oui" : "Non") },
+          ]}
+          filename="lignes_production"
+        />
       </div>
 
       <Card>

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Edit, Factory, Plus, Shield, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 export default function LignesAdmin() {
   const navigate = useNavigate();
@@ -130,6 +131,17 @@ export default function LignesAdmin() {
           <h1 className="text-2xl font-bold">Lignes de production</h1>
           <p className="text-muted-foreground">{lines.length} ligne(s)</p>
         </div>
+        <ExportCsvButton
+          data={lines}
+          columns={[
+            { key: "code", label: "Code" },
+            { key: "designation", label: "Désignation" },
+            { key: "atelier", label: "Atelier" },
+            { key: "description", label: "Description" },
+            { key: "is_active", label: "Actif", format: (v) => (v ? "Oui" : "Non") },
+          ]}
+          filename="lignes_production"
+        />
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Ajouter</Button>

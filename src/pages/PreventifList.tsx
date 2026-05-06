@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   brouillon: { label: "Brouillon", variant: "secondary" },
@@ -145,9 +146,25 @@ export default function PreventifList() {
             {canSeeBrouillons && kpis.brouillons > 0 && <span className="ml-2">• {kpis.brouillons} brouillons</span>}
           </p>
         </div>
-        <Button className="h-12 px-6" onClick={() => navigate("/preventif/new")}>
-          <Plus className="h-4 w-4 mr-2" /> Nouveau plan
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportCsvButton
+            data={filtered}
+            columns={[
+              { key: "title", label: "Plan" },
+              { key: "machines.code", label: "Machine code" },
+              { key: "machines.designation", label: "Machine" },
+              { key: "production_lines.code", label: "Ligne" },
+              { key: "frequence", label: "Fréquence", format: (v) => FREQ_LABELS[v] || v || "" },
+              { key: "derniere_execution", label: "Dernière exécution" },
+              { key: "prochaine_echeance", label: "Prochaine échéance" },
+              { key: "statut_plan", label: "Statut" },
+            ]}
+            filename="plans_preventifs"
+          />
+          <Button className="h-12 px-6" onClick={() => navigate("/preventif/new")}>
+            <Plus className="h-4 w-4 mr-2" /> Nouveau plan
+          </Button>
+        </div>
       </div>
 
       {/* KPIs */}

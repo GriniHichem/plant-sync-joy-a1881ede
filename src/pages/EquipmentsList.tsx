@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 const TYPE_LABELS: Record<string, string> = {
   capteur: "Capteur", actionneur: "Actionneur", convoyeur: "Convoyeur",
@@ -65,11 +66,26 @@ export default function EquipmentsList() {
           <h1 className="text-2xl font-bold">Équipements</h1>
           <p className="text-muted-foreground">{filtered.length} équipement(s)</p>
         </div>
-        {canCreate("machines") && (
-          <Button onClick={() => navigate("/equipements/new")} className="h-12 px-6">
-            <Plus className="h-4 w-4 mr-2" /> Nouvel équipement
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportCsvButton
+            data={filtered}
+            columns={[
+              { key: "code", label: "Code" },
+              { key: "designation", label: "Désignation" },
+              { key: "type", label: "Type", format: (v) => TYPE_LABELS[v] || v || "" },
+              { key: "statut", label: "Statut", format: (v) => STATUT_LABELS[v] || v || "" },
+              { key: "criticite", label: "Criticité" },
+              { key: "machines.code", label: "Machine" },
+              { key: "production_lines.code", label: "Ligne" },
+            ]}
+            filename="equipements"
+          />
+          {canCreate("machines") && (
+            <Button onClick={() => navigate("/equipements/new")} className="h-12 px-6">
+              <Plus className="h-4 w-4 mr-2" /> Nouvel équipement
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">

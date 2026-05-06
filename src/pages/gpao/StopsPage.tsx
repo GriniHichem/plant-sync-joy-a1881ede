@@ -5,6 +5,7 @@ import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertTriangle } from "lucide-react";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 const arretTypeLabels: Record<string, string> = {
   panne: "Panne",
@@ -32,11 +33,26 @@ export default function StopsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">Suivi des arrêts</h1>
-        <p className="text-muted-foreground">
-          {stops.length} arrêts — Total: <span className="font-bold tabular-nums text-destructive">{totalMin} min</span>
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold">Suivi des arrêts</h1>
+          <p className="text-muted-foreground">
+            {stops.length} arrêts — Total: <span className="font-bold tabular-nums text-destructive">{totalMin} min</span>
+          </p>
+        </div>
+        <ExportCsvButton
+          data={stops}
+          columns={[
+            { key: "type", label: "Type", format: (v) => arretTypeLabels[v] || v || "" },
+            { key: "ordres_fabrication.numero", label: "OF" },
+            { key: "production_lines.code", label: "Ligne" },
+            { key: "machines.code", label: "Machine" },
+            { key: "heure_debut", label: "Début" },
+            { key: "heure_fin", label: "Fin" },
+            { key: "duree_minutes", label: "Durée (min)" },
+          ]}
+          filename="arrets_production"
+        />
       </div>
       <Card>
         <CardContent className="p-0">

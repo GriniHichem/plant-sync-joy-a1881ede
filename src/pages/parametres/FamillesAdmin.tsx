@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, FolderTree, Plus, Shield, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 export default function FamillesAdmin() {
   const navigate = useNavigate();
@@ -87,6 +88,16 @@ export default function FamillesAdmin() {
           <h1 className="text-2xl font-bold">Familles machines</h1>
           <p className="text-muted-foreground">{families.length} famille(s)</p>
         </div>
+        <ExportCsvButton
+          data={families}
+          columns={[
+            { key: "name", label: "Nom" },
+            { key: "description", label: "Description" },
+            { key: "parent_id", label: "Parent ID" },
+            { key: "is_active", label: "Actif", format: (v) => (v ? "Oui" : "Non") },
+          ]}
+          filename="familles_machines"
+        />
         <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Ajouter</Button>

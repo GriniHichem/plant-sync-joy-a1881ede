@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 type SortField = "date" | "machine" | "duration";
 type SortDir = "asc" | "desc";
@@ -290,6 +291,21 @@ export default function InterventionHistory() {
             {loading ? "Chargement…" : `${total} intervention(s) — page ${page + 1} / ${totalPages}`}
           </p>
         </div>
+        <ExportCsvButton
+          data={rows}
+          columns={[
+            { key: "date_debut", label: "Début" },
+            { key: "date_fin", label: "Fin" },
+            { key: "statut", label: "Statut" },
+            { key: "description", label: "Description" },
+            { key: "ticket.numero", label: "Ticket" },
+            { key: "ticket.machines.code", label: "Machine code" },
+            { key: "ticket.machines.designation", label: "Machine" },
+            { key: "ticket.temps_arret_minutes", label: "Temps arrêt (min)" },
+            { key: "ticket.temps_intervention_minutes", label: "Temps intervention (min)" },
+          ]}
+          filename="interventions_historique"
+        />
       </div>
 
       {/* Filters */}

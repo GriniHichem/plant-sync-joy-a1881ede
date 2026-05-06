@@ -12,6 +12,7 @@ import {
 } from "@/lib/searchCatalog";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 /**
  * Page de résultats complète (Phase 3 minimale).
@@ -81,10 +82,25 @@ export default function SearchPage() {
       )}
 
       {data.total > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {data.total} résultat{data.total > 1 ? "s" : ""} dans {groups.length} module
-          {groups.length > 1 ? "s" : ""}.
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {data.total} résultat{data.total > 1 ? "s" : ""} dans {groups.length} module
+            {groups.length > 1 ? "s" : ""}.
+          </p>
+          <ExportCsvButton
+            data={groups.flatMap(([, rows]) => rows)}
+            columns={[
+              { key: "module", label: "Module" },
+              { key: "code", label: "Code" },
+              { key: "label", label: "Libellé" },
+              { key: "severity", label: "Sévérité" },
+              { key: "snippet", label: "Extrait", format: (v) => (v ? String(v).replace(/<\/?mark>/g, "") : "") },
+              { key: "url", label: "URL" },
+            ]}
+            filename="recherche"
+            size="sm"
+          />
+        </div>
       )}
 
       <div className="space-y-6">

@@ -16,6 +16,7 @@ import { Package, Edit, History, ShieldAlert } from "lucide-react";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
 import { checkValidationRequired, createValidationRequest } from "@/lib/validation";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 export default function ConsumptionPage() {
   const { user, hasRole } = useAuth();
@@ -145,16 +146,33 @@ export default function ConsumptionPage() {
 
   return (
     <div className="space-y-4">
-      <div className={`flex items-center justify-between ${isMobile ? "flex-col items-stretch gap-2" : ""}`}>
+      <div className={`flex items-center justify-between gap-2 ${isMobile ? "flex-col items-stretch" : ""}`}>
         <div>
           <h1 className={`font-bold ${isMobile ? "text-lg" : "text-2xl"}`}>Consommations hors jour</h1>
           <p className="text-muted-foreground text-sm">Corrections et modifications des consommations d'anciens shifts</p>
         </div>
-        {!canCorrect && (
-          <Badge variant="outline" className="border-amber-400 text-amber-700 bg-amber-50">
-            <ShieldAlert className="h-3 w-3 mr-1" /> Lecture seule
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportCsvButton
+            data={filtered}
+            columns={[
+              { key: "ordres_fabrication.numero", label: "OF" },
+              { key: "articles.code", label: "Article code" },
+              { key: "articles.designation", label: "Article" },
+              { key: "quantite", label: "Quantité" },
+              { key: "unite", label: "Unité" },
+              { key: "shifts.date_shift", label: "Date shift" },
+              { key: "shifts.shift_type", label: "Type shift" },
+              { key: "shifts.shift_teams.name", label: "Équipe" },
+              { key: "created_at", label: "Créé le" },
+            ]}
+            filename="consommations"
+          />
+          {!canCorrect && (
+            <Badge variant="outline" className="border-amber-400 text-amber-700 bg-amber-50">
+              <ShieldAlert className="h-3 w-3 mr-1" /> Lecture seule
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Filters */}

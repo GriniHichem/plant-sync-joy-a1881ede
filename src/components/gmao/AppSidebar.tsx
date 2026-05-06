@@ -76,22 +76,32 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { profile, roles, signOut } = useAuth();
+  const { profile, roles, signOut, hasRole } = useAuth();
   const { canView } = usePermissions();
+  const isAdmin = hasRole("admin" as any);
+
+  const filterByPerm = (items: NavItem[]) =>
+    items.filter((i) => isAdmin || !i.module || canView(i.module));
+
+  const visibleGmao = filterByPerm(gmaoItems);
+  const visibleGpao = filterByPerm(gpaoItems);
+  const visibleQualite = filterByPerm(qualiteItems);
+  const visibleInventaire = filterByPerm(inventaireItems);
+  const visibleAdmin = filterByPerm(adminItems);
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
-  const isGmaoActive = gmaoItems.some((i) => isActive(i.url));
-  const isGpaoActive = gpaoItems.some((i) => isActive(i.url));
-  const isQualiteActive = qualiteItems.some((i) => isActive(i.url));
-  const isAdminActive = adminItems.some((i) => isActive(i.url));
-  const isInventaireActive = inventaireItems.some((i) => isActive(i.url));
-  const showQualite = canView("qualite");
-  const showInventaire = canView("inventaire") || canView("inventaire_campagnes")
-    || roles.includes("admin" as any)
-    || roles.includes("responsable_inventaire" as any)
-    || roles.includes("agent_inventaire" as any);
+  const isGmaoActive = visibleGmao.some((i) => isActive(i.url));
+  const isGpaoActive = visibleGpao.some((i) => isActive(i.url));
+  const isQualiteActive = visibleQualite.some((i) => isActive(i.url));
+  const isAdminActive = visibleAdmin.some((i) => isActive(i.url));
+  const isInventaireActive = visibleInventaire.some((i) => isActive(i.url));
+  const showQualite = visibleQualite.length > 0;
+  const showInventaire = visibleInventaire.length > 0;
+  const showGmao = visibleGmao.length > 0;
+  const showGpao = visibleGpao.length > 0;
+  const showAdmin = visibleAdmin.length > 0;
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"

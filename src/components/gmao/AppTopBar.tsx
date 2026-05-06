@@ -1,6 +1,7 @@
 import { NavLink as RRNavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { ImpersonationDialog } from "@/components/admin/ImpersonationDialog";
 import { Eye } from "lucide-react";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
@@ -25,57 +26,57 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { SearchTrigger } from "@/components/search/SearchTrigger";
 
 
-const gmaoItems = [
-  { title: "Dashboard", url: "/", icon: IconDashboard },
-  { title: "Machines", url: "/machines", icon: IconMachine },
-  { title: "Équipements", url: "/equipements", icon: IconEquipment },
-  { title: "Organes", url: "/organes", icon: IconEquipment },
-  { title: "Lignes", url: "/lignes", icon: IconFactory },
-  { title: "Pièces (PDR)", url: "/pdr", icon: IconSpare },
-  { title: "Tickets", url: "/tickets", icon: IconTicket },
-  { title: "Préventif", url: "/preventif", icon: IconPreventive },
-  { title: "Shift", url: "/maintenance/shift", icon: IconShift },
-  { title: "Journal", url: "/maintenance/journal", icon: IconMaintenance },
-  { title: "Historique", url: "/maintenance/historique", icon: IconMaintenance },
-  { title: "Analyse & KPI", url: "/analytics", icon: IconAnalytics },
+type NavItem = { title: string; url: string; icon: React.FC<any>; module?: string };
+
+const gmaoItems: NavItem[] = [
+  { title: "Dashboard", url: "/", icon: IconDashboard, module: "dashboard" },
+  { title: "Machines", url: "/machines", icon: IconMachine, module: "machines" },
+  { title: "Équipements", url: "/equipements", icon: IconEquipment, module: "equipements" },
+  { title: "Organes", url: "/organes", icon: IconEquipment, module: "organes" },
+  { title: "Lignes", url: "/lignes", icon: IconFactory, module: "lignes" },
+  { title: "Pièces (PDR)", url: "/pdr", icon: IconSpare, module: "pdr" },
+  { title: "Tickets", url: "/tickets", icon: IconTicket, module: "tickets" },
+  { title: "Préventif", url: "/preventif", icon: IconPreventive, module: "preventif" },
+  { title: "Shift", url: "/maintenance/shift", icon: IconShift, module: "shift_maintenance" },
+  { title: "Journal", url: "/maintenance/journal", icon: IconMaintenance, module: "journal" },
+  { title: "Historique", url: "/maintenance/historique", icon: IconMaintenance, module: "historique" },
+  { title: "Analyse & KPI", url: "/analytics", icon: IconAnalytics, module: "analytiques" },
 ];
 
-const gpaoItems = [
-  { title: "Dashboard", url: "/gpao", icon: IconChart },
-  { title: "Ordres de fab.", url: "/gpao/of", icon: IconOrder },
-  { title: "Produits", url: "/gpao/produits", icon: IconProduct },
-  { title: "Articles", url: "/gpao/articles", icon: IconArticle },
-  { title: "Recettes", url: "/gpao/recettes", icon: IconRecipe },
-  { title: "Shift", url: "/gpao/shift", icon: IconTimer },
-  { title: "Consommations", url: "/gpao/consommations", icon: IconConsumption },
-  { title: "Arrêts", url: "/gpao/arrets", icon: IconStop },
+const gpaoItems: NavItem[] = [
+  { title: "Dashboard", url: "/gpao", icon: IconChart, module: "gpao_dashboard" },
+  { title: "Ordres de fab.", url: "/gpao/of", icon: IconOrder, module: "of" },
+  { title: "Produits", url: "/gpao/produits", icon: IconProduct, module: "produits" },
+  { title: "Articles", url: "/gpao/articles", icon: IconArticle, module: "articles" },
+  { title: "Recettes", url: "/gpao/recettes", icon: IconRecipe, module: "recettes" },
+  { title: "Shift", url: "/gpao/shift", icon: IconTimer, module: "shift_production" },
+  { title: "Consommations", url: "/gpao/consommations", icon: IconConsumption, module: "consommations" },
+  { title: "Arrêts", url: "/gpao/arrets", icon: IconStop, module: "arrets" },
 ];
 
-const qualiteItems = [
-  { title: "Dashboard", url: "/qualite", icon: IconDashboard },
-  { title: "Contrôles", url: "/qualite/controles", icon: ClipboardCheck },
-  { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle },
-  { title: "Actions", url: "/qualite/actions", icon: ListChecks },
-  { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics },
-  { title: "OF Qualité", url: "/qualite/of", icon: IconOrder },
-  { title: "Recettes & BOM", url: "/qualite/recettes-nomenclatures", icon: IconRecipe },
-  { title: "Traçabilité", url: "/qualite/tracabilite", icon: GitBranch },
-  { title: "Rapports", url: "/qualite/rapports", icon: FileBarChart },
+const qualiteItems: NavItem[] = [
+  { title: "Dashboard", url: "/qualite", icon: IconDashboard, module: "qualite_dashboard" },
+  { title: "Contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
+  { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle, module: "qualite_nc" },
+  { title: "Actions", url: "/qualite/actions", icon: ListChecks, module: "qualite_actions" },
+  { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics, module: "qualite_indicateurs" },
+  { title: "OF Qualité", url: "/qualite/of", icon: IconOrder, module: "qualite_of" },
+  { title: "Recettes & BOM", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, module: "qualite_recettes" },
+  { title: "Traçabilité", url: "/qualite/tracabilite", icon: GitBranch, module: "qualite_tracabilite" },
+  { title: "Rapports", url: "/qualite/rapports", icon: FileBarChart, module: "qualite_rapports" },
 ];
 
-const inventaireItems = [
-  { title: "Dashboard", url: "/inventaire", icon: IconDashboard },
-  { title: "Campagnes", url: "/inventaire/campagnes", icon: ClipboardList },
+const inventaireItems: NavItem[] = [
+  { title: "Dashboard", url: "/inventaire", icon: IconDashboard, module: "inventaire" },
+  { title: "Campagnes", url: "/inventaire/campagnes", icon: ClipboardList, module: "inventaire_campagnes" },
 ];
 
-const configItems = [
-  { title: "Paramètres", url: "/parametres", icon: IconSettings },
-  { title: "Sécurité & Accès", url: "/securite", icon: Lock },
-  { title: "Validations", url: "/validations", icon: CheckSquare },
-  { title: "Audit & Traçabilité", url: "/audit", icon: Activity },
+const configItems: NavItem[] = [
+  { title: "Paramètres", url: "/parametres", icon: IconSettings, module: "parametres" },
+  { title: "Sécurité & Accès", url: "/securite", icon: Lock, module: "securite" },
+  { title: "Validations", url: "/validations", icon: CheckSquare, module: "validations" },
+  { title: "Audit & Traçabilité", url: "/audit", icon: Activity, module: "audit" },
 ];
-
-type NavItem = { title: string; url: string; icon: React.FC<any> };
 
 function isActive(currentPath: string, path: string) {
   return path === "/" ? currentPath === "/" : currentPath.startsWith(path);
@@ -217,19 +218,31 @@ function MobileNav() {
 export function AppTopBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, roles, realRoles, signOut } = useAuth();
+  const { profile, roles, realRoles, signOut, hasRole } = useAuth();
+  const { canView } = usePermissions();
   const [impersonationOpen, setImpersonationOpen] = useState(false);
   const isRealAdmin = realRoles.includes("admin" as any);
+  const isAdmin = hasRole("admin" as any);
 
-  const isGmaoActive = gmaoItems.some((i) => isActive(location.pathname, i.url));
-  const isGpaoActive = gpaoItems.some((i) => isActive(location.pathname, i.url));
-  const isQualiteActive = qualiteItems.some((i) => isActive(location.pathname, i.url));
-  const isInventaireActive = inventaireItems.some((i) => isActive(location.pathname, i.url));
-  const isConfigActive = configItems.some((i) => isActive(location.pathname, i.url));
+  const filterByPerm = (items: NavItem[]) =>
+    items.filter((i) => isAdmin || !i.module || canView(i.module));
+  const visibleGmao = filterByPerm(gmaoItems);
+  const visibleGpao = filterByPerm(gpaoItems);
+  const visibleQualite = filterByPerm(qualiteItems);
+  const visibleInventaire = filterByPerm(inventaireItems);
+  const visibleConfig = filterByPerm(configItems);
 
-  const showInventaire = roles.includes("admin" as any)
-    || roles.includes("responsable_inventaire" as any)
-    || roles.includes("agent_inventaire" as any);
+  const isGmaoActive = visibleGmao.some((i) => isActive(location.pathname, i.url));
+  const isGpaoActive = visibleGpao.some((i) => isActive(location.pathname, i.url));
+  const isQualiteActive = visibleQualite.some((i) => isActive(location.pathname, i.url));
+  const isInventaireActive = visibleInventaire.some((i) => isActive(location.pathname, i.url));
+  const isConfigActive = visibleConfig.some((i) => isActive(location.pathname, i.url));
+
+  const showInventaire = visibleInventaire.length > 0;
+  const showQualite = visibleQualite.length > 0;
+  const showGmao = visibleGmao.length > 0;
+  const showGpao = visibleGpao.length > 0;
+  const showConfig = visibleConfig.length > 0;
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"
@@ -288,13 +301,13 @@ export function AppTopBar() {
               <span className="hidden lg:inline">Apps</span>
             </RRNavLink>
           </Button>
-          <MegaMenu label="Maintenance" GroupIcon={IconMaintenance} items={gmaoItems} active={isGmaoActive} />
-          <MegaMenu label="Production" GroupIcon={IconProduction} items={gpaoItems} active={isGpaoActive} />
-          <MegaMenu label="Qualité" GroupIcon={ClipboardCheck} items={qualiteItems} active={isQualiteActive} />
+          {showGmao && <MegaMenu label="Maintenance" GroupIcon={IconMaintenance} items={visibleGmao} active={isGmaoActive} />}
+          {showGpao && <MegaMenu label="Production" GroupIcon={IconProduction} items={visibleGpao} active={isGpaoActive} />}
+          {showQualite && <MegaMenu label="Qualité" GroupIcon={ClipboardCheck} items={visibleQualite} active={isQualiteActive} />}
           {showInventaire && (
-            <MegaMenu label="Inventaire" GroupIcon={ClipboardList} items={inventaireItems} active={isInventaireActive} />
+            <MegaMenu label="Inventaire" GroupIcon={ClipboardList} items={visibleInventaire} active={isInventaireActive} />
           )}
-          <MegaMenu label="Configuration" GroupIcon={Cog} items={configItems} active={isConfigActive} />
+          {showConfig && <MegaMenu label="Configuration" GroupIcon={Cog} items={visibleConfig} active={isConfigActive} />}
         </nav>
 
         {/* Spacer */}

@@ -20,76 +20,88 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-const gmaoItems = [
-  { title: "Dashboard", url: "/", icon: IconDashboard },
-  { title: "Machines", url: "/machines", icon: IconMachine },
-  { title: "Équipements", url: "/equipements", icon: IconEquipment },
-  { title: "Organes", url: "/organes", icon: IconEquipment },
-  { title: "Lignes", url: "/lignes", icon: IconFactory },
-  { title: "Pièces (PDR)", url: "/pdr", icon: IconSpare },
-  { title: "Tickets", url: "/tickets", icon: IconTicket },
-  { title: "Préventif", url: "/preventif", icon: IconPreventive },
-  { title: "Shift", url: "/maintenance/shift", icon: IconShift },
-  { title: "Journal", url: "/maintenance/journal", icon: IconMaintenance },
-  { title: "Historique", url: "/maintenance/historique", icon: IconMaintenance },
-  { title: "Analyse & KPI", url: "/analytics", icon: IconAnalytics },
+type NavItem = { title: string; url: string; icon: React.ComponentType<{ size?: number | string; className?: string }>; module?: string };
+
+const gmaoItems: NavItem[] = [
+  { title: "Dashboard", url: "/", icon: IconDashboard, module: "dashboard" },
+  { title: "Machines", url: "/machines", icon: IconMachine, module: "machines" },
+  { title: "Équipements", url: "/equipements", icon: IconEquipment, module: "equipements" },
+  { title: "Organes", url: "/organes", icon: IconEquipment, module: "organes" },
+  { title: "Lignes", url: "/lignes", icon: IconFactory, module: "lignes" },
+  { title: "Pièces (PDR)", url: "/pdr", icon: IconSpare, module: "pdr" },
+  { title: "Tickets", url: "/tickets", icon: IconTicket, module: "tickets" },
+  { title: "Préventif", url: "/preventif", icon: IconPreventive, module: "preventif" },
+  { title: "Shift", url: "/maintenance/shift", icon: IconShift, module: "shift_maintenance" },
+  { title: "Journal", url: "/maintenance/journal", icon: IconMaintenance, module: "journal" },
+  { title: "Historique", url: "/maintenance/historique", icon: IconMaintenance, module: "historique" },
+  { title: "Analyse & KPI", url: "/analytics", icon: IconAnalytics, module: "analytiques" },
 ];
 
-const gpaoItems = [
-  { title: "Dashboard", url: "/gpao", icon: IconChart },
-  { title: "Ordres de fab.", url: "/gpao/of", icon: IconOrder },
-  { title: "Produits", url: "/gpao/produits", icon: IconProduct },
-  { title: "Articles", url: "/gpao/articles", icon: IconArticle },
-  { title: "Recettes", url: "/gpao/recettes", icon: IconRecipe },
-  { title: "Shift", url: "/gpao/shift", icon: IconTimer },
-  { title: "Consommations", url: "/gpao/consommations", icon: IconConsumption },
-  { title: "Arrêts", url: "/gpao/arrets", icon: IconStop },
+const gpaoItems: NavItem[] = [
+  { title: "Dashboard", url: "/gpao", icon: IconChart, module: "gpao_dashboard" },
+  { title: "Ordres de fab.", url: "/gpao/of", icon: IconOrder, module: "of" },
+  { title: "Produits", url: "/gpao/produits", icon: IconProduct, module: "produits" },
+  { title: "Articles", url: "/gpao/articles", icon: IconArticle, module: "articles" },
+  { title: "Recettes", url: "/gpao/recettes", icon: IconRecipe, module: "recettes" },
+  { title: "Shift", url: "/gpao/shift", icon: IconTimer, module: "shift_production" },
+  { title: "Consommations", url: "/gpao/consommations", icon: IconConsumption, module: "consommations" },
+  { title: "Arrêts", url: "/gpao/arrets", icon: IconStop, module: "arrets" },
 ];
 
-const qualiteItems = [
-  { title: "Dashboard", url: "/qualite", icon: IconChart },
-  { title: "OF qualité", url: "/qualite/of", icon: IconOrder },
-  { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics },
-  { title: "Shift contrôle", url: "/qualite/shift", icon: Timer },
-  { title: "Contrôles", url: "/qualite/controles", icon: ClipboardCheck },
-  { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle },
-  { title: "Actions", url: "/qualite/actions", icon: Wrench },
-  { title: "Recettes & nomenclatures", url: "/qualite/recettes-nomenclatures", icon: IconRecipe },
-  { title: "Traçabilité", url: "/qualite/tracabilite", icon: IconChart },
-  { title: "Rapports", url: "/qualite/rapports", icon: FileText },
+const qualiteItems: NavItem[] = [
+  { title: "Dashboard", url: "/qualite", icon: IconChart, module: "qualite_dashboard" },
+  { title: "OF qualité", url: "/qualite/of", icon: IconOrder, module: "qualite_of" },
+  { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics, module: "qualite_indicateurs" },
+  { title: "Shift contrôle", url: "/qualite/shift", icon: Timer, module: "qualite_shift" },
+  { title: "Contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
+  { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle, module: "qualite_nc" },
+  { title: "Actions", url: "/qualite/actions", icon: Wrench, module: "qualite_actions" },
+  { title: "Recettes & nomenclatures", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, module: "qualite_recettes" },
+  { title: "Traçabilité", url: "/qualite/tracabilite", icon: IconChart, module: "qualite_tracabilite" },
+  { title: "Rapports", url: "/qualite/rapports", icon: FileText, module: "qualite_rapports" },
 ];
 
-const inventaireItems = [
-  { title: "Dashboard", url: "/inventaire", icon: IconDashboard },
-  { title: "Campagnes", url: "/inventaire/campagnes", icon: ClipboardList },
+const inventaireItems: NavItem[] = [
+  { title: "Dashboard", url: "/inventaire", icon: IconDashboard, module: "inventaire" },
+  { title: "Campagnes", url: "/inventaire/campagnes", icon: ClipboardList, module: "inventaire_campagnes" },
 ];
 
-const adminItems = [
-  { title: "Sécurité & Accès", url: "/securite", icon: Lock },
-  { title: "Validations", url: "/validations", icon: CheckSquare },
-  { title: "Paramètres", url: "/parametres", icon: IconSettings },
+const adminItems: NavItem[] = [
+  { title: "Sécurité & Accès", url: "/securite", icon: Lock, module: "securite" },
+  { title: "Validations", url: "/validations", icon: CheckSquare, module: "validations" },
+  { title: "Paramètres", url: "/parametres", icon: IconSettings, module: "parametres" },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { profile, roles, signOut } = useAuth();
+  const { profile, roles, signOut, hasRole } = useAuth();
   const { canView } = usePermissions();
+  const isAdmin = hasRole("admin" as any);
+
+  const filterByPerm = (items: NavItem[]) =>
+    items.filter((i) => isAdmin || !i.module || canView(i.module));
+
+  const visibleGmao = filterByPerm(gmaoItems);
+  const visibleGpao = filterByPerm(gpaoItems);
+  const visibleQualite = filterByPerm(qualiteItems);
+  const visibleInventaire = filterByPerm(inventaireItems);
+  const visibleAdmin = filterByPerm(adminItems);
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
-  const isGmaoActive = gmaoItems.some((i) => isActive(i.url));
-  const isGpaoActive = gpaoItems.some((i) => isActive(i.url));
-  const isQualiteActive = qualiteItems.some((i) => isActive(i.url));
-  const isAdminActive = adminItems.some((i) => isActive(i.url));
-  const isInventaireActive = inventaireItems.some((i) => isActive(i.url));
-  const showQualite = canView("qualite");
-  const showInventaire = canView("inventaire") || canView("inventaire_campagnes")
-    || roles.includes("admin" as any)
-    || roles.includes("responsable_inventaire" as any)
-    || roles.includes("agent_inventaire" as any);
+  const isGmaoActive = visibleGmao.some((i) => isActive(i.url));
+  const isGpaoActive = visibleGpao.some((i) => isActive(i.url));
+  const isQualiteActive = visibleQualite.some((i) => isActive(i.url));
+  const isAdminActive = visibleAdmin.some((i) => isActive(i.url));
+  const isInventaireActive = visibleInventaire.some((i) => isActive(i.url));
+  const showQualite = visibleQualite.length > 0;
+  const showInventaire = visibleInventaire.length > 0;
+  const showGmao = visibleGmao.length > 0;
+  const showGpao = visibleGpao.length > 0;
+  const showAdmin = visibleAdmin.length > 0;
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"
@@ -177,29 +189,32 @@ export function AppSidebar() {
       <div className="mx-3 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
 
       <SidebarContent className="pt-3 overflow-y-auto">
-        {renderGroup("Maintenance", IconMaintenance, gmaoItems, isGmaoActive || !isGpaoActive)}
+        {showGmao && renderGroup("Maintenance", IconMaintenance, visibleGmao, isGmaoActive || !isGpaoActive)}
 
-        <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
+        {showGmao && showGpao && <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />}
 
-        {renderGroup("Production", IconProduction, gpaoItems, isGpaoActive)}
+        {showGpao && renderGroup("Production", IconProduction, visibleGpao, isGpaoActive)}
 
         {showQualite && (
           <>
             <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
-            {renderGroup("Qualité", ShieldCheck, qualiteItems, isQualiteActive)}
+            {renderGroup("Qualité", ShieldCheck, visibleQualite, isQualiteActive)}
           </>
         )}
 
         {showInventaire && (
           <>
             <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
-            {renderGroup("Inventaire", ClipboardList, inventaireItems, isInventaireActive)}
+            {renderGroup("Inventaire", ClipboardList, visibleInventaire, isInventaireActive)}
           </>
         )}
 
-        <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
-
-        {renderGroup("Administration", Cog, adminItems, isAdminActive)}
+        {showAdmin && (
+          <>
+            <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
+            {renderGroup("Administration", Cog, visibleAdmin, isAdminActive)}
+          </>
+        )}
       </SidebarContent>
 
       {/* Footer — User area */}

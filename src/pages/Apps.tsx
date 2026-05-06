@@ -38,6 +38,7 @@ const MODULES: AppModule[] = [
   { title: "Maintenance préventive", description: "Plans, gammes et déclenchements automatiques", url: "/preventif", icon: IconPreventive, category: "Maintenance", permissionModule: "preventif", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
   { title: "Shift Maintenance", description: "Vue opérationnelle du maintenancier", url: "/maintenance/shift", icon: IconShift, category: "Maintenance", permissionModule: "shift_maintenance", badge: "Live", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
   { title: "Journal d'interventions", description: "Historique consolidé des interventions", url: "/maintenance/journal", icon: IconMaintenance, category: "Maintenance", permissionModule: "journal", accent: "from-slate-500/15 to-slate-500/5 text-slate-400" },
+  { title: "Historique interventions", description: "Recherche et filtres avancés sur les interventions passées", url: "/maintenance/historique", icon: IconMaintenance, category: "Maintenance", permissionModule: "historique", accent: "from-stone-500/15 to-stone-500/5 text-stone-400" },
   { title: "Analyse & KPI", description: "Indicateurs MTTR, MTBF, disponibilité", url: "/analytics", icon: IconAnalytics, category: "Maintenance", permissionModule: "analytiques", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
 
   // ===== Production =====
@@ -68,9 +69,11 @@ const MODULES: AppModule[] = [
 
   // ===== Configuration =====
   { title: "Sécurité & Accès", description: "Hub centralisé : utilisateurs, rôles, permissions, audit, self-hosting", url: "/securite", icon: ShieldCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "securite", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
+  { title: "Validations", description: "Demandes d'approbation et règles", url: "/validations", icon: ClipboardCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "validations", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
   { title: "Paramètres", description: "Référentiels, utilisateurs et configuration", url: "/parametres", icon: IconSettings, category: "Configuration", permissionModule: "parametres", accent: "from-slate-500/15 to-slate-500/5 text-slate-400" },
   { title: "Audit & Traçabilité", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: ShieldCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "audit", accent: "from-red-500/15 to-red-500/5 text-red-500" },
   { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: Bell as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "notifications", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
+  { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/search", icon: Search as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "recherche", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
 ];
 
 const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Production", "Qualité", "Inventaire", "Configuration"];

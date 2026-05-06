@@ -29,51 +29,86 @@ const MODULE_GROUPS = [
     label: "Maintenance (GMAO)",
     icon: Wrench,
     modules: [
+      { key: "dashboard", label: "Tableau de bord GMAO" },
       { key: "machines", label: "Machines" },
       { key: "equipements", label: "Équipements" },
       { key: "organes", label: "Organes" },
-      { key: "lignes", label: "Lignes" },
-      { key: "pdr", label: "Pièces détachées" },
+      { key: "lignes", label: "Lignes & synoptique" },
+      { key: "pdr", label: "Pièces de rechange" },
       { key: "tickets", label: "Tickets" },
       { key: "preventif", label: "Préventif" },
+      { key: "shift_maintenance", label: "Shift Maintenance" },
+      { key: "journal", label: "Journal d'interventions" },
+      { key: "historique", label: "Historique interventions" },
+      { key: "analytiques", label: "Analyse & KPI" },
     ],
   },
   {
     label: "Production (GPAO)",
     icon: Factory,
     modules: [
+      { key: "gpao_dashboard", label: "Tableau de bord GPAO" },
       { key: "of", label: "Ordres de fab." },
       { key: "produits", label: "Produits" },
       { key: "articles", label: "Articles" },
-      { key: "recettes", label: "Recettes" },
-      { key: "arrets", label: "Arrêts" },
+      { key: "recettes", label: "Recettes / BOM" },
+      { key: "shift_production", label: "Shift Production" },
       { key: "consommations", label: "Consommations" },
+      { key: "arrets", label: "Arrêts" },
     ],
   },
   {
     label: "Qualité",
     icon: ClipboardCheck,
     modules: [
-      { key: "qualite", label: "Module Qualité" },
+      { key: "qualite", label: "Module Qualité (umbrella)" },
+      { key: "qualite_dashboard", label: "Dashboard Qualité" },
+      { key: "qualite_of", label: "OF Qualité" },
+      { key: "qualite_indicateurs", label: "Indicateurs" },
+      { key: "qualite_controles", label: "Contrôles" },
+      { key: "qualite_nc", label: "Non-conformités" },
+      { key: "qualite_actions", label: "Actions correctives" },
+      { key: "qualite_recettes", label: "Recettes & nomenclatures" },
+      { key: "qualite_tracabilite", label: "Traçabilité" },
+      { key: "qualite_rapports", label: "Rapports" },
+      { key: "qualite_shift", label: "Shift contrôle" },
     ],
   },
   {
     label: "Inventaire",
     icon: Boxes,
     modules: [
-      { key: "inventaire", label: "Inventaire" },
+      { key: "inventaire", label: "Module Inventaire (umbrella)" },
+      { key: "inventaire_campagnes", label: "Campagnes (double comptage)" },
     ],
   },
   {
-    label: "Système & Gouvernance",
+    label: "Gouvernance",
+    icon: ShieldCheck,
+    modules: [
+      { key: "audit", label: "Audit & traçabilité" },
+      { key: "validations", label: "Validations" },
+      { key: "validations_rules", label: "Règles de validation" },
+      { key: "notifications", label: "Notifications" },
+      { key: "notifications_rules", label: "Règles de notification" },
+      { key: "securite", label: "Sécurité & accès" },
+    ],
+  },
+  {
+    label: "Configuration",
     icon: Cog,
     modules: [
-      { key: "analytiques", label: "Analytiques & KPI" },
+      { key: "parametres", label: "Paramètres (hub)" },
       { key: "utilisateurs", label: "Utilisateurs" },
-      { key: "parametres", label: "Paramètres" },
-      { key: "audit", label: "Audit & Traçabilité" },
-      { key: "validations", label: "Validations" },
-      { key: "notifications", label: "Notifications" },
+      { key: "referentiels", label: "Référentiels (familles, pannes…)" },
+      { key: "documents", label: "Documents" },
+      { key: "pdr_stock_config", label: "Permissions PDR & Stock" },
+      { key: "qualite_parametres", label: "Paramètres Qualité" },
+      { key: "smtp", label: "SMTP & emails" },
+      { key: "general", label: "Général & branding" },
+      { key: "images", label: "Images & médias" },
+      { key: "recherche", label: "Recherche globale" },
+      { key: "apps", label: "Catalogue d'applications" },
     ],
   },
 ] as const;
@@ -137,31 +172,34 @@ function ap(modules: string[], preset: Preset, base: Record<string, Preset> = {}
   return out;
 }
 
-const MAINT_MODS = ["machines", "equipements", "organes", "lignes", "pdr", "tickets", "preventif"];
-const PROD_MODS = ["of", "produits", "articles", "recettes", "arrets", "consommations"];
-const SYS_MODS = ["analytiques", "utilisateurs", "parametres", "audit", "validations", "notifications"];
+const MAINT_MODS = ["dashboard", "machines", "equipements", "organes", "lignes", "pdr", "tickets", "preventif", "shift_maintenance", "journal", "historique", "analytiques"];
+const PROD_MODS = ["gpao_dashboard", "of", "produits", "articles", "recettes", "shift_production", "consommations", "arrets"];
+const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift"];
+const INV_MODS = ["inventaire", "inventaire_campagnes"];
+const GOV_MODS = ["audit", "validations", "validations_rules", "notifications", "notifications_rules", "securite"];
+const CFG_MODS = ["parametres", "utilisateurs", "referentiels", "documents", "pdr_stock_config", "qualite_parametres", "smtp", "general", "images", "recherche", "apps"];
+const ALL_KEYS = [...MAINT_MODS, ...PROD_MODS, ...QUALITY_MODS, ...INV_MODS, ...GOV_MODS, ...CFG_MODS];
 
 const ROLE_DEFAULTS: Record<string, Record<string, Preset>> = {
-  admin: ap([...MAINT_MODS, ...PROD_MODS, "qualite", "inventaire", ...SYS_MODS], FULL),
+  admin: ap(ALL_KEYS, FULL),
+  responsable_si: ap(ALL_KEYS, FULL),
+  auditeur: ap(ALL_KEYS, RO),
 
-  responsable_si: ap([...MAINT_MODS, ...PROD_MODS, "qualite", "inventaire", ...SYS_MODS], FULL),
-  auditeur: ap([...MAINT_MODS, ...PROD_MODS, "qualite", "inventaire", ...SYS_MODS], RO),
+  resp_maintenance: { ...ap(MAINT_MODS, FULL), ...ap(PROD_MODS, RO), qualite: RO, inventaire: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO, referentiels: RO },
+  maintenancier: { ...ap(MAINT_MODS, RW), tickets: FULL, journal: RO, historique: RO, analytiques: RO, notifications: RO, apps: RO, recherche: RO },
+  bureau_methode: { ...ap(MAINT_MODS, RW), preventif: FULL, recettes: RW, analytiques: RO, notifications: RO, apps: RO, recherche: RO },
 
-  resp_maintenance: { ...ap(MAINT_MODS, FULL), ...ap(PROD_MODS, RO), qualite: RO, analytiques: RO, audit: RO, validations: RW, notifications: RW },
-  maintenancier: { ...ap(MAINT_MODS, RW), tickets: FULL, analytiques: RO, notifications: RO },
-  bureau_methode: { ...ap(MAINT_MODS, RW), preventif: FULL, analytiques: RO, notifications: RO },
+  resp_production: { ...ap(PROD_MODS, FULL), ...ap(MAINT_MODS, RO), tickets: RC, qualite: RO, inventaire: RO, analytiques: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO },
+  chef_ligne: { ...ap(PROD_MODS, RW), of: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, lignes: RO, tickets: RC, analytiques: RO, notifications: RO, apps: RO, recherche: RO },
+  operateur: { gpao_dashboard: RO, of: RO, produits: RO, articles: RO, recettes: RO, shift_production: RW, arrets: RW, consommations: RW, dashboard: RO, machines: RO, lignes: RO, tickets: RC, notifications: RO, apps: RO, recherche: RO },
 
-  resp_production: { ...ap(PROD_MODS, FULL), ...ap(MAINT_MODS, RO), tickets: RC, qualite: RO, analytiques: RO, audit: RO, validations: RW, notifications: RW },
-  chef_ligne: { ...ap(PROD_MODS, RW), of: RW, machines: RO, equipements: RO, organes: RO, lignes: RO, tickets: RC, analytiques: RO, notifications: RO },
-  operateur: { ...ap(PROD_MODS, RC), arrets: RW, consommations: RW, machines: RO, lignes: RO, tickets: RC, notifications: RO },
+  directeur_qualite: { ...ap(QUALITY_MODS, FULL), ...ap(PROD_MODS, RO), ...ap(MAINT_MODS, RO), qualite_parametres: RW, analytiques: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO },
+  responsable_controle_qualite: { ...ap(QUALITY_MODS, FULL), of: RO, produits: RO, articles: RO, recettes: RO, dashboard: RO, machines: RO, lignes: RO, analytiques: RO, qualite_parametres: RW, notifications: RW, apps: RO, recherche: RO },
+  controleur_qualite: { qualite: RW, qualite_dashboard: RO, qualite_of: RO, qualite_indicateurs: RO, qualite_controles: RW, qualite_nc: RW, qualite_actions: RO, qualite_recettes: RO, qualite_tracabilite: RO, qualite_rapports: RO, qualite_shift: RW, of: RO, produits: RO, lignes: RO, machines: RO, notifications: RO, apps: RO, recherche: RO },
 
-  directeur_qualite: { qualite: FULL, ...ap(PROD_MODS, RO), ...ap(MAINT_MODS, RO), analytiques: RO, audit: RO, validations: RW, notifications: RW },
-  responsable_controle_qualite: { qualite: FULL, of: RO, produits: RO, articles: RO, recettes: RO, machines: RO, lignes: RO, analytiques: RO, notifications: RW },
-  controleur_qualite: { qualite: RW, of: RO, produits: RO, lignes: RO, machines: RO, notifications: RO },
-
-  gestionnaire_magasin: { pdr: FULL, articles: RW, machines: RO, equipements: RO, organes: RO, inventaire: RW, notifications: RO },
-  responsable_inventaire: { inventaire: FULL, pdr: RW, articles: RO, machines: RO, organes: RO, analytiques: RO, notifications: RW },
-  agent_inventaire: { inventaire: RW, pdr: RO, articles: RO, machines: RO, organes: RO },
+  gestionnaire_magasin: { pdr: FULL, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RO, apps: RO, recherche: RO },
+  responsable_inventaire: { inventaire: FULL, inventaire_campagnes: FULL, pdr: RW, articles: RO, dashboard: RO, machines: RO, organes: RO, analytiques: RO, notifications: RW, apps: RO, recherche: RO },
+  agent_inventaire: { inventaire: RW, inventaire_campagnes: RW, pdr: RO, articles: RO, machines: RO, organes: RO, apps: RO, recherche: RO },
 };
 
 function presetToRows(role: string): PermRow[] {

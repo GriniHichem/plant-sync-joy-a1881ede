@@ -86,7 +86,8 @@ export function AppSidebar() {
   const isAdminActive = adminItems.some((i) => isActive(i.url));
   const isInventaireActive = inventaireItems.some((i) => isActive(i.url));
   const showQualite = canView("qualite");
-  const showInventaire = roles.includes("admin" as any)
+  const showInventaire = canView("inventaire") || canView("inventaire_campagnes")
+    || roles.includes("admin" as any)
     || roles.includes("responsable_inventaire" as any)
     || roles.includes("agent_inventaire" as any);
 

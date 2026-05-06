@@ -23,15 +23,22 @@ interface Permission {
 
 export function usePermissions() {
   const { roles } = useAuth();
+  const rolesKey = roles.slice().sort().join("|");
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Reset immediately on role change to avoid leaking previous role's perms
+    // (e.g., during impersonation switch).
+    setPermissions([]);
+    setLoading(true);
+
     if (roles.length === 0) {
-      setPermissions([]);
       setLoading(false);
       return;
     }
+
+    let cancelled = false;
 
     async function load() {
       const { data } = await supabase
@@ -39,6 +46,7 @@ export function usePermissions() {
         .select("module, can_view, can_create, can_edit, can_delete, role")
         .in("role", roles);
 
+      if (cancelled) return;
       if (data) {
         // Merge permissions across roles (OR logic)
         const merged = new Map<string, Permission>();

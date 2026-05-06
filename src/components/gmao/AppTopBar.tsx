@@ -217,19 +217,31 @@ function MobileNav() {
 export function AppTopBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, roles, realRoles, signOut } = useAuth();
+  const { profile, roles, realRoles, signOut, hasRole } = useAuth();
+  const { canView } = usePermissions();
   const [impersonationOpen, setImpersonationOpen] = useState(false);
   const isRealAdmin = realRoles.includes("admin" as any);
+  const isAdmin = hasRole("admin" as any);
 
-  const isGmaoActive = gmaoItems.some((i) => isActive(location.pathname, i.url));
-  const isGpaoActive = gpaoItems.some((i) => isActive(location.pathname, i.url));
-  const isQualiteActive = qualiteItems.some((i) => isActive(location.pathname, i.url));
-  const isInventaireActive = inventaireItems.some((i) => isActive(location.pathname, i.url));
-  const isConfigActive = configItems.some((i) => isActive(location.pathname, i.url));
+  const filterByPerm = (items: NavItem[]) =>
+    items.filter((i) => isAdmin || !i.module || canView(i.module));
+  const visibleGmao = filterByPerm(gmaoItems);
+  const visibleGpao = filterByPerm(gpaoItems);
+  const visibleQualite = filterByPerm(qualiteItems);
+  const visibleInventaire = filterByPerm(inventaireItems);
+  const visibleConfig = filterByPerm(configItems);
 
-  const showInventaire = roles.includes("admin" as any)
-    || roles.includes("responsable_inventaire" as any)
-    || roles.includes("agent_inventaire" as any);
+  const isGmaoActive = visibleGmao.some((i) => isActive(location.pathname, i.url));
+  const isGpaoActive = visibleGpao.some((i) => isActive(location.pathname, i.url));
+  const isQualiteActive = visibleQualite.some((i) => isActive(location.pathname, i.url));
+  const isInventaireActive = visibleInventaire.some((i) => isActive(location.pathname, i.url));
+  const isConfigActive = visibleConfig.some((i) => isActive(location.pathname, i.url));
+
+  const showInventaire = visibleInventaire.length > 0;
+  const showQualite = visibleQualite.length > 0;
+  const showGmao = visibleGmao.length > 0;
+  const showGpao = visibleGpao.length > 0;
+  const showConfig = visibleConfig.length > 0;
 
   const displayName = profile
     ? `${profile.first_name} ${profile.last_name}`.trim() || "Utilisateur"

@@ -12,6 +12,7 @@ import {
 } from "@/lib/searchCatalog";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 
 /**
  * Page de résultats complète (Phase 3 minimale).

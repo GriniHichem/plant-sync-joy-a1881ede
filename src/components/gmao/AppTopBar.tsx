@@ -308,6 +308,7 @@ export function AppTopBar() {
             <MegaMenu label="Inventaire" GroupIcon={ClipboardList} items={visibleInventaire} active={isInventaireActive} />
           )}
           {showConfig && <MegaMenu label="Configuration" GroupIcon={Cog} items={visibleConfig} active={isConfigActive} />}
+        </nav>
 
         {/* Spacer */}
         <div className="flex-1" />

@@ -87,7 +87,7 @@ export default function ProductFamiliesAdmin() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Button variant="ghost" size="icon" onClick={() => navigate("/parametres")} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5" />
         </Button>

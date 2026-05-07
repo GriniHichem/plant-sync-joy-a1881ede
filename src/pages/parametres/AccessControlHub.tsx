@@ -48,8 +48,14 @@ export default function AccessControlHub() {
           <CardContent className="p-2 overflow-x-auto">
             <TabsList className="flex flex-wrap gap-1 h-auto bg-transparent">
               {TABS.map((t) => (
-                <TabsTrigger key={t.value} value={t.value} className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <t.icon className="h-4 w-4" /> {t.label}
+                <TabsTrigger
+                  key={t.value}
+                  value={t.value}
+                  title={t.label}
+                  className="gap-1.5 px-2 sm:px-3 h-9 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  <t.icon className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">{t.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>

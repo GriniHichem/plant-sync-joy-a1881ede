@@ -27,4 +27,13 @@ describe("ExportCsvButton", () => {
     expect(exportToCsv).toHaveBeenCalledWith(data, cols, "x");
     expect((toast as any).success).toHaveBeenCalledWith("2 ligne(s) exportée(s)");
   });
+
+  it("exposes aria-label even when label is hidden on mobile", () => {
+    const { container } = render(
+      <ExportCsvButton data={[{ a: 1 }]} columns={[{ key: "a", label: "A" }]} filename="x" label="Exporter CSV" />
+    );
+    const btn = container.querySelector("button")!;
+    expect(btn.getAttribute("aria-label")).toBe("Exporter CSV");
+    expect(btn.getAttribute("title")).toBe("Exporter CSV");
+  });
 });

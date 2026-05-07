@@ -1212,7 +1212,8 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 | 2.0 | 26/04/2026 | Réécriture exhaustive : workflows pas-à-pas, validations, exceptions, messages d'erreur exacts, cas particuliers, workflows transverses, annexes routes/tables/triggers |
 | 2.1 | 28/04/2026 | Notifications & Emails (SMTP self-hosted) — règles `/parametres/notifications`, edge functions, cron quotidien |
 | 2.2 | 30/04/2026 | Module Qualité (§4.9), paramétrage Qualité, fusion Recettes ↔ BOM, hub Contrôle d'accès, export portabilité |
-| **2.3** | **02/05/2026** | Voir §13 — Modifications récentes (Shift Qualité, Vue Maintenancier, Scanner global, Inventaire double comptage, isolation kiosques shift, génération auto sessions shift depuis OF) |
+| 2.3 | 02/05/2026 | Voir §13 — Modifications récentes (Shift Qualité, Vue Maintenancier, Scanner global, Inventaire double comptage, isolation kiosques shift, génération auto sessions shift depuis OF) |
+| **2.4** | **07/05/2026** | Voir §14 — « Voir comme » (impersonation), garde lecture seule en mode aperçu, matrice de permissions stricte (admin inclus), export CSV universel sur tous les tableaux, hub Contrôle d'accès consolidé |
 
 ---
 
@@ -1315,6 +1316,55 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 
 ---
 
-*Document généré pour **PROD IN TIME — GMAO · GPAO · Qualité · Inventaire** · Version manuel 2.3 · 02/05/2026*
+## 14. Modifications récentes (v2.4)
 
+> Évolutions livrées entre le 03/05/2026 et le 07/05/2026.
+
+### 14.1 « Voir comme » — Impersonation contrôlée (admin)
+
+- Nouveau composant `ImpersonationDialog` (accessible depuis l'admin utilisateurs) : permet à un administrateur de **prévisualiser l'application avec les rôles d'un autre utilisateur**.
+- Bandeau persistant `ImpersonationBanner` en haut de l'écran : affiche l'utilisateur ciblé, ses rôles effectifs et le **nombre de modules actuellement visibles**. Bouton « Quitter le mode aperçu ».
+- L'état d'impersonation est conservé dans `sessionStorage` (clé `impersonation_target_user_id`) et restauré au rechargement.
+- **Contexte dédié** `ImpersonationContext` : charge le profil et les rôles de la cible ; `AuthContext` expose ensuite `roles`, `profile` et `hasRole` **effectifs** (memoïsés) sans modifier la session Supabase réelle.
+
+### 14.2 Garde lecture seule en mode aperçu
+
+- Module `src/lib/impersonationGuard.ts` : patch du client Supabase qui **bloque toutes les écritures** tant que l'impersonation est active.
+  - `from().insert / update / delete / upsert` → renvoient une erreur contrôlée + toast « Mode aperçu : action non enregistrée ».
+  - `supabase.functions.invoke(...)` → bloqué.
+  - `supabase.rpc(...)` → bloqué (les RPC peuvent muter l'état).
+- Les **lectures restent intactes** : la prévisualisation reflète exactement ce que verrait l'utilisateur ciblé.
+- Tests automatisés : `src/test/parametres/impersonation-guard.test.ts` et `impersonation-permissions.test.ts`.
+
+### 14.3 Matrice de permissions stricte (admin inclus)
+
+- Suppression de tous les **bypass `isAdmin`** dans la navigation et les launchers (`AppSidebar`, `AppTopBar`, `Apps`).
+- La **Roles Matrix** (`/parametres/roles-matrix`) est désormais l'**unique source de vérité** pour la visibilité de chaque écran, **y compris pour les administrateurs**.
+- `usePermissions` :
+  - Reset immédiat (`permissions = []`, `loading = true`) à chaque changement de rôle effectif pour éviter les fuites entre profils pendant un switch d'impersonation.
+  - Flag `cancelled` dans le `useEffect` pour ignorer les fetchs obsolètes.
+  - **Héritage parapluie** (`UMBRELLAS`) : `qualite` couvre `qualite_dashboard / of / indicateurs / controles / nc / actions / recettes / tracabilite / rapports / shift` ; `inventaire` couvre `inventaire_campagnes` — sauf si une sous-permission est explicitement configurée.
+- Tests : `permissions-umbrella.test.ts`, `roles-matrix-logic.test.ts`, `roles-quality-additive.test.ts`.
+
+### 14.4 Export CSV universel sur tous les tableaux
+
+- Nouveau composant réutilisable **`<ExportCsvButton />`** (`src/components/common/ExportCsvButton.tsx`) au-dessus de l'utilitaire `exportToCsv` (séparateur `;`, BOM UTF-8 pour Excel, nom de fichier suffixé `_YYYY-MM-DD.csv`).
+- **Règle d'export** : exporte **les données filtrées affichées** (respecte recherche + filtres actifs). Bouton désactivé si aucune ligne ; toast de confirmation `N ligne(s) exportée(s)`.
+- Colonnes typées : option `format(value, row)` pour rendre les libellés humains (ex. `is_active` → `Oui/Non`, types d'arrêt traduits, références jointes via `parent.code`).
+- **Pages équipées** (en plus des 9 préexistantes) :
+  - **GMAO** : Lignes, Équipements, Organes, Plans préventifs, Notifications, Historique d'interventions, Journal d'interventions, Validations, Recherche globale.
+  - **GPAO** : Arrêts, Consommations, Recettes.
+  - **Inventaire** : Liste des campagnes.
+  - **Paramètres** : Lignes admin, Pannes admin, Familles (machines), Familles produits, Familles PDR.
+- Permissions : bouton visible pour tout utilisateur ayant accès à la page (pas de gating supplémentaire).
+- Tests : `src/test/common/export-csv-button.test.tsx`, `src/test/gpao/export-csv.test.ts`.
+
+### 14.5 Hub Contrôle d'accès consolidé
+
+- `/parametres/access-control` regroupe : rôles standard + custom, permissions Qualité, `audit_role_settings`, **kill-switches** de contrôle, et onglet **Portabilité** (`PortabilityTab`).
+- Onglet Portabilité : export **JSON complet** (`exportAccessControl`) + génération de **migration SQL** (`generateMigrationSql`) pour rejouer la configuration sur une instance Supabase auto-hébergée.
+
+---
+
+*Document généré pour **PROD IN TIME — GMAO · GPAO · Qualité · Inventaire** · Version manuel 2.4 · 07/05/2026*
 

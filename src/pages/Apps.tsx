@@ -145,23 +145,25 @@ export default function Apps() {
           )}
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {CATEGORIES.map((cat) => (
-            <Button
-              key={cat}
-              size="sm"
-              variant={activeCat === cat ? "default" : "outline"}
-              onClick={() => setActiveCat(cat)}
-              className="h-8 text-xs font-semibold"
-            >
-              {cat}
-              {cat !== "Tous" && (
-                <span className="ml-1.5 opacity-70">
-                  {MODULES.filter((m) => m.category === cat).length}
-                </span>
-              )}
-            </Button>
-          ))}
+        <div className="-mx-1 px-1 overflow-x-auto">
+          <div className="flex gap-1.5 flex-nowrap md:flex-wrap min-w-max md:min-w-0">
+            {CATEGORIES.map((cat) => (
+              <Button
+                key={cat}
+                size="sm"
+                variant={activeCat === cat ? "default" : "outline"}
+                onClick={() => setActiveCat(cat)}
+                className="h-8 text-xs font-semibold whitespace-nowrap"
+              >
+                {cat}
+                {cat !== "Tous" && (
+                  <span className="ml-1.5 opacity-70">
+                    {MODULES.filter((m) => m.category === cat).length}
+                  </span>
+                )}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -113,11 +113,10 @@ export default function PreventifDetail() {
     }
     setExecLoading(true);
     try {
-      const pdrUsedList = planPdr
-        .filter(pp => execPdrUsed[pp.id])
-        .map(pp => ({ pdr_id: pp.pdr_id, reference: pp.pdr?.reference, quantite: pp.quantite }));
+      const usedPlanPdr = planPdr.filter(pp => execPdrUsed[pp.id]);
+      const pdrUsedList = usedPlanPdr.map(pp => ({ pdr_id: pp.pdr_id, reference: pp.pdr?.reference, quantite: pp.quantite }));
 
-      const { error } = await supabase.from("preventive_executions").insert({
+      const { data: exec, error } = await supabase.from("preventive_executions").insert({
         plan_id: id,
         executed_by: user.id,
         notes: [
@@ -126,9 +125,27 @@ export default function PreventifDetail() {
           execNotes || null,
         ].filter(Boolean).join(" | "),
         pdr_used: pdrUsedList as any,
-      });
+      }).select("id").single();
 
       if (error) throw error;
+
+      // B5: decrement PDR stock + log movement (preventive consumption was previously invisible to PMP).
+      // Best-effort: failures here are reported but do not roll back the execution record.
+      for (const pp of usedPlanPdr) {
+        const { data: cur } = await supabase
+          .from("pdr").select("stock_actuel, reference, designation").eq("id", pp.pdr_id).single();
+        if (!cur) continue;
+        const stockAvant = Number(cur.stock_actuel) || 0;
+        const stockApres = Math.max(0, stockAvant - Number(pp.quantite || 0));
+        await supabase.from("pdr").update({ stock_actuel: stockApres }).eq("id", pp.pdr_id);
+        await supabase.from("pdr_stock_movements").insert({
+          pdr_id: pp.pdr_id, type: "sortie" as any, quantite: pp.quantite,
+          stock_avant: stockAvant, stock_apres: stockApres,
+          source_type: "preventive_execution", source_id: exec?.id ?? null,
+          reference_source: plan?.title, motif: `Préventif ${plan?.title}`,
+          user_id: user.id,
+        } as any);
+      }
 
       // Update plan: derniere_execution + prochaine_echeance
       const now = new Date();
@@ -139,6 +156,17 @@ export default function PreventifDetail() {
         derniere_execution: now.toISOString(),
         prochaine_echeance: nextDate.toISOString(),
       } as any).eq("id", id);
+
+      await logAudit({
+        action_type: "create", module: "preventif" as any, entity_type: "preventive_execution",
+        entity_id: exec?.id ?? id!, entity_label: plan?.title,
+        action_label: "Exécution plan préventif",
+        new_values: {
+          plan_id: id, duree_minutes: execDureeMinutes, heure_debut: execStartTime,
+          pdr_used: pdrUsedList, prochaine_echeance: nextDate.toISOString(),
+        },
+        severity: "low",
+      });
 
       toast({ title: "Exécution enregistrée", description: `Prochaine échéance : ${nextDate.toLocaleDateString("fr-FR")}` });
       setExecOpen(false);

@@ -73,7 +73,19 @@ export default function PreventifDetail() {
   useEffect(() => { loadAll(); }, [id]);
 
   const updateStatut = async (newStatut: string) => {
-    await supabase.from("preventive_plans").update({ statut_plan: newStatut } as any).eq("id", id);
+    const oldStatut = (plan as any)?.statut_plan;
+    const { error } = await supabase.from("preventive_plans").update({ statut_plan: newStatut } as any).eq("id", id);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    await logAudit({
+      action_type: "status_change", module: "preventif" as any, entity_type: "preventive_plan",
+      entity_id: id!, entity_label: plan?.title,
+      action_label: `Plan préventif → ${newStatut}`,
+      old_values: { statut_plan: oldStatut }, new_values: { statut_plan: newStatut },
+      severity: newStatut === "suspendu" ? "medium" : "low",
+    });
     toast({ title: `Plan ${newStatut === "valide" ? "validé" : newStatut === "suspendu" ? "suspendu" : "remis en brouillon"}` });
     loadAll();
   };

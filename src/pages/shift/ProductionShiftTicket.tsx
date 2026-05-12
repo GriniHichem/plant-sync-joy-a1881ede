@@ -65,7 +65,7 @@ export default function ProductionShiftTicket() {
         .from("tickets")
         .insert({
           machine_id: machineId,
-          line_id: productionShift.line_id,
+          ligne_id: productionShift.line_id,
           description: description.trim(),
           priorite,
           statut: "ouvert",

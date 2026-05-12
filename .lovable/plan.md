@@ -1,83 +1,74 @@
-## Objectif
+## Audit GMAO — bugs trouvés et corrections
 
-Rendre toutes les nouveautés récentes (bandeau « Voir comme », bouton Export CSV universel, Hub Accès, page Apps, top bar) parfaitement utilisables sur mobile (≤640px) et tablette (≤1024px), puis auditer chaque module pour corriger les problèmes responsive bloquants.
+J'ai parcouru les modules Tickets, Interventions, Préventif, Shift maintenance et hiérarchie d'assets, puis vérifié le schéma Supabase pour confirmer les écarts. Voici les problèmes confirmés et le plan de correction.
 
-## Périmètre — composants nouveaux à adapter
+### 🔴 Critiques (cassent une fonctionnalité)
 
-### 1. `ExportCsvButton` (`src/components/common/ExportCsvButton.tsx`)
-- Sur mobile, le label « Exporter CSV » prend trop de place quand il est posé à côté du bouton « Nouveau … ».
-- Ajouter un mode responsive : icône seule sur `<sm`, label complet à partir de `sm`. Prop `responsive?: boolean` (true par défaut) → `<span className="hidden sm:inline">Exporter CSV</span>`, `aria-label` toujours présent, `size="icon"` automatique sur mobile.
-- Hauteur cohérente avec les autres boutons d'action (`h-10` mobile, `h-12` desktop quand utilisé à côté d'un CTA `h-12`).
+**B1 — Création de ticket depuis le kiosque shift production échoue silencieusement**
+`src/pages/shift/ProductionShiftTicket.tsx:68` insère `line_id` dans `tickets`, mais la colonne réelle est `ligne_id` (vérifié en base). L'insert renvoie une erreur PostgREST → toast "Erreur" générique, aucun ticket créé.
+**Fix** : remplacer `line_id` par `ligne_id` dans l'objet inséré.
 
-### 2. En-têtes de listes (`flex items-center justify-between` rigide)
-Pages concernées (toutes équipées d'`ExportCsvButton`) :
-`LinesList`, `EquipmentsList`, `OrganesList`, `PreventifList`, `NotificationsPage`, `InterventionHistory`, `InterventionJournal`, `SearchPage`, `ValidationsPage`, `gpao/StopsPage`, `gpao/ConsumptionPage`, `gpao/RecipesPage`, `inventaire/InventoryCampaignsList`, `parametres/FamillesAdmin`, `parametres/LignesAdmin`, `parametres/PannesAdmin`, `parametres/PdrFamiliesAdmin`, `parametres/ProductFamiliesAdmin`.
+**B2 — Clôture mobile (kiosque maintenance shift) écrit un statut invalide**
+`src/pages/shift/MaintenanceShiftIntervention.tsx:173` met `statut: "ferme"`. L'enum `ticket_statut` n'accepte que `ouvert | pris_en_charge | en_cours | resolu | cloture`. L'update échoue, l'intervention est insérée mais le ticket reste "pris_en_charge". Pas de vérif d'erreur → silencieux.
+**Fix** : passer le ticket à `resolu` (puisqu'on saisit cause + solution), poser `heure_resolution`, calculer `temps_arret_minutes` et `temps_intervention_minutes`, vérifier l'erreur d'update et la propager au toast. La clôture finale (`cloture`) reste réservée au resp. maintenance via `TicketDetail`.
 
-Patron cible :
-```tsx
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-  <div>{title + count}</div>
-  <div className="flex items-center gap-2 flex-wrap">
-    <ExportCsvButton ... />
-    {canCreate && <Button>Nouveau ...</Button>}
-  </div>
-</div>
-```
-Une seule passe d'édition par fichier, identique partout.
+**B3 — Race condition à la prise en charge**
+`TicketDetail.handleTakeCharge` ne vérifie pas que `assignee_id` est nul → deux maintenanciers cliquant en même temps écrasent l'un l'autre.
+**Fix** : ajouter `.is("assignee_id", null)` au `.update()` et vérifier `data.length === 0` pour avertir "Ticket déjà pris par un collègue, recharger".
 
-### 3. Bandeau « Voir comme » (`ImpersonationBanner`)
-- Le bloc « N modules visibles » est `hidden md:inline`, OK. Le nom + rôle peut déborder : ajouter `min-w-0 truncate` au span (déjà partiel) et empiler nom/rôle sur 2 lignes en mobile :
-```tsx
-<span className="flex-1 min-w-0">
-  <span className="block truncate"><strong>{name}</strong></span>
-  <span className="block truncate text-[11px] opacity-70 sm:inline sm:text-[13px]">— {roles}</span>
-</span>
-```
-- Bouton « Quitter » : `size="sm"` + texte caché en `<sm` (`<span className="hidden sm:inline">Quitter</span>`).
+**B4 — `handleResolve` ne vérifie pas l'erreur de l'update ticket**
+Si la résolution échoue (RLS, contrainte), les insertions PDR + sortie de stock partent quand même → désynchro stock.
+**Fix** : `if (error) { toast destructive; return; }` avant toute écriture PDR.
 
-### 4. Top bar (`AppTopBar`)
-- Le bouton « Voir comme » (admin) garde son icône en mobile (texte déjà `hidden lg:inline`) — OK.
-- Vérifier que la sidebar mobile (`MobileNav`) liste bien : Maintenance, Production, Qualité, Inventaire, Configuration. Vérifié — OK.
-- Ajouter la suppression de surplus : sur mobile, masquer `SearchTrigger variant="input"` (déjà fait via `hidden md:flex`) et garder seulement l'icône. OK.
+### 🟠 Logiques (le code marche mais le résultat est faux)
 
-### 5. Hub Accès (`parametres/AccessControlHub`)
-- `TabsList flex-wrap` sur 10 onglets devient un mur d'onglets sur mobile. Cible : conserver `flex-wrap` mais réduire la taille (`text-xs h-9 px-2`) et masquer le label sous `<sm` (icône seule + tooltip via `title`).
-- `Card > CardContent p-2 overflow-x-auto` → garder `overflow-x-auto` pour fallback.
+**B5 — Exécution préventive ne décrémente pas le stock PDR**
+`PreventifDetail.submitExecution` enregistre `pdr_used` en JSON mais ne fait ni `pdr.stock_actuel` ni `pdr_stock_movements` (contrairement à `TicketDetail.handleResolve`). Conséquence : stock PMP faux dès qu'un préventif consomme.
+**Fix** : pour chaque PDR coché, décrémenter `stock_actuel`, insérer un mouvement `sortie` avec `source_type='preventive_execution'`, `source_id=execId`, `motif=plan.title`, `user_id`. Encadrer d'un try/catch comme dans tickets.
 
-### 6. Page Apps (`Apps.tsx`)
-- Grille `grid-cols-2 sm:grid-cols-3 …` OK déjà.
-- La toolbar `md:flex-row md:justify-between` empile bien en mobile — OK.
-- Vérifier que les chips de catégories scrollent horizontalement si trop nombreuses : ajouter wrapper `overflow-x-auto -mx-1 px-1` autour des `<Button>` catégories.
+**B6 — `temps_intervention_minutes` gonflé par le fallback**
+`TicketDetail.handleResolve` utilise `heure_prise_en_charge || heure_declaration`. Quand un ticket est resté en file d'attente plusieurs heures puis résolu sans prise en charge formelle, le KPI MTTR confond temps d'attente et temps d'intervention.
+**Fix** : si `heure_prise_en_charge` est nul, mettre `temps_intervention_minutes = null` (et conserver `temps_arret_minutes` qui reste valable). MTBF/MTTR se calculent déjà à partir des tickets, pas des interventions (memory `gmao-maintenance`).
 
-## Audit responsive global — autres modules
+**B7 — Aucun audit sur les actions sensibles préventif/ticket**
+- `TicketDetail.handleResolve` n'écrit pas d'audit_log (seul `validation_request` post-hoc est appelé).
+- `TicketDetail.handleClose` : aucun audit, aucun check de validation.
+- `PreventifDetail.updateStatut` (valider/suspendre/réactiver) : aucun audit.
+- `PreventifDetail.submitExecution` : aucun audit.
+**Fix** : `logAudit` à chaque mutation avec `module`, `entity_type`, `entity_id`, `action_label`, `old_values`/`new_values`, `severity` adapté. Conforme à la règle Core "Every mutation needs audit_logs".
 
-Lecture rapide pour confirmer que les pages clés ne sont pas cassées en mobile/tablette. Pour chaque souci, application de la règle :
-1. En-têtes : `flex-col sm:flex-row` + `gap-3`.
-2. Tables hors `<Card>` p-0 doivent être englobées d'un `overflow-x-auto`.
-3. Filtres : déjà `flex-wrap` partout — OK.
+**B8 — Filtre Ligne du Journal ne capte pas les anciens tickets**
+`InterventionJournal:105` lit bien `t.ligne_id`, mais avant l'arrivée de `machine_line_assignments`, beaucoup de tickets ont `ligne_id = null`. Le fallback via `machineLineMap` fonctionne, sauf que `machine_line_assignments` ne renvoie que la 1ʳᵉ ligne par machine (Map écrase). Les machines présentes sur plusieurs lignes (cf. memory asset-hierarchy : max 3) sont sous-comptées.
+**Fix** : transformer `machineLineMap` en `Record<string, string[]>` et accepter le filtre si l'une des lignes correspond.
 
-Pages à scanner (lecture seule) : `MachinesList`, `TicketsList`, `PdrList`, `gpao/OfList`, `gpao/ProductsList`, `gpao/ArticlesList`, `qualite/QualiteControles`, `qualite/QualiteNonConformites`, `qualite/QualiteActions`, `qualite/QualiteIndicateurs`, `qualite/QualiteOf`, `qualite/QualiteRapports`, `qualite/QualiteTracabilite`, `inventaire/InventoryDashboard`, `inventaire/InventoryCampaignDetail`, `parametres/UsersAdmin`, `parametres/ShiftsAdmin`, `parametres/RolesMatrix`, `parametres/DocumentPermissionsAdmin`, `parametres/PdrStockPermissionsAdmin`.
+**B9 — `InterventionHistory` filtre nested PostgREST suspect**
+`q.eq("ticket.ligne_id", filterLine)` — la syntaxe nested avec relation n'est pas garantie. À tester : si invalide, basculer vers `q.eq("tickets.ligne_id", ...)` (nom de table) ou récupérer puis filtrer en mémoire.
+**Fix** : ajouter un test en local et corriger si l'API renvoie 0 résultats à tort.
 
-Corrections appliquées seulement si un problème évident est trouvé (header non flex-col, table sans scroll horizontal). Les pages déjà conformes (`hidden md:table-cell` sur colonnes secondaires + `overflow-x-auto`) ne sont pas touchées.
+### 🟡 Robustesse
 
-## Tests
+**B10 — Limite implicite 1000 lignes**
+`TicketsList`, `PreventifList`, `InterventionJournal` chargent sans `.limit()` → Supabase tronque à 1000. Sur un site mature, des tickets/plans deviennent invisibles.
+**Fix** : ajouter `.limit(5000)` explicite + bandeau d'avertissement quand on l'atteint (et invitation à filtrer).
 
-- Étendre `src/test/common/export-csv-button.test.tsx` pour vérifier que `aria-label` est présent quand `responsive` masque le label.
-- Aucune autre modification logique → pas de régression attendue sur les tests existants.
+**B11 — Décrément stock PDR non atomique**
+`TicketDetail.handleResolve` lit `stock_actuel` côté client puis update. Deux interventions concurrentes peuvent écrire le même `stock_apres`.
+**Fix court terme** : remplacer par un RPC `decrement_pdr_stock(pdr_id, qty, source_type, source_id, motif, user_id)` qui fait l'update + insert mouvement en SQL atomique. (Migration séparée si tu valides.)
 
-## Hors périmètre
+### Périmètre fichiers (≈9 fichiers, 5–25 lignes par fichier)
 
-- Pas de refonte design générale (couleurs, polices).
-- Pas de migration vers `ScrollTable` partout (déjà géré par `overflow-x-auto` ad hoc).
-- Pas de modification des comportements `permissionModule` / matrice de rôles.
+- `src/pages/shift/ProductionShiftTicket.tsx` — B1
+- `src/pages/shift/MaintenanceShiftIntervention.tsx` — B2
+- `src/pages/TicketDetail.tsx` — B3, B4, B6, B7
+- `src/pages/PreventifDetail.tsx` — B5, B7
+- `src/pages/InterventionJournal.tsx` — B8
+- `src/pages/InterventionHistory.tsx` — B9
+- `src/pages/TicketsList.tsx`, `src/pages/PreventifList.tsx` — B10
+- Tests : ajouts dans `src/test/gmao/` (statut clôture mobile, prise en charge concurrente, fallback intervention KPI, décrément stock préventif)
 
-## Récapitulatif des fichiers modifiés (estimation)
+### Hors périmètre (mentionné mais reporté)
 
-- 1 composant : `src/components/common/ExportCsvButton.tsx`
-- 1 banner : `src/components/admin/ImpersonationBanner.tsx`
-- 1 hub : `src/pages/parametres/AccessControlHub.tsx`
-- 1 page apps : `src/pages/Apps.tsx`
-- ~18 pages liste : passage de l'en-tête au patron `flex-col sm:flex-row`
-- 1 test étendu : `src/test/common/export-csv-button.test.tsx`
+- B11 (RPC atomique stock) : nécessite une migration SQL. Je peux l'inclure si tu valides séparément la création de la fonction.
+- Refonte UX du flux de clôture mobile (passer par `/tickets/:id` complet) : changement plus lourd, à discuter si tu veux.
 
-Total : ~22 fichiers, principalement des changements localisés à 5–8 lignes par fichier.
+Je touche uniquement à la logique GMAO listée — pas de refactoring UI ni de changement de schéma sans nouvelle approbation pour B11.

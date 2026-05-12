@@ -167,20 +167,34 @@ export default function MaintenanceShiftIntervention() {
       if (error) throw error;
 
       if (closeTicket) {
-        await supabase
-          .from("tickets")
-          .update({
-            statut: "ferme",
-            cause_racine: causeRacine.trim(),
-            solution: solution.trim(),
-            heure_resolution: now.toISOString(),
-          } as any)
-          .eq("id", ticket.id);
+        // Compute KPI durations: arrest = decl→now, intervention = prise_en_charge→now (or null fallback)
+        const tempsArret = ticket.heure_declaration
+          ? Math.round((now.getTime() - new Date(ticket.heure_declaration).getTime()) / 60000)
+          : null;
+        const baselinePEC = ticket.heure_prise_en_charge ?? startedAt.toISOString();
+        const tempsIntervention = baselinePEC
+          ? Math.round((now.getTime() - new Date(baselinePEC).getTime()) / 60000)
+          : null;
+        const update: any = {
+          // Valid ticket_statut: ouvert|pris_en_charge|en_cours|resolu|cloture (NEVER 'ferme')
+          // Mobile closure resolves the ticket; resp. maintenance does the final 'cloture' from desktop.
+          statut: "resolu",
+          cause_racine: causeRacine.trim(),
+          solution: solution.trim(),
+          heure_resolution: now.toISOString(),
+          temps_arret_minutes: tempsArret,
+          temps_intervention_minutes: tempsIntervention,
+        };
+        if (!ticket.assignee_id) update.assignee_id = user?.id;
+        if (!ticket.heure_prise_en_charge) update.heure_prise_en_charge = startedAt.toISOString();
+        const { error: tErr } = await supabase.from("tickets").update(update).eq("id", ticket.id);
+        if (tErr) throw tErr;
       } else if (ticket.statut === "ouvert") {
-        await supabase
+        const { error: tErr } = await supabase
           .from("tickets")
-          .update({ statut: "pris_en_charge", assignee_id: user?.id } as any)
+          .update({ statut: "pris_en_charge", assignee_id: user?.id, heure_prise_en_charge: startedAt.toISOString() } as any)
           .eq("id", ticket.id);
+        if (tErr) throw tErr;
       }
 
       await logAudit({

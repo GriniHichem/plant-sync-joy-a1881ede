@@ -416,6 +416,7 @@ export default function PreventifDetail() {
                 <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
                   <Package className="h-3.5 w-3.5 text-muted-foreground" /> PDR utilisées
                 </Label>
+                <p className="text-xs text-muted-foreground mb-2">Cochez uniquement les PDR réellement consommées (le stock sera décrémenté).</p>
                 <div className="border rounded-lg divide-y">
                   {planPdr.map((pp: any) => (
                     <div key={pp.id} className="flex items-center gap-3 p-2.5 hover:bg-muted/50 transition-colors">

@@ -299,6 +299,12 @@ export default function MaintenanceShiftIntervention() {
                 <Label>Solution appliquée *</Label>
                 <Textarea value={solution} onChange={(e) => setSolution(e.target.value)} rows={2} />
               </div>
+              <div className="rounded-md border border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10 p-2 text-xs text-amber-800 dark:text-amber-300">
+                <strong>Pièces utilisées ?</strong> La saisie PDR n'est pas disponible en mobile.
+                Si vous avez consommé des pièces, ouvrez{" "}
+                <Link to={`/tickets/${ticket.id}`} className="underline font-medium">l'écran complet du ticket</Link>{" "}
+                avant de clôturer pour décrémenter le stock.
+              </div>
             </>
           )}
 

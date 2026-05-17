@@ -58,18 +58,18 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
 
     async function load() {
       if (kind === "production") {
-        const [{ data: decl }, { data: stops }, { count: tickets }] = await Promise.all([
+        const [{ data: decl }, { data: stops }, { data: shiftTickets }] = await Promise.all([
           supabase
             .from("production_declarations")
             .select("quantite_produite, quantite_rebut")
             .eq("shift_id", sessionId),
           supabase
             .from("production_stops")
-            .select("duree_minutes, heure_debut, heure_fin")
+            .select("duree_minutes, heure_debut, heure_fin, ticket_id")
             .eq("shift_id", sessionId),
           supabase
             .from("tickets")
-            .select("id", { count: "exact", head: true })
+            .select("id, temps_arret_minutes, statut")
             .eq("shift_id", sessionId),
         ]);
         const totalProd = (decl ?? []).reduce((s, d: any) => s + Number(d.quantite_produite || 0), 0);
@@ -77,18 +77,27 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
         const conforme = Math.max(totalProd - rebut, 0);
         const conformite = totalProd > 0 ? Math.round((conforme / totalProd) * 100) : null;
 
-        const downtime = (stops ?? []).reduce((acc, s: any) => {
+        const stopDowntime = (stops ?? []).reduce((acc, s: any) => {
           const d = Number(s.duree_minutes ?? 0);
           if (d > 0) return acc + d;
           return acc + diffMinutes(s.heure_debut, s.heure_fin ?? new Date().toISOString());
         }, 0);
+
+        // L5: add ticket downtime not already covered by a stop (dedup via production_stops.ticket_id).
+        const stoppedTicketIds = new Set((stops ?? []).map((s: any) => s.ticket_id).filter(Boolean));
+        const ticketDowntime = (shiftTickets ?? []).reduce((acc, t: any) => {
+          if (stoppedTicketIds.has(t.id)) return acc;
+          return acc + Number(t.temps_arret_minutes || 0);
+        }, 0);
+        const downtime = stopDowntime + ticketDowntime;
+        const ticketsCount = (shiftTickets ?? []).length;
 
         if (cancelled) return;
         setStats({
           loading: false,
           primary: { label: "Production", value: totalProd, hint: `${rebut} rebut` },
           secondary: { label: "Arrêts", value: stops?.length ?? 0, hint: fmtMinutes(downtime) },
-          tertiary: { label: "Tickets", value: tickets ?? 0 },
+          tertiary: { label: "Tickets", value: ticketsCount },
           extras: [
             { label: "Temps d'arrêt", value: fmtMinutes(downtime) },
             { label: "Conformité", value: conformite === null ? "—" : `${conformite}%`, hint: `${conforme}/${totalProd}` },
@@ -115,19 +124,28 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
         const [{ data: interv }, { data: closedTickets }] = await Promise.all([
           supabase
             .from("interventions")
-            .select("date_debut, date_fin, statut")
+            .select("date_debut, date_fin, statut, description, role, ticket_id")
             .eq("technicien_id", s.maintenancier_id)
             .gte("date_debut", s.heure_debut)
             .lte("date_debut", endTs),
           supabase
             .from("tickets")
             .select("temps_arret_minutes, temps_intervention_minutes")
-            .eq("statut", "ferme" as any)
+            // C2: valid enum is resolu|cloture (never 'ferme'). Includes both lifecycle endpoints.
+            .in("statut", ["resolu", "cloture"] as any)
             .gte("heure_resolution", s.heure_debut)
             .lte("heure_resolution", endTs),
         ]);
 
-        const intervCount = interv?.length ?? 0;
+        // L1: exclude bookkeeping rows (transfer/release/collab) from intervention count.
+        // Real interventions = lead role OR (no role set AND description ≠ "Prise en charge"/"Collaboration").
+        const realInterv = (interv ?? []).filter((i: any) => {
+          if (i.statut === "transferee" || i.statut === "liberee") return false;
+          const desc = (i.description || "").toLowerCase();
+          if (desc.startsWith("collaboration") || desc === "prise en charge") return false;
+          return true;
+        });
+        const intervCount = realInterv.length;
         const intervMinutes = (interv ?? []).reduce(
           (acc, i: any) => acc + diffMinutes(i.date_debut, i.date_fin ?? endTs),
           0,

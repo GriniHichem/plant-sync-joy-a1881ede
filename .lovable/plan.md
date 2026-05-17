@@ -1,74 +1,80 @@
-## Audit GMAO — bugs trouvés et corrections
+## Audit GMAO approfondi + liens cross-modules (GPAO, Qualité, PDR, Shifts, Notifications)
 
-J'ai parcouru les modules Tickets, Interventions, Préventif, Shift maintenance et hiérarchie d'assets, puis vérifié le schéma Supabase pour confirmer les écarts. Voici les problèmes confirmés et le plan de correction.
+J'ai relu en détail TicketDetail, PreventifDetail, InterventionJournal/History, MaintenancierShiftView, ShiftScreen, useShiftSessionStats, useMaintenanceShiftWorkload, useLineSynopticData, ProductionShiftTicket/MaintenanceShiftIntervention, et croisé avec le schéma Postgres. Liste des bugs **réellement confirmés** (vérifiés en base) classés par sévérité.
 
-### 🔴 Critiques (cassent une fonctionnalité)
+### 🔴 Critiques
 
-**B1 — Création de ticket depuis le kiosque shift production échoue silencieusement**
-`src/pages/shift/ProductionShiftTicket.tsx:68` insère `line_id` dans `tickets`, mais la colonne réelle est `ligne_id` (vérifié en base). L'insert renvoie une erreur PostgREST → toast "Erreur" générique, aucun ticket créé.
-**Fix** : remplacer `line_id` par `ligne_id` dans l'objet inséré.
+**C1 — `ProductionShiftTicket` insère `declared_by` mais la colonne s'appelle `declarant_id`**
+Confirmé : `tickets` n'a aucune colonne `declared_by`. L'insert PostgREST échoue → toast "Erreur" générique, aucun ticket créé depuis le kiosque shift production. (Le précédent fix a corrigé `line_id → ligne_id` mais a introduit / laissé `declared_by`.) `ShiftScreen.handleCreateTicket` utilise déjà le bon `declarant_id`.
+**Fix** : `declared_by` → `declarant_id` dans `ProductionShiftTicket.tsx`.
 
-**B2 — Clôture mobile (kiosque maintenance shift) écrit un statut invalide**
-`src/pages/shift/MaintenanceShiftIntervention.tsx:173` met `statut: "ferme"`. L'enum `ticket_statut` n'accepte que `ouvert | pris_en_charge | en_cours | resolu | cloture`. L'update échoue, l'intervention est insérée mais le ticket reste "pris_en_charge". Pas de vérif d'erreur → silencieux.
-**Fix** : passer le ticket à `resolu` (puisqu'on saisit cause + solution), poser `heure_resolution`, calculer `temps_arret_minutes` et `temps_intervention_minutes`, vérifier l'erreur d'update et la propager au toast. La clôture finale (`cloture`) reste réservée au resp. maintenance via `TicketDetail`.
+**C2 — KPI shift maintenance : filtre statut `"ferme"` invalide**
+`useShiftSessionStats.ts:125` filtre `tickets.statut = 'ferme'`. L'enum `ticket_statut` ne contient que `ouvert|pris_en_charge|en_cours|resolu|cloture`. Conséquence : `closedTickets` est toujours vide → "Tickets clôturés", "Temps d'arrêt", "MTTR moy." affichent toujours 0 pour le responsable maintenance.
+**Fix** : remplacer par `.in("statut", ["resolu","cloture"])`.
 
-**B3 — Race condition à la prise en charge**
-`TicketDetail.handleTakeCharge` ne vérifie pas que `assignee_id` est nul → deux maintenanciers cliquant en même temps écrasent l'un l'autre.
-**Fix** : ajouter `.is("assignee_id", null)` au `.update()` et vérifier `data.length === 0` pour avertir "Ticket déjà pris par un collègue, recharger".
+**C3 — Pré-cochage par défaut de toutes les PDR dans l'exécution préventive**
+`PreventifDetail.openExecDialog` initialise `execPdrUsed[pp.id] = true` pour TOUTES les PDR du plan. Depuis le fix B5, chaque PDR cochée décrémente le stock PMP. Un opérateur pressé qui valide sans décocher consomme tout le kit → stock PMP faux à chaque exécution.
+**Fix** : par défaut tout à `false` (opt-in). Texte d'info : "Cocher uniquement les PDR réellement utilisées".
 
-**B4 — `handleResolve` ne vérifie pas l'erreur de l'update ticket**
-Si la résolution échoue (RLS, contrainte), les insertions PDR + sortie de stock partent quand même → désynchro stock.
-**Fix** : `if (error) { toast destructive; return; }` avant toute écriture PDR.
+**C4 — Stop de production lié à un ticket jamais clôturé automatiquement**
+`production_stops.ticket_id` existe (vérifié). Quand un ticket est résolu, le stop GPAO associé garde `heure_fin = null` et `duree_minutes = null` → le temps d'arrêt continue de courir dans les KPI production (`useShiftSessionStats` calcule `now() - heure_debut` si `heure_fin` nul).
+**Fix** : dans `TicketDetail.handleResolve` (et `MaintenanceShiftIntervention.handleSubmit` lors d'une clôture), update `production_stops` correspondants : `heure_fin = now`, `duree_minutes = ticket.temps_arret_minutes ?? round((now-heure_debut)/60000)`.
 
-### 🟠 Logiques (le code marche mais le résultat est faux)
+### 🟠 Logiques
 
-**B5 — Exécution préventive ne décrémente pas le stock PDR**
-`PreventifDetail.submitExecution` enregistre `pdr_used` en JSON mais ne fait ni `pdr.stock_actuel` ni `pdr_stock_movements` (contrairement à `TicketDetail.handleResolve`). Conséquence : stock PMP faux dès qu'un préventif consomme.
-**Fix** : pour chaque PDR coché, décrémenter `stock_actuel`, insérer un mouvement `sortie` avec `source_type='preventive_execution'`, `source_id=execId`, `motif=plan.title`, `user_id`. Encadrer d'un try/catch comme dans tickets.
+**L1 — Comptage interventions du shift maintenance inflaté**
+`useShiftSessionStats.ts:130` `intervCount` compte toutes les lignes `interventions` du technicien dans la fenêtre, y compris : `"Prise en charge"` (créée à chaque take-charge), `"Collaboration (...)"` (créée à chaque add collaborator), `"transferee"`, `"liberee"`. Le manager voit 6 "interventions" pour 1 ticket réel.
+**Fix** : exclure `statut in ('transferee','liberee')` ET (description ne commence pas par `Collaboration` OU role = 'lead'). Compter par `ticket_id` distinct serait encore mieux ; on garde l'approche actuelle mais avec exclusions.
 
-**B6 — `temps_intervention_minutes` gonflé par le fallback**
-`TicketDetail.handleResolve` utilise `heure_prise_en_charge || heure_declaration`. Quand un ticket est resté en file d'attente plusieurs heures puis résolu sans prise en charge formelle, le KPI MTTR confond temps d'attente et temps d'intervention.
-**Fix** : si `heure_prise_en_charge` est nul, mettre `temps_intervention_minutes = null` (et conserver `temps_arret_minutes` qui reste valable). MTBF/MTTR se calculent déjà à partir des tickets, pas des interventions (memory `gmao-maintenance`).
+**L2 — `assignment_status` reste "transferred"/"released" après résolution**
+`TicketDetail.handleResolve` ne reset pas `assignment_status`. Un ticket résolu après transfert reste badgé "Transféré" dans la liste/sticker.
+**Fix** : `assignment_status: "assigned"` (ou null) dans l'update de résolution.
 
-**B7 — Aucun audit sur les actions sensibles préventif/ticket**
-- `TicketDetail.handleResolve` n'écrit pas d'audit_log (seul `validation_request` post-hoc est appelé).
-- `TicketDetail.handleClose` : aucun audit, aucun check de validation.
-- `PreventifDetail.updateStatut` (valider/suspendre/réactiver) : aucun audit.
-- `PreventifDetail.submitExecution` : aucun audit.
-**Fix** : `logAudit` à chaque mutation avec `module`, `entity_type`, `entity_id`, `action_label`, `old_values`/`new_values`, `severity` adapté. Conforme à la règle Core "Every mutation needs audit_logs".
+**L3 — Notification au déclarant absente quand son ticket est résolu/clôturé**
+Le déclarant (opérateur production, qualité, GPAO) n'est jamais notifié de la résolution. La règle Core "audit_critical_event" couvre les criticités, pas le suivi du déclarant.
+**Fix** : dans `handleResolve` et `handleClose`, insérer une `notifications` row pour `recipient_user_id = ticket.declarant_id` (skip si declarant = assignee).
 
-**B8 — Filtre Ligne du Journal ne capte pas les anciens tickets**
-`InterventionJournal:105` lit bien `t.ligne_id`, mais avant l'arrivée de `machine_line_assignments`, beaucoup de tickets ont `ligne_id = null`. Le fallback via `machineLineMap` fonctionne, sauf que `machine_line_assignments` ne renvoie que la 1ʳᵉ ligne par machine (Map écrase). Les machines présentes sur plusieurs lignes (cf. memory asset-hierarchy : max 3) sont sous-comptées.
-**Fix** : transformer `machineLineMap` en `Record<string, string[]>` et accepter le filtre si l'une des lignes correspond.
+**L4 — Mode clôture mobile : aucune décrémentation PDR ni saisie possible**
+`MaintenanceShiftIntervention.handleSubmit` (closeTicket=true) résout le ticket sans permettre de saisir les PDR consommées et ne touche pas au stock. Un opérateur qui clôture en mobile contourne involontairement la gestion PMP.
+**Fix court terme** : afficher une note "Pièces utilisées ? Saisissez-les depuis l'écran complet du ticket avant de clôturer." + lien direct vers `/tickets/:id`. (Refonte mobile complète = hors scope.)
 
-**B9 — `InterventionHistory` filtre nested PostgREST suspect**
-`q.eq("ticket.ligne_id", filterLine)` — la syntaxe nested avec relation n'est pas garantie. À tester : si invalide, basculer vers `q.eq("tickets.ligne_id", ...)` (nom de table) ou récupérer puis filtrer en mémoire.
-**Fix** : ajouter un test en local et corriger si l'API renvoie 0 résultats à tort.
+**L5 — `useShiftSessionStats` production : `tickets` ne compte pas le temps d'arrêt généré**
+Ligne 71 : seul un `count` est fait. L'extra "Temps d'arrêt" du shift production additionne uniquement `production_stops`, pas `tickets.temps_arret_minutes`. Si un ticket bloquant ne crée pas de stop, l'arrêt est invisible.
+**Fix** : récupérer aussi `tickets.temps_arret_minutes` du shift et l'additionner aux stops (en dédupliquant via `production_stops.ticket_id` pour éviter double-comptage : si stop déjà lié au ticket, ne pas compter le ticket).
 
-### 🟡 Robustesse
+**L6 — `MaintenancierShiftView` : plans préventifs sans filtre ligne quand machine multi-ligne**
+`useMaintenanceShiftWorkload.ts:84` filtre `line_id.in.(...)` pour les plans, mais beaucoup de plans préventifs ont `line_id = null` et héritent de la ligne via la machine. Conséquence symétrique au B8 ticket : plans manquants pour les machines multi-lignes.
+**Fix** : précharger `machine_line_assignments` pour les machines des plans assignés, accepter le plan si `plan.line_id ∈ shiftLineIds` OU `machine ∈ machines des shiftLineIds`.
 
-**B10 — Limite implicite 1000 lignes**
-`TicketsList`, `PreventifList`, `InterventionJournal` chargent sans `.limit()` → Supabase tronque à 1000. Sur un site mature, des tickets/plans deviennent invisibles.
-**Fix** : ajouter `.limit(5000)` explicite + bandeau d'avertissement quand on l'atteint (et invitation à filtrer).
+### 🟡 Robustesse / cohérence
 
-**B11 — Décrément stock PDR non atomique**
-`TicketDetail.handleResolve` lit `stock_actuel` côté client puis update. Deux interventions concurrentes peuvent écrire le même `stock_apres`.
-**Fix court terme** : remplacer par un RPC `decrement_pdr_stock(pdr_id, qty, source_type, source_id, motif, user_id)` qui fait l'update + insert mouvement en SQL atomique. (Migration séparée si tu valides.)
+**R1 — Boucle PDR préventive sans gestion d'erreur lecture**
+`PreventifDetail.submitExecution` fait `.single()` sur `pdr` — si une PDR a été désactivée, `.single()` retourne `error` et fait throw → l'exécution est créée mais la boucle s'interrompt en milieu de course (PDR partiellement décrémentées). 
+**Fix** : `.maybeSingle()`, continuer la boucle, journaliser les PDR ignorées dans `notes` de l'exécution.
 
-### Périmètre fichiers (≈9 fichiers, 5–25 lignes par fichier)
+**R2 — `InterventionHistory` filtre Ticket dropdown plafonné à 500**
+Anciens tickets absents du select.
+**Fix** : passer à 5000 (cohérent avec les autres listes), bandeau si atteint.
 
-- `src/pages/shift/ProductionShiftTicket.tsx` — B1
-- `src/pages/shift/MaintenanceShiftIntervention.tsx` — B2
-- `src/pages/TicketDetail.tsx` — B3, B4, B6, B7
-- `src/pages/PreventifDetail.tsx` — B5, B7
-- `src/pages/InterventionJournal.tsx` — B8
-- `src/pages/InterventionHistory.tsx` — B9
-- `src/pages/TicketsList.tsx`, `src/pages/PreventifList.tsx` — B10
-- Tests : ajouts dans `src/test/gmao/` (statut clôture mobile, prise en charge concurrente, fallback intervention KPI, décrément stock préventif)
+**R3 — Audit de transfert/libération sans contexte machine**
+`handleTransfer/handleRelease` audit ne contient pas `machine_id` ni `ligne_id` dans metadata → recherche audit moins fine.
+**Fix** : ajouter `entity_code = ticket.numero`, `metadata.machine_id`, `metadata.ligne_id`.
 
-### Hors périmètre (mentionné mais reporté)
+### Hors périmètre (à valider séparément)
 
-- B11 (RPC atomique stock) : nécessite une migration SQL. Je peux l'inclure si tu valides séparément la création de la fonction.
-- Refonte UX du flux de clôture mobile (passer par `/tickets/:id` complet) : changement plus lourd, à discuter si tu veux.
+- **Atomicité stock PDR** (RPC SQL) — toujours non implémentée, nécessite migration.
+- **Refonte UX clôture mobile** avec saisie PDR — changement plus lourd.
+- **Notification déclencheurs `ticket_resolved`/`ticket_closed` via règles configurables** — l'infra notification_rules existe mais aucune règle pré-câblée ; L3 est un fallback hard-coded en attendant.
 
-Je touche uniquement à la logique GMAO listée — pas de refactoring UI ni de changement de schéma sans nouvelle approbation pour B11.
+### Fichiers touchés (≈9 fichiers, 3–30 lignes chacun)
+
+- `src/pages/shift/ProductionShiftTicket.tsx` — C1
+- `src/hooks/useShiftSessionStats.ts` — C2, L1, L5
+- `src/pages/PreventifDetail.tsx` — C3, R1
+- `src/pages/TicketDetail.tsx` — C4, L2, L3, R3
+- `src/pages/shift/MaintenanceShiftIntervention.tsx` — C4 (variant), L4
+- `src/hooks/useMaintenanceShiftWorkload.ts` — L6
+- `src/pages/InterventionHistory.tsx` — R2
+- Tests : ajout dans `src/test/gmao/` (statut KPI shift maintenance, default PDR opt-in, stop auto-close).
+
+Je ne touche qu'à la logique listée — pas de refonte UI, pas de migration SQL.

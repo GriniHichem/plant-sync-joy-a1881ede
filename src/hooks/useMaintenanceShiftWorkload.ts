@@ -79,14 +79,29 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
         .in("id", planIds)
         .eq("statut_plan", "valide")
         .eq("is_active", true);
-      if (restrictedToShiftLines) {
-        // un plan est conservé si line_id ∈ shiftLineIds (ou si la machine appartient à une de ces lignes)
-        q = q.or(
-          `line_id.in.(${shiftLineIds.join(",")})`
-        );
-      }
       const { data } = await q;
-      loadedPlans = data ?? [];
+      const all = (data ?? []) as any[];
+
+      if (restrictedToShiftLines) {
+        // L6: a plan matches if line_id ∈ shift OR machine is assigned to any shift line.
+        // Plans with line_id=null inheriting via machine_line_assignments were previously excluded.
+        const machineIds = Array.from(new Set(all.map((p) => p.machine_id).filter(Boolean)));
+        let machinesOnShiftLines = new Set<string>();
+        if (machineIds.length > 0) {
+          const { data: ma } = await supabase
+            .from("machine_line_assignments")
+            .select("machine_id, line_id")
+            .in("machine_id", machineIds)
+            .in("line_id", shiftLineIds);
+          machinesOnShiftLines = new Set((ma ?? []).map((r: any) => r.machine_id));
+        }
+        loadedPlans = all.filter((p) =>
+          (p.line_id && shiftLineIds.includes(p.line_id)) ||
+          (p.machine_id && machinesOnShiftLines.has(p.machine_id))
+        );
+      } else {
+        loadedPlans = all;
+      }
     }
 
     // ---- Tickets ouverts / en cours, mes assignés OU non assignés sur mes lignes ----

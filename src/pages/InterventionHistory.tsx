@@ -125,7 +125,7 @@ export default function InterventionHistory() {
           .select("id, date_shift, shift_type, line_id")
           .order("date_shift", { ascending: false })
           .limit(200),
-        supabase.from("tickets").select("id, numero").order("created_at", { ascending: false }).limit(500),
+        supabase.from("tickets").select("id, numero").order("created_at", { ascending: false }).limit(5000),
         supabase.from("profiles").select("user_id, first_name, last_name"),
       ]);
       setLines(l.data || []);

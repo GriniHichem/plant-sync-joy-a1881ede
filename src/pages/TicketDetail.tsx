@@ -256,7 +256,7 @@ export default function TicketDetail() {
         description: `Transfert de ${assigneeName || "—"} vers ${targetProfile?.full_name || "—"} — ${handoverMotif}`,
         old_values: { assignee_id: previousAssigneeId },
         new_values: { assignee_id: transferTargetId },
-        metadata: { motif: handoverMotif, event: "ticket.transferred" },
+        metadata: { motif: handoverMotif, event: "ticket.transferred", machine_id: ticket?.machine_id, ligne_id: ticket?.ligne_id },
         severity: "medium",
       });
 
@@ -318,7 +318,7 @@ export default function TicketDetail() {
         description: `Libération par ${assigneeName || "—"} — ${handoverMotif}`,
         old_values: { assignee_id: previousAssigneeId, statut: ticket.statut },
         new_values: { assignee_id: null, statut: "ouvert" },
-        metadata: { motif: handoverMotif, event: "ticket.released" },
+        metadata: { motif: handoverMotif, event: "ticket.released", machine_id: ticket?.machine_id, ligne_id: ticket?.ligne_id },
         severity: "medium",
       });
 
@@ -371,11 +371,28 @@ export default function TicketDetail() {
 
     const { data: updatedTicket, error: resolveErr } = await supabase.from("tickets").update({
       statut: "resolu" as any, heure_resolution: now, cause_racine: causeRacine, solution, temps_arret_minutes: tempsArret, temps_intervention_minutes: tempsIntervention,
+      // L2: clear transient assignment_status so list/badges don't keep showing "Transféré"/"Libéré" after resolve.
+      assignment_status: "assigned" as any,
     }).eq("id", id!).select("id").single();
     if (resolveErr) {
       toast({ title: "Erreur résolution", description: resolveErr.message, variant: "destructive" });
       return;
     }
+
+    // C4: auto-close any production_stops linked to this ticket so GPAO downtime KPI stops counting.
+    try {
+      const { data: openStops } = await supabase
+        .from("production_stops")
+        .select("id, heure_debut, duree_minutes")
+        .eq("ticket_id", id!)
+        .is("heure_fin", null);
+      for (const stop of openStops ?? []) {
+        const dur = stop.duree_minutes && stop.duree_minutes > 0
+          ? stop.duree_minutes
+          : (tempsArret ?? Math.max(0, Math.round((new Date(now).getTime() - new Date(stop.heure_debut).getTime()) / 60000)));
+        await supabase.from("production_stops").update({ heure_fin: now, duree_minutes: dur } as any).eq("id", stop.id);
+      }
+    } catch (e) { console.warn("[ticket.resolve] stop auto-close failed", e); }
 
     await logAudit({
       action_type: "status_change", module: "tickets", entity_type: "ticket",
@@ -385,6 +402,21 @@ export default function TicketDetail() {
       new_values: { statut: "resolu", cause_racine: causeRacine, solution, temps_arret_minutes: tempsArret, temps_intervention_minutes: tempsIntervention },
       severity: "medium",
     });
+
+    // L3: notify declarant (skip if declarant is the resolver/assignee).
+    if (ticket?.declarant_id && ticket.declarant_id !== user?.id && ticket.declarant_id !== ticket.assignee_id) {
+      await supabase.from("notifications").insert({
+        notification_type: "ticket_resolved", module: "tickets",
+        title: `Ticket résolu : ${ticket.numero}`,
+        message: `Votre ticket sur ${ticket.machines?.designation ?? "—"} a été résolu. Cause : ${causeRacine}`,
+        recipient_user_id: ticket.declarant_id,
+        triggered_by_user_id: user?.id,
+        entity_type: "ticket", entity_id: id!, entity_code: ticket.numero,
+        entity_label: ticket.description,
+        action_url: `/tickets/${id}`,
+        severity: "info" as any,
+      });
+    }
 
     // Field First: post-hoc validation request for critical ticket resolution
     try {
@@ -527,6 +559,20 @@ export default function TicketDetail() {
       new_values: { statut: "cloture", heure_cloture: closedAt },
       severity: "medium",
     });
+    // L3: notify declarant of definitive closure (skip if same user).
+    if (ticket?.declarant_id && ticket.declarant_id !== user?.id) {
+      await supabase.from("notifications").insert({
+        notification_type: "ticket_closed", module: "tickets",
+        title: `Ticket clôturé : ${ticket.numero}`,
+        message: `Le ticket a été clôturé par le responsable maintenance.`,
+        recipient_user_id: ticket.declarant_id,
+        triggered_by_user_id: user?.id,
+        entity_type: "ticket", entity_id: id!, entity_code: ticket.numero,
+        entity_label: ticket.description,
+        action_url: `/tickets/${id}`,
+        severity: "info" as any,
+      });
+    }
     toast({ title: "Ticket clôturé" });
     loadTicket();
   };

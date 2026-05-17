@@ -184,11 +184,42 @@ export default function MaintenanceShiftIntervention() {
           heure_resolution: now.toISOString(),
           temps_arret_minutes: tempsArret,
           temps_intervention_minutes: tempsIntervention,
+          assignment_status: "assigned",
         };
         if (!ticket.assignee_id) update.assignee_id = user?.id;
         if (!ticket.heure_prise_en_charge) update.heure_prise_en_charge = startedAt.toISOString();
         const { error: tErr } = await supabase.from("tickets").update(update).eq("id", ticket.id);
         if (tErr) throw tErr;
+
+        // C4: auto-close linked production_stops so GPAO downtime KPI stops counting.
+        try {
+          const { data: openStops } = await supabase
+            .from("production_stops")
+            .select("id, heure_debut, duree_minutes")
+            .eq("ticket_id", ticket.id)
+            .is("heure_fin", null);
+          for (const stop of openStops ?? []) {
+            const dur = stop.duree_minutes && stop.duree_minutes > 0
+              ? stop.duree_minutes
+              : (tempsArret ?? Math.max(0, Math.round((now.getTime() - new Date(stop.heure_debut).getTime()) / 60000)));
+            await supabase.from("production_stops").update({ heure_fin: now.toISOString(), duree_minutes: dur } as any).eq("id", stop.id);
+          }
+        } catch (e) { console.warn("[shift.intervention] stop auto-close failed", e); }
+
+        // L3: notify declarant (mobile closure).
+        if (ticket.declarant_id && ticket.declarant_id !== user?.id) {
+          await supabase.from("notifications").insert({
+            notification_type: "ticket_resolved", module: "tickets",
+            title: `Ticket résolu : ${ticket.numero}`,
+            message: `Votre ticket sur ${ticket.machines?.designation ?? "—"} a été résolu. Cause : ${causeRacine.trim()}`,
+            recipient_user_id: ticket.declarant_id,
+            triggered_by_user_id: user?.id,
+            entity_type: "ticket", entity_id: ticket.id, entity_code: ticket.numero,
+            entity_label: ticket.description,
+            action_url: `/tickets/${ticket.id}`,
+            severity: "info" as any,
+          });
+        }
       } else if (ticket.statut === "ouvert") {
         const { error: tErr } = await supabase
           .from("tickets")
@@ -267,6 +298,12 @@ export default function MaintenanceShiftIntervention() {
               <div>
                 <Label>Solution appliquée *</Label>
                 <Textarea value={solution} onChange={(e) => setSolution(e.target.value)} rows={2} />
+              </div>
+              <div className="rounded-md border border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10 p-2 text-xs text-amber-800 dark:text-amber-300">
+                <strong>Pièces utilisées ?</strong> La saisie PDR n'est pas disponible en mobile.
+                Si vous avez consommé des pièces, ouvrez{" "}
+                <Link to={`/tickets/${ticket.id}`} className="underline font-medium">l'écran complet du ticket</Link>{" "}
+                avant de clôturer pour décrémenter le stock.
               </div>
             </>
           )}

@@ -99,8 +99,10 @@ export default function PreventifDetail() {
     setExecDureeMinutes(0);
     const now = new Date();
     setExecStartTime(now.toTimeString().slice(0, 5));
+    // C3: opt-in by default — opérateur coche uniquement les PDR réellement utilisées
+    // (sinon décrémentation PMP fausse à chaque exécution).
     const pdrMap: Record<string, boolean> = {};
-    planPdr.forEach(pp => { pdrMap[pp.id] = true; });
+    planPdr.forEach(pp => { pdrMap[pp.id] = false; });
     setExecPdrUsed(pdrMap);
     setExecOpen(true);
   };
@@ -130,21 +132,30 @@ export default function PreventifDetail() {
       if (error) throw error;
 
       // B5: decrement PDR stock + log movement (preventive consumption was previously invisible to PMP).
-      // Best-effort: failures here are reported but do not roll back the execution record.
+      // R1: maybeSingle + per-PDR try/catch — a disabled/missing PDR must NOT abort the whole loop.
+      const skippedPdr: string[] = [];
       for (const pp of usedPlanPdr) {
-        const { data: cur } = await supabase
-          .from("pdr").select("stock_actuel, reference, designation").eq("id", pp.pdr_id).single();
-        if (!cur) continue;
-        const stockAvant = Number(cur.stock_actuel) || 0;
-        const stockApres = Math.max(0, stockAvant - Number(pp.quantite || 0));
-        await supabase.from("pdr").update({ stock_actuel: stockApres }).eq("id", pp.pdr_id);
-        await supabase.from("pdr_stock_movements").insert({
-          pdr_id: pp.pdr_id, type: "sortie" as any, quantite: pp.quantite,
-          stock_avant: stockAvant, stock_apres: stockApres,
-          source_type: "preventive_execution", source_id: exec?.id ?? null,
-          reference_source: plan?.title, motif: `Préventif ${plan?.title}`,
-          user_id: user.id,
-        } as any);
+        try {
+          const { data: cur } = await supabase
+            .from("pdr").select("stock_actuel, reference, designation").eq("id", pp.pdr_id).maybeSingle();
+          if (!cur) { skippedPdr.push(pp.pdr?.reference || pp.pdr_id); continue; }
+          const stockAvant = Number(cur.stock_actuel) || 0;
+          const stockApres = Math.max(0, stockAvant - Number(pp.quantite || 0));
+          await supabase.from("pdr").update({ stock_actuel: stockApres }).eq("id", pp.pdr_id);
+          await supabase.from("pdr_stock_movements").insert({
+            pdr_id: pp.pdr_id, type: "sortie" as any, quantite: pp.quantite,
+            stock_avant: stockAvant, stock_apres: stockApres,
+            source_type: "preventive_execution", source_id: exec?.id ?? null,
+            reference_source: plan?.title, motif: `Préventif ${plan?.title}`,
+            user_id: user.id,
+          } as any);
+        } catch (e) {
+          console.warn("[preventif] PDR decrement failed", pp.pdr_id, e);
+          skippedPdr.push(pp.pdr?.reference || pp.pdr_id);
+        }
+      }
+      if (skippedPdr.length > 0) {
+        toast({ title: "PDR ignorées", description: `Stock non décrémenté: ${skippedPdr.join(", ")}`, variant: "destructive" });
       }
 
       // Update plan: derniere_execution + prochaine_echeance
@@ -405,6 +416,7 @@ export default function PreventifDetail() {
                 <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
                   <Package className="h-3.5 w-3.5 text-muted-foreground" /> PDR utilisées
                 </Label>
+                <p className="text-xs text-muted-foreground mb-2">Cochez uniquement les PDR réellement consommées (le stock sera décrémenté).</p>
                 <div className="border rounded-lg divide-y">
                   {planPdr.map((pp: any) => (
                     <div key={pp.id} className="flex items-center gap-3 p-2.5 hover:bg-muted/50 transition-colors">

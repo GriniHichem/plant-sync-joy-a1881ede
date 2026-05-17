@@ -69,7 +69,7 @@ export default function ProductionShiftTicket() {
           description: description.trim(),
           priorite,
           statut: "ouvert",
-          declared_by: user?.id,
+          declarant_id: user?.id,
           shift_id: productionShift.id,
           of_id: productionShift.of_id,
         } as any)

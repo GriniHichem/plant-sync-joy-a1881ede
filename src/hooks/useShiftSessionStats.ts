@@ -115,19 +115,28 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
         const [{ data: interv }, { data: closedTickets }] = await Promise.all([
           supabase
             .from("interventions")
-            .select("date_debut, date_fin, statut")
+            .select("date_debut, date_fin, statut, description, role, ticket_id")
             .eq("technicien_id", s.maintenancier_id)
             .gte("date_debut", s.heure_debut)
             .lte("date_debut", endTs),
           supabase
             .from("tickets")
             .select("temps_arret_minutes, temps_intervention_minutes")
-            .eq("statut", "ferme" as any)
+            // C2: valid enum is resolu|cloture (never 'ferme'). Includes both lifecycle endpoints.
+            .in("statut", ["resolu", "cloture"] as any)
             .gte("heure_resolution", s.heure_debut)
             .lte("heure_resolution", endTs),
         ]);
 
-        const intervCount = interv?.length ?? 0;
+        // L1: exclude bookkeeping rows (transfer/release/collab) from intervention count.
+        // Real interventions = lead role OR (no role set AND description ≠ "Prise en charge"/"Collaboration").
+        const realInterv = (interv ?? []).filter((i: any) => {
+          if (i.statut === "transferee" || i.statut === "liberee") return false;
+          const desc = (i.description || "").toLowerCase();
+          if (desc.startsWith("collaboration") || desc === "prise en charge") return false;
+          return true;
+        });
+        const intervCount = realInterv.length;
         const intervMinutes = (interv ?? []).reduce(
           (acc, i: any) => acc + diffMinutes(i.date_debut, i.date_fin ?? endTs),
           0,

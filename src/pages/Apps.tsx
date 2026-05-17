@@ -73,7 +73,7 @@ const MODULES: AppModule[] = [
   { title: "Paramètres", description: "Référentiels, utilisateurs et configuration", url: "/parametres", icon: IconSettings, category: "Configuration", permissionModule: "parametres", accent: "from-slate-500/15 to-slate-500/5 text-slate-400" },
   { title: "Audit & Traçabilité", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: ShieldCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "audit", accent: "from-red-500/15 to-red-500/5 text-red-500" },
   { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: Bell as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "notifications", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
-  { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/search", icon: Search as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "recherche", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
+  { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/recherche", icon: Search as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "recherche", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
 ];
 
 const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Production", "Qualité", "Inventaire", "Configuration"];

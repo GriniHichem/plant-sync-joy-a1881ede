@@ -18,10 +18,12 @@ import { useScanner } from "@/hooks/useScanner";
 import {
   resolveScannedCode,
   isAutoSelectable,
+  normalizeScanInput,
   type MatchQuality,
   type ResolvedScan,
   type ScannableEntityType,
 } from "@/lib/scanResolver";
+import { logScan } from "@/lib/scanHistory";
 import { useToast } from "@/hooks/use-toast";
 
 export interface ScannerDialogProps {
@@ -35,6 +37,8 @@ export interface ScannerDialogProps {
   description?: string;
   /** Force le mode enrôlement: pas d'appel RPC, on renvoie la valeur brute. */
   enrollMode?: boolean;
+  /** Contexte d'origine (page) journalisé dans scan_history. */
+  context?: string;
 }
 
 const TYPE_LABEL: Record<ScannableEntityType, string> = {
@@ -106,6 +110,7 @@ export function ScannerDialog({
   title = "Scanner un code",
   description = "Pointez la caméra vers un QR code ou un code-barres.",
   enrollMode,
+  context,
 }: ScannerDialogProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [manual, setManual] = useState("");
@@ -113,6 +118,7 @@ export function ScannerDialog({
   const [lastRaw, setLastRaw] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<ResolvedScan[]>([]);
+  const sourceRef = useRef<"camera" | "manual">("camera");
   const { toast } = useToast();
 
   // Mode enrôlement = pas de résolution RPC. Implicite si onResolved absent.
@@ -124,7 +130,7 @@ export function ScannerDialog({
 
   const { error, devices, deviceId, setDeviceId } = useScanner(videoRef, {
     enabled: open,
-    onDetected: (text) => handleResolve(text),
+    onDetected: (text) => { sourceRef.current = "camera"; handleResolve(text); },
   });
 
   useEffect(() => {
@@ -140,11 +146,14 @@ export function ScannerDialog({
     if (busy) return;
     const trimmed = (raw ?? "").trim();
     if (!trimmed) return;
+    const normalized = normalizeScanInput(trimmed);
+    const source = isEnroll ? "enroll" : sourceRef.current;
 
     // Mode enrôlement : on renvoie la valeur brute, jamais le RPC.
     if (isEnroll) {
       beep();
       try { (navigator as any).vibrate?.(60); } catch {}
+      logScan({ raw: trimmed, normalized, source: "enroll", outcome: "enrolled", context });
       onRawValue?.(trimmed);
       onOpenChange(false);
       return;
@@ -158,12 +167,25 @@ export function ScannerDialog({
         beep();
         try { (navigator as any).vibrate?.(60); } catch {}
         pushHistory(rows[0]);
+        logScan({
+          raw: trimmed, normalized, source, outcome: "resolved",
+          matches: rows, picked: rows[0], context,
+        });
         onResolved!(rows[0]);
         onOpenChange(false);
         return;
       }
       setMatches(rows);
+      logScan({
+        raw: trimmed, normalized, source,
+        outcome: rows.length === 0 ? "not_found" : "ambiguous",
+        matches: rows, context,
+      });
     } catch (e: any) {
+      logScan({
+        raw: trimmed, normalized, source, outcome: "error",
+        error: e?.message ?? String(e), context,
+      });
       toast({ title: "Erreur scan", description: e.message, variant: "destructive" });
     } finally {
       setBusy(false);
@@ -172,6 +194,12 @@ export function ScannerDialog({
 
   function pickResult(r: ResolvedScan) {
     pushHistory(r);
+    // Re-log un événement "resolved" quand l'utilisateur lève l'ambiguïté.
+    logScan({
+      raw: lastRaw || manual, normalized: normalizeScanInput(lastRaw || manual),
+      source: isEnroll ? "enroll" : sourceRef.current,
+      outcome: "resolved", picked: r, matches: matches ?? [r], context,
+    });
     onResolved?.(r);
     onOpenChange(false);
   }
@@ -255,9 +283,10 @@ export function ScannerDialog({
               value={manual}
               onChange={(e) => setManual(e.target.value)}
               placeholder="Référence, code ERP, code-barres, UUID, URL…"
-              onKeyDown={(e) => { if (e.key === "Enter" && manual.trim()) handleResolve(manual.trim()); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && manual.trim()) { sourceRef.current = "manual"; handleResolve(manual.trim()); } }}
             />
-            <Button onClick={() => handleResolve(manual.trim())} disabled={!manual.trim() || busy}>
+            <Button onClick={() => { sourceRef.current = "manual"; handleResolve(manual.trim()); }} disabled={!manual.trim() || busy}>
+
               OK
             </Button>
           </div>

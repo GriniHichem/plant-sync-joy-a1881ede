@@ -1,65 +1,83 @@
-# Audit du système de scan QR / code-barres
+## Historique des scans QR / code-barres
 
-## Bugs identifiés
+Créer un journal persistant et consultable de tous les scans effectués via `ScannerDialog`, avec horodatage, utilisateur, type de code et résultat (succès / échec / ambigu).
 
-### B1 — RPC `resolve_scanned_code` : prefix fallback déclenché à tort (HIGH)
-Dans la migration, après les 4 blocs `RETURN QUERY` (pdr, machine, equipement, organe) de l'étape "exact match", le code fait :
-```
-GET DIAGNOSTICS found_any = ROW_COUNT;
-IF found_any THEN RETURN; END IF;
-```
-`GET DIAGNOSTICS ROW_COUNT` ne reflète que **le dernier `RETURN QUERY`** (organes). Conséquence : si un scan correspond exactement à une PDR (ou machine, ou équipement) mais qu'aucun organe ne matche, `found_any = false` → la phase "prefix" s'exécute et renvoie en plus des correspondances approchantes parasites. L'auto-sélection (`isAutoSelectable` requiert 1 seul résultat) tombe alors en désambiguïsation inutile.
+### 1. Base de données
 
-**Fix** : utiliser une variable cumulative.
-```sql
-DECLARE total_found integer := 0;
-...
--- après chaque RETURN QUERY exact :
-GET DIAGNOSTICS found_any = ROW_COUNT;
-total_found := total_found + found_any;
-...
-IF total_found > 0 THEN RETURN; END IF;
-```
+Nouvelle table `public.scan_history` :
+- `id uuid pk`
+- `user_id uuid` (auth.uid())
+- `scanned_at timestamptz default now()`
+- `raw_value text` — valeur brute lue
+- `normalized_value text` — sortie de `normalizeScanInput`
+- `source text` — `camera` | `manual` | `enroll`
+- `code_format text` — format ZXing détecté (QR_CODE, EAN_13, CODE_128, URL, UUID…) ou `unknown`
+- `outcome text` — `resolved` | `ambiguous` | `not_found` | `enrolled` | `error`
+- `match_quality text` — `url`/`uuid`/`exact`/`prefix`/null
+- `matches_count int`
+- `entity_type text` (pdr/machine/organe/equipement) — null si non résolu
+- `entity_id uuid` — null si non résolu
+- `entity_code text`, `entity_label text` — snapshot lisible
+- `context text` — page d'origine (ex: `pdr_list`, `enroll_external_ids`)
+- `error_message text` — si outcome=error
+- `search_vector tsvector` (trigger `fts_build`)
 
-### B2 — Prefix SQL ignore la normalisation (MED)
-L'étape exact compare aussi `qn` (sans accents/séparateurs) mais l'étape prefix utilise uniquement `q` (lowercased brut). Un scan "ABC-123" ne matchera pas en préfixe une référence stockée "abc123". **Fix** : ajouter `regexp_replace(lower(unaccent(coalesce(col,''))), '[\s\-_/\\]+', '', 'g') LIKE qn || '%'` aux `WHERE` du bloc prefix.
+Index : `(user_id, scanned_at desc)`, `(outcome)`, `(entity_type, entity_id)`, GIN sur `search_vector`.
 
-### B3 — `ExternalIdsCard` enregistre la mauvaise valeur lors de l'enrôlement QR (MED)
-Le bouton "Scanner" à côté des champs `qr_code` / `code_barres` sert à **enrôler** la valeur lue sur la fiche (Machine/PDR/Organe/Équipement). Or si le QR scanné correspond déjà à une entité existante, `ScannerDialog` appelle `onResolved` avec `r.code` (= référence/désignation de l'entité retrouvée), pas la valeur brute du QR. Le champ se remplit alors avec la mauvaise chaîne et duplique l'ID d'une autre fiche.
+RLS :
+- SELECT : utilisateur voit ses propres scans ; admin + `responsable_si` voient tout.
+- INSERT : authentifié, `user_id = auth.uid()`.
+- UPDATE/DELETE : interdit (immuable, comme `audit_logs`).
 
-**Fix** : dans `ExternalIdsCard`, ne pas passer `onResolved` pour les boutons d'enrôlement, garder uniquement `onRawValue`, et basculer `ScannerDialog` pour appeler `onRawValue` au lieu d'auto-résoudre quand `onResolved` n'est pas fourni. Côté `ScannerDialog`, traiter le cas `onResolved` absent → écrire la valeur brute du scan dans le champ via `onRawValue(raw)` sans passer par le RPC.
+Rétention : pas de purge auto au début (table légère). Documenter une purge manuelle optionnelle plus tard.
 
-### B4 — `useScanner` relance la caméra à chaque changement de `deviceId` interne (MED)
-L'effet a `[enabled, deviceId]` en deps et appelle `setDeviceId(chosen)` **à l'intérieur** quand `chosen !== deviceId`. Cela ré-exécute tout l'effet : nouvelle `getUserMedia()` (re-prompt permission sur certains navigateurs), nouvelle énumération, nouveau `decodeFromVideoDevice`. On voit parfois la caméra clignoter ou un délai de 1–2s avant lecture stable.
+### 2. Logging côté client
 
-**Fix** : à l'initialisation, calculer `chosen` localement et le passer directement à ZXing **sans** appeler `setDeviceId` pour le défaut. N'utiliser `setDeviceId` que pour les changements explicites de l'utilisateur via le `<Select>` (ce qui doit alors relancer l'effet — comportement souhaité).
+Nouveau helper `src/lib/scanHistory.ts` :
+- `logScan(entry: ScanHistoryEntry)` — `insert` direct dans `scan_history`, fire-and-forget (try/catch silencieux pour ne jamais bloquer un scan).
+- Détecte le format depuis le payload : UUID regex, URL regex, sinon laisse `unknown` (ZXing renvoie le format dans `BarcodeFormat` — on l'expose depuis `useScanner.onDetected` via un 2e argument).
 
-### B5 — Auto-sélection silencieuse sur URL avec UUID invalide / entité supprimée (LOW)
-Si le QR contient `/pdr/<uuid>` mais que l'entité a été supprimée, le RPC ne retourne rien pour l'URL et retombe sur exact/prefix avec `q` = pathname (ex: `/pdr/abc…`), ce qui ne matche rien. Résultat : "Aucune entité trouvée". Le toast manque de contexte (URL invalide vs code inconnu).
+Branchements :
+- `ScannerDialog.handleResolve` : log à chaque résolution (success/ambiguous/not_found) avec snapshot du 1er match si auto-sélection.
+- Mode enrôlement : log `outcome=enrolled`, `entity_*` = null.
+- Erreur RPC : log `outcome=error` + message.
+- Saisie manuelle : `source=manual`.
 
-**Fix mineur** : dans `ScannerDialog`, quand `rows.length === 0` et que la valeur brute ressemble à une URL de l'app, afficher un message dédié ("Entité supprimée ou introuvable").
+`useScanner.ts` : étendre `onDetected(text, format?)` pour propager `BarcodeFormat` ZXing.
 
-### B6 — `match_quality='url'` mais `matched_field='url'` (cosmétique LOW)
-L'UI affiche "via url" alors que l'utilisateur attend "via QR". Renommer `matched_field` en `'qr_code'` pour la branche URL (cohérent avec l'origine du payload).
+### 3. Page UI consultable
 
-### B7 — `pushHistory` peut grossir avec entrées invalides (LOW)
-Pas de validation au `JSON.parse` ; un payload sessionStorage corrompu (autre onglet/app) plante silencieusement. Ajouter un filtre `typeof r?.entity_id === 'string'`.
+Nouvelle route `/parametres/scan-history` (composant `ScanHistoryPage.tsx`) :
+- Accessible aux titulaires de la permission `parametres` (admin/resp_si voient tout, autres voient uniquement leurs scans — filtre serveur via RLS).
+- KPI cards : total 24h, taux de succès, ambigus, non trouvés.
+- Filtres : période (DateRangeFilter existant), outcome (chips), type d'entité, source, recherche texte (FTS sur `search_vector`).
+- Tableau (pattern `AuditTable`) : date, utilisateur, source, format, valeur brute (tronquée + copy), outcome (badge coloré), entité (lien cliquable si résolu), match_quality.
+- Bouton `ExportCsvButton` (composant existant).
+- Détail au clic → `Sheet` avec payload complet + bouton "Rescanner" (réinjecte la valeur brute dans `ScannerDialog`).
 
-## Plan d'implémentation
+### 4. Intégrations annexes
 
-1. **Migration SQL** : recréer `public.resolve_scanned_code` avec compteur cumulatif (B1), normalisation prefix (B2), `matched_field='qr_code'` pour la branche URL (B6).
-2. **`src/components/scanner/ScannerDialog.tsx`** : 
-   - Ajouter mode "enrôlement" : si `onResolved` non fourni OU prop `mode="enroll"`, ne pas appeler le RPC, juste émettre `onRawValue(raw)` et fermer.
-   - Améliorer le message d'erreur URL invalide (B5).
-   - Durcir `readHistory` (B7).
-3. **`src/components/scanner/ScanButton.tsx`** : exposer `enrollMode?: boolean` propagé au dialog.
-4. **`src/components/scanner/ExternalIdsCard.tsx`** : passer `enrollMode` + retirer `onResolved` sur les boutons QR/code-barres (B3).
-5. **`src/hooks/useScanner.ts`** : refacto pour éviter le re-render via `setDeviceId` au démarrage (B4) ; conserver le changement manuel via select.
-6. **Tests** : étendre `src/test/scanner/resolve.test.ts` avec un cas multi-RETURN QUERY (pdr exact + 0 organe) qui ne doit pas déclencher prefix, et un test du mode enrôlement.
+- `ScannerDialog` : remplacer l'historique sessionStorage (`HISTORY_KEY`) par un fetch des 6 derniers scans **réussis** de l'utilisateur courant depuis `scan_history` (fallback session si offline). Garde l'UX "Récents".
+- `Apps.tsx` : ajouter une carte rapide vers `/parametres/scan-history` dans la catégorie "Paramètres".
+- Sidebar `Parametres` : nouvelle entrée "Historique des scans".
 
-## Détails techniques
+### 5. Tests
 
-- Aucune table modifiée, juste la fonction RPC (DROP + CREATE OR REPLACE).
-- Aucun changement de signature côté client (`MatchQuality` reste identique).
-- Le mode enrôlement court-circuite `resolveScannedCode` → pas d'aller-retour réseau, plus rapide.
-- Compatibilité ascendante : tous les appelants existants (`ListScanButton`, `InventoryCountScreen`) passent `onResolved` → comportement inchangé. Seul `ExternalIdsCard` bascule en enrôlement.
+- `src/test/scanner/scan-history.test.ts` :
+  - `logScan` ne lève jamais (mock supabase rejette → silencieux).
+  - Détection format (UUID, URL, code numérique → code-barres).
+  - Mapping outcome selon résultat RPC (0 / 1+exact / 1+prefix / 2+).
+- `src/test/scanner/scan-history-rls.test.ts` (logique permissions client) : non-admin ne voit pas un scan d'autrui (filtre `.eq('user_id', uid)` appliqué côté hook).
+
+### 6. Mémoire
+
+Mettre à jour `mem://features/scanner-codes` pour mentionner la table `scan_history`, le logging fire-and-forget, et la page `/parametres/scan-history`.
+
+### Détails techniques
+
+- Migration SQL : table + RLS + trigger FTS + index. Aucune modification du RPC `resolve_scanned_code`.
+- Le logging passe par `supabase.from('scan_history').insert(...)` sans `await` bloquant l'UI (Promise détachée + catch console.warn).
+- `BarcodeFormat` ZXing → string via `BarcodeFormat[format]`.
+- Le bouton "Rescanner" depuis le détail réouvre `ScannerDialog` avec `manual` pré-rempli.
+- Pas d'impact sur le mode enrôlement existant : on log juste l'événement.
+- Compatible self-hosting (RLS standard, pas de service role).

@@ -4984,6 +4984,66 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_history: {
+        Row: {
+          code_format: string | null
+          context: string | null
+          entity_code: string | null
+          entity_id: string | null
+          entity_label: string | null
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          match_quality: string | null
+          matches_count: number
+          normalized_value: string | null
+          outcome: string
+          raw_value: string
+          scanned_at: string
+          search_vector: unknown
+          source: string
+          user_id: string
+        }
+        Insert: {
+          code_format?: string | null
+          context?: string | null
+          entity_code?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          match_quality?: string | null
+          matches_count?: number
+          normalized_value?: string | null
+          outcome: string
+          raw_value: string
+          scanned_at?: string
+          search_vector?: unknown
+          source?: string
+          user_id?: string
+        }
+        Update: {
+          code_format?: string | null
+          context?: string | null
+          entity_code?: string | null
+          entity_id?: string | null
+          entity_label?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          match_quality?: string | null
+          matches_count?: number
+          normalized_value?: string | null
+          outcome?: string
+          raw_value?: string
+          scanned_at?: string
+          search_vector?: unknown
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shift_mode_slots: {
         Row: {
           created_at: string

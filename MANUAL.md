@@ -1,7 +1,7 @@
 # 📘 Manuel Utilisateur — PROD IN TIME (GMAO · GPAO)
 
 > Application industrielle intégrée de **gestion de maintenance** (GMAO), **gestion de production** (GPAO), **qualité** et **inventaire**.
-> Version manuel : **2.3** — Mise à jour : 02/05/2026
+> Version manuel : **2.5** — Mise à jour : 18/05/2026
 
 ---
 
@@ -1366,5 +1366,53 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 
 ---
 
-*Document généré pour **PROD IN TIME — GMAO · GPAO · Qualité · Inventaire** · Version manuel 2.4 · 07/05/2026*
+## 15. Modifications récentes (v2.5) — Audit GMAO approfondi
+
+> Évolutions livrées entre le 08/05/2026 et le 18/05/2026. Cette version cible la **fiabilité du module GMAO** et ses liens avec GPAO, PDR et Notifications.
+
+### 15.1 Création de tickets depuis le shift production
+
+- **Bug corrigé** (`ProductionShiftTicket.tsx`) : l'insert utilisait `declared_by` au lieu de `declarant_id` et `line_id` au lieu de `ligne_id` (noms réels en base). Les tickets créés depuis le kiosque shift étaient silencieusement rejetés. Désormais alignés sur le schéma.
+- Audit log automatique (`logAudit`) à chaque création depuis le shift, avec lien `shift_id`, `machine_id` et priorité.
+
+### 15.2 KPI Shift Maintenance fiables
+
+- **Statuts corrigés** (`useShiftSessionStats.ts`) : le filtre `statut = 'ferme'` n'existait pas dans l'enum `ticket_statut`. Remplacé par `IN ('resolu', 'cloture')`. Les KPI MTTR et downtime des opérateurs maintenance ne renvoient plus systématiquement 0.
+- **Filtrage des interventions parasites** : les lignes `transferee`, `liberee` et entrées de collaboration sont exclues du compteur d'interventions.
+- **Downtime production complet** : les `tickets.temps_arret_minutes` sont désormais agrégés en plus des `production_stops`, dédupliqués pour éviter le double comptage.
+
+### 15.3 Préventif — consommation PDR sécurisée
+
+- **PDR opt-in** (`PreventifDetail.tsx`) : la boîte de dialogue d'exécution coche désormais **toutes les PDR à OFF par défaut**. L'opérateur sélectionne explicitement les pièces réellement consommées. Évite la déplétion massive de stock en cas de validation rapide.
+- **Décrément robuste** : la boucle de décrément utilise `maybeSingle` + gestion d'erreur par item ; une PDR introuvable ne casse plus le reste de la transaction. Mouvement `pdr_stock_movements` (type `sortie`) tracé pour chaque pièce consommée.
+
+### 15.4 Workflow ticket → arrêt production synchronisé
+
+- **Fermeture automatique des `production_stops`** liés (`TicketDetail.tsx`, `MaintenanceShiftIntervention.tsx`) : à la résolution d'un ticket, le `heure_fin` et `duree_minutes` du stop associé sont renseignés. Les KPI GPAO ne « tournent » plus après résolution.
+- **`assignment_status` réinitialisé** : passe à `assigned` à la résolution pour effacer les badges « Transféré / Libéré ».
+- **Garde anti-collision** : `handleTakeCharge` ajoute `.is("assignee_id", null)` pour empêcher deux techniciens de prendre le même ticket en parallèle.
+
+### 15.5 Notifications transverses
+
+- **Déclarant prévenu** automatiquement à la résolution (`ticket_resolved`) et à la clôture (`ticket_closed`) de son ticket.
+- Les transitions critiques restent gérées par `audit_critical_event` côté base (jamais d'appel notification depuis le module notifications).
+
+### 15.6 Plans préventifs — assets multi-lignes
+
+- `useMaintenanceShiftWorkload` : un plan dont `line_id` est `null` est désormais inclus dans la vue d'un shift si la machine est rattachée (via `machine_line_assignments`) à au moins une des lignes du shift. Les machines partagées entre plusieurs lignes n'échappent plus aux plans.
+
+### 15.7 UI mobile & limites de requêtes
+
+- `MaintenanceShiftIntervention.tsx` : avertissement explicite quand la consommation PDR est requise mais que l'on est en mode mobile rapide → renvoyer vers la vue desktop.
+- `InterventionHistory.tsx`, `TicketsList.tsx`, `PreventifList.tsx`, `InterventionJournal.tsx` : `.limit(5000)` ajouté pour contourner le plafond Supabase par défaut (1000 lignes) sur les écrans à fort historique.
+- `InterventionJournal.tsx` : map machines → lignes désormais en multi-map, les machines partagées apparaissent correctement dans les filtres par ligne.
+
+### 15.8 Lancher « Recherche globale » corrigé
+
+- `Apps.tsx` : la tuile « Recherche globale » dans Configuration pointait sur `/search` (404). Corrigée vers `/recherche` (route réellement enregistrée dans `App.tsx`).
+
+---
+
+*Document généré pour **PROD IN TIME — GMAO · GPAO · Qualité · Inventaire** · Version manuel 2.5 · 18/05/2026*
+
 

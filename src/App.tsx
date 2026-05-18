@@ -284,6 +284,8 @@ const App = () => (
               <Route path="/parametres/familles-pdr" element={<PdrFamiliesAdmin />} />
               <Route path="/parametres/general" element={<GeneralSettings />} />
               <Route path="/parametres/pdr-stock-permissions" element={<PdrStockPermissionsAdmin />} />
+              <Route path="/parametres/scan-history" element={<ScanHistoryAdmin />} />
+              <Route path="/scan-history" element={<Navigate to="/parametres/scan-history" replace />} />
               <Route path="/audit" element={<AuditPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/parametres/notifications" element={<NotificationRulesAdmin />} />

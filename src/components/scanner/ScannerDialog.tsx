@@ -56,7 +56,14 @@ const HISTORY_MAX = 6;
 
 function readHistory(): ResolvedScan[] {
   try {
-    return JSON.parse(sessionStorage.getItem(HISTORY_KEY) || "[]") as ResolvedScan[];
+    const parsed = JSON.parse(sessionStorage.getItem(HISTORY_KEY) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (r: any) =>
+        r &&
+        typeof r.entity_id === "string" &&
+        typeof r.entity_type === "string",
+    ) as ResolvedScan[];
   } catch {
     return [];
   }

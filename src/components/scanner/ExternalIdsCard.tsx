@@ -63,7 +63,7 @@ export function ExternalIdsCard({ value, onChange, fields = ["code_erp", "qr_cod
               />
               <ScanButton
                 iconOnly
-                onResolved={(r) => onChange({ ...value, qr_code: r.code ?? "" })}
+                enrollMode
                 onRawValue={scanInto("qr_code")}
                 title="Scanner un QR à enregistrer"
                 description="La valeur lue sera copiée dans le champ QR code."

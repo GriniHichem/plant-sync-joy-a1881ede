@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock, Cog, Shield, Settings2, Database, Bell, Mail, CheckSquare } from "lucide-react";
+import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock, Cog, Shield, Settings2, Database, Bell, Mail, CheckSquare, ScanLine } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Section {

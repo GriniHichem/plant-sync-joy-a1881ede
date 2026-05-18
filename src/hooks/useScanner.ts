@@ -67,13 +67,14 @@ export function useScanner(videoRef: React.RefObject<HTMLVideoElement>, opts: Us
         if (!mounted) return;
         setDevices(list);
 
+        // Choix local (sans setDeviceId si pas encore défini) pour éviter de
+        // re-déclencher l'effet et relancer la caméra inutilement.
         let chosen = deviceId;
         if (!chosen) {
           const back = preferEnvironment
             ? list.find((d) => /back|rear|environment|arrière|arriere/i.test(d.label))
             : null;
           chosen = back?.deviceId ?? list[0]?.deviceId ?? null;
-          if (chosen !== deviceId) setDeviceId(chosen);
         }
         if (!chosen || !videoRef.current) {
           setError("Aucune caméra disponible.");
@@ -98,6 +99,10 @@ export function useScanner(videoRef: React.RefObject<HTMLVideoElement>, opts: Us
             onDetectedRef.current(text);
           },
         );
+        if (!mounted) {
+          controls.stop();
+          return;
+        }
         controlsRef.current = controls;
       } catch (e: any) {
         if (mounted) setError(explainCameraError(e));

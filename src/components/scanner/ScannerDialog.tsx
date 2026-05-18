@@ -105,6 +105,7 @@ export function ScannerDialog({
   onRawValue,
   title = "Scanner un code",
   description = "Pointez la caméra vers un QR code ou un code-barres.",
+  enrollMode,
 }: ScannerDialogProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [manual, setManual] = useState("");
@@ -113,6 +114,9 @@ export function ScannerDialog({
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<ResolvedScan[]>([]);
   const { toast } = useToast();
+
+  // Mode enrôlement = pas de résolution RPC. Implicite si onResolved absent.
+  const isEnroll = enrollMode || !onResolved;
 
   useEffect(() => {
     if (open) setHistory(readHistory().filter((r) => !allowedTypes?.length || allowedTypes.includes(r.entity_type)));
@@ -134,15 +138,27 @@ export function ScannerDialog({
 
   async function handleResolve(raw: string) {
     if (busy) return;
+    const trimmed = (raw ?? "").trim();
+    if (!trimmed) return;
+
+    // Mode enrôlement : on renvoie la valeur brute, jamais le RPC.
+    if (isEnroll) {
+      beep();
+      try { (navigator as any).vibrate?.(60); } catch {}
+      onRawValue?.(trimmed);
+      onOpenChange(false);
+      return;
+    }
+
     setBusy(true);
-    setLastRaw(raw);
+    setLastRaw(trimmed);
     try {
-      const rows = await resolveScannedCode(raw, allowedTypes);
+      const rows = await resolveScannedCode(trimmed, allowedTypes);
       if (isAutoSelectable(rows)) {
         beep();
         try { (navigator as any).vibrate?.(60); } catch {}
         pushHistory(rows[0]);
-        onResolved(rows[0]);
+        onResolved!(rows[0]);
         onOpenChange(false);
         return;
       }
@@ -156,9 +172,12 @@ export function ScannerDialog({
 
   function pickResult(r: ResolvedScan) {
     pushHistory(r);
-    onResolved(r);
+    onResolved?.(r);
     onOpenChange(false);
   }
+
+  /** Vrai si le payload scanné ressemble à une URL/route de l'app. */
+  const looksLikeAppUrl = /^\/?(pdr|machines|equipements|organes)\/[0-9a-f-]{8,}/i.test(lastRaw);
 
   function useRawAsFallback() {
     const v = (lastRaw || manual).trim();

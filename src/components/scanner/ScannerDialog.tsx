@@ -37,6 +37,8 @@ export interface ScannerDialogProps {
   description?: string;
   /** Force le mode enrôlement: pas d'appel RPC, on renvoie la valeur brute. */
   enrollMode?: boolean;
+  /** Contexte d'origine (page) journalisé dans scan_history. */
+  context?: string;
 }
 
 const TYPE_LABEL: Record<ScannableEntityType, string> = {

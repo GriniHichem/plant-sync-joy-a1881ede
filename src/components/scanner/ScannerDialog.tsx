@@ -268,7 +268,11 @@ export function ScannerDialog({
             {groupedMatches.length === 0 ? (
               <div className="text-sm space-y-2">
                 <div className="text-muted-foreground">
-                  Aucune entité trouvée pour <code className="px-1 bg-muted rounded">{lastRaw || manual}</code>.
+                  {looksLikeAppUrl ? (
+                    <>QR reconnu mais l'entité est introuvable (supprimée ?) pour <code className="px-1 bg-muted rounded">{lastRaw}</code>.</>
+                  ) : (
+                    <>Aucune entité trouvée pour <code className="px-1 bg-muted rounded">{lastRaw || manual}</code>.</>
+                  )}
                 </div>
                 {onRawValue && (
                   <Button size="sm" variant="outline" onClick={useRawAsFallback} className="w-full">

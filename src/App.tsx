@@ -38,6 +38,7 @@ import DocumentCategoriesAdmin from "@/pages/parametres/DocumentCategoriesAdmin"
 import DocumentPermissionsAdmin from "@/pages/parametres/DocumentPermissionsAdmin";
 import PdrFamiliesAdmin from "@/pages/parametres/PdrFamiliesAdmin";
 import PdrStockPermissionsAdmin from "@/pages/parametres/PdrStockPermissionsAdmin";
+import ScanHistoryAdmin from "@/pages/parametres/ScanHistoryAdmin";
 
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";

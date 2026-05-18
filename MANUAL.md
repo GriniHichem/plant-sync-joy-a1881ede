@@ -1,7 +1,7 @@
 # 📘 Manuel Utilisateur — PROD IN TIME (GMAO · GPAO)
 
 > Application industrielle intégrée de **gestion de maintenance** (GMAO), **gestion de production** (GPAO), **qualité** et **inventaire**.
-> Version manuel : **2.3** — Mise à jour : 02/05/2026
+> Version manuel : **2.5** — Mise à jour : 18/05/2026
 
 ---
 

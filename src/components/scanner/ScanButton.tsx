@@ -9,12 +9,14 @@ import type { ResolvedScan, ScannableEntityType } from "@/lib/scanResolver";
 
 interface ScanButtonProps extends Omit<ButtonProps, "onClick"> {
   allowedTypes?: ScannableEntityType[];
-  onResolved: (entity: ResolvedScan) => void;
+  onResolved?: (entity: ResolvedScan) => void;
   onRawValue?: (raw: string) => void;
   label?: string;
   iconOnly?: boolean;
   title?: string;
   description?: string;
+  /** Mode enrôlement: pas de résolution RPC, on renvoie la valeur brute lue. */
+  enrollMode?: boolean;
 }
 
 export function ScanButton({

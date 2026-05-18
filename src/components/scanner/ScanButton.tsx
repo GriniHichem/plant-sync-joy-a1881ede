@@ -27,6 +27,7 @@ export function ScanButton({
   iconOnly = false,
   title,
   description,
+  enrollMode,
   variant = "outline",
   size,
   className,
@@ -55,6 +56,7 @@ export function ScanButton({
         onRawValue={onRawValue}
         title={title}
         description={description}
+        enrollMode={enrollMode}
       />
     </>
   );

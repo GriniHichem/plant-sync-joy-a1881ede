@@ -74,7 +74,7 @@ export default function RecipesPage({ readOnly = false, hideHeader = false }: Re
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
 
-  const canManage = !readOnly && (hasRole("admin") || hasRole("resp_production") || hasRole("resp_qualite"));
+  const canManage = !readOnly && (hasRole("admin") || hasRole("resp_production") || hasRole("responsable_controle_qualite") || hasRole("directeur_qualite"));
 
 
   const load = async () => {

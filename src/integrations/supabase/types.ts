@@ -5881,6 +5881,13 @@ export type Database = {
       }
     }
     Functions: {
+      auto_close_stale_shifts: {
+        Args: never
+        Returns: {
+          closed_id: string
+          kind: string
+        }[]
+      }
       can_manage_notification_rule: {
         Args: { _module: string; _user_id: string }
         Returns: boolean

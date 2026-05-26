@@ -345,75 +345,143 @@ export default function RecipesPage({ readOnly = false, hideHeader = false }: Re
 
   return (
     <div className="space-y-4">
-      <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="py-3 px-4 flex items-start gap-2 text-sm">
-          <Info className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+      {readOnly && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-3 px-4 flex items-start gap-2 text-sm">
+            <Info className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+            <div>
+              Cette page est en <span className="font-medium">lecture seule</span>. La création et la modification des recettes, de la composition et des étapes se font dans <Link to="/qualite/recettes-nomenclatures" className="font-medium text-primary underline">Qualité → Recettes & nomenclatures</Link>.
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {!hideHeader && (
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div>
-            Pour créer ou modifier la <span className="font-medium">nomenclature (BOM)</span> et marquer les composants « Qualité sensible », rendez-vous dans <Link to="/qualite/recettes-nomenclatures" className="font-medium text-primary underline">Qualité → Recettes & nomenclatures</Link>. Cette page reste utilisée pour consulter les recettes et gérer les étapes de fabrication.
+            <h1 className="text-2xl font-bold">Recettes & Nomenclatures</h1>
+            <p className="text-muted-foreground">{productGroups.length} produit(s) · {recipes.length} version(s) au total</p>
           </div>
-        </CardContent>
-      </Card>
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Recettes & Nomenclatures</h1>
-          <p className="text-muted-foreground">{productGroups.length} produit(s) · {recipes.length} version(s) au total</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ExportCsvButton
-            data={recipes}
-            columns={[
-              { key: "name", label: "Nom" },
-              { key: "version", label: "Version" },
-              { key: "products.code", label: "Produit code" },
-              { key: "products.designation", label: "Produit" },
-              { key: "status", label: "Statut" },
-              { key: "is_active", label: "Actif", format: (v) => (v ? "Oui" : "Non") },
-              { key: "created_at", label: "Créée le" },
-            ]}
-            filename="recettes"
-          />
-          {canManage && (
-            <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
-              <DialogTrigger asChild>
-                <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Nouvelle recette</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>{editId ? "Modifier" : parentProductId ? "Nouvelle version" : "Nouvelle recette"}</DialogTitle></DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Nom *</Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} className="h-12" placeholder="Ex: Harissa épicée v2" />
-                  </div>
-                  {!parentProductId && (
+          <div className="flex items-center gap-2">
+            <ExportCsvButton
+              data={recipes}
+              columns={[
+                { key: "name", label: "Nom" },
+                { key: "version", label: "Version" },
+                { key: "products.code", label: "Produit code" },
+                { key: "products.designation", label: "Produit" },
+                { key: "status", label: "Statut" },
+                { key: "is_active", label: "Actif", format: (v) => (v ? "Oui" : "Non") },
+                { key: "created_at", label: "Créée le" },
+              ]}
+              filename="recettes"
+            />
+            {canManage && (
+              <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) resetForm(); }}>
+                <DialogTrigger asChild>
+                  <Button className="h-12 px-6"><Plus className="h-4 w-4 mr-2" /> Nouvelle recette</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>{editId ? "Modifier" : parentProductId ? "Nouvelle version" : "Nouvelle recette"}</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Produit *</Label>
-                      <Select value={productId} onValueChange={setProductId}>
-                        <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                        <SelectContent>
-                          {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.designation}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <Label>Nom *</Label>
+                      <Input value={name} onChange={(e) => setName(e.target.value)} className="h-12" placeholder="Ex: Harissa épicée v2" />
                     </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label>N° Version</Label>
-                    <Input type="number" value={version} onChange={(e) => setVersion(e.target.value)} className="h-12" min={1} />
+                    {!parentProductId && (
+                      <div className="space-y-2">
+                        <Label>Produit *</Label>
+                        <Select value={productId} onValueChange={setProductId}>
+                          <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                          <SelectContent>
+                            {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.code} — {p.designation}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label>N° Version</Label>
+                      <Input type="number" value={version} onChange={(e) => setVersion(e.target.value)} className="h-12" min={1} />
+                    </div>
+                    <Button onClick={handleSaveRecipe} className="w-full h-12">{editId ? "Enregistrer" : "Créer"}</Button>
                   </div>
-                  <Button onClick={handleSaveRecipe} className="w-full h-12">{editId ? "Enregistrer" : "Créer"}</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Composition edition désactivée ici — gérée dans Qualité → Recettes & nomenclatures */}
+      {/* Add line dialog (édition composition) */}
+      {canManage && (
+        <Dialog open={lineDialogOpen} onOpenChange={setLineDialogOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Ajouter un article</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Article *</Label>
+                <Select value={lineArticleId} onValueChange={setLineArticleId}>
+                  <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    {articles.map((a) => <SelectItem key={a.id} value={a.id}>{a.code} — {a.designation}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Quantité *</Label>
+                  <Input type="number" value={lineQte} onChange={(e) => setLineQte(e.target.value)} className="h-12" placeholder="0" step="0.01" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Unité</Label>
+                  <Select value={lineUnite} onValueChange={setLineUnite}>
+                    <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="l">L</SelectItem>
+                      <SelectItem value="ml">mL</SelectItem>
+                      <SelectItem value="unité">Unité</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Select value={lineItemType} onValueChange={setLineItemType}>
+                    <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="raw_material">Matière première</SelectItem>
+                      <SelectItem value="packaging">Emballage</SelectItem>
+                      <SelectItem value="label">Étiquette</SelectItem>
+                      <SelectItem value="carton">Carton</SelectItem>
+                      <SelectItem value="pallet">Palette</SelectItem>
+                      <SelectItem value="consumable">Consommable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Perte %</Label>
+                  <Input type="number" value={lineWastePercent} onChange={(e) => setLineWastePercent(e.target.value)} className="h-12" placeholder="0" step="0.01" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={lineMandatory} onChange={(e) => setLineMandatory(e.target.checked)} className="h-4 w-4" />
+                  Composant obligatoire
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={lineQualitySensitive} onChange={(e) => setLineQualitySensitive(e.target.checked)} className="h-4 w-4" />
+                  Qualité sensible (suivi renforcé en contrôle qualité)
+                </label>
+              </div>
+              <Button onClick={handleAddLine} className="w-full h-12">Ajouter</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
 
-      {/* Recipes grouped by product */}
-      {productGroups.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
             <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p>Aucune recette — créez-en une pour définir les nomenclatures matières</p>
           </CardContent>

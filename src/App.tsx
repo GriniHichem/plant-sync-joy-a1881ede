@@ -272,7 +272,7 @@ const App = () => (
               } />
               <Route path="/gpao/consommations" element={<ConsumptionPage />} />
               <Route path="/gpao/arrets" element={<StopsPage />} />
-              <Route path="/gpao/recettes" element={<RecipesPage />} />
+              <Route path="/gpao/recettes" element={<RecipesPage readOnly />} />
               {/* Admin */}
               <Route path="/parametres" element={<Parametres />} />
               <Route path="/parametres/users" element={<UsersAdmin />} />

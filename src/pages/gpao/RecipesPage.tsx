@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, BookOpen, Trash2, Edit, ChevronDown, ChevronRight, Package, Copy, GitBranch, ListOrdered, AlertTriangle, ArchiveIcon, CheckCircle2, FileText } from "lucide-react";
+import { Plus, BookOpen, Trash2, Edit, ChevronDown, ChevronRight, Package, Copy, GitBranch, ListOrdered, AlertTriangle, ArchiveIcon, CheckCircle2, FileText, Info } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useEntityPrimaryImages } from "@/hooks/useEntityPrimaryImages";
@@ -338,6 +339,14 @@ export default function RecipesPage() {
 
   return (
     <div className="space-y-4">
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="py-3 px-4 flex items-start gap-2 text-sm">
+          <Info className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+          <div>
+            Pour créer ou modifier la <span className="font-medium">nomenclature (BOM)</span> et marquer les composants « Qualité sensible », rendez-vous dans <Link to="/qualite/recettes-nomenclatures" className="font-medium text-primary underline">Qualité → Recettes & nomenclatures</Link>. Cette page reste utilisée pour consulter les recettes et gérer les étapes de fabrication.
+          </div>
+        </CardContent>
+      </Card>
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Recettes & Nomenclatures</h1>

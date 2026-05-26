@@ -33,13 +33,12 @@ export function useActiveMaintenanceShift() {
       return;
     }
     setLoading(true);
-    const today = new Date().toISOString().slice(0, 10);
+    // Pas de filtre date_shift : un shift de nuit ouvert hier reste actif après minuit.
     const { data } = await supabase
       .from("maintenance_shifts" as any)
       .select("*, shift_teams(id, name, code, color)")
       .eq("maintenancier_id", user.id)
       .eq("is_active", true)
-      .eq("date_shift", today)
       .order("heure_debut", { ascending: false })
       .limit(1)
       .maybeSingle();

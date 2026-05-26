@@ -62,9 +62,13 @@ export function CloseShiftButton() {
         .eq("id", activeId);
       if (error) throw error;
 
+      const auditModule =
+        kind === "production" ? "gpao" :
+        kind === "maintenance" ? "interventions" :
+        "qualite";
       await logAudit({
         action_type: "update",
-        module: kind === "quality" ? ("qualite" as any) : (kind as any),
+        module: auditModule as any,
         entity_type: `${kind}_shift`,
         entity_id: activeId,
         action_label: "Clôture de shift par l'opérateur (kiosque)",

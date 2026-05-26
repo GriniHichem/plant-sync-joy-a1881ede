@@ -196,12 +196,13 @@
     @apply px-1 py-0.5 rounded bg-muted text-[12px] font-mono text-foreground;
   }
   .manual-prose pre {
-    @apply bg-muted/60 border border-border/60 rounded-md p-3 my-3 overflow-x-auto text-[12px];
+    @apply bg-muted/60 border border-border/60 rounded-md p-3 my-3 overflow-x-auto text-[11.5px] font-mono leading-snug whitespace-pre;
   }
-  .manual-prose pre code { @apply bg-transparent p-0; }
+  .manual-prose pre code { @apply bg-transparent p-0 font-mono; }
   .manual-prose blockquote {
-    @apply border-l-2 border-primary/60 bg-primary/5 pl-3 pr-2 py-1.5 my-3 italic text-foreground/85 rounded-r;
+    @apply border-l-2 border-primary/60 bg-primary/5 pl-3 pr-2 py-1.5 my-3 text-foreground/85 rounded-r;
   }
+  .manual-prose blockquote p { @apply my-1 not-italic; }
   .manual-prose hr { @apply my-4 border-border/60; }
   .manual-prose table {
     @apply w-full text-[12.5px] border-collapse my-3;

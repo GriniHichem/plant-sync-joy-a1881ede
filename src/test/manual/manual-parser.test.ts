@@ -91,3 +91,30 @@ describe("getManualSectionForRoute", () => {
     expect(getManualSectionForRoute("/totally/unknown/path")).toBeNull();
   });
 });
+
+describe("MANUAL.md ↔ routeMap coherence", () => {
+  it("every section targeted by the route map exists in MANUAL.md", async () => {
+    const raw = (await import("../../../MANUAL.md?raw")).default as string;
+    const { sections } = parseManual(raw);
+    const ids = new Set(sections.map((s) => s.id));
+    const targets = [
+      "1-presentation-architecture",
+      "2-authentification-securite",
+      "3-1-dashboard",
+      "3-2-machines",
+      "3-5-pieces-de-rechange-pdr",
+      "3-6-tickets-de-maintenance",
+      "3-8-shift-maintenance",
+      "4-2-ordres-de-fabrication-of",
+      "4-5-recettes-unifiees-avec-la-nomenclature-bom-qualite",
+      "4-6-shift-production",
+      "4-9-module-qualite",
+      "6-administration-parametres",
+      "6-1-securite-acces",
+      "6-bis-2-configuration-smtp-parametres-smtp",
+      "9-roles-permissions",
+      "9-5-permissions-stock-pdr-speciales",
+    ];
+    for (const t of targets) expect(ids.has(t), `missing section ${t}`).toBe(true);
+  });
+});

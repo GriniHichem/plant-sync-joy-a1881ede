@@ -550,13 +550,6 @@ export default function RecipesPage() {
                                              <TableCell className="text-sm">{l.articles?.designation}</TableCell>
                                             <TableCell className="tabular-nums font-medium">{l.quantite}</TableCell>
                                             <TableCell className="text-sm">{l.unite}</TableCell>
-                                            {canManage && (
-                                              <TableCell>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDeleteLine(l.id)}>
-                                                  <Trash2 className="h-3 w-3 text-destructive" />
-                                                </Button>
-                                              </TableCell>
-                                            )}
                                           </TableRow>
                                         ))}
                                       </TableBody>

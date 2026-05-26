@@ -481,11 +481,15 @@ export default function RecipesPage({ readOnly = false, hideHeader = false }: Re
         </Dialog>
       )}
 
-
+      {/* Recipes grouped by product */}
+      {productGroups.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
             <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p>Aucune recette — créez-en une pour définir les nomenclatures matières</p>
+            <p>Aucune recette{readOnly ? "" : " — créez-en une pour définir les nomenclatures matières"}</p>
           </CardContent>
         </Card>
+
       ) : (
         <div className="space-y-3">
           {productGroups.map(([prodId, group]) => {

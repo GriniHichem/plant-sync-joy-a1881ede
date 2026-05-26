@@ -527,7 +527,7 @@ export default function RecipesPage() {
                                     </Button>
                                   </div>
                                   {lines.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground py-3 text-center bg-muted/30 rounded-lg">Aucun article — ajoutez les matières premières</p>
+                                    <p className="text-sm text-muted-foreground py-3 text-center bg-muted/30 rounded-lg">Aucun article — à ajouter dans Qualité → Recettes & nomenclatures</p>
                                   ) : (
                                     <Table>
                                       <TableHeader>

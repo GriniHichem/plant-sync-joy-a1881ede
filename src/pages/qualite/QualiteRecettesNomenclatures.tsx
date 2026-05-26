@@ -17,7 +17,7 @@ export default function QualiteRecettesNomenclatures() {
         <CardContent className="py-3 px-4 flex items-start gap-2 text-sm">
           <Info className="h-4 w-4 mt-0.5 text-primary shrink-0" />
           <div>
-            La nomenclature (BOM) est intégrée à la recette. Pour ajouter ou modifier les composants, allez dans <span className="font-medium">GPAO → Recettes</span> et activez l'option « Qualité sensible » sur les lignes concernées.
+            C'est ici que se gèrent les <span className="font-medium">nomenclatures (BOM)</span> et le marquage « Qualité sensible » des composants. La page <span className="font-medium">GPAO → Recettes</span> reste utilisée pour consulter les recettes et gérer les étapes de fabrication.
           </div>
         </CardContent>
       </Card>

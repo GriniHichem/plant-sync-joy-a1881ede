@@ -198,6 +198,21 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
     setSubmitting(true);
     try {
       if (kind === "production") {
+        // Preflight : éviter doublon actif pour (of, ligne, jour, créneau)
+        const { data: dup } = await supabase
+          .from("shifts")
+          .select("id")
+          .eq("of_id", ofId === "__none__" ? "00000000-0000-0000-0000-000000000000" : ofId)
+          .eq("line_id", lineId)
+          .eq("date_shift", today)
+          .eq("shift_type", shiftType as any)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (dup) {
+          toast({ title: "Session déjà ouverte", description: "Une session est déjà active pour cette ligne sur ce créneau." });
+          setSubmitting(false);
+          return;
+        }
         const { data, error } = await supabase
           .from("shifts")
           .insert({

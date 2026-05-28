@@ -130,7 +130,7 @@ export default function QualityIndicatorAssignments() {
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Assignment | null>(null);
 
-  const canManage = canCreate("qualite_indicators") || canEdit("qualite_indicators");
+  const canManage = canCreate("qualite_indicateurs") || canEdit("qualite_indicateurs");
 
   const load = async () => {
     setLoading(true);
@@ -290,7 +290,7 @@ export default function QualityIndicatorAssignments() {
             Définissez quels indicateurs s'appliquent par produit, famille, ligne ou recette.
           </p>
         </div>
-        {canCreate("qualite_indicators") && (
+        {canCreate("qualite_indicateurs") && (
           <Button onClick={openNew}><Plus className="h-4 w-4" /> Nouvelle affectation</Button>
         )}
       </div>
@@ -367,10 +367,10 @@ export default function QualityIndicatorAssignments() {
                     <TableCell>{a.is_blocking ? <Badge variant="destructive">Oui</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
                     <TableCell>{a.frequency_type ? (FREQUENCIES.find((f) => f.value === a.frequency_type)?.label ?? a.frequency_type) : <span className="text-muted-foreground">hérité</span>}</TableCell>
                     <TableCell className="text-right space-x-1">
-                      {canEdit("qualite_indicators") && (
+                      {canEdit("qualite_indicateurs") && (
                         <Button size="sm" variant="ghost" onClick={() => openEdit(a)}><Edit className="h-4 w-4" /></Button>
                       )}
-                      {canDelete("qualite_indicators") && (
+                      {canDelete("qualite_indicateurs") && (
                         <Button size="sm" variant="ghost" onClick={() => setConfirmDel(a)}><Trash2 className="h-4 w-4" /></Button>
                       )}
                     </TableCell>

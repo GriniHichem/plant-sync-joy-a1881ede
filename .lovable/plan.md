@@ -1,56 +1,22 @@
-## Objectif
+## Problème identifié
 
-Remplacer le placeholder `/qualite/of` par une vraie page de pilotage qualité des OF. Toute la logique backend existe déjà (`quality_status`, RPC `get_quality_indicators_for_of`, `quality_checks`, `set_of_quality_status`) et le composant `OfQualityTab` est déjà fonctionnel dans le détail OF — il s'agit donc juste de construire la vue liste.
+Le bouton **« Nouvel indicateur »** n'apparaît jamais sur `/qualite/indicateurs` parce que le code vérifie la permission `qualite_indicators` (anglais), alors que la clé réellement enregistrée dans le système (umbrella, sidebar, matrice des rôles, base) est `qualite_indicateurs` (français).
 
-## Changements
+Résultat : `canCreate("qualite_indicators")` retourne toujours `false`, même pour les rôles qui ont la permission Qualité. Même bug sur les boutons Modifier/Supprimer des affectations d'indicateurs.
 
-**1 fichier réécrit : `src/pages/qualite/QualiteOf.tsx`**
+## Fichiers à corriger (remplacement de clé uniquement)
 
-Liste de tous les OF avec focus qualité, alignée sur le style des autres pages Qualité (Matte Ceramic, IBM Plex Sans, 48px targets).
+- `src/pages/qualite/QualiteIndicateurs.tsx` — 3 occurrences de `qualite_indicators` → `qualite_indicateurs`
+- `src/components/qualite/QualityIndicatorAssignments.tsx` — 4 occurrences de `qualite_indicators` → `qualite_indicateurs`
 
-### Contenu de la page
+## Vérification du reste du module Qualité
 
-- **Header** : titre « OF Qualité » + sous-titre, bouton export CSV.
-- **KPI cards** (4) : Total OF actifs · Conformes · Non conformes/Bloqués · Contrôles manquants (somme sur tous les OF affichés).
-- **Filtres** :
-  - Recherche (numéro OF / produit / ligne)
-  - Statut qualité (Tous / Non démarré / En contrôle / Conforme / Conforme sous réserve / Non conforme / Bloqué / Libéré / Rebuté / À retraiter)
-  - Statut production (Tous / Planifié / En cours / Terminé / Annulé)
-  - Ligne (toutes lignes actives)
-  - Bouton `RotateCcw` Réinitialiser (visible si filtres actifs — convention projet)
-- **Tableau** colonnes : N° OF · Produit · Ligne · Statut production · Statut qualité (badge coloré via `QUALITY_STATUS_OPTIONS`) · Contrôles (faits/requis) · Hors tolérance · Dernier contrôle · Action « Ouvrir ».
-- **Action Ouvrir** : navigation vers `/gpao/of/:id?tab=quality` (le détail OF embarque déjà `OfQualityTab`).
+Recherche déjà effectuée sur toutes les clés `qualite_*` du code : **aucun autre décalage** entre les clés utilisées dans les pages Qualité et celles déclarées dans `UMBRELLAS` / `RolesMatrix` / sidebar. Le bug est isolé aux indicateurs.
 
-### Source de données
+## Test après correctif
 
-Un seul `useEffect` qui charge en parallèle :
-- `ordres_fabrication` : `id, numero, statut, quality_status, product_id, line_id, products(code, designation), lignes(code, name)`
-- Pour chaque OF visible (batch) : RPC `get_quality_indicators_for_of` + `quality_checks` (par lot via `.in('of_id', ids)`) pour calculer `computeQualityKpis` réutilisé depuis `OfQualityTab`.
+- Recharger `/qualite/indicateurs` → le bouton **« + Nouvel indicateur »** doit apparaître pour admin / responsable_controle_qualite / directeur_qualite.
+- Créer un indicateur de test (ex. `POIDS_NET`, numérique, cible 250 g, min 245, max 255) pour valider la chaîne complète (formulaire → insert → audit log → affichage dans la table).
+- Vérifier que les boutons Modifier / Supprimer apparaissent dans l'onglet **Affectations**.
 
-Pour éviter N appels RPC, on charge `quality_checks` en une requête (`.in('of_id', ids)`) puis on ne calcule que `performed`/`outOfTolerance` côté liste. Le détail complet reste dans `OfQualityTab` quand l'utilisateur ouvre l'OF — pas de duplication de logique lourde.
-
-### Permissions
-
-Lecture pour tout porteur de la permission `qualite` (déjà gérée par `ShiftGuard`/RBAC du module). Aucune mutation depuis la liste (les changements de statut se font dans le détail).
-
-### Hors scope
-
-- Pas de nouvelle migration (backend déjà prêt).
-- Pas de modif de `OfQualityTab` ni du détail OF.
-- Pas de modif du sidebar ni de la route (déjà déclarés).
-- Pas de modification du `MANUAL.md`.
-
-## Détails techniques
-
-- Réutiliser `QUALITY_STATUS_OPTIONS`, `qualityStatusLabel`, `computeQualityKpis` exportés de `OfQualityTab.tsx`.
-- Réutiliser `ExportCsvButton` pour l'export.
-- Convention Radix : valeurs Select `__none__` pour « Tous » (déjà appliquée ailleurs).
-- Couleurs strictement via tokens sémantiques (pas de couleur hardcodée).
-- Statut prod via `StatusBadge` existant si compatible, sinon Badge inline (à vérifier au moment de coder).
-- Pas de couplage à `ordres_fabrication.statut` non-actif : on affiche tout par défaut, le filtre permet de masquer Annulé/Terminé.
-
-## Critère d'acceptation
-
-- `/qualite/of` affiche la liste réelle des OF avec leur état qualité, filtres opérationnels, KPI cohérents.
-- Clic sur « Ouvrir » mène au détail OF côté GPAO sur l'onglet Qualité.
-- Aucun bug TypeScript, aucun changement de comportement ailleurs.
+Aucune migration DB, aucune création de table, aucune modification fonctionnelle au-delà du remplacement de la clé.

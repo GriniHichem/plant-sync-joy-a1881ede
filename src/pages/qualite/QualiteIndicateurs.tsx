@@ -186,7 +186,7 @@ export default function QualiteIndicateurs() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [saving, setSaving] = useState(false);
 
-  const canManage = canCreate("qualite_indicators") || canEdit("qualite_indicators");
+  const canManage = canCreate("qualite_indicateurs") || canEdit("qualite_indicateurs");
 
   const load = async () => {
     setLoading(true);
@@ -369,7 +369,7 @@ export default function QualiteIndicateurs() {
           <Button variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
             <Download className="h-4 w-4" /> Export CSV
           </Button>
-          {canCreate("qualite_indicators") && (
+          {canCreate("qualite_indicateurs") && (
             <Button onClick={openNew}>
               <Plus className="h-4 w-4" /> Nouvel indicateur
             </Button>
@@ -468,7 +468,7 @@ export default function QualiteIndicateurs() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    {canEdit("qualite_indicators") && (
+                    {canEdit("qualite_indicateurs") && (
                       <>
                         <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>
                           <Edit className="h-4 w-4" />

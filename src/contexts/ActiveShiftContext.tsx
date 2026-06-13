@@ -2,6 +2,8 @@ import { createContext, useContext, ReactNode } from "react";
 import { useActiveProductionShift, ActiveProductionShift } from "@/hooks/useActiveProductionShift";
 import { useActiveQualityShift, ActiveQualityShift } from "@/hooks/useActiveQualityShift";
 import { useActiveMaintenanceShift, ActiveMaintenanceShift } from "@/hooks/useActiveMaintenanceShift";
+import { useAutoOpenWorkSession } from "@/hooks/useAutoOpenWorkSession";
+
 
 export type ShiftKind = "production" | "maintenance" | "quality";
 
@@ -42,6 +44,10 @@ export function ActiveShiftProvider({ kind, children }: { kind: ShiftKind; child
     if (kind === "maintenance") await maint.refresh();
     if (kind === "quality") await qual.refresh();
   };
+
+  // Auto-open the employee's session based on their rotation pattern on connection.
+  useAutoOpenWorkSession(() => { void refresh(); });
+
 
   return (
     <ActiveShiftContext.Provider

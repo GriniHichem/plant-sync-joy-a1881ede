@@ -13,7 +13,7 @@ import { Plus, Square, Clock, Loader2, RefreshCw, Users, FileText } from "lucide
 import { logAudit } from "@/lib/audit";
 import { ShiftSessionLiveStats } from "@/components/shift/ShiftSessionLiveStats";
 import { ShiftSummaryDialog } from "@/components/shift/ShiftSummaryDialog";
-import { MaintenanceScheduleManager } from "@/components/shift/MaintenanceScheduleManager";
+
 import type { ShiftKind } from "@/contexts/ActiveShiftContext";
 
 interface RespShiftConsoleProps {
@@ -460,7 +460,8 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
         </CardContent>
       </Card>
 
-      {kind === "maintenance" && <MaintenanceScheduleManager />}
+
+
 
 
 

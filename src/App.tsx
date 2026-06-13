@@ -30,6 +30,7 @@ import FamillesAdmin from "@/pages/parametres/FamillesAdmin";
 import PannesAdmin from "@/pages/parametres/PannesAdmin";
 import RolesMatrix from "@/pages/parametres/RolesMatrix";
 import ShiftsAdmin from "@/pages/parametres/ShiftsAdmin";
+import RotationsAdmin from "@/pages/parametres/RotationsAdmin";
 import LignesAdmin from "@/pages/parametres/LignesAdmin";
 import GeneralSettings from "@/pages/parametres/GeneralSettings";
 import ImageSettings from "@/pages/parametres/ImageSettings";
@@ -281,6 +282,7 @@ const App = () => (
               <Route path="/parametres/pannes" element={<PannesAdmin />} />
               <Route path="/parametres/roles" element={<RolesMatrix />} />
               <Route path="/parametres/shifts" element={<ShiftsAdmin />} />
+              <Route path="/parametres/rotations" element={<RotationsAdmin />} />
               <Route path="/parametres/lignes" element={<LignesAdmin />} />
               <Route path="/parametres/familles-produits" element={<ProductFamiliesAdmin />} />
               <Route path="/parametres/images" element={<ImageSettings />} />

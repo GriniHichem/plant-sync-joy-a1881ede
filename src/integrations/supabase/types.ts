@@ -573,6 +573,69 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_shift_assignments: {
+        Row: {
+          anchor_date: string
+          autorisation_libre: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          line_ids: string[]
+          pattern: Json
+          scope_kind: string
+          shift_team_id: string | null
+          system_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anchor_date?: string
+          autorisation_libre?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          line_ids?: string[]
+          pattern?: Json
+          scope_kind?: string
+          shift_team_id?: string | null
+          system_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anchor_date?: string
+          autorisation_libre?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          line_ids?: string[]
+          pattern?: Json
+          scope_kind?: string
+          shift_team_id?: string | null
+          system_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_shift_assignments_shift_team_id_fkey"
+            columns: ["shift_team_id"]
+            isOneToOne: false
+            referencedRelation: "shift_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_shift_assignments_system_id_fkey"
+            columns: ["system_id"]
+            isOneToOne: false
+            referencedRelation: "work_shift_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_documents: {
         Row: {
           category_id: string
@@ -1631,54 +1694,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      maintenance_shift_schedules: {
-        Row: {
-          auto_open: boolean
-          created_at: string
-          created_by: string | null
-          date_debut: string
-          date_fin: string | null
-          id: string
-          is_active: boolean
-          line_ids: string[]
-          maintenancier_id: string
-          shift_team_id: string | null
-          shift_type: string
-          updated_at: string
-          weekdays: number[]
-        }
-        Insert: {
-          auto_open?: boolean
-          created_at?: string
-          created_by?: string | null
-          date_debut?: string
-          date_fin?: string | null
-          id?: string
-          is_active?: boolean
-          line_ids?: string[]
-          maintenancier_id: string
-          shift_team_id?: string | null
-          shift_type?: string
-          updated_at?: string
-          weekdays?: number[]
-        }
-        Update: {
-          auto_open?: boolean
-          created_at?: string
-          created_by?: string | null
-          date_debut?: string
-          date_fin?: string | null
-          id?: string
-          is_active?: boolean
-          line_ids?: string[]
-          maintenancier_id?: string
-          shift_team_id?: string | null
-          shift_type?: string
-          updated_at?: string
-          weekdays?: number[]
-        }
-        Relationships: []
       }
       maintenance_shifts: {
         Row: {
@@ -5882,6 +5897,83 @@ export type Database = {
         }
         Relationships: []
       }
+      work_shift_system_slots: {
+        Row: {
+          created_at: string
+          crosses_midnight: boolean
+          heure_debut: string
+          heure_fin: string
+          id: string
+          label: string
+          slot_code: string
+          sort_order: number
+          system_id: string
+        }
+        Insert: {
+          created_at?: string
+          crosses_midnight?: boolean
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          label: string
+          slot_code: string
+          sort_order?: number
+          system_id: string
+        }
+        Update: {
+          created_at?: string
+          crosses_midnight?: boolean
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          label?: string
+          slot_code?: string
+          sort_order?: number
+          system_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_shift_system_slots_system_id_fkey"
+            columns: ["system_id"]
+            isOneToOne: false
+            referencedRelation: "work_shift_systems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_shift_systems: {
+        Row: {
+          code: string
+          created_at: string
+          cycle_type: string
+          id: string
+          is_active: boolean
+          label: string
+          nb_shifts: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          cycle_type?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          nb_shifts?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          cycle_type?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          nb_shifts?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       pdr_position_status: {
@@ -5956,6 +6048,15 @@ export type Database = {
       check_permission: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
+      }
+      compute_expected_shift: {
+        Args: { _at?: string; _user_id: string }
+        Returns: {
+          heure_debut: string
+          heure_fin: string
+          is_now: boolean
+          slot_code: string
+        }[]
       }
       derive_shift_type_from_now: {
         Args: never
@@ -6071,6 +6172,7 @@ export type Database = {
         Args: { _module: string; _role: string }
         Returns: boolean
       }
+      open_my_work_session: { Args: never; Returns: string }
       quality_shift_refresh_links: {
         Args: { p_quality_shift_id: string }
         Returns: number

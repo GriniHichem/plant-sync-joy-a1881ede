@@ -2,6 +2,8 @@ import { createContext, useContext, ReactNode } from "react";
 import { useActiveProductionShift, ActiveProductionShift } from "@/hooks/useActiveProductionShift";
 import { useActiveQualityShift, ActiveQualityShift } from "@/hooks/useActiveQualityShift";
 import { useActiveMaintenanceShift, ActiveMaintenanceShift } from "@/hooks/useActiveMaintenanceShift";
+import { useAutoOpenWorkSession } from "@/hooks/useAutoOpenWorkSession";
+
 
 export type ShiftKind = "production" | "maintenance" | "quality";
 

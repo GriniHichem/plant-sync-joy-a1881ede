@@ -45,6 +45,10 @@ export function ActiveShiftProvider({ kind, children }: { kind: ShiftKind; child
     if (kind === "quality") await qual.refresh();
   };
 
+  // Auto-open the employee's session based on their rotation pattern on connection.
+  useAutoOpenWorkSession(() => { void refresh(); });
+
+
   return (
     <ActiveShiftContext.Provider
       value={{

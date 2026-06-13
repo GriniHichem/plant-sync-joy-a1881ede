@@ -460,6 +460,10 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
         </CardContent>
       </Card>
 
+      {kind === "maintenance" && <MaintenanceScheduleManager />}
+
+
+
       <ResponsiveDialog
         open={openDialog}
         onOpenChange={(o) => {

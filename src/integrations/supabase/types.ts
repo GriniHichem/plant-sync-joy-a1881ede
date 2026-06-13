@@ -1632,6 +1632,54 @@ export type Database = {
           },
         ]
       }
+      maintenance_shift_schedules: {
+        Row: {
+          auto_open: boolean
+          created_at: string
+          created_by: string | null
+          date_debut: string
+          date_fin: string | null
+          id: string
+          is_active: boolean
+          line_ids: string[]
+          maintenancier_id: string
+          shift_team_id: string | null
+          shift_type: string
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          auto_open?: boolean
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          id?: string
+          is_active?: boolean
+          line_ids?: string[]
+          maintenancier_id: string
+          shift_team_id?: string | null
+          shift_type?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          auto_open?: boolean
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          id?: string
+          is_active?: boolean
+          line_ids?: string[]
+          maintenancier_id?: string
+          shift_team_id?: string | null
+          shift_type?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: []
+      }
       maintenance_shifts: {
         Row: {
           created_at: string
@@ -5881,6 +5929,7 @@ export type Database = {
       }
     }
     Functions: {
+      apply_maintenance_shift_schedules: { Args: never; Returns: string[] }
       auto_close_stale_shifts: {
         Args: never
         Returns: {

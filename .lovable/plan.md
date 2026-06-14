@@ -1,43 +1,67 @@
-# Auto-ouverture des sessions de shift par rotation d'équipe
+# Données de test Maintenance + tests de shift avec clôture
 
 ## Objectif
-À la connexion, ouvrir automatiquement la session de l'employé **selon son rôle**, en s'appuyant sur le moteur de rotation par équipe (`shift_schedules` / `shift_templates` / `shift_team_members`).
+1. Peupler **toutes les tables des modules Maintenance (GMAO)** avec un jeu de données cohérent.
+2. Dérouler des **tests de shift maintenance (ouverture → activité → clôture)**, y compris l'auto-ouverture par rotation d'équipe.
+3. **Vérifier les résultats** par requêtes SQL, relever les **anomalies** et proposer des **améliorations UX**.
 
-Décisions validées :
-- **Portée** : selon le rôle uniquement — `maintenancier` → maintenance, `controleur_qualite` → qualité.
-- **Production** : pas d'auto-ouverture (un OF actif et une ligne restent obligatoires → ouverture manuelle conservée).
-- **Lignes** : reprises depuis le planning On-Shift (`shift_schedules.line_ids`).
+## État actuel (constaté)
+La plupart des tables maintenance sont quasi vides : `machines=1`, `equipements=0`, `organes=0`, `panne_types=0`, `pdr=0`, `preventive_plans=0`, `machine_families=0`. Le moteur de rotation n'a **aucune donnée** : `shift_team_members=0`, `shift_schedules=0` (alors que `shift_teams=3`, `shift_templates=3`). C'est pourquoi, dans la session observée, `open_my_work_session` n'a rien ouvert.
 
-## Constat
-Aujourd'hui `open_my_work_session()` n'ouvre **que** la maintenance, sans reprendre les lignes du planning, et ignore la qualité. C'est le seul endroit à faire évoluer côté logique d'ouverture automatique.
+Utilisateurs clés : Yacine Saidi (`maintenancier`), Karim Hadj (`resp_maintenance`), Lamia Cherif (`controleur_qualite`), + admin.
 
-## Modifications base de données (migration)
+## Phase 1 — Seed des données (outil insert)
 
-### 1. Fonction utilitaire `get_scope_shift_context(_user_id, _scope, _at)`
-Variante scopée de `get_active_shift_context` qui filtre `shift_schedules.scope_kind IN (_scope, 'all')` et retourne en plus `line_ids` :
-`(team_id, template_id, template_code, heure_debut, heure_fin, line_ids, is_on_shift, autorisation_libre)`.
-- `STABLE SECURITY DEFINER`, fuseau `Africa/Algiers`, même logique de fenêtre jour/jour-1 et `weekdays` que l'existant.
-- Sélectionne en priorité le créneau On-Shift, sinon le prochain.
+### 1. Référentiel équipements
+- `machine_families` : 3 familles (Mélange, Conditionnement, Utilités).
+- `production_lines` : compléter à 3 lignes actives.
+- `machines` : ~6 machines (codes, désignations, criticité A/B/C, statut, family_id).
+- `machine_line_assignments` : rattacher chaque machine à 1–2 lignes (priority/sort_order).
+- `equipements` : ~10 (types : convoyeur, capteur, actionneur…), rattachés machine/ligne.
+- `organes` : ~12 rattachés aux équipements/machines.
 
-### 2. Réécriture de `open_my_work_session()`
-- Récupère `auth.uid()`.
-- **Maintenance** : si l'utilisateur a le rôle `maintenancier`, appelle `get_scope_shift_context(uid,'maintenance')`. Si `is_on_shift OR autorisation_libre` et pas de session active existante, insère dans `maintenance_shifts` avec `line_ids` issus du planning + `shift_team_id`, `shift_type` (mappé depuis `template_code`), `heure_debut/heure_fin`, `opened_by`, observation `[Ouverture auto rotation équipe]`, et journalise dans `audit_logs`.
-- **Qualité** : si rôle `controleur_qualite`, idem via `get_scope_shift_context(uid,'quality')` → insère dans `quality_shifts`, puis crée les liens `quality_shift_lines` à partir des `line_ids` du planning ; journalise.
-- **Production** : aucune action (ouverture manuelle conservée).
-- Anti-doublon : ne rouvre pas si une session active existe déjà pour l'utilisateur dans la table concernée.
-- **Type de retour** : passe de `uuid` à `jsonb` (`{ "maintenance": <uuid|null>, "quality": <uuid|null> }`) pour refléter l'ouverture multi-scope. Utilise `has_role()` pour les contrôles de rôle.
+### 2. Pannes & pièces
+- `panne_types` : 6 types (mécanique, électrique, pneumatique…).
+- `pdr` : ~8 pièces de rechange (avec stock) + `pdr_install_positions` sur quelques machines.
 
-## Modifications front-end
-- `src/hooks/useAutoOpenWorkSession.ts` : inchangé sur le principe (appelle la RPC une fois par session) ; déclenche `onOpened()` si le `jsonb` retourné contient au moins une session ouverte.
-- `src/integrations/supabase/types.ts` : régénéré automatiquement après la migration (nouvelle signature de la RPC).
-- Aucune modification UI : `RespShiftConsole` et `SelfOpenShiftDialog` restent les voies manuelles, et la production reste pilotée par l'OF.
+### 3. Préventif
+- `preventive_plans` : ~5 plans (fréquences variées) liés machines/organes.
+- `preventive_plan_assignees` (Yacine), `preventive_plan_pdr` (pièces).
+- `preventive_executions` : 2 exécutions passées.
 
-## Détails techniques
-- Mapping `template_code` → `shift_type` : `matin→matin`, `soir|midi→apres_midi`, `nuit→nuit`, défaut `matin`.
-- `maintenance_shifts.line_ids` est `NOT NULL DEFAULT '{}'` → on passe le tableau du planning (vide accepté).
-- `quality_shifts` n'a pas de colonne lignes : les lignes vont dans `quality_shift_lines`.
-- Toutes les ouvertures restent conditionnées par `is_on_shift OR autorisation_libre`, cohérent avec le garde On-Shift (`is_user_on_shift` / `useOnShiftGuard`).
+### 4. Tickets & interventions
+- `tickets` : ~10 tickets répartis sur les statuts réels de l'enum (`ouvert`, `pris_en_charge`, `en_cours`, `resolu`, `cloture`) et priorités (`critique`→`basse`), liés machine/ligne, déclarant/assignee. Laisser `numero` au trigger d'auto-numérotation.
+- `interventions` : ~8 (en_cours/terminée) avec `technicien_id = Yacine`, `date_debut/date_fin` dans des fenêtres de shift.
+- `intervention_pdr` : consommations de pièces sur 3 interventions.
 
-## Vérification
-- Tests SQL manuels : simuler un membre `maintenancier` On-Shift → une `maintenance_shifts` créée avec les bonnes lignes ; un `controleur_qualite` On-Shift → `quality_shifts` + `quality_shift_lines` ; hors créneau sans autorisation libre → rien.
-- `npx vitest run` pour s'assurer de l'absence de régression.
+### 5. Rotation d'équipe (pour tester l'auto-ouverture)
+- `shift_team_members` : Yacine dans une équipe (rôle membre), Lamia dans une équipe ; un membre avec `autorisation_libre=true` pour tester ce cas.
+- `shift_schedules` : planning `scope_kind='maintenance'` couvrant aujourd'hui (weekdays incluant le jour courant, lignes du planning) + un planning `quality`.
+
+## Phase 2 — Tests de shift maintenance (clôture incluse)
+
+Réalisés en SQL (l'ouverture/clôture maintenance sont de simples INSERT/UPDATE de table) + appels aux fonctions de contexte :
+
+1. **Auto-ouverture rotation** : vérifier `get_scope_shift_context(Yacine,'maintenance')` (équipe, créneau, on-shift, lignes) et `is_user_on_shift`. Contrôler la cohérence du résultat de `open_my_work_session` (logique : ouvre maintenance si on-shift/autorisation libre, sans doublon).
+2. **Ouverture manuelle** : insérer un `maintenance_shifts` actif pour Yacine avec `line_ids` (parcours responsable/self-open).
+3. **Activité** : rattacher des interventions/tickets dans la fenêtre du shift.
+4. **Clôture** : `UPDATE maintenance_shifts SET is_active=false, heure_fin=now(), observations='…'` (parcours `CloseShiftButton`).
+5. **Bilan** : rejouer les requêtes de `ShiftSummaryDialog` (interventions par `technicien_id` dans la fenêtre + tickets clôturés) et comparer aux données réelles.
+
+## Phase 3 — Vérification & anomalies
+
+Requêtes de contrôle après chaque étape (compte des sessions actives, sessions sans observations, interventions hors fenêtre, etc.). Anomalies déjà pressenties à confirmer pendant les tests :
+
+- **Bilan « Tickets clôturés » toujours à 0** : `ShiftSummaryDialog` (ligne 91) filtre `statut='ferme'`, valeur **inexistante** dans l'enum (`cloture`/`resolu`). Bug réel à corriger.
+- **Clôture maintenance non protégée côté serveur** : `observations` n'est exigé qu'en UI (trigger seulement sur `quality_shifts`). Risque de sessions clôturées sans bilan / via API.
+- **Lien ticket ↔ shift maintenance absent** : `tickets.shift_id` pointe sur `shifts` (production), pas `maintenance_shifts`. Le bilan repose sur une fenêtre temporelle + `technicien_id`, ce qui peut sur/sous-compter (interventions commencées avant l'ouverture mais terminées pendant sont exclues car filtrées sur `date_debut`).
+- **Auto-ouverture silencieuse** : sans `shift_schedules`/`shift_team_members`, `open_my_work_session` ne fait rien et l'utilisateur n'a aucun retour (observé en preview). 
+- **Pas de RPC de clôture** : open/close en UPDATE direct, sans audit DB ni garde anti-concurrence.
+
+## Phase 4 — Livrable : rapport
+Un récapitulatif en chat : données créées (compteurs par table), résultats des tests de shift (ouverture/clôture/bilan), liste des anomalies confirmées avec gravité, et **propositions d'amélioration UX** (ex. : corriger le filtre `ferme→cloture`, trigger serveur exigeant `observations` à la clôture maintenance, toast explicite quand aucune rotation n'est planifiée, lien explicite intervention↔maintenance_shift ou bilan basé sur chevauchement de fenêtre, RPC `close_my_work_session` audité).
+
+## Notes techniques
+- Seed via l'outil **insert** (données), pas de migration (aucun changement de schéma en Phase 1–3). Les corrections d'anomalies (trigger, RPC, filtre front) seront proposées dans le rapport et implémentées seulement après validation.
+- `numero` des tickets laissé au trigger d'auto-numérotation.
+- Toutes les écritures resteront cohérentes avec les enums réels et les colonnes NOT NULL relevées.

@@ -88,7 +88,7 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
           supabase
             .from("tickets")
             .select("numero, heure_resolution, cause_racine, solution")
-            .eq("statut", "ferme" as any)
+            .in("statut", ["resolu", "cloture"] as any)
             .gte("heure_resolution", session.heure_debut)
             .lte("heure_resolution", endTs)
             .order("heure_resolution"),

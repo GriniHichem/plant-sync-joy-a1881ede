@@ -5294,6 +5294,7 @@ export type Database = {
           id: string
           is_active: boolean
           label: string
+          shift_mode_id: string | null
           sort_order: number
           updated_at: string
         }
@@ -5308,6 +5309,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           label: string
+          shift_mode_id?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -5322,10 +5324,19 @@ export type Database = {
           id?: string
           is_active?: boolean
           label?: string
+          shift_mode_id?: string | null
           sort_order?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shift_templates_shift_mode_id_fkey"
+            columns: ["shift_mode_id"]
+            isOneToOne: false
+            referencedRelation: "shift_modes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shifts: {
         Row: {

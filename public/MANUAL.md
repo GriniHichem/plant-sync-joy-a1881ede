@@ -1,7 +1,7 @@
 # 📘 Manuel Utilisateur — PROD IN TIME (GMAO · GPAO · Qualité · Inventaire)
 
 > Application industrielle intégrée de **gestion de maintenance** (GMAO), **gestion de production** (GPAO), **qualité** et **inventaire**.
-> Version manuel : **3.0** — Mise à jour : 26/05/2026 — Édition « Nouvel utilisateur ».
+> Version manuel : **3.1** — Mise à jour : 14/06/2026 — Édition « Rotations de shift ».
 
 > 💡 **Astuce permanente** : à tout moment, appuyez sur la touche `?` (point d'interrogation) pour ouvrir ce manuel directement sur le chapitre lié à votre écran courant.
 
@@ -28,6 +28,7 @@
 13. [Modifications récentes (v2.3)](#13-modifications-recentes-v23)
 14. [Modifications récentes (v2.4)](#14-modifications-recentes-v24)
 15. [Modifications récentes (v2.5)](#15-modifications-recentes-v25--audit-gmao-approfondi)
+16. [Modifications récentes (v3.1)](#16-modifications-recentes-v31--rotations-de-shift-par-employe)
 
 ---
 
@@ -1257,6 +1258,110 @@ L'administration est organisée en **4 pôles + Qualité** :
 
 ---
 
+### 6.6 Rotations & Systèmes de Shift
+
+**Route** : `/parametres/rotations`
+
+> ⏰ **À quoi ça sert** : définir les systèmes de travail par employé, programmer automatiquement l'ouverture de session, et ne plus ouvrir manuellement les shifts.
+
+Ce module remplace l'ancien `maintenance_shift_schedules` par un moteur de rotation **par employé**, couvrant les 3 domaines : maintenance, production, qualité.
+
+#### 🏗️ Architecture
+
+```text
+   ┌──────────────────────┐
+   │  work_shift_systems  │  ← 5 systèmes de base (3×8, 2×8, 1×8, 2×12, Surface)
+   │  + leurs créneaux    │
+   └──────────┬───────────┘
+              │
+   ┌──────────▼───────────┐
+   │ employee_shift_assign│  ← par employé : système, motif, date d'ancrage,
+   │ ments               │    équipe, lignes, scope (maint/prod/qual)
+   └──────────┬───────────┘
+              │
+   ┌──────────▼───────────┐     ┌──────────────────┐
+   │  compute_expected_   │────►│ open_my_work_    │
+   │  shift() — SQL        │     │ session() — RPC   │
+   │  (Africa/Algiers)     │     │ auto au login    │
+   └──────────────────────┘     └──────────────────┘
+```
+
+#### 📋 Les 5 systèmes de base
+
+| Code | Nom | Créneaux | Type |
+|------|-----|----------|------|
+| **3×8** | 3×8h | Matin (06h00–14h00) · Midi (14h00–22h00) · Nuit (22h00–06h00) | `rotation` |
+| **2×8** | 2×8h | Matin (06h00–14h00) · Midi (14h00–22h00) | `rotation` |
+| **1×8** | 1×8h | Matin (06h00–14h00) | `rotation` |
+| **2×12** | 2×12h | Jour (06h00–18h00) · Nuit (18h00–06h00) | `rotation` |
+| **Surface** | Journée normale | Jour (08h00–16h30) | `fixed_weekly` (5/7 Lun–Ven) |
+
+#### 🔄 Motif de cycle (rotation)
+
+Le manager construit un **motif cyclique** (ex: `Matin, Matin, Repos, Nuit, Nuit, Repos`).
+
+La fonction `compute_expected_shift()` calcule :
+1. **Indice du motif** : `(date_cible − date_ancrage) mod longueur(motif)`
+2. **Token attendu** : matin / midi / nuit / jour / repos
+3. **Vérification temps réel** : `heure_debut ≤ now() < heure_fin`
+4. **Shift traversant minuit** (nuit 2×8, nuit 2×12) : fenêtre prolongée jusqu'à `heure_fin` du lendemain
+
+> 📌 **Exemple** : Yacine a motif `Matin, Repos, Nuit, Repos` et ancrage `01/06/2026`.
+> - 01/06 → Matin (06h00–14h00)
+> - 02/06 → Repos
+> - 03/06 → Nuit (22h00–06h00+1)
+> - 04/06 → Repos
+> - 05/06 → Matin (cycle recommence)
+
+#### ⚙️ Système Surface (5/7 fixe)
+
+Pas de motif à configurer. Logique calendaire automatique :
+- **Lun–Ven** → token `jour` (08h00–16h30)
+- **Sam–Dim** → repos (pas de shift)
+
+#### 🔓 Autorisation Libre
+
+Interrupteur par employé dans la grille. Quand actif :
+- À la connexion, `open_my_work_session()` s'exécute automatiquement.
+- Si `now()` tombe dans le créneau calculé → session ouverte avec marqueur `[Ouverture auto rotation]`.
+- Si hors créneau → pas d'ouverture (message informatif).
+
+#### 🛡️ Permissions
+
+Accessible aux rôles : `admin`, `resp_maintenance`, `resp_production`, `responsable_controle_qualite`.
+
+| Champ | Description |
+|-------|-------------|
+| **Employé** | Sélection du profil |
+| **Système** | Un des 5 systèmes actifs |
+| **Scope** | Maintenance / Production / Qualité |
+| **Équipe** | Équipe shift (`A/B/C/D`) ou aucune |
+| **Lignes couvertes** | Multi-sélection (pour maintenance/qualité) |
+| **Motif** | Jetons cliquables : Matin, Midi, Nuit, Jour, Repos |
+| **Date d'ancrage** | Date de référence du cycle (JJ/MM/AAAA) |
+| **Autorisation Libre** | Active l'ouverture auto au login |
+| **Affectation active** | On/off sans suppression |
+
+> 💡 **Aperçu prochain shift** : bandeau en temps réel dans le dialog (`Prochain shift : 14/06/2026 → Matin`).
+
+#### ⚠️ Règles & anti-duplication
+
+- `open_my_work_session()` vérifie qu'**aucune session ouverte** n'existe déjà pour cet utilisateur avant d'insérer.
+- Si session déjà ouverte → retourne son `id` sans nouvelle insertion.
+- Audit log automatique sur chaque ouverture et chaque modification de configuration.
+
+#### 🔗 Intégration avec les shifts existants
+
+| Domaine | Table ouverte | Conditions |
+|---------|---------------|------------|
+| Maintenance | `maintenance_shifts` | `scope_kind = 'maintenance'` |
+| Production | `shifts` (via `of_shift_assignments`) | `scope_kind = 'production'` |
+| Qualité | `quality_shifts` | `scope_kind = 'quality'` |
+
+> 🎯 **Cas d'usage** : Karim (maintenancier) a système 3×8, motif `Matin, Matin, Repos, Midi, Midi, Repos, Nuit, Nuit, Repos`. Il se connecte le 14/06/2026 à 07h30. `compute_expected_shift` retourne « Matin 06h00–14h00 » et `is_now=true`. Sa session `maintenance_shifts` s'ouvre automatiquement avec ses tickets curatifs et préventifs du jour.
+
+---
+
 ## 6 bis. Notifications & Emails
 
 > 🔔 **À quoi ça sert** : alerter la bonne personne au bon moment — in-app et/ou par email.
@@ -1559,11 +1664,12 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 - `/parametres/document-permissions`, `/parametres/pdr-stock-permissions`
 - `/parametres/familles`, `/parametres/product-families`, `/parametres/pdr-families`
 - `/parametres/pannes`, `/parametres/document-categories`
-- `/parametres/lignes`, `/parametres/shifts`
-- `/parametres/general`, `/parametres/images`, `/parametres/scan-history`
-- `/parametres/notifications`, `/parametres/smtp`
-- `/parametres/qualite` + sous-pages
-- `/notifications` (boîte de réception)
+  - `/parametres/lignes`, `/parametres/shifts`
+  - `/parametres/rotations`
+  - `/parametres/general`, `/parametres/images`, `/parametres/scan-history`
+  - `/parametres/notifications`, `/parametres/smtp`
+  - `/parametres/qualite` + sous-pages
+  - `/notifications` (boîte de réception)
 
 ### 12.2 🗃️ Tables principales (BDD)
 
@@ -1584,6 +1690,7 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 | `produits`, `articles`, `recipes`, `recipe_lines` | Référentiels production (recettes unifiées) |
 | `declarations_production`, `consommations`, `arrets_production` | Déclarations |
 | `shift_modes`, `shift_time_slots`, `shift_teams`, `shift_settings`, `shifts`, `quality_shifts`, `of_shift_assignments` | Shifts |
+| `work_shift_systems`, `work_shift_system_slots`, `employee_shift_assignments` | Rotations & systèmes de shift par employé |
 | `entity_documents`, `entity_images`, `document_categories` | GED + images |
 | `notifications`, `notification_rules`, `notification_email_log` | Notifications/emails |
 | `app_settings` | SMTP, flags globaux, secrets cron |

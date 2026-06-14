@@ -10,10 +10,17 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { logAudit } from "@/lib/audit";
+
+const NONE = "__none__";
+
+interface ShiftSystem { id: string; code: string; label: string; }
 
 interface ShiftTemplate {
   id: string;
@@ -25,11 +32,13 @@ interface ShiftTemplate {
   couleur: string | null;
   sort_order: number;
   is_active: boolean;
+  shift_mode_id: string | null;
 }
 
 const BLANK = {
   id: "", code: "", label: "", heure_debut: "06:00", heure_fin: "14:00",
   crosses_midnight: false, couleur: "#3b82f6", sort_order: 0, is_active: true,
+  shift_mode_id: "" as string,
 };
 
 const hhmm = (t: string) => (t ? t.slice(0, 5) : "");
@@ -37,6 +46,7 @@ const hhmm = (t: string) => (t ? t.slice(0, 5) : "");
 export function TemplatesTab({ onChange }: { onChange?: () => void }) {
   const { toast } = useToast();
   const [rows, setRows] = useState<ShiftTemplate[]>([]);
+  const [systems, setSystems] = useState<ShiftSystem[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<typeof BLANK>(BLANK);
@@ -44,11 +54,17 @@ export function TemplatesTab({ onChange }: { onChange?: () => void }) {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("shift_templates").select("*").order("sort_order");
-    setRows((data as ShiftTemplate[]) ?? []);
+    const [tRes, sRes] = await Promise.all([
+      supabase.from("shift_templates").select("*").order("sort_order"),
+      supabase.from("shift_modes").select("id, code, label").eq("is_active", true).order("code"),
+    ]);
+    setRows((tRes.data as ShiftTemplate[]) ?? []);
+    setSystems((sRes.data as ShiftSystem[]) ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
+  const sysLabel = (id: string | null) => systems.find((s) => s.id === id)?.label ?? "—";
 
   const openNew = () => { setDraft({ ...BLANK, sort_order: rows.length }); setOpen(true); };
   const openEdit = (t: ShiftTemplate) => {

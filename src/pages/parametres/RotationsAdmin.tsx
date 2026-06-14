@@ -54,17 +54,13 @@ export default function RotationsAdmin() {
           <Tabs defaultValue="teams" className="space-y-4">
             <TabsList className="flex flex-wrap h-auto">
               <TabsTrigger value="teams"><Users className="h-4 w-4 mr-2" /> Équipes</TabsTrigger>
-              <TabsTrigger value="members"><UserCog className="h-4 w-4 mr-2" /> Membres &amp; Autorisations</TabsTrigger>
-              <TabsTrigger value="templates"><LayoutGrid className="h-4 w-4 mr-2" /> Modèles</TabsTrigger>
-              <TabsTrigger value="schedules"><CalendarRange className="h-4 w-4 mr-2" /> Plannings</TabsTrigger>
               <TabsTrigger value="modes"><Layers className="h-4 w-4 mr-2" /> Systèmes de production</TabsTrigger>
+              <TabsTrigger value="members"><UserCog className="h-4 w-4 mr-2" /> Membres &amp; Motifs</TabsTrigger>
               <TabsTrigger value="rules"><Settings className="h-4 w-4 mr-2" /> Règles</TabsTrigger>
             </TabsList>
             <TabsContent value="teams"><TeamsTab /></TabsContent>
-            <TabsContent value="members"><MembersTab /></TabsContent>
-            <TabsContent value="templates"><TemplatesTab /></TabsContent>
-            <TabsContent value="schedules"><SchedulesTab /></TabsContent>
             <TabsContent value="modes"><ModesTab /></TabsContent>
+            <TabsContent value="members"><MembersTab /></TabsContent>
             <TabsContent value="rules"><RulesTab /></TabsContent>
           </Tabs>
         </CardContent>

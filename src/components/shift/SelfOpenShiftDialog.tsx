@@ -24,6 +24,24 @@ function deriveShiftTypeFromHour(hour: number): "matin" | "apres_midi" | "nuit" 
   return "nuit";
 }
 
+function shiftTypeFromTemplate(code?: string | null): "matin" | "apres_midi" | "nuit" {
+  switch (code) {
+    case "matin": return "matin";
+    case "soir":
+    case "midi": return "apres_midi";
+    case "nuit": return "nuit";
+    default: return deriveShiftTypeFromHour(new Date().getHours());
+  }
+}
+
+interface PlanContext {
+  teamId: string | null;
+  templateCode: string | null;
+  lineIds: string[];
+  isOnShift: boolean;
+  autorisationLibre: boolean;
+}
+
 interface Props {
   kind: ShiftKind;
 }
@@ -41,7 +59,13 @@ export function SelfOpenShiftDialog({ kind }: Props) {
   const [lineId, setLineId] = useState("");
   const [ofId, setOfId] = useState("__none__");
   const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
-  const shiftType = deriveShiftTypeFromHour(new Date().getHours());
+  const [plan, setPlan] = useState<PlanContext | null>(null);
+  const [shiftType, setShiftType] = useState<"matin" | "apres_midi" | "nuit">(
+    deriveShiftTypeFromHour(new Date().getHours()),
+  );
+
+  // Planning issu de la rotation par équipe (lignes/équipe/créneau).
+  const hasPlan = !!plan && (plan.lineIds.length > 0 || !!plan.teamId);
 
   useEffect(() => {
     if (!open) return;
@@ -53,15 +77,47 @@ export function SelfOpenShiftDialog({ kind }: Props) {
       setTeams(tRes.data ?? []);
       setLines(lRes.data ?? []);
       if (kind === "production") {
+        // Production : pas d'auto-ouverture, ni de pré-remplissage par planning.
+        setPlan(null);
+        setShiftType(deriveShiftTypeFromHour(new Date().getHours()));
         const { data } = await supabase
           .from("ordres_fabrication")
           .select("id, numero, line_id")
           .in("statut", ["en_cours", "planifie"])
           .order("numero", { ascending: false });
         setOfs(data ?? []);
+        return;
       }
+
+      // Maintenance / Qualité : portée selon le rôle + lignes issues du planning.
+      const scope = kind === "maintenance" ? "maintenance" : "quality";
+      if (user) {
+        const { data: rows } = await supabase.rpc("get_scope_shift_context" as any, {
+          _user_id: user.id,
+          _scope: scope,
+        });
+        const r = Array.isArray(rows) ? rows[0] : rows;
+        if (r && (r.team_id || (r.line_ids && r.line_ids.length))) {
+          const planLines: string[] = r.line_ids ?? [];
+          setPlan({
+            teamId: r.team_id ?? null,
+            templateCode: r.template_code ?? null,
+            lineIds: planLines,
+            isOnShift: !!r.is_on_shift,
+            autorisationLibre: !!r.autorisation_libre,
+          });
+          setTeamId(r.team_id ?? "__none__");
+          setSelectedLineIds(planLines);
+          setShiftType(shiftTypeFromTemplate(r.template_code));
+          return;
+        }
+      }
+      // Aucun planning : repli manuel (anti-blocage).
+      setPlan(null);
+      setShiftType(deriveShiftTypeFromHour(new Date().getHours()));
     })();
-  }, [open, kind]);
+  }, [open, kind, user]);
+
 
   async function handleStart() {
     if (!user) return;
@@ -162,14 +218,26 @@ export function SelfOpenShiftDialog({ kind }: Props) {
         <DialogHeader>
           <DialogTitle>Démarrer mon shift — {slotLabel}</DialogTitle>
           <DialogDescription>
-            Aucun plan n'a été configuré par votre responsable. Vous pouvez ouvrir votre session vous-même.
+            {kind === "production"
+              ? "La production n'est pas ouverte automatiquement. Sélectionnez la ligne et l'OF en cours."
+              : hasPlan
+                ? "Votre créneau est défini par le planning de rotation de votre équipe. Équipe et lignes sont pré-remplies."
+                : "Aucun planning n'a été configuré par votre responsable. Vous pouvez ouvrir votre session vous-même."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
+          {hasPlan && kind !== "production" && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+              Créneau planifié : <span className="font-medium text-foreground">{slotLabel}</span>
+              {plan?.templateCode ? ` (${plan.templateCode})` : ""}
+              {!plan?.isOnShift && plan?.autorisationLibre ? " — hors créneau (autorisation libre)" : ""}
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <Label>Équipe (optionnel)</Label>
-            <Select value={teamId} onValueChange={setTeamId}>
+            <Label>Équipe {hasPlan ? "(planning)" : "(optionnel)"}</Label>
+            <Select value={teamId} onValueChange={setTeamId} disabled={hasPlan && !!plan?.teamId}>
               <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">— Aucune —</SelectItem>
@@ -204,18 +272,28 @@ export function SelfOpenShiftDialog({ kind }: Props) {
             </>
           ) : (
             <div className="space-y-1.5">
-              <Label>Lignes couvertes *</Label>
+              <Label>Lignes couvertes * {hasPlan && <span className="text-xs text-muted-foreground">(définies par le planning)</span>}</Label>
               <div className="border rounded-md p-2 max-h-48 overflow-auto space-y-1">
-                {lines.map((l) => (
-                  <label key={l.id} className="flex items-center gap-2 text-sm py-1 px-1 hover:bg-accent rounded cursor-pointer">
-                    <Checkbox checked={selectedLineIds.includes(l.id)} onCheckedChange={() => toggleLine(l.id)} />
-                    <span><span className="font-medium">{l.code}</span> — {l.designation}</span>
-                  </label>
-                ))}
+                {lines
+                  .filter((l) => !hasPlan || selectedLineIds.includes(l.id))
+                  .map((l) => (
+                    <label key={l.id} className={`flex items-center gap-2 text-sm py-1 px-1 rounded ${hasPlan ? "opacity-90" : "hover:bg-accent cursor-pointer"}`}>
+                      <Checkbox
+                        checked={selectedLineIds.includes(l.id)}
+                        disabled={hasPlan}
+                        onCheckedChange={() => !hasPlan && toggleLine(l.id)}
+                      />
+                      <span><span className="font-medium">{l.code}</span> — {l.designation}</span>
+                    </label>
+                  ))}
+                {hasPlan && selectedLineIds.length === 0 && (
+                  <p className="text-xs text-amber-600 px-1 py-2">Aucune ligne définie dans le planning pour ce créneau.</p>
+                )}
               </div>
             </div>
           )}
         </div>
+
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Annuler</Button>

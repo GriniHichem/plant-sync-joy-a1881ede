@@ -32,7 +32,7 @@ const groups: SectionGroup[] = [
     icon: Factory,
     items: [
       { title: "Lignes de production", description: "Gérer les lignes et ateliers", icon: Factory, url: "/parametres/lignes" },
-      { title: "Shifts & Rotations", description: "Équipes, membres, autorisations, modèles, plannings, modes & règles", icon: Clock, url: "/parametres/shifts" },
+      { title: "Shifts & Rotations", description: "Équipes, membres, autorisations, modèles, plannings, systèmes & règles", icon: Clock, url: "/parametres/shifts" },
     ],
   },
   {

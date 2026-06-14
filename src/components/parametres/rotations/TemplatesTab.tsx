@@ -92,11 +92,11 @@ export function TemplatesTab({ onChange }: { onChange?: () => void }) {
         shift_mode_id: draft.shift_mode_id || null,
       };
       if (draft.id) {
-        const { error } = await supabase.from("shift_templates").update(payload).eq("id", draft.id);
+        const { error } = await supabase.from("shift_templates").update(payload as any).eq("id", draft.id);
         if (error) throw error;
         await logAudit({ action_type: "update", module: "parametres", action: "shift_template_update", entity_type: "shift_templates", entity_id: draft.id, description: `Modèle ${payload.code} modifié` });
       } else {
-        const { error } = await supabase.from("shift_templates").insert(payload);
+        const { error } = await supabase.from("shift_templates").insert(payload as any);
         if (error) throw error;
         await logAudit({ action_type: "create", module: "parametres", action: "shift_template_create", entity_type: "shift_templates", description: `Modèle ${payload.code} créé` });
       }

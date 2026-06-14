@@ -24,6 +24,24 @@ function deriveShiftTypeFromHour(hour: number): "matin" | "apres_midi" | "nuit" 
   return "nuit";
 }
 
+function shiftTypeFromTemplate(code?: string | null): "matin" | "apres_midi" | "nuit" {
+  switch (code) {
+    case "matin": return "matin";
+    case "soir":
+    case "midi": return "apres_midi";
+    case "nuit": return "nuit";
+    default: return deriveShiftTypeFromHour(new Date().getHours());
+  }
+}
+
+interface PlanContext {
+  teamId: string | null;
+  templateCode: string | null;
+  lineIds: string[];
+  isOnShift: boolean;
+  autorisationLibre: boolean;
+}
+
 interface Props {
   kind: ShiftKind;
 }
@@ -41,7 +59,13 @@ export function SelfOpenShiftDialog({ kind }: Props) {
   const [lineId, setLineId] = useState("");
   const [ofId, setOfId] = useState("__none__");
   const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
-  const shiftType = deriveShiftTypeFromHour(new Date().getHours());
+  const [plan, setPlan] = useState<PlanContext | null>(null);
+  const [shiftType, setShiftType] = useState<"matin" | "apres_midi" | "nuit">(
+    deriveShiftTypeFromHour(new Date().getHours()),
+  );
+
+  // Planning issu de la rotation par équipe (lignes/équipe/créneau).
+  const hasPlan = !!plan && (plan.lineIds.length > 0 || !!plan.teamId);
 
   useEffect(() => {
     if (!open) return;
@@ -53,15 +77,47 @@ export function SelfOpenShiftDialog({ kind }: Props) {
       setTeams(tRes.data ?? []);
       setLines(lRes.data ?? []);
       if (kind === "production") {
+        // Production : pas d'auto-ouverture, ni de pré-remplissage par planning.
+        setPlan(null);
+        setShiftType(deriveShiftTypeFromHour(new Date().getHours()));
         const { data } = await supabase
           .from("ordres_fabrication")
           .select("id, numero, line_id")
           .in("statut", ["en_cours", "planifie"])
           .order("numero", { ascending: false });
         setOfs(data ?? []);
+        return;
       }
+
+      // Maintenance / Qualité : portée selon le rôle + lignes issues du planning.
+      const scope = kind === "maintenance" ? "maintenance" : "quality";
+      if (user) {
+        const { data: rows } = await supabase.rpc("get_scope_shift_context" as any, {
+          _user_id: user.id,
+          _scope: scope,
+        });
+        const r = Array.isArray(rows) ? rows[0] : rows;
+        if (r && (r.team_id || (r.line_ids && r.line_ids.length))) {
+          const planLines: string[] = r.line_ids ?? [];
+          setPlan({
+            teamId: r.team_id ?? null,
+            templateCode: r.template_code ?? null,
+            lineIds: planLines,
+            isOnShift: !!r.is_on_shift,
+            autorisationLibre: !!r.autorisation_libre,
+          });
+          setTeamId(r.team_id ?? "__none__");
+          setSelectedLineIds(planLines);
+          setShiftType(shiftTypeFromTemplate(r.template_code));
+          return;
+        }
+      }
+      // Aucun planning : repli manuel (anti-blocage).
+      setPlan(null);
+      setShiftType(deriveShiftTypeFromHour(new Date().getHours()));
     })();
-  }, [open, kind]);
+  }, [open, kind, user]);
+
 
   async function handleStart() {
     if (!user) return;

@@ -164,6 +164,16 @@ export function TemplatesTab({ onChange }: { onChange?: () => void }) {
                   <Input type="number" value={draft.sort_order} onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })} />
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <Label>Système de production</Label>
+                <Select value={draft.shift_mode_id || NONE} onValueChange={(v) => setDraft({ ...draft, shift_mode_id: v === NONE ? "" : v })}>
+                  <SelectTrigger><SelectValue placeholder="Aucun" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>Aucun (créneau libre)</SelectItem>
+                    {systems.map((s) => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2">
                 <Switch checked={draft.is_active} onCheckedChange={(v) => setDraft({ ...draft, is_active: v })} />
                 <Label>Actif</Label>

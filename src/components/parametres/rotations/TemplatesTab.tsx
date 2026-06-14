@@ -211,6 +211,7 @@ export function TemplatesTab({ onChange }: { onChange?: () => void }) {
                   </span>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{t.code}</TableCell>
+                <TableCell className="text-xs">{t.shift_mode_id ? <Badge variant="outline">{sysLabel(t.shift_mode_id)}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
                 <TableCell className="tabular-nums">
                   {hhmm(t.heure_debut)} → {hhmm(t.heure_fin)} {t.crosses_midnight && <Badge variant="outline" className="ml-1 text-[10px]">nuit</Badge>}
                 </TableCell>

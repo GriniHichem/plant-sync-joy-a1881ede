@@ -100,27 +100,8 @@ export default function ShiftsAdmin() {
     loadAll();
   }
 
-  async function handleSetRotation(teamId: string, date: string, slotId: string | null, isRepos: boolean) {
-    // Upsert: delete then insert
-    await supabase.from("shift_rotation").delete().eq("shift_team_id", teamId).eq("date_shift", date);
-    if (slotId || isRepos) {
-      await supabase.from("shift_rotation").insert({
-        shift_team_id: teamId, date_shift: date, time_slot_id: isRepos ? null : slotId, is_repos: isRepos,
-      });
-    }
-    loadRotation(rotationWeekStart);
-  }
-
-  // Generate week dates
-  const weekDates: string[] = [];
-  const ws = new Date(rotationWeekStart);
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(ws);
-    d.setDate(ws.getDate() + i);
-    weekDates.push(d.toISOString().slice(0, 10));
-  }
-
   const dayLabels = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+
 
   return (
     <div className="space-y-4 max-w-5xl">

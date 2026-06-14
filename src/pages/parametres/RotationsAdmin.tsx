@@ -46,7 +46,7 @@ export default function RotationsAdmin() {
         <div>
           <h1 className="text-2xl font-bold">Shifts &amp; Rotations</h1>
           <p className="text-sm text-muted-foreground">
-            Équipes, membres, autorisations, modèles, plannings, modes &amp; règles
+            Équipes, membres, autorisations, modèles, plannings, systèmes &amp; règles
           </p>
         </div>
       </div>

@@ -573,69 +573,6 @@ export type Database = {
         }
         Relationships: []
       }
-      employee_shift_assignments: {
-        Row: {
-          anchor_date: string
-          autorisation_libre: boolean
-          created_at: string
-          created_by: string | null
-          id: string
-          is_active: boolean
-          line_ids: string[]
-          pattern: Json
-          scope_kind: string
-          shift_team_id: string | null
-          system_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          anchor_date?: string
-          autorisation_libre?: boolean
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          line_ids?: string[]
-          pattern?: Json
-          scope_kind?: string
-          shift_team_id?: string | null
-          system_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          anchor_date?: string
-          autorisation_libre?: boolean
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          line_ids?: string[]
-          pattern?: Json
-          scope_kind?: string
-          shift_team_id?: string | null
-          system_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_shift_assignments_shift_team_id_fkey"
-            columns: ["shift_team_id"]
-            isOneToOne: false
-            referencedRelation: "shift_teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_shift_assignments_system_id_fkey"
-            columns: ["system_id"]
-            isOneToOne: false
-            referencedRelation: "work_shift_systems"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       entity_documents: {
         Row: {
           category_id: string
@@ -5181,44 +5118,62 @@ export type Database = {
         }
         Relationships: []
       }
-      shift_rotation: {
+      shift_schedules: {
         Row: {
           created_at: string
-          date_shift: string
+          created_by: string | null
+          date_debut: string
+          date_fin: string | null
           id: string
-          is_repos: boolean
-          shift_team_id: string
-          time_slot_id: string | null
+          is_active: boolean
+          line_ids: string[]
+          scope_kind: string
+          team_id: string
+          template_id: string
+          updated_at: string
+          weekdays: number[]
         }
         Insert: {
           created_at?: string
-          date_shift: string
+          created_by?: string | null
+          date_debut: string
+          date_fin?: string | null
           id?: string
-          is_repos?: boolean
-          shift_team_id: string
-          time_slot_id?: string | null
+          is_active?: boolean
+          line_ids?: string[]
+          scope_kind?: string
+          team_id: string
+          template_id: string
+          updated_at?: string
+          weekdays?: number[]
         }
         Update: {
           created_at?: string
-          date_shift?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string | null
           id?: string
-          is_repos?: boolean
-          shift_team_id?: string
-          time_slot_id?: string | null
+          is_active?: boolean
+          line_ids?: string[]
+          scope_kind?: string
+          team_id?: string
+          template_id?: string
+          updated_at?: string
+          weekdays?: number[]
         }
         Relationships: [
           {
-            foreignKeyName: "shift_rotation_shift_team_id_fkey"
-            columns: ["shift_team_id"]
+            foreignKeyName: "shift_schedules_team_id_fkey"
+            columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "shift_teams"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "shift_rotation_time_slot_id_fkey"
-            columns: ["time_slot_id"]
+            foreignKeyName: "shift_schedules_template_id_fkey"
+            columns: ["template_id"]
             isOneToOne: false
-            referencedRelation: "shift_time_slots"
+            referencedRelation: "shift_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -5253,6 +5208,50 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_team_members: {
+        Row: {
+          autorisation_libre: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          role_in_team: string
+          team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          autorisation_libre?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          role_in_team?: string
+          team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          autorisation_libre?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          role_in_team?: string
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "shift_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_teams: {
         Row: {
           code: string
@@ -5279,6 +5278,51 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shift_templates: {
+        Row: {
+          code: string
+          couleur: string | null
+          created_at: string
+          created_by: string | null
+          crosses_midnight: boolean
+          heure_debut: string
+          heure_fin: string
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          couleur?: string | null
+          created_at?: string
+          created_by?: string | null
+          crosses_midnight?: boolean
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          couleur?: string | null
+          created_at?: string
+          created_by?: string | null
+          crosses_midnight?: boolean
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
@@ -5897,83 +5941,6 @@ export type Database = {
         }
         Relationships: []
       }
-      work_shift_system_slots: {
-        Row: {
-          created_at: string
-          crosses_midnight: boolean
-          heure_debut: string
-          heure_fin: string
-          id: string
-          label: string
-          slot_code: string
-          sort_order: number
-          system_id: string
-        }
-        Insert: {
-          created_at?: string
-          crosses_midnight?: boolean
-          heure_debut: string
-          heure_fin: string
-          id?: string
-          label: string
-          slot_code: string
-          sort_order?: number
-          system_id: string
-        }
-        Update: {
-          created_at?: string
-          crosses_midnight?: boolean
-          heure_debut?: string
-          heure_fin?: string
-          id?: string
-          label?: string
-          slot_code?: string
-          sort_order?: number
-          system_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "work_shift_system_slots_system_id_fkey"
-            columns: ["system_id"]
-            isOneToOne: false
-            referencedRelation: "work_shift_systems"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      work_shift_systems: {
-        Row: {
-          code: string
-          created_at: string
-          cycle_type: string
-          id: string
-          is_active: boolean
-          label: string
-          nb_shifts: number
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          cycle_type?: string
-          id?: string
-          is_active?: boolean
-          label: string
-          nb_shifts?: number
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          cycle_type?: string
-          id?: string
-          is_active?: boolean
-          label?: string
-          nb_shifts?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       pdr_position_status: {
@@ -6033,6 +6000,7 @@ export type Database = {
         Args: { _module: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_shifts: { Args: { _user_id: string }; Returns: boolean }
       can_manage_validation_rule: {
         Args: { _module: string; _user_id: string }
         Returns: boolean
@@ -6049,15 +6017,6 @@ export type Database = {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
       }
-      compute_expected_shift: {
-        Args: { _at?: string; _user_id: string }
-        Returns: {
-          heure_debut: string
-          heure_fin: string
-          is_now: boolean
-          slot_code: string
-        }[]
-      }
       derive_shift_type_from_now: {
         Args: never
         Returns: Database["public"]["Enums"]["shift_type"]
@@ -6070,6 +6029,19 @@ export type Database = {
         Returns: string
       }
       fts_build: { Args: { parts: string[] }; Returns: unknown }
+      get_active_shift_context: {
+        Args: { _at?: string; _user_id: string }
+        Returns: {
+          autorisation_libre: boolean
+          heure_debut: string
+          heure_fin: string
+          is_on_shift: boolean
+          team_id: string
+          team_name: string
+          template_code: string
+          template_id: string
+        }[]
+      }
       get_position_counter: { Args: { p_position_id: string }; Returns: number }
       get_quality_indicators_for_of: {
         Args: { p_of_id: string }
@@ -6170,6 +6142,10 @@ export type Database = {
       }
       is_audit_enabled: {
         Args: { _module: string; _role: string }
+        Returns: boolean
+      }
+      is_user_on_shift: {
+        Args: { _at?: string; _scope?: string; _user_id: string }
         Returns: boolean
       }
       open_my_work_session: { Args: never; Returns: string }

@@ -3,6 +3,8 @@ import { useActiveProductionShift, ActiveProductionShift } from "@/hooks/useActi
 import { useActiveQualityShift, ActiveQualityShift } from "@/hooks/useActiveQualityShift";
 import { useActiveMaintenanceShift, ActiveMaintenanceShift } from "@/hooks/useActiveMaintenanceShift";
 import { useAutoOpenWorkSession } from "@/hooks/useAutoOpenWorkSession";
+import { useActiveShiftContext, ActiveShiftContextData } from "@/hooks/useActiveShiftContext";
+
 
 
 export type ShiftKind = "production" | "maintenance" | "quality";
@@ -16,6 +18,8 @@ interface ActiveShiftContextValue {
   qualityShift: ActiveQualityShift | null;
   qualityShifts: ActiveQualityShift[];
   setQualityShiftId: (id: string | null) => void;
+  /** Team-based rotation context (active team + template + on-shift state). */
+  shiftContext: ActiveShiftContextData;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -32,6 +36,7 @@ export function ActiveShiftProvider({ kind, children }: { kind: ShiftKind; child
   const prod = useActiveProductionShift();
   const maint = useActiveMaintenanceShift();
   const qual = useActiveQualityShift();
+  const shiftCtx = useActiveShiftContext();
 
   const loading =
     (kind === "production" && prod.loading) ||
@@ -60,6 +65,7 @@ export function ActiveShiftProvider({ kind, children }: { kind: ShiftKind; child
         qualityShift: qual.shift,
         qualityShifts: qual.shifts,
         setQualityShiftId: qual.setSelectedId,
+        shiftContext: shiftCtx,
         loading,
         refresh,
       }}

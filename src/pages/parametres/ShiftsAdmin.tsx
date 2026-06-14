@@ -23,7 +23,6 @@ export default function ShiftsAdmin() {
   const [teams, setTeams] = useState<any[]>([]);
   const [timeSlots, setTimeSlots] = useState<any[]>([]);
   const [settings, setSettings] = useState<any[]>([]);
-  const [rotation, setRotation] = useState<any[]>([]);
   const [shiftModes, setShiftModes] = useState<any[]>([]);
   const [modeSlots, setModeSlots] = useState<any[]>([]);
 
@@ -39,10 +38,6 @@ export default function ShiftsAdmin() {
   const [slotCode, setSlotCode] = useState("");
   const [slotStart, setSlotStart] = useState("06:00");
   const [slotEnd, setSlotEnd] = useState("14:00");
-
-  // Rotation
-  const [rotationDate, setRotationDate] = useState(new Date().toISOString().slice(0, 10));
-  const [rotationWeekStart, setRotationWeekStart] = useState(new Date().toISOString().slice(0, 10));
 
   useEffect(() => { loadAll(); }, []);
 
@@ -61,19 +56,7 @@ export default function ShiftsAdmin() {
     setModeSlots(modeSlotsRes.data || []);
   }
 
-  async function loadRotation(startDate: string) {
-    const end = new Date(startDate);
-    end.setDate(end.getDate() + 6);
-    const { data } = await supabase
-      .from("shift_rotation")
-      .select("*, shift_teams(name, code, color), shift_time_slots(label, code)")
-      .gte("date_shift", startDate)
-      .lte("date_shift", end.toISOString().slice(0, 10))
-      .order("date_shift");
-    setRotation(data || []);
-  }
 
-  useEffect(() => { loadRotation(rotationWeekStart); }, [rotationWeekStart]);
 
   if (!hasRole("admin") && !hasRole("resp_production")) {
     return <div className="p-8 text-center text-muted-foreground">Accès réservé aux administrateurs.</div>;
@@ -117,27 +100,8 @@ export default function ShiftsAdmin() {
     loadAll();
   }
 
-  async function handleSetRotation(teamId: string, date: string, slotId: string | null, isRepos: boolean) {
-    // Upsert: delete then insert
-    await supabase.from("shift_rotation").delete().eq("shift_team_id", teamId).eq("date_shift", date);
-    if (slotId || isRepos) {
-      await supabase.from("shift_rotation").insert({
-        shift_team_id: teamId, date_shift: date, time_slot_id: isRepos ? null : slotId, is_repos: isRepos,
-      });
-    }
-    loadRotation(rotationWeekStart);
-  }
+  
 
-  // Generate week dates
-  const weekDates: string[] = [];
-  const ws = new Date(rotationWeekStart);
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(ws);
-    d.setDate(ws.getDate() + i);
-    weekDates.push(d.toISOString().slice(0, 10));
-  }
-
-  const dayLabels = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
   return (
     <div className="space-y-4 max-w-5xl">
@@ -350,70 +314,20 @@ export default function ShiftsAdmin() {
         <TabsContent value="rotation">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Planning de rotation</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm">Semaine du</Label>
-                  <Input type="date" value={rotationWeekStart} onChange={(e) => setRotationWeekStart(e.target.value)} className="w-40 h-8" />
-                </div>
-              </div>
+              <CardTitle className="text-base">Planning de rotation</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[100px]">Équipe</TableHead>
-                    {weekDates.map((d) => (
-                      <TableHead key={d} className="text-center min-w-[120px]">
-                        <div className="text-xs">{dayLabels[new Date(d).getDay()]}</div>
-                        <div className="text-xs text-muted-foreground">{new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}</div>
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teams.filter((t) => t.is_active).map((team) => (
-                    <TableRow key={team.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="h-3 w-3 rounded-full" style={{ backgroundColor: team.color }} />
-                          <span className="font-medium text-sm">{team.name}</span>
-                        </div>
-                      </TableCell>
-                      {weekDates.map((date) => {
-                        const entry = rotation.find((r: any) => r.shift_team_id === team.id && r.date_shift === date);
-                        const currentSlotId = entry?.is_repos ? "repos" : (entry?.time_slot_id || "");
-                        return (
-                          <TableCell key={date} className="p-1">
-                            <Select
-                              value={currentSlotId}
-                              onValueChange={(val) => {
-                                if (val === "repos") handleSetRotation(team.id, date, null, true);
-                                else if (val === "") handleSetRotation(team.id, date, null, false);
-                                else handleSetRotation(team.id, date, val, false);
-                              }}
-                            >
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder="—" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="empty_placeholder" className="text-muted-foreground">— Non affecté</SelectItem>
-                                {timeSlots.filter((s) => s.is_active).map((slot) => (
-                                  <SelectItem key={slot.id} value={slot.id}>{slot.label} ({slot.heure_debut}–{slot.heure_fin})</SelectItem>
-                                ))}
-                                <SelectItem value="repos" className="text-amber-600">🛏️ Repos</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                La planification des rotations a été déplacée vers le nouveau moteur
+                « Équipes &amp; Rotations » (modèle de shift assigné à une équipe pour une période).
+              </p>
+              <Button onClick={() => navigate("/parametres/rotations")}>
+                <CalendarDays className="h-4 w-4 mr-1" /> Ouvrir Équipes &amp; Rotations
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
+
 
         {/* === RÈGLES === */}
         <TabsContent value="settings">

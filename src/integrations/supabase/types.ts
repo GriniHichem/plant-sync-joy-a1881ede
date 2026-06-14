@@ -5118,66 +5118,6 @@ export type Database = {
         }
         Relationships: []
       }
-      shift_schedules: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          date_debut: string
-          date_fin: string | null
-          id: string
-          is_active: boolean
-          line_ids: string[]
-          scope_kind: string
-          team_id: string
-          template_id: string
-          updated_at: string
-          weekdays: number[]
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          date_debut: string
-          date_fin?: string | null
-          id?: string
-          is_active?: boolean
-          line_ids?: string[]
-          scope_kind?: string
-          team_id: string
-          template_id: string
-          updated_at?: string
-          weekdays?: number[]
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          date_debut?: string
-          date_fin?: string | null
-          id?: string
-          is_active?: boolean
-          line_ids?: string[]
-          scope_kind?: string
-          team_id?: string
-          template_id?: string
-          updated_at?: string
-          weekdays?: number[]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shift_schedules_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "shift_teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shift_schedules_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "shift_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       shift_settings: {
         Row: {
           created_at: string
@@ -5210,39 +5150,58 @@ export type Database = {
       }
       shift_team_members: {
         Row: {
+          anchor_date: string | null
           autorisation_libre: boolean
           created_at: string
           created_by: string | null
+          cycle_pattern: string[]
           id: string
           is_active: boolean
           role_in_team: string
+          scope_kind: string
+          shift_mode_id: string | null
           team_id: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          anchor_date?: string | null
           autorisation_libre?: boolean
           created_at?: string
           created_by?: string | null
+          cycle_pattern?: string[]
           id?: string
           is_active?: boolean
           role_in_team?: string
+          scope_kind?: string
+          shift_mode_id?: string | null
           team_id: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          anchor_date?: string | null
           autorisation_libre?: boolean
           created_at?: string
           created_by?: string | null
+          cycle_pattern?: string[]
           id?: string
           is_active?: boolean
           role_in_team?: string
+          scope_kind?: string
+          shift_mode_id?: string | null
           team_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shift_team_members_shift_mode_id_fkey"
+            columns: ["shift_mode_id"]
+            isOneToOne: false
+            referencedRelation: "shift_modes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shift_team_members_team_id_fkey"
             columns: ["team_id"]
@@ -6178,6 +6137,10 @@ export type Database = {
       set_recipe_status: {
         Args: { p_reason?: string; p_recipe_id: string; p_status: string }
         Returns: undefined
+      }
+      shift_cycle_slot: {
+        Args: { _anchor: string; _d: string; _pattern: string[] }
+        Returns: string
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

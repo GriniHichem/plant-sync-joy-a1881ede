@@ -1,7 +1,7 @@
 # 📘 Manuel Utilisateur — PROD IN TIME (GMAO · GPAO · Qualité · Inventaire)
 
 > Application industrielle intégrée de **gestion de maintenance** (GMAO), **gestion de production** (GPAO), **qualité** et **inventaire**.
-> Version manuel : **3.0** — Mise à jour : 26/05/2026 — Édition « Nouvel utilisateur ».
+> Version manuel : **3.1** — Mise à jour : 14/06/2026 — Édition « Rotations de shift ».
 
 > 💡 **Astuce permanente** : à tout moment, appuyez sur la touche `?` (point d'interrogation) pour ouvrir ce manuel directement sur le chapitre lié à votre écran courant.
 
@@ -28,6 +28,7 @@
 13. [Modifications récentes (v2.3)](#13-modifications-recentes-v23)
 14. [Modifications récentes (v2.4)](#14-modifications-recentes-v24)
 15. [Modifications récentes (v2.5)](#15-modifications-recentes-v25--audit-gmao-approfondi)
+16. [Modifications récentes (v3.1)](#16-modifications-recentes-v31--rotations-de-shift-par-employe)
 
 ---
 

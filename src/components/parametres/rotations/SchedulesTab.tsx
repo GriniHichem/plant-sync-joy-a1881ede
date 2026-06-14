@@ -57,6 +57,8 @@ export function SchedulesTab() {
   const { toast } = useToast();
   const [teams, setTeams] = useState<Team[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [systems, setSystems] = useState<ShiftSystem[]>([]);
+  const [systemFilter, setSystemFilter] = useState<string>("all");
   const [lines, setLines] = useState<Line[]>([]);
   const [rows, setRows] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);

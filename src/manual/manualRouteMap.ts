@@ -48,6 +48,7 @@ const RAW_MAP: Array<[RegExp, string]> = [
   [/^\/parametres\/document-categories/, "6-2-referentiels-classification"],
   [/^\/parametres\/document-permissions/, "7-documents"],
   [/^\/parametres\/lignes/, "6-3-production-organisation"],
+  [/^\/parametres\/rotations/, "6-6-rotations-systemes-de-shift"],
   [/^\/parametres\/shifts/, "6-3-production-organisation"],
   [/^\/parametres\/images/, "6-4-configuration-generale"],
   [/^\/parametres\/general/, "6-4-configuration-generale"],

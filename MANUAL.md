@@ -1664,11 +1664,12 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 - `/parametres/document-permissions`, `/parametres/pdr-stock-permissions`
 - `/parametres/familles`, `/parametres/product-families`, `/parametres/pdr-families`
 - `/parametres/pannes`, `/parametres/document-categories`
-- `/parametres/lignes`, `/parametres/shifts`
-- `/parametres/general`, `/parametres/images`, `/parametres/scan-history`
-- `/parametres/notifications`, `/parametres/smtp`
-- `/parametres/qualite` + sous-pages
-- `/notifications` (boîte de réception)
+  - `/parametres/lignes`, `/parametres/shifts`
+  - `/parametres/rotations`
+  - `/parametres/general`, `/parametres/images`, `/parametres/scan-history`
+  - `/parametres/notifications`, `/parametres/smtp`
+  - `/parametres/qualite` + sous-pages
+  - `/notifications` (boîte de réception)
 
 ### 12.2 🗃️ Tables principales (BDD)
 
@@ -1689,6 +1690,7 @@ Disponible pour : OF, Articles (et autres entités via `CsvImporter`).
 | `produits`, `articles`, `recipes`, `recipe_lines` | Référentiels production (recettes unifiées) |
 | `declarations_production`, `consommations`, `arrets_production` | Déclarations |
 | `shift_modes`, `shift_time_slots`, `shift_teams`, `shift_settings`, `shifts`, `quality_shifts`, `of_shift_assignments` | Shifts |
+| `work_shift_systems`, `work_shift_system_slots`, `employee_shift_assignments` | Rotations & systèmes de shift par employé |
 | `entity_documents`, `entity_images`, `document_categories` | GED + images |
 | `notifications`, `notification_rules`, `notification_email_log` | Notifications/emails |
 | `app_settings` | SMTP, flags globaux, secrets cron |

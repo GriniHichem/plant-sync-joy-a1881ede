@@ -1,77 +1,93 @@
-# Gestion des temps & rotation des shifts par employé
+# Consolidation Shifts / Rotations / Autorisations temporelles — Fondation (DB + Contexte)
 
-## Objectif
-Attribuer à chaque employé un **système de shift** (3-8, 2-8, 1-8, 2-12, Surface), un **motif de cycle** personnalisé et une **date d'ancrage**. Le système calcule à toute date le shift attendu, et **ouvre automatiquement la session** (statut « Présent ») à la connexion si le responsable a activé « Autorisation Libre » et que l'employé se connecte dans son créneau. Couvre les 3 mondes (maintenance, production, qualité). Tous les calculs en fuseau `Africa/Algiers`.
+Cette première étape pose **uniquement** la fondation : schéma de base de données et logique du contexte global « Shift Actif ». L'UI unifiée et le durcissement complet des Guards viendront dans une phase ultérieure, après validation.
 
-On **remplace** `maintenance_shift_schedules` (+ son UI, son edge function et son cron) par cette logique plus générale.
+## Décisions validées
+- **Rotation par Équipe** (et non plus par employé). On supprime le moteur `employee_shift_assignments` au profit d'un rattachement utilisateur→équipe + planning équipe↔modèle.
+- **Nouvelle table `shift_templates`** comme source unique des modèles de créneaux (Matin/Soir/Nuit…), migrée depuis `shift_time_slots`.
+- **Nouvelle table de planning par période** (date_debut/date_fin), distincte de l'ancienne `shift_rotation` (par date unique).
+- **Guard On-Shift** à 3 niveaux : `autorisation_libre` (accès permanent), sinon avertissement, sinon override par un responsable de section.
 
+## Les trois piliers
 ```text
-employee_shift_assignments (par user)
-  system → work_shift_systems (+ slots horaires)
-  pattern (séquence: matin/midi/nuit/repos)  +  anchor_date
-        │
-        ▼  compute_expected_shift(user, now)   ← mod(jours écoulés, longueur motif)
-        │     • Surface = règle calendaire 5/7 (Lun-Ven travail, Sam/Dim repos)
-        ▼
-  open_my_work_session()  (RPC, à la connexion)
-        • si autorisation_libre ET now ∈ créneau ET pas de session active
-        → INSERT dans maintenance_shifts / shifts / quality_shifts (statut Présent)
-        ▼
-  Dashboard employé : Tâches curatives + Tâches préventives
+shift_templates (Modèles)        shift_teams (Équipes)
+   Matin 06-14                       ── shift_team_members (user ↔ équipe, rôle)
+   Soir  14-22                              │
+   Nuit  22-06                              │
+        └──────────────┬────────────────────┘
+                       ▼
+            shift_schedules (Rotations / plannings)
+            équipe + modèle + période + jours actifs
+                       │
+                       ▼  get_active_shift_context(_user, _now)
+            → équipe active, modèle en cours, is_on_shift
+                       ▼
+        ActiveShiftContext (prod / maintenance / qualité)
+        Guards : action critique autorisée si on-shift OU autorisation_libre OU override responsable
 ```
 
-## 1. Base de données (migration)
+## 1. Schéma de base de données (migration unique)
 
-### `work_shift_systems`
-- `code` (unique : `3x8`, `2x8`, `1x8`, `2x12`, `surface`), `label`, `cycle_type` (`rotation` | `fixed_weekly`), `nb_shifts`, `is_active`.
+### `shift_templates` (modèles de créneaux)
+- `code` (unique), `label`, `heure_debut` (time), `heure_fin` (time), `crosses_midnight` (bool), `couleur`, `sort_order`, `is_active`, standards + trigger updated_at.
+- **Seed** depuis `shift_time_slots` existant (matin/apres_midi/nuit), avec calcul de `crosses_midnight` pour la nuit.
 
-### `work_shift_system_slots`
-- `system_id` (FK), `slot_code` (`matin`/`midi`/`nuit`/`jour`), `label`, `heure_debut` (time), `heure_fin` (time), `crosses_midnight` (bool), `sort_order`.
-- Seed exact des 5 systèmes :
-  - 3x8 : matin 06:00-14:00, midi 14:00-22:00, nuit 22:00-06:00(+1)
-  - 2x8 : matin 06:00-14:00, midi 14:00-22:00
-  - 1x8 : matin 06:00-14:00
-  - 2x12 : matin 06:00-18:00, nuit 18:00-06:00(+1)
-  - surface : jour 08:00-16:30
+### `shift_team_members` (membres d'équipe)
+- `team_id` (FK `shift_teams`), `user_id` (FK auth.users), `role_in_team` (text: `membre`/`responsable`), `autorisation_libre` (bool, défaut false), `is_active`, standards.
+- Unique `(team_id, user_id)`.
+- `autorisation_libre` porté ici (par membre) : un membre « libre » peut intervenir hors de son créneau sans blocage.
 
-### `employee_shift_assignments`
-- `user_id` (unique, FK auth.users), `system_id` (FK), `scope_kind` (`maintenance`|`production`|`quality` — quelle table de session ouvrir), `shift_team_id` (nullable), `line_ids` (uuid[]), `pattern` (jsonb : tableau ordonné de tokens `matin`/`midi`/`nuit`/`repos` ; ignoré pour Surface), `anchor_date` (date), `autorisation_libre` (bool, défaut false), `is_active`, standards + trigger updated_at.
+### `shift_schedules` (rotations / plannings)
+- `team_id` (FK), `template_id` (FK `shift_templates`), `scope_kind` (`maintenance`|`production`|`quality`|`all`), `line_ids` (uuid[], défaut `{}`), `date_debut` (date), `date_fin` (date nullable = ouvert), `weekdays` (smallint[] ISO 1-7, vide = tous les jours), `is_active`, standards.
+- Trigger de validation : `date_fin >= date_debut` si renseigné (pas de CHECK sur dates).
 
-GRANT (`authenticated` lecture, `admin`/responsables écriture via RLS `has_role`), service_role ALL. L'employé peut **lire sa propre** affectation.
+### Grants & RLS (chaque table)
+- `GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated` ; `GRANT ALL ... TO service_role` ; `GRANT SELECT TO anon` **uniquement** sur `shift_templates` (lecture publique des créneaux non sensible) — sinon pas d'anon.
+- RLS : lecture `authenticated` ; écriture réservée via `has_role()` (admin + responsables de section : `resp_maintenance`, `responsable_si`, `directeur_qualite`, etc., à aligner sur les rôles existants).
+- `shift_team_members` : un user peut lire sa propre appartenance ; écriture par admin/responsables.
 
-### Fonctions
-- `compute_expected_shift(_user_id uuid, _at timestamptz)` → `(slot_code text, heure_debut timestamptz, heure_fin timestamptz, is_now boolean)`. STABLE SECURITY DEFINER.
-  - Surface : selon weekday (1-5 = `jour`, 6/7 = repos → renvoie vide).
-  - Rotation : `idx = (date_at - anchor_date) mod length(pattern)` ; token = `pattern[idx]` ; si `repos` → vide ; sinon slot correspondant, bornes calculées en `Africa/Algiers` (gère `crosses_midnight`). Vérifie aussi le créneau **nuit de la veille** encore en cours après minuit. `is_now` = `_at` ∈ [début, fin].
-- `open_my_work_session()` → uuid (id session ou null). SECURITY DEFINER.
-  - Récupère l'affectation de `auth.uid()` ; exige `autorisation_libre` + `is_now` ; anti-doublon (session active même jour/créneau) ; INSERT dans la table de session selon `scope_kind` (`maintenance_shifts` / `shifts` / `quality_shifts`) avec `opened_by = auth.uid()`, observation « [Ouverture auto rotation] » ; écrit un `audit_logs`.
+### Fonctions SQL
+- **`get_active_shift_context(_user_id uuid, _at timestamptz)`** → `(team_id uuid, team_name text, template_id uuid, template_code text, heure_debut timestamptz, heure_fin timestamptz, is_on_shift boolean, autorisation_libre boolean)`. STABLE SECURITY DEFINER, calculs en `Africa/Algiers`.
+  - Récupère les équipes du user (`shift_team_members.is_active`).
+  - Pour chaque `shift_schedules` actif couvrant la date (`date_debut..date_fin`, `weekdays`), résout les bornes du `template` (gère `crosses_midnight` + créneau nuit de la veille encore en cours).
+  - `is_on_shift = _at ∈ [début, fin]`. Renvoie la ligne on-shift en priorité, sinon la prochaine.
+- **`is_user_on_shift(_user_id uuid, _scope text, _at timestamptz)`** → boolean. STABLE SECURITY DEFINER. `true` si on-shift pour le scope OU si `autorisation_libre` du membre. Utilisée par les Guards (et exploitable plus tard côté RLS/triggers).
+- **`open_my_work_session()`** : réécrite pour s'appuyer sur `get_active_shift_context` (équipe/template) au lieu de `employee_shift_assignments`. Ouvre la session (`maintenance_shifts`/`shifts`/`quality_shifts`) si on-shift, anti-doublon, `opened_by = auth.uid()`, audit log.
 
 ### Nettoyage
-- `DROP TABLE maintenance_shift_schedules` (+ policies/trigger). Supprimer l'edge function `apply-maintenance-schedules` et son cron `pg_cron`.
+- `DROP` de `employee_shift_assignments`, `work_shift_systems`, `work_shift_system_slots` (+ leurs policies/triggers) et de la fonction `compute_expected_shift`.
+- Conservation de `shift_rotation` ancienne ? → **supprimée** (remplacée par `shift_schedules`) si non utilisée hors migrations (vérifié : seulement migrations + types).
 
-## 2. Logique métier (frontend/hooks)
-- `src/lib/shiftRotation.ts` : helpers purs (calcul d'index de motif, résolution token→slot, bornes horaires, 5/7 surface) — testables sans DB.
-- Hook `useAutoOpenWorkSession()` : appelé au montage de l'app authentifiée ; invoque `open_my_work_session()` puis `refresh()` du contexte shift. Silencieux si rien à ouvrir.
+## 2. Logique du contexte global (frontend)
 
-## 3. Interface Manager (configuration)
-Nouvelle page `/parametres/rotations` (réservée admin/responsables) :
-- Tableau des employés : système attribué, motif (aperçu badges), date d'ancrage, **toggle « Autorisation Libre »**, scope.
-- Dialog d'édition : sélection système, **constructeur de motif** (séquence de jours matin/midi/nuit/repos, ajout/suppression/réordonnancement — masqué pour Surface), date d'ancrage, équipe, lignes couvertes, scope.
-- Aperçu calculé « prochain shift » à partir du motif + ancrage.
-- Audit `logAudit` sur chaque création/modif/toggle.
+### `src/lib/shiftSchedule.ts` (helpers purs, testables)
+- Remplace `src/lib/shiftRotation.ts`. Calcul des bornes d'un template pour une date locale, gestion `crosses_midnight`, règle `weekdays`, et résolution « template actif à l'instant T » — miroir de `get_active_shift_context`.
 
-## 4. Interface Employé (dashboard)
-Réutilise/étend `MaintenancierShiftView` :
-- Au chargement, auto-ouverture via le hook. Bandeau « Session ouverte automatiquement — Présent ».
-- **Tâches curatives** : interventions curatives ouvertes non assignées ou assignées à l'équipe du shift.
-- **Tâches préventives** : préventif assigné spécifiquement à l'employé pour ce shift.
-- Pour production/qualité : l'auto-ouverture redirige vers leurs kiosques existants (le dashboard curatif/préventif reste maintenance).
+### `src/hooks/useActiveShiftContext.ts` (nouveau)
+- Appelle `get_active_shift_context(auth.uid(), now())`, expose `{ team, template, isOnShift, autorisationLibre, loading, refresh }`.
+- Rafraîchissement périodique léger (ex. à intervalle régulier) pour basculer automatiquement de créneau.
 
-## 5. Tests (Vitest)
-`src/test/shift/rotation-engine.test.ts` : modulo de motif, bouclage sur date future, repos, règle Surface 5/7, créneau nuit après minuit, gating `autorisation_libre`/`is_now`.
+### `src/contexts/ActiveShiftContext.tsx` (mise à jour)
+- Intègre `useActiveShiftContext` et expose `activeTeam`, `activeTemplate`, `isOnShift` en plus de l'existant.
+- `useAutoOpenWorkSession` conservé mais branché sur la nouvelle logique (la RPC `open_my_work_session` réécrite).
+- **Non-régression** : `useActiveProductionShift` / `useActiveMaintenanceShift` / `useActiveQualityShift` restent inchangés dans leur lecture des tables de session — on ajoute la couche équipe/template par-dessus, sans modifier les flux de déclaration production/maintenance.
+
+### `src/hooks/useAutoOpenWorkSession.ts`
+- Conservé tel quel (appelle la RPC) ; bénéficie automatiquement de la RPC réécrite.
+
+## 3. Préparation des Guards (sans changer l'UI encore)
+- Ajout d'un helper `useOnShiftGuard(scope)` qui lit `isOnShift` + `autorisationLibre` du contexte et renvoie `{ allowed, needsOverride }`. Branchement effectif dans `ShiftGuard` et les actions critiques traité en **phase 2 (UI)**.
+
+## 4. Tests (Vitest)
+- `src/test/shift/shift-schedule.test.ts` : bornes de template, nuit traversant minuit, règle `weekdays`, sélection du créneau actif vs prochain, gating `autorisation_libre`.
 
 ## Détails techniques
 - Tous les calculs horaires en `Africa/Algiers` (cohérent avec `ensure_production_shift_session`).
 - Sessions toujours insérées dans les tables existantes — aucun changement de leur schéma.
-- RLS via `has_role()` ; l'employé lit uniquement sa propre affectation et déclenche sa propre ouverture.
-- Mise à jour mémoire projet (remplacement de maintenance_shift_schedules par le moteur de rotation).
+- Audit `audit_logs` sur toute écriture (équipes, membres, modèles, plannings) conformément aux règles projet.
+- Mise à jour de la mémoire projet (remplacement du moteur par-employé par le moteur par-équipe).
+
+## Hors périmètre de cette étape (phase 2, après validation)
+- Page paramètres unifiée (Équipes + Membres + Modèles + Plannings) remplaçant `RotationsAdmin` / `ShiftsAdmin`.
+- Durcissement effectif des Guards et du workflow d'override responsable dans prod/maintenance/qualité.
+- Mise à jour de la documentation `MANUAL.md`.

@@ -21,9 +21,13 @@ export function useAutoOpenWorkSession(onOpened?: () => void) {
 
     (async () => {
       const { data, error } = await supabase.rpc("open_my_work_session" as any);
-      if (!error && data) {
-        onOpened?.();
-      }
+      if (error || !data) return;
+      // New RPC returns { maintenance: uuid|null, quality: uuid|null }.
+      const opened =
+        typeof data === "object"
+          ? Object.values(data as Record<string, unknown>).some((v) => !!v)
+          : !!data;
+      if (opened) onOpened?.();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);

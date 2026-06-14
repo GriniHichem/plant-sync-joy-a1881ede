@@ -35,7 +35,7 @@ describe("Parametres — Page d'accueil", () => {
     { title: "Familles machines", description: "Catégories et sous-familles", url: "/parametres/familles" },
     { title: "Types de panne", description: "Référentiel des types de panne", url: "/parametres/pannes" },
     { title: "Lignes de production", description: "Gérer les lignes et ateliers", url: "/parametres/lignes" },
-    { title: "Shifts & Rotation", description: "Équipes, créneaux, planning et règles", url: "/parametres/shifts" },
+    { title: "Shifts & Rotations", description: "Équipes, membres, autorisations, modèles, plannings, modes & règles", url: "/parametres/shifts" },
     { title: "Général", description: "Paramètres de l'application", url: "/parametres/general" },
   ];
 

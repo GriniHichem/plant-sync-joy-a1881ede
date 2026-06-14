@@ -5327,42 +5327,6 @@ export type Database = {
         }
         Relationships: []
       }
-      shift_time_slots: {
-        Row: {
-          code: string
-          created_at: string
-          heure_debut: string
-          heure_fin: string
-          id: string
-          is_active: boolean
-          label: string
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          heure_debut: string
-          heure_fin: string
-          id?: string
-          is_active?: boolean
-          label: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          heure_debut?: string
-          heure_fin?: string
-          id?: string
-          is_active?: boolean
-          label?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       shifts: {
         Row: {
           chef_ligne_id: string | null

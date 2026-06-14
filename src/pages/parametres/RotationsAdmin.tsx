@@ -2,20 +2,24 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, CalendarClock, Users, UserCog, LayoutGrid, CalendarRange } from "lucide-react";
+import { ArrowLeft, CalendarClock, Users, UserCog, LayoutGrid, CalendarRange, Layers, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { TeamsTab } from "@/components/parametres/rotations/TeamsTab";
 import { MembersTab } from "@/components/parametres/rotations/MembersTab";
 import { TemplatesTab } from "@/components/parametres/rotations/TemplatesTab";
 import { SchedulesTab } from "@/components/parametres/rotations/SchedulesTab";
+import { ModesTab } from "@/components/parametres/rotations/ModesTab";
+import { RulesTab } from "@/components/parametres/rotations/RulesTab";
 
 /**
- * Unified "Équipes & Rotations" management module (phase 2).
- * Team-based shift engine:
+ * Module unifié "Shifts & Rotations".
+ * Regroupe l'ensemble du paramétrage shift, sans doublon :
  *   - shift_teams        : équipes
  *   - shift_team_members : appartenance + autorisation libre
- *   - shift_templates    : modèles de créneaux réutilisables
+ *   - shift_templates    : modèles de créneaux réutilisables (moteur de rotation)
  *   - shift_schedules    : plannings équipe ↔ modèle (portée + lignes + jours)
+ *   - shift_modes        : modes de production (3x8…) utilisés par les OF du GPAO
+ *   - shift_settings     : règles et paramètres
  */
 export default function RotationsAdmin() {
   const navigate = useNavigate();
@@ -40,9 +44,9 @@ export default function RotationsAdmin() {
         </Button>
         <CalendarClock className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-2xl font-bold">Équipes &amp; Rotations</h1>
+          <h1 className="text-2xl font-bold">Shifts &amp; Rotations</h1>
           <p className="text-sm text-muted-foreground">
-            Équipes, membres, modèles de shift &amp; plannings de rotation
+            Équipes, membres, autorisations, modèles, plannings, modes &amp; règles
           </p>
         </div>
       </div>
@@ -52,14 +56,18 @@ export default function RotationsAdmin() {
           <Tabs defaultValue="teams" className="space-y-4">
             <TabsList className="flex flex-wrap h-auto">
               <TabsTrigger value="teams"><Users className="h-4 w-4 mr-2" /> Équipes</TabsTrigger>
-              <TabsTrigger value="members"><UserCog className="h-4 w-4 mr-2" /> Membres</TabsTrigger>
+              <TabsTrigger value="members"><UserCog className="h-4 w-4 mr-2" /> Membres &amp; Autorisations</TabsTrigger>
               <TabsTrigger value="templates"><LayoutGrid className="h-4 w-4 mr-2" /> Modèles</TabsTrigger>
               <TabsTrigger value="schedules"><CalendarRange className="h-4 w-4 mr-2" /> Plannings</TabsTrigger>
+              <TabsTrigger value="modes"><Layers className="h-4 w-4 mr-2" /> Modes de production</TabsTrigger>
+              <TabsTrigger value="rules"><Settings className="h-4 w-4 mr-2" /> Règles</TabsTrigger>
             </TabsList>
             <TabsContent value="teams"><TeamsTab /></TabsContent>
             <TabsContent value="members"><MembersTab /></TabsContent>
             <TabsContent value="templates"><TemplatesTab /></TabsContent>
             <TabsContent value="schedules"><SchedulesTab /></TabsContent>
+            <TabsContent value="modes"><ModesTab /></TabsContent>
+            <TabsContent value="rules"><RulesTab /></TabsContent>
           </Tabs>
         </CardContent>
       </Card>

@@ -295,7 +295,13 @@ export async function createValidationRequest(
   const rule = payload.rule;
   const enforcement: ValidationEnforcement = rule?.enforcement ?? "post_hoc";
   const priority = payload.priority ?? rule?.priority ?? "medium";
-  const status: ValidationStatus = enforcement === "blocking" ? "submitted" : "pending_post_hoc";
+  // Auto-approve low-risk post-hoc requests when the rule allows it.
+  const autoApprove = enforcement === "post_hoc"
+    && (rule?.auto_approve_if_low_risk ?? false)
+    && priority === "low";
+  const status: ValidationStatus = autoApprove
+    ? "approved"
+    : enforcement === "blocking" ? "submitted" : "pending_post_hoc";
 
   const old_san = payload.old_values
     ? (sanitizeValues(payload.old_values) as Record<string, unknown>)

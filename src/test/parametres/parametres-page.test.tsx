@@ -30,12 +30,12 @@ describe("Parametres — Page d'accueil", () => {
   });
 
   const coreSections = [
-    { title: "Utilisateurs", description: "Gérer les comptes et rôles", url: "/parametres/users" },
-    { title: "Matrice des rôles", description: "Permissions détaillées par rôle", url: "/parametres/roles" },
     { title: "Familles machines", description: "Catégories et sous-familles", url: "/parametres/familles" },
+    { title: "Familles produits", description: "Catégories de produits et articles", url: "/parametres/familles-produits" },
     { title: "Types de panne", description: "Référentiel des types de panne", url: "/parametres/pannes" },
     { title: "Lignes de production", description: "Gérer les lignes et ateliers", url: "/parametres/lignes" },
-    { title: "Shifts & Rotations", description: "Équipes, membres, autorisations, modèles, plannings, modes & règles", url: "/parametres/shifts" },
+    { title: "Shifts & Rotations", description: "Équipes, membres, autorisations, modèles, plannings, systèmes & règles", url: "/parametres/shifts" },
+    { title: "Paramétrage Qualité", description: "Catégories NC, types de défauts, unités, points de contrôle, motifs de décision…", url: "/parametres/qualite" },
     { title: "Général", description: "Paramètres de l'application", url: "/parametres/general" },
   ];
 
@@ -75,9 +75,9 @@ describe("Parametres — Page d'accueil", () => {
 
   it("affiche les 4 groupes de paramètres", () => {
     renderPage();
-    expect(screen.getByText("Sécurité & Accès")).toBeInTheDocument();
     expect(screen.getByText("Référentiels & Classification")).toBeInTheDocument();
     expect(screen.getByText("Production & Organisation")).toBeInTheDocument();
+    expect(screen.getByText("Qualité & Traçabilité")).toBeInTheDocument();
     expect(screen.getByText("Configuration générale")).toBeInTheDocument();
   });
 });

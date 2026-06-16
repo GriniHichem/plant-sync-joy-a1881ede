@@ -34,14 +34,14 @@ const MODULES: AppModule[] = [
   { title: "Tableau de bord", description: "Vue synthétique de l'activité maintenance", url: "/", icon: IconDashboard, category: "Maintenance", permissionModule: "dashboard", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
   { title: "Machines", description: "Parc machines, criticité et historique", url: "/machines", icon: IconMachine, category: "Maintenance", permissionModule: "machines", accent: "from-blue-500/15 to-blue-500/5 text-blue-500" },
   { title: "Équipements", description: "Équipements autonomes rattachés aux lignes", url: "/equipements", icon: IconEquipment, category: "Maintenance", permissionModule: "equipements", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
-  { title: "Organes", description: "Sous-ensembles techniques des machines/équipements", url: "/organes", icon: IconEquipment, category: "Maintenance", permissionModule: "organes", accent: "from-teal-500/15 to-teal-500/5 text-teal-500" },
+  { title: "Organes", description: "Sous-ensembles techniques des machines/équipements", url: "/organes", icon: IconOrganes, category: "Maintenance", permissionModule: "organes", accent: "from-teal-500/15 to-teal-500/5 text-teal-500" },
   { title: "Lignes de production", description: "Synoptique interactif des lignes", url: "/lignes", icon: IconFactory, category: "Maintenance", permissionModule: "lignes", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
   { title: "Pièces de rechange", description: "Catalogue PDR, stock et liens machines", url: "/pdr", icon: IconSpare, category: "Maintenance", permissionModule: "pdr", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
   { title: "Tickets", description: "Demandes d'intervention et suivi en temps réel", url: "/tickets", icon: IconTicket, category: "Maintenance", permissionModule: "tickets", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
   { title: "Maintenance préventive", description: "Plans, gammes et déclenchements automatiques", url: "/preventif", icon: IconPreventive, category: "Maintenance", permissionModule: "preventif", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
   { title: "Shift Maintenance", description: "Vue opérationnelle du maintenancier", url: "/maintenance/shift", icon: IconShift, category: "Maintenance", permissionModule: "shift_maintenance", badge: "Live", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
-  { title: "Journal d'interventions", description: "Historique consolidé des interventions", url: "/maintenance/journal", icon: IconMaintenance, category: "Maintenance", permissionModule: "journal", accent: "from-slate-500/15 to-slate-500/5 text-slate-400" },
-  { title: "Historique interventions", description: "Recherche et filtres avancés sur les interventions passées", url: "/maintenance/historique", icon: IconMaintenance, category: "Maintenance", permissionModule: "historique", accent: "from-stone-500/15 to-stone-500/5 text-stone-400" },
+  { title: "Journal d'interventions", description: "Historique consolidé des interventions", url: "/maintenance/journal", icon: IconJournal, category: "Maintenance", permissionModule: "journal", accent: "from-slate-500/15 to-slate-500/5 text-slate-400" },
+  { title: "Historique interventions", description: "Recherche et filtres avancés sur les interventions passées", url: "/maintenance/historique", icon: IconHistory, category: "Maintenance", permissionModule: "historique", accent: "from-stone-500/15 to-stone-500/5 text-stone-400" },
   { title: "Analyse & KPI", description: "Indicateurs MTTR, MTBF, disponibilité", url: "/analytics", icon: IconAnalytics, category: "Maintenance", permissionModule: "analytiques", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
 
   // ===== Production =====
@@ -55,28 +55,28 @@ const MODULES: AppModule[] = [
   { title: "Arrêts", description: "Pannes et arrêts production", url: "/gpao/arrets", icon: IconStop, category: "Production", permissionModule: "arrets", accent: "from-orange-500/15 to-orange-500/5 text-orange-500" },
 
   // ===== Qualité =====
-  { title: "Dashboard Qualité", description: "Indicateurs et synthèse qualité", url: "/qualite", icon: IconChart, category: "Qualité", permissionModule: "qualite_dashboard", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
-  { title: "OF Qualité", description: "Suivi qualité par ordre de fabrication", url: "/qualite/of", icon: IconOrder, category: "Qualité", permissionModule: "qualite_of", accent: "from-blue-500/15 to-blue-500/5 text-blue-500" },
+  { title: "Dashboard Qualité", description: "Indicateurs et synthèse qualité", url: "/qualite", icon: IconKpi, category: "Qualité", permissionModule: "qualite_dashboard", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
+  { title: "OF Qualité", description: "Suivi qualité par ordre de fabrication", url: "/qualite/of", icon: IconControl, category: "Qualité", permissionModule: "qualite_of", accent: "from-blue-500/15 to-blue-500/5 text-blue-500" },
   { title: "Indicateurs qualité", description: "Catalogue des indicateurs et tolérances", url: "/qualite/indicateurs", icon: IconAnalytics, category: "Qualité", permissionModule: "qualite_indicateurs", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
-  { title: "Contrôles", description: "Saisie et historique des contrôles qualité", url: "/qualite/controles", icon: ClipboardCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Qualité", permissionModule: "qualite_controles", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
-  { title: "Non-conformités", description: "Déclaration, décisions et lots bloqués", url: "/qualite/non-conformites", icon: AlertTriangle as unknown as React.FC<{ size?: number; className?: string }>, category: "Qualité", permissionModule: "qualite_nc", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
-  { title: "Actions qualité", description: "Plans d'actions correctives et préventives", url: "/qualite/actions", icon: Wrench as unknown as React.FC<{ size?: number; className?: string }>, category: "Qualité", permissionModule: "qualite_actions", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
+  { title: "Contrôles", description: "Saisie et historique des contrôles qualité", url: "/qualite/controles", icon: IconPreventive, category: "Qualité", permissionModule: "qualite_controles", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
+  { title: "Non-conformités", description: "Déclaration, décisions et lots bloqués", url: "/qualite/non-conformites", icon: IconNc, category: "Qualité", permissionModule: "qualite_nc", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
+  { title: "Actions qualité", description: "Plans d'actions correctives et préventives", url: "/qualite/actions", icon: IconAction, category: "Qualité", permissionModule: "qualite_actions", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
   { title: "Recettes & Nomenclatures", description: "Versions recettes et BOM côté qualité", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, category: "Qualité", permissionModule: "qualite_recettes", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
-  { title: "Traçabilité", description: "Fiche traçabilité complète par OF", url: "/qualite/tracabilite", icon: GitBranch as unknown as React.FC<{ size?: number; className?: string }>, category: "Qualité", permissionModule: "qualite_tracabilite", accent: "from-teal-500/15 to-teal-500/5 text-teal-500" },
-  { title: "Shift contrôle", description: "Saisie temps réel par contrôleur qualité", url: "/qualite/shift", icon: IconShift, category: "Qualité", permissionModule: "qualite_shift", badge: "Live", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
-  { title: "Rapports qualité", description: "Conformité, NC, actions, théorique vs réel", url: "/qualite/rapports", icon: FileText as unknown as React.FC<{ size?: number; className?: string }>, category: "Qualité", permissionModule: "qualite_rapports", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
+  { title: "Traçabilité", description: "Fiche traçabilité complète par OF", url: "/qualite/tracabilite", icon: IconTrace, category: "Qualité", permissionModule: "qualite_tracabilite", accent: "from-teal-500/15 to-teal-500/5 text-teal-500" },
+  { title: "Shift contrôle", description: "Saisie temps réel par contrôleur qualité", url: "/qualite/shift", icon: IconTimer, category: "Qualité", permissionModule: "qualite_shift", badge: "Live", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
+  { title: "Rapports qualité", description: "Conformité, NC, actions, théorique vs réel", url: "/qualite/rapports", icon: IconReport, category: "Qualité", permissionModule: "qualite_rapports", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
 
   // ===== Inventaire =====
-  { title: "Dashboard Inventaire", description: "Vue d'ensemble des campagnes d'inventaire", url: "/inventaire", icon: IconDashboard, category: "Inventaire", permissionModule: "inventaire", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
-  { title: "Campagnes d'inventaire", description: "Double comptage A/B avec arbitrage C", url: "/inventaire/campagnes", icon: ClipboardCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Inventaire", permissionModule: "inventaire_campagnes", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
+  { title: "Dashboard Inventaire", description: "Vue d'ensemble des campagnes d'inventaire", url: "/inventaire", icon: IconInventory, category: "Inventaire", permissionModule: "inventaire", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
+  { title: "Campagnes d'inventaire", description: "Double comptage A/B avec arbitrage C", url: "/inventaire/campagnes", icon: IconCampaign, category: "Inventaire", permissionModule: "inventaire_campagnes", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
 
   // ===== Configuration =====
-  { title: "Sécurité & Accès", description: "Hub centralisé : utilisateurs, rôles, permissions, audit, self-hosting", url: "/securite", icon: ShieldCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "securite", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
-  { title: "Validations", description: "Demandes d'approbation et règles", url: "/validations", icon: ClipboardCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "validations", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
+  { title: "Sécurité & Accès", description: "Hub centralisé : utilisateurs, rôles, permissions, audit, self-hosting", url: "/securite", icon: IconSecurity, category: "Configuration", permissionModule: "securite", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
+  { title: "Validations", description: "Demandes d'approbation et règles", url: "/validations", icon: IconValidation, category: "Configuration", permissionModule: "validations", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
   { title: "Paramètres", description: "Référentiels, utilisateurs et configuration", url: "/parametres", icon: IconSettings, category: "Configuration", permissionModule: "parametres", accent: "from-slate-500/15 to-slate-500/5 text-slate-400" },
-  { title: "Audit & Traçabilité", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: ShieldCheck as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "audit", accent: "from-red-500/15 to-red-500/5 text-red-500" },
-  { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: Bell as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "notifications", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
-  { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/recherche", icon: Search as unknown as React.FC<{ size?: number; className?: string }>, category: "Configuration", permissionModule: "recherche", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
+  { title: "Audit & Traçabilité", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: IconAudit, category: "Configuration", permissionModule: "audit", accent: "from-red-500/15 to-red-500/5 text-red-500" },
+  { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: IconBell, category: "Configuration", permissionModule: "notifications", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
+  { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/recherche", icon: IconSearch, category: "Configuration", permissionModule: "recherche", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
 ];
 
 const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Production", "Qualité", "Inventaire", "Configuration"];
@@ -84,8 +84,8 @@ const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance"
 const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: string }>> = {
   Maintenance: IconMaintenance,
   Production: IconProduction,
-  Qualité: ShieldCheck as unknown as React.FC<{ size?: number; className?: string }>,
-  Inventaire: ClipboardList as unknown as React.FC<{ size?: number; className?: string }>,
+  Qualité: IconControl,
+  Inventaire: IconInventory,
   Configuration: IconSettings,
 };
 

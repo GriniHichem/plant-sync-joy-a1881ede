@@ -39,6 +39,7 @@ interface FormState {
   is_active: boolean;
   is_required: boolean;
   validator_roles: string[];
+  validator_users: string[];
   auto_approve_if_low_risk: boolean;
   conditions: CondTree;
 }
@@ -46,9 +47,11 @@ interface FormState {
 const EMPTY: FormState = {
   name: "", description: "", module: "pdr_stock", entity_type: "", action_type: "",
   enforcement: "post_hoc", priority: "medium", is_active: true, is_required: true,
-  validator_roles: [], auto_approve_if_low_risk: false,
+  validator_roles: [], validator_users: [], auto_approve_if_low_risk: false,
   conditions: { combinator: "all", rules: [] },
 };
+
+interface ProfileOption { user_id: string; name: string }
 
 export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
   const [form, setForm] = useState<FormState>(EMPTY);

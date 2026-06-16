@@ -361,6 +361,19 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
               <Label>Validation obligatoire</Label>
               <Switch checked={form.is_required} onCheckedChange={(v) => setForm({ ...form, is_required: v })} />
             </div>
+            <div className="flex items-center justify-between rounded-md border p-2 col-span-2">
+              <div>
+                <Label>Auto-approuver si risque faible</Label>
+                <p className="text-xs text-muted-foreground">
+                  Les demandes a posteriori de priorité « faible » sont approuvées automatiquement.
+                </p>
+              </div>
+              <Switch
+                checked={form.auto_approve_if_low_risk}
+                onCheckedChange={(v) => setForm({ ...form, auto_approve_if_low_risk: v })}
+                disabled={form.enforcement === "blocking"}
+              />
+            </div>
           </div>
 
           {/* Preflight */}

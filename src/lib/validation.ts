@@ -99,14 +99,72 @@ export interface CreateValidationRequestPayload {
 }
 
 // =============================================
-// Conditions matcher (simple OR/eq + numeric thresholds)
+// Conditions matcher
+// Supports two formats:
+//  1. Native builder format: { combinator: "all"|"any", rules: [{field, op, value}] }
+//  2. Legacy format: { key: value }, arrays, { or: [...] }, numeric shortcuts
+// Both are evaluated identically so the admin UI reflects exactly what runs.
 // =============================================
+export type CondOperator = "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "contains";
+export interface CondLeaf {
+  field: string;
+  op: CondOperator;
+  value: string | number | boolean;
+}
+export interface CondTreeNative {
+  combinator: "all" | "any";
+  rules: CondLeaf[];
+}
+
+function isNativeTree(c: Record<string, unknown>): c is unknown as CondTreeNative {
+  return Array.isArray((c as { rules?: unknown }).rules)
+    && typeof (c as { combinator?: unknown }).combinator === "string";
+}
+
+function evalLeaf(leaf: CondLeaf, context: Record<string, unknown>): boolean {
+  const actual = context[leaf.field];
+  const expected = leaf.value;
+
+  switch (leaf.op) {
+    case "eq":
+      // tolerant equality (string/number coercion)
+      // eslint-disable-next-line eqeqeq
+      return actual == expected;
+    case "neq":
+      // eslint-disable-next-line eqeqeq
+      return actual != expected;
+    case "gt":
+      return Number(actual) > Number(expected);
+    case "gte":
+      return Number(actual) >= Number(expected);
+    case "lt":
+      return Number(actual) < Number(expected);
+    case "lte":
+      return Number(actual) <= Number(expected);
+    case "contains":
+      return String(actual ?? "").toLowerCase().includes(String(expected ?? "").toLowerCase());
+    default:
+      return false;
+  }
+}
+
 export function matchConditions(
   conditions: Record<string, unknown> | null,
   context: Record<string, unknown> = {}
 ): boolean {
   if (!conditions) return true;
 
+  // --- Native builder format ---
+  if (isNativeTree(conditions)) {
+    const tree = conditions as unknown as CondTreeNative;
+    if (!tree.rules || tree.rules.length === 0) return true;
+    if (tree.combinator === "any") {
+      return tree.rules.some((leaf) => evalLeaf(leaf, context));
+    }
+    return tree.rules.every((leaf) => evalLeaf(leaf, context));
+  }
+
+  // --- Legacy format ---
   // OR group
   const orGroup = conditions.or as Array<Record<string, unknown>> | undefined;
   if (Array.isArray(orGroup)) {
@@ -144,6 +202,19 @@ export function matchConditions(
   }
   return true;
 }
+
+/** Number of conditions in a rule — used to rank specificity. */
+export function countConditions(conditions: Record<string, unknown> | null): number {
+  if (!conditions) return 0;
+  if (isNativeTree(conditions)) return (conditions as unknown as CondTreeNative).rules.length;
+  const orGroup = conditions.or as unknown[] | undefined;
+  if (Array.isArray(orGroup)) return orGroup.length;
+  return Object.keys(conditions).filter((k) => k !== "or").length;
+}
+
+const PRIORITY_RANK: Record<ValidationPriority, number> = {
+  critical: 4, high: 3, medium: 2, low: 1,
+};
 
 // =============================================
 // Check if validation is required for an action

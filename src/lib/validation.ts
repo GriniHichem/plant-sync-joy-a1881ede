@@ -242,12 +242,21 @@ export async function checkValidationRequired(
     const { data: rules } = await q;
     if (!rules || rules.length === 0) return { rule: null, enforcement: "none" };
 
-    for (const r of rules) {
-      const rule = r as unknown as ValidationRule;
-      if (matchConditions(rule.conditions, params.context ?? {})) {
-        return { rule, enforcement: rule.enforcement };
-      }
-    }
+    // Deterministic selection: among matching rules, prefer higher priority,
+    // then a stricter entity_type match, then more specific (more conditions).
+    const matching = (rules as unknown as ValidationRule[])
+      .filter((rule) => matchConditions(rule.conditions, params.context ?? {}))
+      .sort((a, b) => {
+        const p = PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority];
+        if (p !== 0) return p;
+        const ea = a.entity_type ? 1 : 0;
+        const eb = b.entity_type ? 1 : 0;
+        if (eb !== ea) return eb - ea;
+        return countConditions(b.conditions) - countConditions(a.conditions);
+      });
+
+    const rule = matching[0];
+    if (rule) return { rule, enforcement: rule.enforcement };
     return { rule: null, enforcement: "none" };
   } catch (e) {
     if (typeof console !== "undefined") console.warn("[validation] check failed", e);

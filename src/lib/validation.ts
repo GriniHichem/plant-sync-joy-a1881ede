@@ -329,6 +329,7 @@ export async function createValidationRequest(
     submitted_by_name: user.name,
     submitted_by_email: user.email,
     assigned_validator_role: rule?.validator_roles?.[0] ?? null,
+    assigned_validator_user_id: rule?.validator_users?.[0] ?? null,
     title: payload.title,
     description: payload.description ?? "",
     justification: payload.justification ?? null,

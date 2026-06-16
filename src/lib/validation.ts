@@ -339,7 +339,8 @@ export async function createValidationRequest(
     action_url: payload.action_url ?? null,
     submitted_at: new Date().toISOString(),
     applied_at: enforcement === "post_hoc" ? new Date().toISOString() : null,
-  };
+    validated_at: autoApprove ? new Date().toISOString() : null,
+    validation_comment: autoApprove ? "Auto-approuvée (risque faible)" : null,
 
   const { data, error } = await supabase
     .from("validation_requests")

@@ -59,6 +59,22 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
   const [expertMode, setExpertMode] = useState(false);
   const [expertJson, setExpertJson] = useState("");
   const [forceWarnings, setForceWarnings] = useState(false);
+  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id,first_name,last_name")
+        .order("first_name");
+      const opts: ProfileOption[] = (data ?? []).map((p: { user_id: string; first_name: string | null; last_name: string | null }) => ({
+        user_id: p.user_id,
+        name: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || p.user_id.slice(0, 8),
+      }));
+      setProfiles(opts);
+    })();
+  }, [open]);
 
   useEffect(() => {
     if (rule) {
@@ -73,6 +89,7 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
         is_active: rule.is_active ?? true,
         is_required: rule.is_required ?? true,
         validator_roles: rule.validator_roles ?? [],
+        validator_users: rule.validator_users ?? [],
         auto_approve_if_low_risk: rule.auto_approve_if_low_risk ?? false,
         conditions: fromAnyConditions(rule.conditions),
       });

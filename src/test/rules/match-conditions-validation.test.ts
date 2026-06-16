@@ -79,10 +79,29 @@ describe("matchConditions — native builder format", () => {
 describe("matchConditions — legacy format still supported", () => {
   it("min_duration_minutes / ecart_seuil_pct / or", () => {
     expect(matchConditions({ min_duration_minutes: 60 }, { duration_minutes: 90 })).toBe(true);
+    expect(matchConditions({ min_duration_minutes: 60 }, { duration_minutes: 30 })).toBe(false);
     expect(matchConditions({ ecart_seuil_pct: 10 }, { ecart_pct: -15 })).toBe(true);
+    expect(matchConditions({ ecart_seuil_pct: 10 }, { ecart_pct: -5 })).toBe(false);
     expect(matchConditions({ or: [{ priority: "critical" }] }, { priority: "critical" })).toBe(true);
   });
+
+  it("array equality membership", () => {
+    expect(matchConditions({ statut: ["a", "b"] }, { statut: "b" })).toBe(true);
+    expect(matchConditions({ statut: ["a", "b"] }, { statut: "c" })).toBe(false);
+  });
+
+  it("min_age_hours threshold", () => {
+    expect(matchConditions({ min_age_hours: 24 }, { age_hours: 48 })).toBe(true);
+    expect(matchConditions({ min_age_hours: 24 }, { age_hours: 1 })).toBe(false);
+  });
+
+  it("plain key equality", () => {
+    expect(matchConditions({ priority: "high" }, { priority: "high" })).toBe(true);
+    expect(matchConditions({ priority: "high" }, { priority: "low" })).toBe(false);
+  });
 });
+
+
 
 describe("countConditions", () => {
   it("counts native rules, or groups, plain keys", () => {

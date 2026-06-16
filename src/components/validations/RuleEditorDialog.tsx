@@ -283,6 +283,35 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
                 );
               })}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Tous les utilisateurs ayant l'un de ces rôles pourront traiter la demande.
+            </p>
+          </div>
+
+          {/* Validateurs nominatifs */}
+          <div>
+            <Label>Validateurs nominatifs (optionnel)</Label>
+            <div className="flex flex-wrap gap-2 mt-2 max-h-32 overflow-y-auto">
+              {profiles.length === 0 && (
+                <span className="text-xs text-muted-foreground italic">Aucun utilisateur chargé.</span>
+              )}
+              {profiles.map((p) => {
+                const sel = form.validator_users.includes(p.user_id);
+                return (
+                  <Badge
+                    key={p.user_id}
+                    variant={sel ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => toggleUser(p.user_id)}
+                  >
+                    {p.name}
+                  </Badge>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Le premier validateur nominatif sera assigné directement à la demande.
+            </p>
           </div>
 
           {/* Conditions */}

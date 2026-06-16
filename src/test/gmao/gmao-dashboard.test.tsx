@@ -44,6 +44,7 @@ vi.mock("@/integrations/supabase/client", () => ({
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: "/", search: "", hash: "", state: null, key: "default" }),
 }));
 
 import Dashboard from "@/pages/Dashboard";

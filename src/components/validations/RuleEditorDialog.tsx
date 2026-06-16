@@ -119,12 +119,17 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
     action_type: form.action_type,
     enforcement: form.enforcement,
     validator_roles: form.validator_roles,
+    validator_users: form.validator_users,
     conditions: expertMode ? expertJson : conditionsObj,
     allowCustom: false,
   }), [form, expertMode, expertJson, conditionsObj]);
 
   const toggleRole = (r: string) => {
     setForm({ ...form, validator_roles: form.validator_roles.includes(r) ? form.validator_roles.filter((x) => x !== r) : [...form.validator_roles, r] });
+  };
+
+  const toggleUser = (uid: string) => {
+    setForm({ ...form, validator_users: form.validator_users.includes(uid) ? form.validator_users.filter((x) => x !== uid) : [...form.validator_users, uid] });
   };
 
   const save = async () => {

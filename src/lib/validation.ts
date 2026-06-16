@@ -116,7 +116,7 @@ export interface CondTreeNative {
   rules: CondLeaf[];
 }
 
-function isNativeTree(c: Record<string, unknown>): c is unknown as CondTreeNative {
+function isNativeTree(c: Record<string, unknown>): boolean {
   return Array.isArray((c as { rules?: unknown }).rules)
     && typeof (c as { combinator?: unknown }).combinator === "string";
 }

@@ -13,7 +13,7 @@ import {
   IconConsumption, IconStop, IconSettings, IconMaintenance, IconProduction,
   IconOrganes, IconJournal, IconHistory, IconKpi, IconControl,
   IconNc, IconAction, IconTrace, IconReport, IconInventory,
-  IconCampaign, IconSecurity, IconValidation, IconAudit, IconBell,
+  IconCampaign, IconSecurity, IconValidation, IconAudit, IconBell, IconSearch,
 } from "@/components/icons/IndustrialIcons";
 import { usePermissions } from "@/hooks/usePermissions";
 

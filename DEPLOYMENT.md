@@ -3,6 +3,51 @@
 Ce guide explique comment déployer **Prod-in-Time** sur votre propre serveur
 Ubuntu avec une instance Supabase locale, en partant d'une base **100% vide**.
 
+## ⭐ Méthode recommandée : le baseline consolidé (fiable, garanti)
+
+Les 85 migrations incrémentales peuvent échouer **en cascade** sur une base
+vierge (une seule migration en erreur bloque toutes les suivantes → des modules
+et des pages entières se retrouvent sans tables). Pour éviter cela, le projet
+fournit un **baseline unique** qui crée **100% du schéma en une seule passe** :
+
+```
+supabase/baseline/00000000000000_baseline.sql
+```
+
+Ce fichier est généré directement depuis la base de référence avec
+`pg_dump` (source de vérité) et contient **tout** : types/enums, 96 tables,
+fonctions, triggers, RLS, `GRANT` Data API, buckets storage et politiques
+storage. Il a été **testé sur une base PostgreSQL vierge** et s'applique sans
+erreur. Il ne contient **aucune donnée métier ni utilisateur de test**.
+
+### Déploiement (recommandé)
+
+```bash
+# Sur votre serveur, une fois Supabase démarré et la base 'postgres' accessible :
+psql "$DATABASE_URL" -f supabase/baseline/00000000000000_baseline.sql
+```
+
+> `$DATABASE_URL` = la chaîne de connexion de votre Postgres local
+> (ex : `postgres://postgres:motdepasse@localhost:5432/postgres`).
+
+C'est tout : la base est complète, sécurisée par RLS, et exploitable
+immédiatement par l'API (Data API) et par l'application.
+
+### Régénérer le baseline (optionnel)
+
+Si vous faites évoluer le schéma sur la base de référence, régénérez le fichier :
+
+```bash
+SUPABASE_DB_URL="postgres://...source..." ./scripts/generate-baseline.sh
+```
+
+---
+
+## Méthode alternative : migrations incrémentales
+
+> ⚠️ Plus fragile. À n'utiliser que si vous tenez à conserver l'historique des
+> migrations. Préférez le baseline ci-dessus pour un déploiement neuf.
+
 ## Principe : schéma vs données
 
 | Élément | Contenu | En production |

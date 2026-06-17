@@ -185,7 +185,7 @@
 |--------|-------------|
 | Frontend | React 18 + TypeScript 5 + Vite 5 |
 | UI | Tailwind CSS v3 + shadcn/ui + design tokens HSL |
-| Backend | Lovable Cloud (PostgreSQL, Auth, Storage, Edge Functions) |
+| Backend | Backend cloud (PostgreSQL, Auth, Storage, Edge Functions) |
 | Sécurité | RLS PostgreSQL + RBAC applicatif via `has_role()` |
 | Temps réel | Mises à jour live sur tickets, stocks, déclarations, shifts |
 
@@ -312,7 +312,7 @@ Toast affiché : *« Compte créé — Vérifiez votre email pour confirmer votr
 2. ⚠️ Si l'email est vide → toast d'erreur : *« Saisissez votre adresse email puis cliquez… »*.
 3. ✉️ Un email contenant un lien temporaire est envoyé.
 4. Le lien redirige vers `/reset-password` où vous saisissez un nouveau mot de passe.
-5. ⏱️ Le lien expire au bout d'une période courte (sécurité Lovable Cloud).
+5. ⏱️ Le lien expire au bout d'une période courte (sécurité du backend).
 
 > 📌 **Exemple** : Ahmed a oublié son mot de passe. Il saisit `ahmed@laiterie-amour.dz`, clique « Mot de passe oublié ? », reçoit un mail dans la minute, clique le lien, saisit `MonNouveauMdp2026!`, et se reconnecte immédiatement.
 

@@ -52,7 +52,7 @@ export default function PortabilityTab() {
       <Card>
         <CardHeader><CardTitle>Guide self-hosting</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <p>Pour migrer hors Lovable :</p>
+          <p>Pour migrer vers votre propre infrastructure :</p>
           <ol className="list-decimal pl-5 space-y-1">
             <li>Provisionnez une instance Supabase (cloud ou auto-hébergée).</li>
             <li>Appliquez les migrations <code>supabase/migrations/*.sql</code> via la CLI Supabase.</li>

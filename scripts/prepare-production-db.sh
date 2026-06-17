@@ -303,6 +303,28 @@ if grep -RInE "$ENV_URLS" "$OUT_MIG" >/dev/null; then
   exit 1
 fi
 echo "✓ Aucune URL d'environnement figée."
+echo "→ Vérification anti-données utilisateur et idempotence storage..."
+python3 - "$OUT_MIG" <<'PY'
+import pathlib, re, sys
+root = pathlib.Path(sys.argv[1])
+errors = []
+for p in sorted(root.glob("*.sql")):
+    s = p.read_text(encoding="utf-8")
+    if re.search(r"INSERT\s+INTO\s+public\.user_roles\b", s, re.I):
+        errors.append(f"{p.name}: insertion directe dans public.user_roles")
+    if re.search(r"Équipe\s+[ABCD]|Equipe\s+[ABCD]", s, re.I):
+        errors.append(f"{p.name}: équipes de démonstration encore présentes")
+    for m in re.finditer(r"INSERT\s+INTO\s+storage\.buckets\b.*?;", s, re.I | re.S):
+        if not re.search(r"ON\s+CONFLICT\s*\(", m.group(0), re.I):
+            line = s[:m.start()].count("\n") + 1
+            errors.append(f"{p.name}:{line}: bucket storage sans ON CONFLICT")
+if errors:
+    print("⚠️  Vérification échouée :")
+    for e in errors:
+        print(" -", e)
+    sys.exit(1)
+print("✓ Aucune insertion user_roles, aucune équipe démo, buckets idempotents.")
+PY
 echo ""
 echo "Migrations propres générées dans : $OUT_MIG"
 echo "Le fichier seed.sql n'a PAS été copié (base vierge garantie)."

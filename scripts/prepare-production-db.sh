@@ -98,6 +98,9 @@ s = open(p, encoding="utf-8").read()
 # Remplace:  SELECT cron.unschedule('job');   (avec ou sans SELECT/PERFORM)
 # par un bloc DO ... gardé par un test d'existence + tolérance pg_cron absent.
 def repl(m):
+    # Ne pas retraiter un appel déjà encapsulé dans notre bloc sûr.
+    if "$cron_cleanup$" in s[max(0, m.start() - 200):m.start()]:
+        return m.group(0)
     job = m.group("job")
     return (
         "DO $cron_cleanup$\n"

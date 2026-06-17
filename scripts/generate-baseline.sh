@@ -31,9 +31,16 @@ TMP_PUBLIC="$(mktemp)"
 TMP_STORAGE="$(mktemp)"
 
 echo "→ Dump du schéma public (tables, fonctions, triggers, RLS, GRANT)..."
+# On retire :
+#  - les méta-commandes psql \restrict
+#  - le CREATE SCHEMA public (déjà présent sur une base Supabase)
+#  - les GRANT vers des rôles spécifiques à l'environnement source
+#    (postgres, sandbox_exec, supabase_admin, authenticator, dashboard_user...)
+#    qui n'existent pas sur une instance auto-hébergée.
 pg_dump "$SUPABASE_DB_URL" --schema-only --schema=public --no-owner --no-comments \
   | grep -vE '^\\(un)?restrict' \
   | grep -vE '^CREATE SCHEMA public;$' \
+  | grep -vE '^GRANT .* TO (postgres|sandbox_exec|supabase_admin|authenticator|dashboard_user|supabase_read_only_user|supabase_storage_admin|supabase_auth_admin);$' \
   > "$TMP_PUBLIC"
 
 echo "→ Dump des politiques storage.objects..."

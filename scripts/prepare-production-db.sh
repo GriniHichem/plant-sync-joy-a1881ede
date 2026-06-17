@@ -312,7 +312,7 @@ for p in sorted(root.glob("*.sql")):
     s = p.read_text(encoding="utf-8")
     if re.search(r"INSERT\s+INTO\s+public\.user_roles\b", s, re.I):
         errors.append(f"{p.name}: insertion directe dans public.user_roles")
-    if re.search(r"Équipe\s+[ABCD]|Equipe\s+[ABCD]", s, re.I):
+    if re.search(r"(?:Équipe|Equipe)\s+[ABCD]\b", s, re.I):
         errors.append(f"{p.name}: équipes de démonstration encore présentes")
     for m in re.finditer(r"INSERT\s+INTO\s+storage\.buckets\b.*?;", s, re.I | re.S):
         if not re.search(r"ON\s+CONFLICT\s*\(", m.group(0), re.I):

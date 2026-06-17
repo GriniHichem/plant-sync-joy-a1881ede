@@ -40,12 +40,13 @@ SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
 SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
+SET client_encoding = 'SQL_ASCII';
+SET standard_conforming_strings = off;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
+SET escape_string_warning = off;
 SET row_security = off;
 
 --
@@ -12485,11 +12486,9 @@ ALTER TABLE public.validation_rules ENABLE ROW LEVEL SECURITY;
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: -
 --
 
-GRANT USAGE ON SCHEMA public TO postgres;
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT USAGE ON SCHEMA public TO service_role;
-GRANT USAGE ON SCHEMA public TO sandbox_exec;
 
 
 --
@@ -12499,7 +12498,6 @@ GRANT USAGE ON SCHEMA public TO sandbox_exec;
 GRANT ALL ON FUNCTION public.apply_maintenance_shift_schedules() TO anon;
 GRANT ALL ON FUNCTION public.apply_maintenance_shift_schedules() TO authenticated;
 GRANT ALL ON FUNCTION public.apply_maintenance_shift_schedules() TO service_role;
-GRANT ALL ON FUNCTION public.apply_maintenance_shift_schedules() TO sandbox_exec;
 
 
 --
@@ -12509,7 +12507,6 @@ GRANT ALL ON FUNCTION public.apply_maintenance_shift_schedules() TO sandbox_exec
 GRANT ALL ON FUNCTION public.articles_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.articles_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.articles_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.articles_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12519,7 +12516,6 @@ GRANT ALL ON FUNCTION public.articles_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.audit_logs_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.audit_logs_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.audit_logs_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.audit_logs_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12529,7 +12525,6 @@ GRANT ALL ON FUNCTION public.audit_logs_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.auto_close_stale_shifts() TO anon;
 GRANT ALL ON FUNCTION public.auto_close_stale_shifts() TO authenticated;
 GRANT ALL ON FUNCTION public.auto_close_stale_shifts() TO service_role;
-GRANT ALL ON FUNCTION public.auto_close_stale_shifts() TO sandbox_exec;
 
 
 --
@@ -12539,7 +12534,6 @@ GRANT ALL ON FUNCTION public.auto_close_stale_shifts() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.can_manage_notification_rule(_user_id uuid, _module text) TO anon;
 GRANT ALL ON FUNCTION public.can_manage_notification_rule(_user_id uuid, _module text) TO authenticated;
 GRANT ALL ON FUNCTION public.can_manage_notification_rule(_user_id uuid, _module text) TO service_role;
-GRANT ALL ON FUNCTION public.can_manage_notification_rule(_user_id uuid, _module text) TO sandbox_exec;
 
 
 --
@@ -12549,7 +12543,6 @@ GRANT ALL ON FUNCTION public.can_manage_notification_rule(_user_id uuid, _module
 GRANT ALL ON FUNCTION public.can_manage_shifts(_user_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_manage_shifts(_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_manage_shifts(_user_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.can_manage_shifts(_user_id uuid) TO sandbox_exec;
 
 
 --
@@ -12559,7 +12552,6 @@ GRANT ALL ON FUNCTION public.can_manage_shifts(_user_id uuid) TO sandbox_exec;
 GRANT ALL ON FUNCTION public.can_manage_validation_rule(_user_id uuid, _module text) TO anon;
 GRANT ALL ON FUNCTION public.can_manage_validation_rule(_user_id uuid, _module text) TO authenticated;
 GRANT ALL ON FUNCTION public.can_manage_validation_rule(_user_id uuid, _module text) TO service_role;
-GRANT ALL ON FUNCTION public.can_manage_validation_rule(_user_id uuid, _module text) TO sandbox_exec;
 
 
 --
@@ -12569,7 +12561,6 @@ GRANT ALL ON FUNCTION public.can_manage_validation_rule(_user_id uuid, _module t
 GRANT ALL ON FUNCTION public.can_validate_request(_user_id uuid, _request_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.can_validate_request(_user_id uuid, _request_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.can_validate_request(_user_id uuid, _request_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.can_validate_request(_user_id uuid, _request_id uuid) TO sandbox_exec;
 
 
 --
@@ -12579,7 +12570,6 @@ GRANT ALL ON FUNCTION public.can_validate_request(_user_id uuid, _request_id uui
 GRANT ALL ON FUNCTION public.check_document_permission(_user_id uuid, _entity_type text, _action text) TO anon;
 GRANT ALL ON FUNCTION public.check_document_permission(_user_id uuid, _entity_type text, _action text) TO authenticated;
 GRANT ALL ON FUNCTION public.check_document_permission(_user_id uuid, _entity_type text, _action text) TO service_role;
-GRANT ALL ON FUNCTION public.check_document_permission(_user_id uuid, _entity_type text, _action text) TO sandbox_exec;
 
 
 --
@@ -12589,7 +12579,6 @@ GRANT ALL ON FUNCTION public.check_document_permission(_user_id uuid, _entity_ty
 GRANT ALL ON FUNCTION public.check_permission(_user_id uuid, _module text, _action text) TO anon;
 GRANT ALL ON FUNCTION public.check_permission(_user_id uuid, _module text, _action text) TO authenticated;
 GRANT ALL ON FUNCTION public.check_permission(_user_id uuid, _module text, _action text) TO service_role;
-GRANT ALL ON FUNCTION public.check_permission(_user_id uuid, _module text, _action text) TO sandbox_exec;
 
 
 --
@@ -12599,7 +12588,6 @@ GRANT ALL ON FUNCTION public.check_permission(_user_id uuid, _module text, _acti
 GRANT ALL ON FUNCTION public.consumptions_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.consumptions_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.consumptions_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.consumptions_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12609,7 +12597,6 @@ GRANT ALL ON FUNCTION public.consumptions_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.derive_shift_type_from_now() TO anon;
 GRANT ALL ON FUNCTION public.derive_shift_type_from_now() TO authenticated;
 GRANT ALL ON FUNCTION public.derive_shift_type_from_now() TO service_role;
-GRANT ALL ON FUNCTION public.derive_shift_type_from_now() TO sandbox_exec;
 
 
 --
@@ -12619,7 +12606,6 @@ GRANT ALL ON FUNCTION public.derive_shift_type_from_now() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.ensure_my_production_shift_session() TO anon;
 GRANT ALL ON FUNCTION public.ensure_my_production_shift_session() TO authenticated;
 GRANT ALL ON FUNCTION public.ensure_my_production_shift_session() TO service_role;
-GRANT ALL ON FUNCTION public.ensure_my_production_shift_session() TO sandbox_exec;
 
 
 --
@@ -12629,7 +12615,6 @@ GRANT ALL ON FUNCTION public.ensure_my_production_shift_session() TO sandbox_exe
 GRANT ALL ON FUNCTION public.ensure_my_production_shifts() TO anon;
 GRANT ALL ON FUNCTION public.ensure_my_production_shifts() TO authenticated;
 GRANT ALL ON FUNCTION public.ensure_my_production_shifts() TO service_role;
-GRANT ALL ON FUNCTION public.ensure_my_production_shifts() TO sandbox_exec;
 
 
 --
@@ -12639,7 +12624,6 @@ GRANT ALL ON FUNCTION public.ensure_my_production_shifts() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.ensure_my_quality_shifts() TO anon;
 GRANT ALL ON FUNCTION public.ensure_my_quality_shifts() TO authenticated;
 GRANT ALL ON FUNCTION public.ensure_my_quality_shifts() TO service_role;
-GRANT ALL ON FUNCTION public.ensure_my_quality_shifts() TO sandbox_exec;
 
 
 --
@@ -12649,7 +12633,6 @@ GRANT ALL ON FUNCTION public.ensure_my_quality_shifts() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.ensure_production_shift_session(p_of_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.ensure_production_shift_session(p_of_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.ensure_production_shift_session(p_of_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.ensure_production_shift_session(p_of_id uuid) TO sandbox_exec;
 
 
 --
@@ -12659,7 +12642,6 @@ GRANT ALL ON FUNCTION public.ensure_production_shift_session(p_of_id uuid) TO sa
 GRANT ALL ON FUNCTION public.entity_documents_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.entity_documents_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.entity_documents_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.entity_documents_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12669,7 +12651,6 @@ GRANT ALL ON FUNCTION public.entity_documents_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.equipements_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.equipements_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.equipements_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.equipements_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12679,7 +12660,6 @@ GRANT ALL ON FUNCTION public.equipements_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.fts_build(VARIADIC parts text[]) TO anon;
 GRANT ALL ON FUNCTION public.fts_build(VARIADIC parts text[]) TO authenticated;
 GRANT ALL ON FUNCTION public.fts_build(VARIADIC parts text[]) TO service_role;
-GRANT ALL ON FUNCTION public.fts_build(VARIADIC parts text[]) TO sandbox_exec;
 
 
 --
@@ -12689,7 +12669,6 @@ GRANT ALL ON FUNCTION public.fts_build(VARIADIC parts text[]) TO sandbox_exec;
 GRANT ALL ON FUNCTION public.generate_nc_number() TO anon;
 GRANT ALL ON FUNCTION public.generate_nc_number() TO authenticated;
 GRANT ALL ON FUNCTION public.generate_nc_number() TO service_role;
-GRANT ALL ON FUNCTION public.generate_nc_number() TO sandbox_exec;
 
 
 --
@@ -12699,7 +12678,6 @@ GRANT ALL ON FUNCTION public.generate_nc_number() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.generate_of_numero() TO anon;
 GRANT ALL ON FUNCTION public.generate_of_numero() TO authenticated;
 GRANT ALL ON FUNCTION public.generate_of_numero() TO service_role;
-GRANT ALL ON FUNCTION public.generate_of_numero() TO sandbox_exec;
 
 
 --
@@ -12709,7 +12687,6 @@ GRANT ALL ON FUNCTION public.generate_of_numero() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.generate_ticket_numero() TO anon;
 GRANT ALL ON FUNCTION public.generate_ticket_numero() TO authenticated;
 GRANT ALL ON FUNCTION public.generate_ticket_numero() TO service_role;
-GRANT ALL ON FUNCTION public.generate_ticket_numero() TO sandbox_exec;
 
 
 --
@@ -12719,7 +12696,6 @@ GRANT ALL ON FUNCTION public.generate_ticket_numero() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.get_active_shift_context(_user_id uuid, _at timestamp with time zone) TO anon;
 GRANT ALL ON FUNCTION public.get_active_shift_context(_user_id uuid, _at timestamp with time zone) TO authenticated;
 GRANT ALL ON FUNCTION public.get_active_shift_context(_user_id uuid, _at timestamp with time zone) TO service_role;
-GRANT ALL ON FUNCTION public.get_active_shift_context(_user_id uuid, _at timestamp with time zone) TO sandbox_exec;
 
 
 --
@@ -12729,7 +12705,6 @@ GRANT ALL ON FUNCTION public.get_active_shift_context(_user_id uuid, _at timesta
 GRANT ALL ON FUNCTION public.get_position_counter(p_position_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_position_counter(p_position_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_position_counter(p_position_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.get_position_counter(p_position_id uuid) TO sandbox_exec;
 
 
 --
@@ -12739,7 +12714,6 @@ GRANT ALL ON FUNCTION public.get_position_counter(p_position_id uuid) TO sandbox
 GRANT ALL ON FUNCTION public.get_quality_indicators_for_of(p_of_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_quality_indicators_for_of(p_of_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_quality_indicators_for_of(p_of_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.get_quality_indicators_for_of(p_of_id uuid) TO sandbox_exec;
 
 
 --
@@ -12749,7 +12723,6 @@ GRANT ALL ON FUNCTION public.get_quality_indicators_for_of(p_of_id uuid) TO sand
 GRANT ALL ON FUNCTION public.get_recipe_for_of(p_of_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.get_recipe_for_of(p_of_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.get_recipe_for_of(p_of_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.get_recipe_for_of(p_of_id uuid) TO sandbox_exec;
 
 
 --
@@ -12759,7 +12732,6 @@ GRANT ALL ON FUNCTION public.get_recipe_for_of(p_of_id uuid) TO sandbox_exec;
 GRANT ALL ON FUNCTION public.get_scope_shift_context(_user_id uuid, _scope text, _at timestamp with time zone) TO anon;
 GRANT ALL ON FUNCTION public.get_scope_shift_context(_user_id uuid, _scope text, _at timestamp with time zone) TO authenticated;
 GRANT ALL ON FUNCTION public.get_scope_shift_context(_user_id uuid, _scope text, _at timestamp with time zone) TO service_role;
-GRANT ALL ON FUNCTION public.get_scope_shift_context(_user_id uuid, _scope text, _at timestamp with time zone) TO sandbox_exec;
 
 
 --
@@ -12769,7 +12741,6 @@ GRANT ALL ON FUNCTION public.get_scope_shift_context(_user_id uuid, _scope text,
 GRANT ALL ON FUNCTION public.global_search(q text, modules text[], date_from timestamp with time zone, date_to timestamp with time zone, limit_per_module integer) TO anon;
 GRANT ALL ON FUNCTION public.global_search(q text, modules text[], date_from timestamp with time zone, date_to timestamp with time zone, limit_per_module integer) TO authenticated;
 GRANT ALL ON FUNCTION public.global_search(q text, modules text[], date_from timestamp with time zone, date_to timestamp with time zone, limit_per_module integer) TO service_role;
-GRANT ALL ON FUNCTION public.global_search(q text, modules text[], date_from timestamp with time zone, date_to timestamp with time zone, limit_per_module integer) TO sandbox_exec;
 
 
 --
@@ -12779,7 +12750,6 @@ GRANT ALL ON FUNCTION public.global_search(q text, modules text[], date_from tim
 GRANT ALL ON FUNCTION public.handle_new_user() TO anon;
 GRANT ALL ON FUNCTION public.handle_new_user() TO authenticated;
 GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
-GRANT ALL ON FUNCTION public.handle_new_user() TO sandbox_exec;
 
 
 --
@@ -12789,7 +12759,6 @@ GRANT ALL ON FUNCTION public.handle_new_user() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.has_audit_access(_user_id uuid, _module text) TO anon;
 GRANT ALL ON FUNCTION public.has_audit_access(_user_id uuid, _module text) TO authenticated;
 GRANT ALL ON FUNCTION public.has_audit_access(_user_id uuid, _module text) TO service_role;
-GRANT ALL ON FUNCTION public.has_audit_access(_user_id uuid, _module text) TO sandbox_exec;
 
 
 --
@@ -12799,7 +12768,6 @@ GRANT ALL ON FUNCTION public.has_audit_access(_user_id uuid, _module text) TO sa
 GRANT ALL ON FUNCTION public.has_quality_permission(_user_id uuid, _action text) TO anon;
 GRANT ALL ON FUNCTION public.has_quality_permission(_user_id uuid, _action text) TO authenticated;
 GRANT ALL ON FUNCTION public.has_quality_permission(_user_id uuid, _action text) TO service_role;
-GRANT ALL ON FUNCTION public.has_quality_permission(_user_id uuid, _action text) TO sandbox_exec;
 
 
 --
@@ -12809,7 +12777,6 @@ GRANT ALL ON FUNCTION public.has_quality_permission(_user_id uuid, _action text)
 GRANT ALL ON FUNCTION public.has_role(_user_id uuid, _role public.app_role) TO anon;
 GRANT ALL ON FUNCTION public.has_role(_user_id uuid, _role public.app_role) TO authenticated;
 GRANT ALL ON FUNCTION public.has_role(_user_id uuid, _role public.app_role) TO service_role;
-GRANT ALL ON FUNCTION public.has_role(_user_id uuid, _role public.app_role) TO sandbox_exec;
 
 
 --
@@ -12819,7 +12786,6 @@ GRANT ALL ON FUNCTION public.has_role(_user_id uuid, _role public.app_role) TO s
 GRANT ALL ON FUNCTION public.interventions_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.interventions_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.interventions_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.interventions_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12829,7 +12795,6 @@ GRANT ALL ON FUNCTION public.interventions_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.inv_assignment_authorized_families(p_assignment_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.inv_assignment_authorized_families(p_assignment_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.inv_assignment_authorized_families(p_assignment_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.inv_assignment_authorized_families(p_assignment_id uuid) TO sandbox_exec;
 
 
 --
@@ -12839,7 +12804,6 @@ GRANT ALL ON FUNCTION public.inv_assignment_authorized_families(p_assignment_id 
 GRANT ALL ON FUNCTION public.inv_campaign_authorized_families(p_campaign_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.inv_campaign_authorized_families(p_campaign_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.inv_campaign_authorized_families(p_campaign_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.inv_campaign_authorized_families(p_campaign_id uuid) TO sandbox_exec;
 
 
 --
@@ -12849,7 +12813,6 @@ GRANT ALL ON FUNCTION public.inv_campaign_authorized_families(p_campaign_id uuid
 GRANT ALL ON FUNCTION public.inv_close_campaign(p_campaign_id uuid, p_motif text) TO anon;
 GRANT ALL ON FUNCTION public.inv_close_campaign(p_campaign_id uuid, p_motif text) TO authenticated;
 GRANT ALL ON FUNCTION public.inv_close_campaign(p_campaign_id uuid, p_motif text) TO service_role;
-GRANT ALL ON FUNCTION public.inv_close_campaign(p_campaign_id uuid, p_motif text) TO sandbox_exec;
 
 
 --
@@ -12859,7 +12822,6 @@ GRANT ALL ON FUNCTION public.inv_close_campaign(p_campaign_id uuid, p_motif text
 GRANT ALL ON FUNCTION public.inv_ensure_targets(p_campaign_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.inv_ensure_targets(p_campaign_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.inv_ensure_targets(p_campaign_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.inv_ensure_targets(p_campaign_id uuid) TO sandbox_exec;
 
 
 --
@@ -12869,7 +12831,6 @@ GRANT ALL ON FUNCTION public.inv_ensure_targets(p_campaign_id uuid) TO sandbox_e
 GRANT ALL ON FUNCTION public.inv_family_descendants(p_family_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.inv_family_descendants(p_family_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.inv_family_descendants(p_family_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.inv_family_descendants(p_family_id uuid) TO sandbox_exec;
 
 
 --
@@ -12879,7 +12840,6 @@ GRANT ALL ON FUNCTION public.inv_family_descendants(p_family_id uuid) TO sandbox
 GRANT ALL ON FUNCTION public.inv_open_campaign(p_campaign_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.inv_open_campaign(p_campaign_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.inv_open_campaign(p_campaign_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.inv_open_campaign(p_campaign_id uuid) TO sandbox_exec;
 
 
 --
@@ -12889,7 +12849,6 @@ GRANT ALL ON FUNCTION public.inv_open_campaign(p_campaign_id uuid) TO sandbox_ex
 GRANT ALL ON FUNCTION public.inv_recompute_result(p_target_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.inv_recompute_result(p_target_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.inv_recompute_result(p_target_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.inv_recompute_result(p_target_id uuid) TO sandbox_exec;
 
 
 --
@@ -12899,7 +12858,6 @@ GRANT ALL ON FUNCTION public.inv_recompute_result(p_target_id uuid) TO sandbox_e
 GRANT ALL ON FUNCTION public.inv_register_count(p_target_id uuid, p_qty numeric, p_notes text) TO anon;
 GRANT ALL ON FUNCTION public.inv_register_count(p_target_id uuid, p_qty numeric, p_notes text) TO authenticated;
 GRANT ALL ON FUNCTION public.inv_register_count(p_target_id uuid, p_qty numeric, p_notes text) TO service_role;
-GRANT ALL ON FUNCTION public.inv_register_count(p_target_id uuid, p_qty numeric, p_notes text) TO sandbox_exec;
 
 
 --
@@ -12909,7 +12867,6 @@ GRANT ALL ON FUNCTION public.inv_register_count(p_target_id uuid, p_qty numeric,
 GRANT ALL ON FUNCTION public.is_audit_enabled(_role text, _module text) TO anon;
 GRANT ALL ON FUNCTION public.is_audit_enabled(_role text, _module text) TO authenticated;
 GRANT ALL ON FUNCTION public.is_audit_enabled(_role text, _module text) TO service_role;
-GRANT ALL ON FUNCTION public.is_audit_enabled(_role text, _module text) TO sandbox_exec;
 
 
 --
@@ -12919,7 +12876,6 @@ GRANT ALL ON FUNCTION public.is_audit_enabled(_role text, _module text) TO sandb
 GRANT ALL ON FUNCTION public.is_user_on_shift(_user_id uuid, _scope text, _at timestamp with time zone) TO anon;
 GRANT ALL ON FUNCTION public.is_user_on_shift(_user_id uuid, _scope text, _at timestamp with time zone) TO authenticated;
 GRANT ALL ON FUNCTION public.is_user_on_shift(_user_id uuid, _scope text, _at timestamp with time zone) TO service_role;
-GRANT ALL ON FUNCTION public.is_user_on_shift(_user_id uuid, _scope text, _at timestamp with time zone) TO sandbox_exec;
 
 
 --
@@ -12929,7 +12885,6 @@ GRANT ALL ON FUNCTION public.is_user_on_shift(_user_id uuid, _scope text, _at ti
 GRANT ALL ON FUNCTION public.machines_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.machines_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.machines_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.machines_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12939,7 +12894,6 @@ GRANT ALL ON FUNCTION public.machines_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.notifications_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.notifications_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.notifications_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.notifications_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12949,7 +12903,6 @@ GRANT ALL ON FUNCTION public.notifications_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.notify_shift_event() TO anon;
 GRANT ALL ON FUNCTION public.notify_shift_event() TO authenticated;
 GRANT ALL ON FUNCTION public.notify_shift_event() TO service_role;
-GRANT ALL ON FUNCTION public.notify_shift_event() TO sandbox_exec;
 
 
 --
@@ -12959,7 +12912,6 @@ GRANT ALL ON FUNCTION public.notify_shift_event() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.of_backfill_bom_id() TO anon;
 GRANT ALL ON FUNCTION public.of_backfill_bom_id() TO authenticated;
 GRANT ALL ON FUNCTION public.of_backfill_bom_id() TO service_role;
-GRANT ALL ON FUNCTION public.of_backfill_bom_id() TO sandbox_exec;
 
 
 --
@@ -12969,7 +12921,6 @@ GRANT ALL ON FUNCTION public.of_backfill_bom_id() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.of_close_cascade_shifts() TO anon;
 GRANT ALL ON FUNCTION public.of_close_cascade_shifts() TO authenticated;
 GRANT ALL ON FUNCTION public.of_close_cascade_shifts() TO service_role;
-GRANT ALL ON FUNCTION public.of_close_cascade_shifts() TO sandbox_exec;
 
 
 --
@@ -12979,7 +12930,6 @@ GRANT ALL ON FUNCTION public.of_close_cascade_shifts() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.of_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.of_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.of_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.of_search_refresh() TO sandbox_exec;
 
 
 --
@@ -12989,7 +12939,6 @@ GRANT ALL ON FUNCTION public.of_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.open_my_work_session() TO anon;
 GRANT ALL ON FUNCTION public.open_my_work_session() TO authenticated;
 GRANT ALL ON FUNCTION public.open_my_work_session() TO service_role;
-GRANT ALL ON FUNCTION public.open_my_work_session() TO sandbox_exec;
 
 
 --
@@ -12999,7 +12948,6 @@ GRANT ALL ON FUNCTION public.open_my_work_session() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.organes_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.organes_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.organes_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.organes_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13009,7 +12957,6 @@ GRANT ALL ON FUNCTION public.organes_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.pdr_equivalences_enforce_proposal() TO anon;
 GRANT ALL ON FUNCTION public.pdr_equivalences_enforce_proposal() TO authenticated;
 GRANT ALL ON FUNCTION public.pdr_equivalences_enforce_proposal() TO service_role;
-GRANT ALL ON FUNCTION public.pdr_equivalences_enforce_proposal() TO sandbox_exec;
 
 
 --
@@ -13019,7 +12966,6 @@ GRANT ALL ON FUNCTION public.pdr_equivalences_enforce_proposal() TO sandbox_exec
 GRANT ALL ON FUNCTION public.pdr_family_suppliers_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.pdr_family_suppliers_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.pdr_family_suppliers_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.pdr_family_suppliers_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13029,7 +12975,6 @@ GRANT ALL ON FUNCTION public.pdr_family_suppliers_search_refresh() TO sandbox_ex
 GRANT ALL ON FUNCTION public.pdr_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.pdr_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.pdr_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.pdr_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13039,7 +12984,6 @@ GRANT ALL ON FUNCTION public.pdr_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.pdr_stock_movements_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.pdr_stock_movements_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.pdr_stock_movements_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.pdr_stock_movements_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13049,7 +12993,6 @@ GRANT ALL ON FUNCTION public.pdr_stock_movements_search_refresh() TO sandbox_exe
 GRANT ALL ON FUNCTION public.pdr_suppliers_unique_principal() TO anon;
 GRANT ALL ON FUNCTION public.pdr_suppliers_unique_principal() TO authenticated;
 GRANT ALL ON FUNCTION public.pdr_suppliers_unique_principal() TO service_role;
-GRANT ALL ON FUNCTION public.pdr_suppliers_unique_principal() TO sandbox_exec;
 
 
 --
@@ -13059,7 +13002,6 @@ GRANT ALL ON FUNCTION public.pdr_suppliers_unique_principal() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.preventive_plans_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.preventive_plans_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.preventive_plans_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.preventive_plans_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13069,7 +13011,6 @@ GRANT ALL ON FUNCTION public.preventive_plans_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.production_lines_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.production_lines_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.production_lines_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.production_lines_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13079,7 +13020,6 @@ GRANT ALL ON FUNCTION public.production_lines_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.production_stops_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.production_stops_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.production_stops_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.production_stops_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13089,7 +13029,6 @@ GRANT ALL ON FUNCTION public.production_stops_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.products_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.products_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.products_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.products_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13099,7 +13038,6 @@ GRANT ALL ON FUNCTION public.products_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.qshift_unlink_closed_production() TO anon;
 GRANT ALL ON FUNCTION public.qshift_unlink_closed_production() TO authenticated;
 GRANT ALL ON FUNCTION public.qshift_unlink_closed_production() TO service_role;
-GRANT ALL ON FUNCTION public.qshift_unlink_closed_production() TO sandbox_exec;
 
 
 --
@@ -13109,7 +13047,6 @@ GRANT ALL ON FUNCTION public.qshift_unlink_closed_production() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.quality_actions_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.quality_actions_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_actions_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.quality_actions_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13119,7 +13056,6 @@ GRANT ALL ON FUNCTION public.quality_actions_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.quality_actions_validate() TO anon;
 GRANT ALL ON FUNCTION public.quality_actions_validate() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_actions_validate() TO service_role;
-GRANT ALL ON FUNCTION public.quality_actions_validate() TO sandbox_exec;
 
 
 --
@@ -13129,7 +13065,6 @@ GRANT ALL ON FUNCTION public.quality_actions_validate() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.quality_checks_compute_conformity() TO anon;
 GRANT ALL ON FUNCTION public.quality_checks_compute_conformity() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_checks_compute_conformity() TO service_role;
-GRANT ALL ON FUNCTION public.quality_checks_compute_conformity() TO sandbox_exec;
 
 
 --
@@ -13139,7 +13074,6 @@ GRANT ALL ON FUNCTION public.quality_checks_compute_conformity() TO sandbox_exec
 GRANT ALL ON FUNCTION public.quality_indicator_assignments_validate() TO anon;
 GRANT ALL ON FUNCTION public.quality_indicator_assignments_validate() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_indicator_assignments_validate() TO service_role;
-GRANT ALL ON FUNCTION public.quality_indicator_assignments_validate() TO sandbox_exec;
 
 
 --
@@ -13149,7 +13083,6 @@ GRANT ALL ON FUNCTION public.quality_indicator_assignments_validate() TO sandbox
 GRANT ALL ON FUNCTION public.quality_indicators_validate() TO anon;
 GRANT ALL ON FUNCTION public.quality_indicators_validate() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_indicators_validate() TO service_role;
-GRANT ALL ON FUNCTION public.quality_indicators_validate() TO sandbox_exec;
 
 
 --
@@ -13159,7 +13092,6 @@ GRANT ALL ON FUNCTION public.quality_indicators_validate() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.quality_nc_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.quality_nc_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_nc_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.quality_nc_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13169,7 +13101,6 @@ GRANT ALL ON FUNCTION public.quality_nc_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.quality_nc_validate() TO anon;
 GRANT ALL ON FUNCTION public.quality_nc_validate() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_nc_validate() TO service_role;
-GRANT ALL ON FUNCTION public.quality_nc_validate() TO sandbox_exec;
 
 
 --
@@ -13179,7 +13110,6 @@ GRANT ALL ON FUNCTION public.quality_nc_validate() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.quality_shift_lines_attach_links() TO anon;
 GRANT ALL ON FUNCTION public.quality_shift_lines_attach_links() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_shift_lines_attach_links() TO service_role;
-GRANT ALL ON FUNCTION public.quality_shift_lines_attach_links() TO sandbox_exec;
 
 
 --
@@ -13189,7 +13119,6 @@ GRANT ALL ON FUNCTION public.quality_shift_lines_attach_links() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.quality_shift_refresh_links(p_quality_shift_id uuid) TO anon;
 GRANT ALL ON FUNCTION public.quality_shift_refresh_links(p_quality_shift_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.quality_shift_refresh_links(p_quality_shift_id uuid) TO service_role;
-GRANT ALL ON FUNCTION public.quality_shift_refresh_links(p_quality_shift_id uuid) TO sandbox_exec;
 
 
 --
@@ -13199,7 +13128,6 @@ GRANT ALL ON FUNCTION public.quality_shift_refresh_links(p_quality_shift_id uuid
 GRANT ALL ON FUNCTION public.quality_shifts_close_validate() TO anon;
 GRANT ALL ON FUNCTION public.quality_shifts_close_validate() TO authenticated;
 GRANT ALL ON FUNCTION public.quality_shifts_close_validate() TO service_role;
-GRANT ALL ON FUNCTION public.quality_shifts_close_validate() TO sandbox_exec;
 
 
 --
@@ -13209,7 +13137,6 @@ GRANT ALL ON FUNCTION public.quality_shifts_close_validate() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.recipes_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.recipes_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.recipes_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.recipes_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13219,7 +13146,6 @@ GRANT ALL ON FUNCTION public.recipes_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.recipes_sync_status() TO anon;
 GRANT ALL ON FUNCTION public.recipes_sync_status() TO authenticated;
 GRANT ALL ON FUNCTION public.recipes_sync_status() TO service_role;
-GRANT ALL ON FUNCTION public.recipes_sync_status() TO sandbox_exec;
 
 
 --
@@ -13229,7 +13155,6 @@ GRANT ALL ON FUNCTION public.recipes_sync_status() TO sandbox_exec;
 REVOKE ALL ON FUNCTION public.resolve_scanned_code(p_code text) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.resolve_scanned_code(p_code text) TO authenticated;
 GRANT ALL ON FUNCTION public.resolve_scanned_code(p_code text) TO service_role;
-GRANT ALL ON FUNCTION public.resolve_scanned_code(p_code text) TO sandbox_exec;
 
 
 --
@@ -13239,7 +13164,6 @@ GRANT ALL ON FUNCTION public.resolve_scanned_code(p_code text) TO sandbox_exec;
 GRANT ALL ON FUNCTION public.scan_history_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.scan_history_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.scan_history_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.scan_history_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13249,7 +13173,6 @@ GRANT ALL ON FUNCTION public.scan_history_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.search_suggest(q text, max_results integer) TO anon;
 GRANT ALL ON FUNCTION public.search_suggest(q text, max_results integer) TO authenticated;
 GRANT ALL ON FUNCTION public.search_suggest(q text, max_results integer) TO service_role;
-GRANT ALL ON FUNCTION public.search_suggest(q text, max_results integer) TO sandbox_exec;
 
 
 --
@@ -13259,7 +13182,6 @@ GRANT ALL ON FUNCTION public.search_suggest(q text, max_results integer) TO sand
 GRANT ALL ON FUNCTION public.set_bom_status(p_bom_id uuid, p_status text, p_reason text) TO anon;
 GRANT ALL ON FUNCTION public.set_bom_status(p_bom_id uuid, p_status text, p_reason text) TO authenticated;
 GRANT ALL ON FUNCTION public.set_bom_status(p_bom_id uuid, p_status text, p_reason text) TO service_role;
-GRANT ALL ON FUNCTION public.set_bom_status(p_bom_id uuid, p_status text, p_reason text) TO sandbox_exec;
 
 
 --
@@ -13269,7 +13191,6 @@ GRANT ALL ON FUNCTION public.set_bom_status(p_bom_id uuid, p_status text, p_reas
 GRANT ALL ON FUNCTION public.set_of_quality_status(p_of_id uuid, p_status public.of_quality_status, p_reason text) TO anon;
 GRANT ALL ON FUNCTION public.set_of_quality_status(p_of_id uuid, p_status public.of_quality_status, p_reason text) TO authenticated;
 GRANT ALL ON FUNCTION public.set_of_quality_status(p_of_id uuid, p_status public.of_quality_status, p_reason text) TO service_role;
-GRANT ALL ON FUNCTION public.set_of_quality_status(p_of_id uuid, p_status public.of_quality_status, p_reason text) TO sandbox_exec;
 
 
 --
@@ -13279,7 +13200,6 @@ GRANT ALL ON FUNCTION public.set_of_quality_status(p_of_id uuid, p_status public
 GRANT ALL ON FUNCTION public.set_recipe_status(p_recipe_id uuid, p_status text, p_reason text) TO anon;
 GRANT ALL ON FUNCTION public.set_recipe_status(p_recipe_id uuid, p_status text, p_reason text) TO authenticated;
 GRANT ALL ON FUNCTION public.set_recipe_status(p_recipe_id uuid, p_status text, p_reason text) TO service_role;
-GRANT ALL ON FUNCTION public.set_recipe_status(p_recipe_id uuid, p_status text, p_reason text) TO sandbox_exec;
 
 
 --
@@ -13289,7 +13209,6 @@ GRANT ALL ON FUNCTION public.set_recipe_status(p_recipe_id uuid, p_status text, 
 GRANT ALL ON FUNCTION public.shift_cycle_slot(_pattern text[], _anchor date, _d date) TO anon;
 GRANT ALL ON FUNCTION public.shift_cycle_slot(_pattern text[], _anchor date, _d date) TO authenticated;
 GRANT ALL ON FUNCTION public.shift_cycle_slot(_pattern text[], _anchor date, _d date) TO service_role;
-GRANT ALL ON FUNCTION public.shift_cycle_slot(_pattern text[], _anchor date, _d date) TO sandbox_exec;
 
 
 --
@@ -13299,7 +13218,6 @@ GRANT ALL ON FUNCTION public.shift_cycle_slot(_pattern text[], _anchor date, _d 
 GRANT ALL ON FUNCTION public.shifts_fill_defaults() TO anon;
 GRANT ALL ON FUNCTION public.shifts_fill_defaults() TO authenticated;
 GRANT ALL ON FUNCTION public.shifts_fill_defaults() TO service_role;
-GRANT ALL ON FUNCTION public.shifts_fill_defaults() TO sandbox_exec;
 
 
 --
@@ -13309,7 +13227,6 @@ GRANT ALL ON FUNCTION public.shifts_fill_defaults() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.tg_intervention_pdr_lifecycle() TO anon;
 GRANT ALL ON FUNCTION public.tg_intervention_pdr_lifecycle() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_intervention_pdr_lifecycle() TO service_role;
-GRANT ALL ON FUNCTION public.tg_intervention_pdr_lifecycle() TO sandbox_exec;
 
 
 --
@@ -13319,7 +13236,6 @@ GRANT ALL ON FUNCTION public.tg_intervention_pdr_lifecycle() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.tg_inventory_campaign_code() TO anon;
 GRANT ALL ON FUNCTION public.tg_inventory_campaign_code() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_inventory_campaign_code() TO service_role;
-GRANT ALL ON FUNCTION public.tg_inventory_campaign_code() TO sandbox_exec;
 
 
 --
@@ -13329,7 +13245,6 @@ GRANT ALL ON FUNCTION public.tg_inventory_campaign_code() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.tg_lock_inventory_counts() TO anon;
 GRANT ALL ON FUNCTION public.tg_lock_inventory_counts() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_lock_inventory_counts() TO service_role;
-GRANT ALL ON FUNCTION public.tg_lock_inventory_counts() TO sandbox_exec;
 
 
 --
@@ -13339,7 +13254,6 @@ GRANT ALL ON FUNCTION public.tg_lock_inventory_counts() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.tg_pdr_position_block_delete() TO anon;
 GRANT ALL ON FUNCTION public.tg_pdr_position_block_delete() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_pdr_position_block_delete() TO service_role;
-GRANT ALL ON FUNCTION public.tg_pdr_position_block_delete() TO sandbox_exec;
 
 
 --
@@ -13349,7 +13263,6 @@ GRANT ALL ON FUNCTION public.tg_pdr_position_block_delete() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.tg_pdr_position_validate() TO anon;
 GRANT ALL ON FUNCTION public.tg_pdr_position_validate() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_pdr_position_validate() TO service_role;
-GRANT ALL ON FUNCTION public.tg_pdr_position_validate() TO sandbox_exec;
 
 
 --
@@ -13359,7 +13272,6 @@ GRANT ALL ON FUNCTION public.tg_pdr_position_validate() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.tg_preventive_execution_pdr_lifecycle() TO anon;
 GRANT ALL ON FUNCTION public.tg_preventive_execution_pdr_lifecycle() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_preventive_execution_pdr_lifecycle() TO service_role;
-GRANT ALL ON FUNCTION public.tg_preventive_execution_pdr_lifecycle() TO sandbox_exec;
 
 
 --
@@ -13369,7 +13281,6 @@ GRANT ALL ON FUNCTION public.tg_preventive_execution_pdr_lifecycle() TO sandbox_
 GRANT ALL ON FUNCTION public.tg_production_declarations_hour_minus_1() TO anon;
 GRANT ALL ON FUNCTION public.tg_production_declarations_hour_minus_1() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_production_declarations_hour_minus_1() TO service_role;
-GRANT ALL ON FUNCTION public.tg_production_declarations_hour_minus_1() TO sandbox_exec;
 
 
 --
@@ -13379,7 +13290,6 @@ GRANT ALL ON FUNCTION public.tg_production_declarations_hour_minus_1() TO sandbo
 GRANT ALL ON FUNCTION public.tg_set_updated_at() TO anon;
 GRANT ALL ON FUNCTION public.tg_set_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.tg_set_updated_at() TO service_role;
-GRANT ALL ON FUNCTION public.tg_set_updated_at() TO sandbox_exec;
 
 
 --
@@ -13389,7 +13299,6 @@ GRANT ALL ON FUNCTION public.tg_set_updated_at() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.tickets_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.tickets_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.tickets_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.tickets_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13399,7 +13308,6 @@ GRANT ALL ON FUNCTION public.tickets_search_refresh() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.update_updated_at_column() TO anon;
 GRANT ALL ON FUNCTION public.update_updated_at_column() TO authenticated;
 GRANT ALL ON FUNCTION public.update_updated_at_column() TO service_role;
-GRANT ALL ON FUNCTION public.update_updated_at_column() TO sandbox_exec;
 
 
 --
@@ -13409,7 +13317,6 @@ GRANT ALL ON FUNCTION public.update_updated_at_column() TO sandbox_exec;
 GRANT ALL ON FUNCTION public.user_has_role_text(_user_id uuid, _role_text text) TO anon;
 GRANT ALL ON FUNCTION public.user_has_role_text(_user_id uuid, _role_text text) TO authenticated;
 GRANT ALL ON FUNCTION public.user_has_role_text(_user_id uuid, _role_text text) TO service_role;
-GRANT ALL ON FUNCTION public.user_has_role_text(_user_id uuid, _role_text text) TO sandbox_exec;
 
 
 --
@@ -13419,7 +13326,6 @@ GRANT ALL ON FUNCTION public.user_has_role_text(_user_id uuid, _role_text text) 
 GRANT ALL ON FUNCTION public.validation_requests_search_refresh() TO anon;
 GRANT ALL ON FUNCTION public.validation_requests_search_refresh() TO authenticated;
 GRANT ALL ON FUNCTION public.validation_requests_search_refresh() TO service_role;
-GRANT ALL ON FUNCTION public.validation_requests_search_refresh() TO sandbox_exec;
 
 
 --
@@ -13429,7 +13335,6 @@ GRANT ALL ON FUNCTION public.validation_requests_search_refresh() TO sandbox_exe
 GRANT ALL ON TABLE public.app_settings TO anon;
 GRANT ALL ON TABLE public.app_settings TO authenticated;
 GRANT ALL ON TABLE public.app_settings TO service_role;
-GRANT SELECT,INSERT ON TABLE public.app_settings TO sandbox_exec;
 
 
 --
@@ -13439,7 +13344,6 @@ GRANT SELECT,INSERT ON TABLE public.app_settings TO sandbox_exec;
 GRANT ALL ON TABLE public.articles TO anon;
 GRANT ALL ON TABLE public.articles TO authenticated;
 GRANT ALL ON TABLE public.articles TO service_role;
-GRANT SELECT,INSERT ON TABLE public.articles TO sandbox_exec;
 
 
 --
@@ -13449,7 +13353,6 @@ GRANT SELECT,INSERT ON TABLE public.articles TO sandbox_exec;
 GRANT ALL ON TABLE public.audit_logs TO anon;
 GRANT ALL ON TABLE public.audit_logs TO authenticated;
 GRANT ALL ON TABLE public.audit_logs TO service_role;
-GRANT SELECT,INSERT ON TABLE public.audit_logs TO sandbox_exec;
 
 
 --
@@ -13459,7 +13362,6 @@ GRANT SELECT,INSERT ON TABLE public.audit_logs TO sandbox_exec;
 GRANT ALL ON TABLE public.audit_role_settings TO anon;
 GRANT ALL ON TABLE public.audit_role_settings TO authenticated;
 GRANT ALL ON TABLE public.audit_role_settings TO service_role;
-GRANT SELECT,INSERT ON TABLE public.audit_role_settings TO sandbox_exec;
 
 
 --
@@ -13469,7 +13371,6 @@ GRANT SELECT,INSERT ON TABLE public.audit_role_settings TO sandbox_exec;
 GRANT ALL ON TABLE public.bill_of_materials TO anon;
 GRANT ALL ON TABLE public.bill_of_materials TO authenticated;
 GRANT ALL ON TABLE public.bill_of_materials TO service_role;
-GRANT SELECT,INSERT ON TABLE public.bill_of_materials TO sandbox_exec;
 
 
 --
@@ -13479,7 +13380,6 @@ GRANT SELECT,INSERT ON TABLE public.bill_of_materials TO sandbox_exec;
 GRANT ALL ON TABLE public.bom_items TO anon;
 GRANT ALL ON TABLE public.bom_items TO authenticated;
 GRANT ALL ON TABLE public.bom_items TO service_role;
-GRANT SELECT,INSERT ON TABLE public.bom_items TO sandbox_exec;
 
 
 --
@@ -13489,7 +13389,6 @@ GRANT SELECT,INSERT ON TABLE public.bom_items TO sandbox_exec;
 GRANT ALL ON TABLE public.consumptions TO anon;
 GRANT ALL ON TABLE public.consumptions TO authenticated;
 GRANT ALL ON TABLE public.consumptions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.consumptions TO sandbox_exec;
 
 
 --
@@ -13499,7 +13398,6 @@ GRANT SELECT,INSERT ON TABLE public.consumptions TO sandbox_exec;
 GRANT ALL ON TABLE public.custom_roles TO anon;
 GRANT ALL ON TABLE public.custom_roles TO authenticated;
 GRANT ALL ON TABLE public.custom_roles TO service_role;
-GRANT SELECT,INSERT ON TABLE public.custom_roles TO sandbox_exec;
 
 
 --
@@ -13509,7 +13407,6 @@ GRANT SELECT,INSERT ON TABLE public.custom_roles TO sandbox_exec;
 GRANT ALL ON TABLE public.document_audit_logs TO anon;
 GRANT ALL ON TABLE public.document_audit_logs TO authenticated;
 GRANT ALL ON TABLE public.document_audit_logs TO service_role;
-GRANT SELECT,INSERT ON TABLE public.document_audit_logs TO sandbox_exec;
 
 
 --
@@ -13519,7 +13416,6 @@ GRANT SELECT,INSERT ON TABLE public.document_audit_logs TO sandbox_exec;
 GRANT ALL ON TABLE public.document_categories TO anon;
 GRANT ALL ON TABLE public.document_categories TO authenticated;
 GRANT ALL ON TABLE public.document_categories TO service_role;
-GRANT SELECT,INSERT ON TABLE public.document_categories TO sandbox_exec;
 
 
 --
@@ -13529,7 +13425,6 @@ GRANT SELECT,INSERT ON TABLE public.document_categories TO sandbox_exec;
 GRANT ALL ON TABLE public.document_permissions TO anon;
 GRANT ALL ON TABLE public.document_permissions TO authenticated;
 GRANT ALL ON TABLE public.document_permissions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.document_permissions TO sandbox_exec;
 
 
 --
@@ -13539,7 +13434,6 @@ GRANT SELECT,INSERT ON TABLE public.document_permissions TO sandbox_exec;
 GRANT ALL ON TABLE public.entity_documents TO anon;
 GRANT ALL ON TABLE public.entity_documents TO authenticated;
 GRANT ALL ON TABLE public.entity_documents TO service_role;
-GRANT SELECT,INSERT ON TABLE public.entity_documents TO sandbox_exec;
 
 
 --
@@ -13549,7 +13443,6 @@ GRANT SELECT,INSERT ON TABLE public.entity_documents TO sandbox_exec;
 GRANT ALL ON TABLE public.entity_images TO anon;
 GRANT ALL ON TABLE public.entity_images TO authenticated;
 GRANT ALL ON TABLE public.entity_images TO service_role;
-GRANT SELECT,INSERT ON TABLE public.entity_images TO sandbox_exec;
 
 
 --
@@ -13559,7 +13452,6 @@ GRANT SELECT,INSERT ON TABLE public.entity_images TO sandbox_exec;
 GRANT ALL ON TABLE public.equipements TO anon;
 GRANT ALL ON TABLE public.equipements TO authenticated;
 GRANT ALL ON TABLE public.equipements TO service_role;
-GRANT SELECT,INSERT ON TABLE public.equipements TO sandbox_exec;
 
 
 --
@@ -13569,7 +13461,6 @@ GRANT SELECT,INSERT ON TABLE public.equipements TO sandbox_exec;
 GRANT ALL ON TABLE public.intervention_pdr TO anon;
 GRANT ALL ON TABLE public.intervention_pdr TO authenticated;
 GRANT ALL ON TABLE public.intervention_pdr TO service_role;
-GRANT SELECT,INSERT ON TABLE public.intervention_pdr TO sandbox_exec;
 
 
 --
@@ -13579,7 +13470,6 @@ GRANT SELECT,INSERT ON TABLE public.intervention_pdr TO sandbox_exec;
 GRANT ALL ON TABLE public.interventions TO anon;
 GRANT ALL ON TABLE public.interventions TO authenticated;
 GRANT ALL ON TABLE public.interventions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.interventions TO sandbox_exec;
 
 
 --
@@ -13589,7 +13479,6 @@ GRANT SELECT,INSERT ON TABLE public.interventions TO sandbox_exec;
 GRANT ALL ON TABLE public.inventory_assignment_scopes TO anon;
 GRANT ALL ON TABLE public.inventory_assignment_scopes TO authenticated;
 GRANT ALL ON TABLE public.inventory_assignment_scopes TO service_role;
-GRANT SELECT,INSERT ON TABLE public.inventory_assignment_scopes TO sandbox_exec;
 
 
 --
@@ -13599,7 +13488,6 @@ GRANT SELECT,INSERT ON TABLE public.inventory_assignment_scopes TO sandbox_exec;
 GRANT ALL ON TABLE public.inventory_assignments TO anon;
 GRANT ALL ON TABLE public.inventory_assignments TO authenticated;
 GRANT ALL ON TABLE public.inventory_assignments TO service_role;
-GRANT SELECT,INSERT ON TABLE public.inventory_assignments TO sandbox_exec;
 
 
 --
@@ -13609,7 +13497,6 @@ GRANT SELECT,INSERT ON TABLE public.inventory_assignments TO sandbox_exec;
 GRANT ALL ON TABLE public.inventory_campaign_scopes TO anon;
 GRANT ALL ON TABLE public.inventory_campaign_scopes TO authenticated;
 GRANT ALL ON TABLE public.inventory_campaign_scopes TO service_role;
-GRANT SELECT,INSERT ON TABLE public.inventory_campaign_scopes TO sandbox_exec;
 
 
 --
@@ -13619,7 +13506,6 @@ GRANT SELECT,INSERT ON TABLE public.inventory_campaign_scopes TO sandbox_exec;
 GRANT ALL ON TABLE public.inventory_campaigns TO anon;
 GRANT ALL ON TABLE public.inventory_campaigns TO authenticated;
 GRANT ALL ON TABLE public.inventory_campaigns TO service_role;
-GRANT SELECT,INSERT ON TABLE public.inventory_campaigns TO sandbox_exec;
 
 
 --
@@ -13629,7 +13515,6 @@ GRANT SELECT,INSERT ON TABLE public.inventory_campaigns TO sandbox_exec;
 GRANT ALL ON TABLE public.inventory_counts TO anon;
 GRANT ALL ON TABLE public.inventory_counts TO authenticated;
 GRANT ALL ON TABLE public.inventory_counts TO service_role;
-GRANT SELECT,INSERT ON TABLE public.inventory_counts TO sandbox_exec;
 
 
 --
@@ -13639,7 +13524,6 @@ GRANT SELECT,INSERT ON TABLE public.inventory_counts TO sandbox_exec;
 GRANT ALL ON TABLE public.inventory_results TO anon;
 GRANT ALL ON TABLE public.inventory_results TO authenticated;
 GRANT ALL ON TABLE public.inventory_results TO service_role;
-GRANT SELECT,INSERT ON TABLE public.inventory_results TO sandbox_exec;
 
 
 --
@@ -13649,7 +13533,6 @@ GRANT SELECT,INSERT ON TABLE public.inventory_results TO sandbox_exec;
 GRANT ALL ON TABLE public.inventory_targets TO anon;
 GRANT ALL ON TABLE public.inventory_targets TO authenticated;
 GRANT ALL ON TABLE public.inventory_targets TO service_role;
-GRANT SELECT,INSERT ON TABLE public.inventory_targets TO sandbox_exec;
 
 
 --
@@ -13659,7 +13542,6 @@ GRANT SELECT,INSERT ON TABLE public.inventory_targets TO sandbox_exec;
 GRANT ALL ON TABLE public.line_products TO anon;
 GRANT ALL ON TABLE public.line_products TO authenticated;
 GRANT ALL ON TABLE public.line_products TO service_role;
-GRANT SELECT,INSERT ON TABLE public.line_products TO sandbox_exec;
 
 
 --
@@ -13669,7 +13551,6 @@ GRANT SELECT,INSERT ON TABLE public.line_products TO sandbox_exec;
 GRANT ALL ON TABLE public.machine_documents TO anon;
 GRANT ALL ON TABLE public.machine_documents TO authenticated;
 GRANT ALL ON TABLE public.machine_documents TO service_role;
-GRANT SELECT,INSERT ON TABLE public.machine_documents TO sandbox_exec;
 
 
 --
@@ -13679,7 +13560,6 @@ GRANT SELECT,INSERT ON TABLE public.machine_documents TO sandbox_exec;
 GRANT ALL ON TABLE public.machine_families TO anon;
 GRANT ALL ON TABLE public.machine_families TO authenticated;
 GRANT ALL ON TABLE public.machine_families TO service_role;
-GRANT SELECT,INSERT ON TABLE public.machine_families TO sandbox_exec;
 
 
 --
@@ -13689,7 +13569,6 @@ GRANT SELECT,INSERT ON TABLE public.machine_families TO sandbox_exec;
 GRANT ALL ON TABLE public.machine_line_assignments TO anon;
 GRANT ALL ON TABLE public.machine_line_assignments TO authenticated;
 GRANT ALL ON TABLE public.machine_line_assignments TO service_role;
-GRANT SELECT,INSERT ON TABLE public.machine_line_assignments TO sandbox_exec;
 
 
 --
@@ -13699,7 +13578,6 @@ GRANT SELECT,INSERT ON TABLE public.machine_line_assignments TO sandbox_exec;
 GRANT ALL ON TABLE public.machine_pdr TO anon;
 GRANT ALL ON TABLE public.machine_pdr TO authenticated;
 GRANT ALL ON TABLE public.machine_pdr TO service_role;
-GRANT SELECT,INSERT ON TABLE public.machine_pdr TO sandbox_exec;
 
 
 --
@@ -13709,7 +13587,6 @@ GRANT SELECT,INSERT ON TABLE public.machine_pdr TO sandbox_exec;
 GRANT ALL ON TABLE public.machines TO anon;
 GRANT ALL ON TABLE public.machines TO authenticated;
 GRANT ALL ON TABLE public.machines TO service_role;
-GRANT SELECT,INSERT ON TABLE public.machines TO sandbox_exec;
 
 
 --
@@ -13719,7 +13596,6 @@ GRANT SELECT,INSERT ON TABLE public.machines TO sandbox_exec;
 GRANT ALL ON TABLE public.maintenance_shifts TO anon;
 GRANT ALL ON TABLE public.maintenance_shifts TO authenticated;
 GRANT ALL ON TABLE public.maintenance_shifts TO service_role;
-GRANT SELECT,INSERT ON TABLE public.maintenance_shifts TO sandbox_exec;
 
 
 --
@@ -13729,7 +13605,6 @@ GRANT SELECT,INSERT ON TABLE public.maintenance_shifts TO sandbox_exec;
 GRANT ALL ON TABLE public.notification_email_log TO anon;
 GRANT ALL ON TABLE public.notification_email_log TO authenticated;
 GRANT ALL ON TABLE public.notification_email_log TO service_role;
-GRANT SELECT,INSERT ON TABLE public.notification_email_log TO sandbox_exec;
 
 
 --
@@ -13739,7 +13614,6 @@ GRANT SELECT,INSERT ON TABLE public.notification_email_log TO sandbox_exec;
 GRANT ALL ON TABLE public.notification_rules TO anon;
 GRANT ALL ON TABLE public.notification_rules TO authenticated;
 GRANT ALL ON TABLE public.notification_rules TO service_role;
-GRANT SELECT,INSERT ON TABLE public.notification_rules TO sandbox_exec;
 
 
 --
@@ -13749,7 +13623,6 @@ GRANT SELECT,INSERT ON TABLE public.notification_rules TO sandbox_exec;
 GRANT ALL ON TABLE public.notifications TO anon;
 GRANT ALL ON TABLE public.notifications TO authenticated;
 GRANT ALL ON TABLE public.notifications TO service_role;
-GRANT SELECT,INSERT ON TABLE public.notifications TO sandbox_exec;
 
 
 --
@@ -13759,7 +13632,6 @@ GRANT SELECT,INSERT ON TABLE public.notifications TO sandbox_exec;
 GRANT ALL ON TABLE public.of_mode_history TO anon;
 GRANT ALL ON TABLE public.of_mode_history TO authenticated;
 GRANT ALL ON TABLE public.of_mode_history TO service_role;
-GRANT SELECT,INSERT ON TABLE public.of_mode_history TO sandbox_exec;
 
 
 --
@@ -13769,7 +13641,6 @@ GRANT SELECT,INSERT ON TABLE public.of_mode_history TO sandbox_exec;
 GRANT ALL ON TABLE public.of_shift_assignments TO anon;
 GRANT ALL ON TABLE public.of_shift_assignments TO authenticated;
 GRANT ALL ON TABLE public.of_shift_assignments TO service_role;
-GRANT SELECT,INSERT ON TABLE public.of_shift_assignments TO sandbox_exec;
 
 
 --
@@ -13779,7 +13650,6 @@ GRANT SELECT,INSERT ON TABLE public.of_shift_assignments TO sandbox_exec;
 GRANT ALL ON TABLE public.ordres_fabrication TO anon;
 GRANT ALL ON TABLE public.ordres_fabrication TO authenticated;
 GRANT ALL ON TABLE public.ordres_fabrication TO service_role;
-GRANT SELECT,INSERT ON TABLE public.ordres_fabrication TO sandbox_exec;
 
 
 --
@@ -13789,7 +13659,6 @@ GRANT SELECT,INSERT ON TABLE public.ordres_fabrication TO sandbox_exec;
 GRANT ALL ON TABLE public.organes TO anon;
 GRANT ALL ON TABLE public.organes TO authenticated;
 GRANT ALL ON TABLE public.organes TO service_role;
-GRANT SELECT,INSERT ON TABLE public.organes TO sandbox_exec;
 
 
 --
@@ -13799,7 +13668,6 @@ GRANT SELECT,INSERT ON TABLE public.organes TO sandbox_exec;
 GRANT ALL ON TABLE public.packaging_levels TO anon;
 GRANT ALL ON TABLE public.packaging_levels TO authenticated;
 GRANT ALL ON TABLE public.packaging_levels TO service_role;
-GRANT SELECT,INSERT ON TABLE public.packaging_levels TO sandbox_exec;
 
 
 --
@@ -13809,7 +13677,6 @@ GRANT SELECT,INSERT ON TABLE public.packaging_levels TO sandbox_exec;
 GRANT ALL ON TABLE public.panne_types TO anon;
 GRANT ALL ON TABLE public.panne_types TO authenticated;
 GRANT ALL ON TABLE public.panne_types TO service_role;
-GRANT SELECT,INSERT ON TABLE public.panne_types TO sandbox_exec;
 
 
 --
@@ -13819,7 +13686,6 @@ GRANT SELECT,INSERT ON TABLE public.panne_types TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr TO anon;
 GRANT ALL ON TABLE public.pdr TO authenticated;
 GRANT ALL ON TABLE public.pdr TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr TO sandbox_exec;
 
 
 --
@@ -13829,7 +13695,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_entity_links TO anon;
 GRANT ALL ON TABLE public.pdr_entity_links TO authenticated;
 GRANT ALL ON TABLE public.pdr_entity_links TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_entity_links TO sandbox_exec;
 
 
 --
@@ -13839,7 +13704,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_entity_links TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_equivalences TO anon;
 GRANT ALL ON TABLE public.pdr_equivalences TO authenticated;
 GRANT ALL ON TABLE public.pdr_equivalences TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_equivalences TO sandbox_exec;
 
 
 --
@@ -13849,7 +13713,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_equivalences TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_families TO anon;
 GRANT ALL ON TABLE public.pdr_families TO authenticated;
 GRANT ALL ON TABLE public.pdr_families TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_families TO sandbox_exec;
 
 
 --
@@ -13859,7 +13722,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_families TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_family_suppliers TO anon;
 GRANT ALL ON TABLE public.pdr_family_suppliers TO authenticated;
 GRANT ALL ON TABLE public.pdr_family_suppliers TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_family_suppliers TO sandbox_exec;
 
 
 --
@@ -13869,7 +13731,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_family_suppliers TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_install_positions TO anon;
 GRANT ALL ON TABLE public.pdr_install_positions TO authenticated;
 GRANT ALL ON TABLE public.pdr_install_positions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_install_positions TO sandbox_exec;
 
 
 --
@@ -13879,7 +13740,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_install_positions TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_instances TO anon;
 GRANT ALL ON TABLE public.pdr_instances TO authenticated;
 GRANT ALL ON TABLE public.pdr_instances TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_instances TO sandbox_exec;
 
 
 --
@@ -13889,7 +13749,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_instances TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_position_status TO anon;
 GRANT ALL ON TABLE public.pdr_position_status TO authenticated;
 GRANT ALL ON TABLE public.pdr_position_status TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_position_status TO sandbox_exec;
 
 
 --
@@ -13899,7 +13758,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_position_status TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_stock_movements TO anon;
 GRANT ALL ON TABLE public.pdr_stock_movements TO authenticated;
 GRANT ALL ON TABLE public.pdr_stock_movements TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_stock_movements TO sandbox_exec;
 
 
 --
@@ -13909,7 +13767,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_stock_movements TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_stock_permissions TO anon;
 GRANT ALL ON TABLE public.pdr_stock_permissions TO authenticated;
 GRANT ALL ON TABLE public.pdr_stock_permissions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_stock_permissions TO sandbox_exec;
 
 
 --
@@ -13919,7 +13776,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_stock_permissions TO sandbox_exec;
 GRANT ALL ON TABLE public.pdr_suppliers TO anon;
 GRANT ALL ON TABLE public.pdr_suppliers TO authenticated;
 GRANT ALL ON TABLE public.pdr_suppliers TO service_role;
-GRANT SELECT,INSERT ON TABLE public.pdr_suppliers TO sandbox_exec;
 
 
 --
@@ -13929,7 +13785,6 @@ GRANT SELECT,INSERT ON TABLE public.pdr_suppliers TO sandbox_exec;
 GRANT ALL ON TABLE public.preventive_executions TO anon;
 GRANT ALL ON TABLE public.preventive_executions TO authenticated;
 GRANT ALL ON TABLE public.preventive_executions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.preventive_executions TO sandbox_exec;
 
 
 --
@@ -13939,7 +13794,6 @@ GRANT SELECT,INSERT ON TABLE public.preventive_executions TO sandbox_exec;
 GRANT ALL ON TABLE public.preventive_plan_assignees TO anon;
 GRANT ALL ON TABLE public.preventive_plan_assignees TO authenticated;
 GRANT ALL ON TABLE public.preventive_plan_assignees TO service_role;
-GRANT SELECT,INSERT ON TABLE public.preventive_plan_assignees TO sandbox_exec;
 
 
 --
@@ -13949,7 +13803,6 @@ GRANT SELECT,INSERT ON TABLE public.preventive_plan_assignees TO sandbox_exec;
 GRANT ALL ON TABLE public.preventive_plan_pdr TO anon;
 GRANT ALL ON TABLE public.preventive_plan_pdr TO authenticated;
 GRANT ALL ON TABLE public.preventive_plan_pdr TO service_role;
-GRANT SELECT,INSERT ON TABLE public.preventive_plan_pdr TO sandbox_exec;
 
 
 --
@@ -13959,7 +13812,6 @@ GRANT SELECT,INSERT ON TABLE public.preventive_plan_pdr TO sandbox_exec;
 GRANT ALL ON TABLE public.preventive_plans TO anon;
 GRANT ALL ON TABLE public.preventive_plans TO authenticated;
 GRANT ALL ON TABLE public.preventive_plans TO service_role;
-GRANT SELECT,INSERT ON TABLE public.preventive_plans TO sandbox_exec;
 
 
 --
@@ -13969,7 +13821,6 @@ GRANT SELECT,INSERT ON TABLE public.preventive_plans TO sandbox_exec;
 GRANT ALL ON TABLE public.product_families TO anon;
 GRANT ALL ON TABLE public.product_families TO authenticated;
 GRANT ALL ON TABLE public.product_families TO service_role;
-GRANT SELECT,INSERT ON TABLE public.product_families TO sandbox_exec;
 
 
 --
@@ -13979,7 +13830,6 @@ GRANT SELECT,INSERT ON TABLE public.product_families TO sandbox_exec;
 GRANT ALL ON TABLE public.production_declarations TO anon;
 GRANT ALL ON TABLE public.production_declarations TO authenticated;
 GRANT ALL ON TABLE public.production_declarations TO service_role;
-GRANT SELECT,INSERT ON TABLE public.production_declarations TO sandbox_exec;
 
 
 --
@@ -13989,7 +13839,6 @@ GRANT SELECT,INSERT ON TABLE public.production_declarations TO sandbox_exec;
 GRANT ALL ON TABLE public.production_lines TO anon;
 GRANT ALL ON TABLE public.production_lines TO authenticated;
 GRANT ALL ON TABLE public.production_lines TO service_role;
-GRANT SELECT,INSERT ON TABLE public.production_lines TO sandbox_exec;
 
 
 --
@@ -13999,7 +13848,6 @@ GRANT SELECT,INSERT ON TABLE public.production_lines TO sandbox_exec;
 GRANT ALL ON TABLE public.production_stops TO anon;
 GRANT ALL ON TABLE public.production_stops TO authenticated;
 GRANT ALL ON TABLE public.production_stops TO service_role;
-GRANT SELECT,INSERT ON TABLE public.production_stops TO sandbox_exec;
 
 
 --
@@ -14009,7 +13857,6 @@ GRANT SELECT,INSERT ON TABLE public.production_stops TO sandbox_exec;
 GRANT ALL ON TABLE public.products TO anon;
 GRANT ALL ON TABLE public.products TO authenticated;
 GRANT ALL ON TABLE public.products TO service_role;
-GRANT SELECT,INSERT ON TABLE public.products TO sandbox_exec;
 
 
 --
@@ -14019,7 +13866,6 @@ GRANT SELECT,INSERT ON TABLE public.products TO sandbox_exec;
 GRANT ALL ON TABLE public.profiles TO anon;
 GRANT ALL ON TABLE public.profiles TO authenticated;
 GRANT ALL ON TABLE public.profiles TO service_role;
-GRANT SELECT,INSERT ON TABLE public.profiles TO sandbox_exec;
 
 
 --
@@ -14029,7 +13875,6 @@ GRANT SELECT,INSERT ON TABLE public.profiles TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_action_categories TO anon;
 GRANT ALL ON TABLE public.quality_action_categories TO authenticated;
 GRANT ALL ON TABLE public.quality_action_categories TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_action_categories TO sandbox_exec;
 
 
 --
@@ -14039,7 +13884,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_action_categories TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_actions TO anon;
 GRANT ALL ON TABLE public.quality_actions TO authenticated;
 GRANT ALL ON TABLE public.quality_actions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_actions TO sandbox_exec;
 
 
 --
@@ -14049,7 +13893,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_actions TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_checks TO anon;
 GRANT ALL ON TABLE public.quality_checks TO authenticated;
 GRANT ALL ON TABLE public.quality_checks TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_checks TO sandbox_exec;
 
 
 --
@@ -14059,7 +13902,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_checks TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_control_point_lines TO anon;
 GRANT ALL ON TABLE public.quality_control_point_lines TO authenticated;
 GRANT ALL ON TABLE public.quality_control_point_lines TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_control_point_lines TO sandbox_exec;
 
 
 --
@@ -14069,7 +13911,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_control_point_lines TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_control_point_ofs TO anon;
 GRANT ALL ON TABLE public.quality_control_point_ofs TO authenticated;
 GRANT ALL ON TABLE public.quality_control_point_ofs TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_control_point_ofs TO sandbox_exec;
 
 
 --
@@ -14079,7 +13920,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_control_point_ofs TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_control_points TO anon;
 GRANT ALL ON TABLE public.quality_control_points TO authenticated;
 GRANT ALL ON TABLE public.quality_control_points TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_control_points TO sandbox_exec;
 
 
 --
@@ -14089,7 +13929,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_control_points TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_decision_reasons TO anon;
 GRANT ALL ON TABLE public.quality_decision_reasons TO authenticated;
 GRANT ALL ON TABLE public.quality_decision_reasons TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_decision_reasons TO sandbox_exec;
 
 
 --
@@ -14099,7 +13938,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_decision_reasons TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_defect_types TO anon;
 GRANT ALL ON TABLE public.quality_defect_types TO authenticated;
 GRANT ALL ON TABLE public.quality_defect_types TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_defect_types TO sandbox_exec;
 
 
 --
@@ -14109,7 +13947,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_defect_types TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_indicator_assignments TO anon;
 GRANT ALL ON TABLE public.quality_indicator_assignments TO authenticated;
 GRANT ALL ON TABLE public.quality_indicator_assignments TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_indicator_assignments TO sandbox_exec;
 
 
 --
@@ -14119,7 +13956,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_indicator_assignments TO sandbox_exe
 GRANT ALL ON TABLE public.quality_indicators TO anon;
 GRANT ALL ON TABLE public.quality_indicators TO authenticated;
 GRANT ALL ON TABLE public.quality_indicators TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_indicators TO sandbox_exec;
 
 
 --
@@ -14129,7 +13965,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_indicators TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_nc_categories TO anon;
 GRANT ALL ON TABLE public.quality_nc_categories TO authenticated;
 GRANT ALL ON TABLE public.quality_nc_categories TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_nc_categories TO sandbox_exec;
 
 
 --
@@ -14139,7 +13974,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_nc_categories TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_non_conformities TO anon;
 GRANT ALL ON TABLE public.quality_non_conformities TO authenticated;
 GRANT ALL ON TABLE public.quality_non_conformities TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_non_conformities TO sandbox_exec;
 
 
 --
@@ -14149,7 +13983,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_non_conformities TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_permissions TO anon;
 GRANT ALL ON TABLE public.quality_permissions TO authenticated;
 GRANT ALL ON TABLE public.quality_permissions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_permissions TO sandbox_exec;
 
 
 --
@@ -14159,7 +13992,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_permissions TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_shift_assignments TO anon;
 GRANT ALL ON TABLE public.quality_shift_assignments TO authenticated;
 GRANT ALL ON TABLE public.quality_shift_assignments TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_shift_assignments TO sandbox_exec;
 
 
 --
@@ -14169,7 +14001,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_shift_assignments TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_shift_lines TO anon;
 GRANT ALL ON TABLE public.quality_shift_lines TO authenticated;
 GRANT ALL ON TABLE public.quality_shift_lines TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_shift_lines TO sandbox_exec;
 
 
 --
@@ -14179,7 +14010,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_shift_lines TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_shift_production_links TO anon;
 GRANT ALL ON TABLE public.quality_shift_production_links TO authenticated;
 GRANT ALL ON TABLE public.quality_shift_production_links TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_shift_production_links TO sandbox_exec;
 
 
 --
@@ -14189,7 +14019,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_shift_production_links TO sandbox_ex
 GRANT ALL ON TABLE public.quality_shifts TO anon;
 GRANT ALL ON TABLE public.quality_shifts TO authenticated;
 GRANT ALL ON TABLE public.quality_shifts TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_shifts TO sandbox_exec;
 
 
 --
@@ -14199,7 +14028,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_shifts TO sandbox_exec;
 GRANT ALL ON TABLE public.quality_units TO anon;
 GRANT ALL ON TABLE public.quality_units TO authenticated;
 GRANT ALL ON TABLE public.quality_units TO service_role;
-GRANT SELECT,INSERT ON TABLE public.quality_units TO sandbox_exec;
 
 
 --
@@ -14209,7 +14037,6 @@ GRANT SELECT,INSERT ON TABLE public.quality_units TO sandbox_exec;
 GRANT ALL ON TABLE public.recipe_lines TO anon;
 GRANT ALL ON TABLE public.recipe_lines TO authenticated;
 GRANT ALL ON TABLE public.recipe_lines TO service_role;
-GRANT SELECT,INSERT ON TABLE public.recipe_lines TO sandbox_exec;
 
 
 --
@@ -14219,7 +14046,6 @@ GRANT SELECT,INSERT ON TABLE public.recipe_lines TO sandbox_exec;
 GRANT ALL ON TABLE public.recipe_steps TO anon;
 GRANT ALL ON TABLE public.recipe_steps TO authenticated;
 GRANT ALL ON TABLE public.recipe_steps TO service_role;
-GRANT SELECT,INSERT ON TABLE public.recipe_steps TO sandbox_exec;
 
 
 --
@@ -14229,7 +14055,6 @@ GRANT SELECT,INSERT ON TABLE public.recipe_steps TO sandbox_exec;
 GRANT ALL ON TABLE public.recipes TO anon;
 GRANT ALL ON TABLE public.recipes TO authenticated;
 GRANT ALL ON TABLE public.recipes TO service_role;
-GRANT SELECT,INSERT ON TABLE public.recipes TO sandbox_exec;
 
 
 --
@@ -14239,7 +14064,6 @@ GRANT SELECT,INSERT ON TABLE public.recipes TO sandbox_exec;
 GRANT ALL ON TABLE public.role_permissions TO anon;
 GRANT ALL ON TABLE public.role_permissions TO authenticated;
 GRANT ALL ON TABLE public.role_permissions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.role_permissions TO sandbox_exec;
 
 
 --
@@ -14249,7 +14073,6 @@ GRANT SELECT,INSERT ON TABLE public.role_permissions TO sandbox_exec;
 GRANT ALL ON TABLE public.scan_history TO anon;
 GRANT ALL ON TABLE public.scan_history TO authenticated;
 GRANT ALL ON TABLE public.scan_history TO service_role;
-GRANT SELECT,INSERT ON TABLE public.scan_history TO sandbox_exec;
 
 
 --
@@ -14259,7 +14082,6 @@ GRANT SELECT,INSERT ON TABLE public.scan_history TO sandbox_exec;
 GRANT ALL ON TABLE public.shift_mode_slots TO anon;
 GRANT ALL ON TABLE public.shift_mode_slots TO authenticated;
 GRANT ALL ON TABLE public.shift_mode_slots TO service_role;
-GRANT SELECT,INSERT ON TABLE public.shift_mode_slots TO sandbox_exec;
 
 
 --
@@ -14269,7 +14091,6 @@ GRANT SELECT,INSERT ON TABLE public.shift_mode_slots TO sandbox_exec;
 GRANT ALL ON TABLE public.shift_modes TO anon;
 GRANT ALL ON TABLE public.shift_modes TO authenticated;
 GRANT ALL ON TABLE public.shift_modes TO service_role;
-GRANT SELECT,INSERT ON TABLE public.shift_modes TO sandbox_exec;
 
 
 --
@@ -14279,7 +14100,6 @@ GRANT SELECT,INSERT ON TABLE public.shift_modes TO sandbox_exec;
 GRANT ALL ON TABLE public.shift_settings TO anon;
 GRANT ALL ON TABLE public.shift_settings TO authenticated;
 GRANT ALL ON TABLE public.shift_settings TO service_role;
-GRANT SELECT,INSERT ON TABLE public.shift_settings TO sandbox_exec;
 
 
 --
@@ -14289,7 +14109,6 @@ GRANT SELECT,INSERT ON TABLE public.shift_settings TO sandbox_exec;
 GRANT ALL ON TABLE public.shift_team_members TO anon;
 GRANT ALL ON TABLE public.shift_team_members TO authenticated;
 GRANT ALL ON TABLE public.shift_team_members TO service_role;
-GRANT SELECT,INSERT ON TABLE public.shift_team_members TO sandbox_exec;
 
 
 --
@@ -14299,7 +14118,6 @@ GRANT SELECT,INSERT ON TABLE public.shift_team_members TO sandbox_exec;
 GRANT ALL ON TABLE public.shift_teams TO anon;
 GRANT ALL ON TABLE public.shift_teams TO authenticated;
 GRANT ALL ON TABLE public.shift_teams TO service_role;
-GRANT SELECT,INSERT ON TABLE public.shift_teams TO sandbox_exec;
 
 
 --
@@ -14309,7 +14127,6 @@ GRANT SELECT,INSERT ON TABLE public.shift_teams TO sandbox_exec;
 GRANT ALL ON TABLE public.shift_templates TO anon;
 GRANT ALL ON TABLE public.shift_templates TO authenticated;
 GRANT ALL ON TABLE public.shift_templates TO service_role;
-GRANT SELECT,INSERT ON TABLE public.shift_templates TO sandbox_exec;
 
 
 --
@@ -14319,7 +14136,6 @@ GRANT SELECT,INSERT ON TABLE public.shift_templates TO sandbox_exec;
 GRANT ALL ON TABLE public.shifts TO anon;
 GRANT ALL ON TABLE public.shifts TO authenticated;
 GRANT ALL ON TABLE public.shifts TO service_role;
-GRANT SELECT,INSERT ON TABLE public.shifts TO sandbox_exec;
 
 
 --
@@ -14329,7 +14145,6 @@ GRANT SELECT,INSERT ON TABLE public.shifts TO sandbox_exec;
 GRANT ALL ON TABLE public.ticket_collaborators TO anon;
 GRANT ALL ON TABLE public.ticket_collaborators TO authenticated;
 GRANT ALL ON TABLE public.ticket_collaborators TO service_role;
-GRANT SELECT,INSERT ON TABLE public.ticket_collaborators TO sandbox_exec;
 
 
 --
@@ -14339,7 +14154,6 @@ GRANT SELECT,INSERT ON TABLE public.ticket_collaborators TO sandbox_exec;
 GRANT ALL ON TABLE public.tickets TO anon;
 GRANT ALL ON TABLE public.tickets TO authenticated;
 GRANT ALL ON TABLE public.tickets TO service_role;
-GRANT SELECT,INSERT ON TABLE public.tickets TO sandbox_exec;
 
 
 --
@@ -14349,7 +14163,6 @@ GRANT SELECT,INSERT ON TABLE public.tickets TO sandbox_exec;
 GRANT ALL ON TABLE public.user_notification_preferences TO anon;
 GRANT ALL ON TABLE public.user_notification_preferences TO authenticated;
 GRANT ALL ON TABLE public.user_notification_preferences TO service_role;
-GRANT SELECT,INSERT ON TABLE public.user_notification_preferences TO sandbox_exec;
 
 
 --
@@ -14359,7 +14172,6 @@ GRANT SELECT,INSERT ON TABLE public.user_notification_preferences TO sandbox_exe
 GRANT ALL ON TABLE public.user_roles TO anon;
 GRANT ALL ON TABLE public.user_roles TO authenticated;
 GRANT ALL ON TABLE public.user_roles TO service_role;
-GRANT SELECT,INSERT ON TABLE public.user_roles TO sandbox_exec;
 
 
 --
@@ -14369,7 +14181,6 @@ GRANT SELECT,INSERT ON TABLE public.user_roles TO sandbox_exec;
 GRANT ALL ON TABLE public.validation_permissions TO anon;
 GRANT ALL ON TABLE public.validation_permissions TO authenticated;
 GRANT ALL ON TABLE public.validation_permissions TO service_role;
-GRANT SELECT,INSERT ON TABLE public.validation_permissions TO sandbox_exec;
 
 
 --
@@ -14379,7 +14190,6 @@ GRANT SELECT,INSERT ON TABLE public.validation_permissions TO sandbox_exec;
 GRANT ALL ON TABLE public.validation_requests TO anon;
 GRANT ALL ON TABLE public.validation_requests TO authenticated;
 GRANT ALL ON TABLE public.validation_requests TO service_role;
-GRANT SELECT,INSERT ON TABLE public.validation_requests TO sandbox_exec;
 
 
 --
@@ -14389,70 +14199,42 @@ GRANT SELECT,INSERT ON TABLE public.validation_requests TO sandbox_exec;
 GRANT ALL ON TABLE public.validation_rules TO anon;
 GRANT ALL ON TABLE public.validation_rules TO authenticated;
 GRANT ALL ON TABLE public.validation_rules TO service_role;
-GRANT SELECT,INSERT ON TABLE public.validation_rules TO sandbox_exec;
 
 
 --
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,USAGE ON SEQUENCES TO sandbox_exec;
 
 
 --
 -- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
 
 
 --
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON FUNCTIONS TO sandbox_exec;
 
 
 --
 -- Name: DEFAULT PRIVILEGES FOR FUNCTIONS; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO service_role;
 
 
 --
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT,INSERT ON TABLES TO sandbox_exec;
 
 
 --
 -- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON TABLES TO postgres;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON TABLES TO anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON TABLES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON TABLES TO service_role;
 
 
 --

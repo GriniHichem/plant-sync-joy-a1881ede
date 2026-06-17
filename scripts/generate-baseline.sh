@@ -41,6 +41,7 @@ pg_dump "$SUPABASE_DB_URL" --schema-only --schema=public --no-owner --no-comment
   | grep -vE '^\\(un)?restrict' \
   | grep -vE '^CREATE SCHEMA public;$' \
   | grep -vE '^GRANT .* TO (postgres|sandbox_exec|supabase_admin|authenticator|dashboard_user|supabase_read_only_user|supabase_storage_admin|supabase_auth_admin);$' \
+  | grep -vE '^ALTER DEFAULT PRIVILEGES ' \
   > "$TMP_PUBLIC"
 
 echo "→ Dump des politiques storage.objects..."

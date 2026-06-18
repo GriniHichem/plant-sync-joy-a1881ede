@@ -7,7 +7,7 @@ import { ArrowLeft, Upload, Shield } from "lucide-react";
 import { EntityImporter } from "@/components/parametres/EntityImporter";
 import { IMPORT_TEMPLATES, ImportEntity } from "@/lib/importTemplates";
 
-const ENTITIES: ImportEntity[] = ["machines", "equipements", "organes", "pdr"];
+const ENTITIES: ImportEntity[] = ["machines", "equipements", "organes", "pdr", "products", "articles"];
 
 export default function ImportData() {
   const navigate = useNavigate();

@@ -62,7 +62,10 @@ export default function InventoryCampaignsList() {
                   <li key={c.id} className="px-4 py-3 hover:bg-muted/30">
                     <Link to={`/inventaire/campagnes/${c.id}`} className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="font-medium truncate">{c.label}</div>
+                        <div className="font-medium truncate flex items-center gap-2">
+                          {c.label}
+                          <Badge variant="outline" className="text-[10px] shrink-0">{c.campaign_type === "investissement" ? "Investissement" : "PDR"}</Badge>
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           <span className="font-mono">{c.code ?? "—"}</span>
                           {c.date_debut && <> · Début {c.date_debut}</>}

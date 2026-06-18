@@ -1,78 +1,73 @@
-# Plan — Suite de tests complète du moteur de validation
+# Inventaire — Deux types de campagne : PDR et Investissement
 
-Objectif : garantir, par des tests automatisés exhaustifs, que les règles de validation se comportent exactement comme configurées dans l'UI — sans bug ni régression silencieuse. Aucune logique métier n'est modifiée ; on ajoute uniquement des tests (et, si un test révèle un vrai défaut, on le corrigera ponctuellement).
+## Objectif
+Aujourd'hui une campagne d'inventaire ne génère des articles à compter que pour les **PDR** (pièces de rechange), filtrés par famille PDR, avec double comptage Agent A/B + arbitrage C.
 
-## Périmètre
+On ajoute un **deuxième type exclusif** : **Investissement**, qui couvre **machines, équipements et organes**, filtré **par famille de machine**, avec choix des catégories à inclure. Le comptage se fait en **présence** (présent = 1 / absent = 0). Toute la mécanique double comptage A/B/C, écarts, arbitrage et clôture est réutilisée telle quelle.
 
-Le moteur (`src/lib/validation.ts`) contient :
-- Fonctions pures : `matchConditions`, `countConditions`, `checkValidationRequired` (sélection déterministe), `createValidationRequest` (auto-approve), `approve/reject/cancelValidationRequest`, `markTargetValidationStatus`.
-- Constantes d'affichage : `STATUS_LABEL`, `PRIORITY_LABEL`, etc.
+Choix validés :
+- Type **exclusif** choisi à la création (PDR **ou** Investissement, jamais mélangé).
+- Investissement : filtrage **par famille de machine** + cases pour inclure **machine / équipement / organe**.
+- Comptage **présence** (présent/absent).
+- Affectation agents : **même logique par famille** que les PDR.
 
-Test existant : `src/test/rules/match-conditions-validation.test.ts` (couvre déjà partiellement `matchConditions` + `countConditions`). On le complète et on ajoute de nouveaux fichiers.
+## Comportement attendu
 
-## Fichiers de test à créer / compléter
+### Création de campagne
+- En haut du formulaire : un choix **Type de campagne** (PDR / Investissement).
+- **PDR** → inchangé : familles PDR + agents par famille PDR (les cases « PDR / Organes » actuelles sont remplacées par ce sélecteur).
+- **Investissement** →
+  - Cases à cocher des catégories : **Machines**, **Équipements**, **Organes** (au moins une requise).
+  - Périmètre : liste des **familles de machine** (avec sous-familles).
+  - Affectations Agent A/B/(C) : familles autorisées = sous-ensemble des familles de machine du périmètre (même UI que PDR).
 
-```text
-src/test/rules/
-  match-conditions-validation.test.ts   (compléter)
-  check-validation-required.test.ts      (nouveau)
-  create-validation-request.test.ts      (nouveau)
-  validation-decisions.test.ts           (nouveau)
-  validation-display.test.ts             (nouveau)
-```
+### Lancement (génération des articles)
+- PDR : inchangé.
+- Investissement : pour chaque catégorie cochée, on crée un article à compter pour chaque actif **actif** dont la famille de machine est dans le périmètre :
+  - Machine → famille = sa propre `family_id`.
+  - Équipement → famille = sa propre `family_id`.
+  - Organe → famille = celle de sa machine (ou de son équipement) parente. Un organe sans famille rattachable est **ignoré** (impossible à affecter à un agent).
+  - `quantité système = 1` pour chaque actif.
 
-### 1. `match-conditions-validation.test.ts` — compléter
-Cas manquants à ajouter :
-- Champs absents du contexte (`undefined`) pour chaque opérateur (gt/gte/lt/lte/contains/eq/neq) → comportement attendu défini et figé.
-- Valeurs booléennes (`is_active`, `auto`) avec `eq`/`neq`.
-- Format natif avec `combinator` invalide / `rules` absent → ne plante pas.
-- Format legacy : tableau d'égalité (`{ statut: ["a","b"] }`), `min_age_hours`, `or` imbriqué, écart négatif vs `ecart_seuil_pct` (valeur absolue).
-- `conditions = null` → `true` (toujours déclenché).
+### Écran de comptage agent
+- Pour une campagne Investissement, l'agent voit ses familles de machine, scanne machine/équipement/organe.
+- Saisie en **présence** : deux boutons **Présent (1)** / **Absent (0)** au lieu du champ quantité libre. (PDR garde la saisie quantité décimale.)
+- Le bouton « Fiche » ouvre la bonne page selon le type (`/machines/:id`, `/equipements/:id`, `/organes/:id`, ou `/pdr/:id`).
 
-### 2. `check-validation-required.test.ts` — sélection déterministe (nouveau)
-Mock de `@/integrations/supabase/client` via le mock centralisé (`src/test/__mocks__/supabase.ts`), en surchargeant `validation_rules` pour chaque scénario :
-- Aucune règle active → `{ rule: null, enforcement: "none" }`.
-- Une seule règle correspondante → renvoyée avec son enforcement.
-- Plusieurs règles : priorité supérieure gagne (`critical` > `high` > `medium` > `low`).
-- Priorités égales : règle avec `entity_type` non nul (plus spécifique) gagne sur règle générique.
-- Priorité + spécificité égales : règle avec le plus de conditions gagne.
-- Règle dont les `conditions` ne matchent pas le contexte → exclue.
-- Erreur backend (mock qui rejette) → fallback sûr `{ rule: null, enforcement: "none" }` (jamais d'exception remontée).
-
-### 3. `create-validation-request.test.ts` — création + auto-approve (nouveau)
-Mock de `supabase.auth.getUser`, `from("validation_requests").insert`, et des dépendances (`logAudit`, `triggerNotification`, `@/lib/audit`) :
-- Sans utilisateur connecté → `null`, aucun insert.
-- Règle `blocking` → statut `submitted`, `is_blocking = true`, `applied_at = null`.
-- Règle `post_hoc` sans auto-approve → statut `pending_post_hoc`, `applied_at` renseigné.
-- Règle `post_hoc` + `auto_approve_if_low_risk = true` + priorité `low` → statut `approved`, `validation_comment` = "Auto-approuvée (risque faible)", `validated_at` renseigné.
-- `auto_approve_if_low_risk = true` mais priorité `medium`/`high` → PAS auto-approuvée.
-- Affectation `assigned_validator_role`/`assigned_validator_user_id` depuis la règle.
-- `changed_fields` calculé depuis old/proposed values.
-- Notification déclenchée uniquement si `validator_roles` non vide.
-
-### 4. `validation-decisions.test.ts` — approve / reject / cancel (nouveau)
-- `approveValidationRequest` blocking → statut `applied` + `applied_at`.
-- `approveValidationRequest` post_hoc → statut `approved`, et `markTargetValidationStatus` appelée sur la bonne table (`tickets`, `interventions`, `pdr_stock_movements`, `consumptions`).
-- `rejectValidationRequest` → statut `rejected` + `rejection_reason`, marquage cible `rejected`.
-- `cancelValidationRequest` → statut `cancelled`, filtre `submitted_by_user_id` (un utilisateur ne peut annuler que ses demandes).
-- Sans utilisateur → `false` partout.
-- Erreur d'update backend → `false`.
-
-### 5. `validation-display.test.ts` — cohérence des libellés (nouveau)
-- Chaque `ValidationStatus` a un `STATUS_LABEL` et un `STATUS_BADGE_CLASS`.
-- Chaque `ValidationPriority` a `PRIORITY_LABEL` et `PRIORITY_BADGE_CLASS`.
-- Chaque `ValidationEnforcement` a `ENFORCEMENT_LABEL`.
-Ces tests verrouillent l'exhaustivité si un nouveau statut/priorité est ajouté plus tard.
+### Suivi / détail campagne
+- Badge du type de campagne.
+- Le tableau écarts / A / B / C / décision reste identique (générique). Pour l'investissement, A et B valent 1 ou 0, l'écart révèle un actif vu par l'un et pas par l'autre.
+- Liste des campagnes : afficher le type.
 
 ## Détails techniques
 
-- Réutilisation du mock centralisé `src/test/__mocks__/supabase.ts` (déjà utilisé par les autres suites), avec `vi.mock("@/integrations/supabase/client")` et surcharge ciblée des données par test via un `createQueryBuilder` paramétrable. Si le builder actuel ne permet pas de simuler une erreur ou des données par-table dynamiques, on ajoute un petit helper local au fichier de test (sans toucher au mock partagé) pour ne pas casser les autres suites.
-- `logAudit`, `triggerNotification`, `sanitizeValues`, `computeChangedFields` seront mockés (`vi.mock`) pour isoler la logique et asserter les appels.
-- Aucune migration, aucun changement de schéma.
+### Migrations base de données
+1. **Enum type de campagne** : `CREATE TYPE inventory_campaign_type AS ENUM ('pdr','investissement')`.
+2. **Valeurs enum entités** : `ALTER TYPE inventory_entity_type ADD VALUE 'machine'` et `'equipement'` (`organe` existe déjà). À faire dans une migration distincte/préalable car PG interdit d'utiliser une valeur d'enum ajoutée dans la même transaction.
+3. **Colonnes `inventory_campaigns`** :
+   - `campaign_type inventory_campaign_type NOT NULL DEFAULT 'pdr'` (les campagnes existantes restent PDR).
+   - `scope_machines boolean NOT NULL DEFAULT false`, `scope_equipements boolean NOT NULL DEFAULT false` (réutilise `scope_organes` existant ; `scope_pdr` reste pour le type PDR).
+4. **`inv_family_descendants(uuid)`** : réécrire pour recurser sur l'union de `pdr_families` **et** `machine_families` (les UUID sont uniques par table, donc la résolution est correcte selon la table qui contient l'id). Ainsi `inv_campaign_authorized_families` et `inv_assignment_authorized_families` fonctionnent sans changement pour les deux types.
+5. **`inv_ensure_targets(uuid)`** : ajouter une branche selon `campaign_type` :
+   - `pdr` : logique actuelle inchangée.
+   - `investissement` : insertions conditionnelles selon `scope_machines/scope_equipements/scope_organes`, `qty_systeme = 1`, `family_id` résolue comme décrit, filtrées par `inv_campaign_authorized_families`, `ON CONFLICT DO NOTHING`. Organes : `family_id = COALESCE(machine.family_id, equipement.family_id)` et exclure ceux sans famille dans le périmètre.
+   - L'insertion des `inventory_results` reste générique.
+- `inv_register_count` / `inv_recompute_result` : **aucun changement** (déjà agnostiques au type, exigent juste un `family_id` non nul et autorisé → garanti par la résolution ci-dessus).
 
-## Validation
-- Lancement de la suite Vitest complète ; objectif : tous les nouveaux tests au vert et aucune régression sur les suites existantes.
-- Si un test met en évidence un vrai bug du moteur, correction minimale et ciblée dans `src/lib/validation.ts`, signalée explicitement.
+### Frontend
+- `src/hooks/useInventoryCampaigns.ts` : ajouter `campaign_type`, `scope_machines`, `scope_equipements` au type.
+- `src/pages/inventaire/InventoryCampaignNew.tsx` :
+  - Sélecteur de type ; chargement conditionnel des familles (`pdr_families` vs `machine_families`).
+  - Cases catégories pour l'investissement.
+  - À l'enregistrement : poser `campaign_type` et les `scope_*` adéquats ; `scope_pdr=false` pour investissement.
+- `src/pages/inventaire/InventoryCampaignDetail.tsx` : badge type ; libellés inchangés.
+- `src/pages/inventaire/InventoryCountScreen.tsx` :
+  - Charger les familles depuis `machine_families` si investissement.
+  - `ScanButton allowedTypes` selon le type (`["machine","equipement","organe"]` vs `["pdr","organe"]`).
+  - Mode présence : boutons Présent/Absent (envoient 1/0 via `inv_register_count`).
+  - Lien « Fiche » routé par `entity_type`.
+- `src/pages/inventaire/InventoryCampaignsList.tsx` : afficher le type.
 
-## Estimation
-~45–60 cas de test répartis sur 5 fichiers, couvrant matching, sélection déterministe, auto-approve, décisions, marquage cible et exhaustivité d'affichage.
+### Vérifications
+- Compatibilité ascendante : campagnes existantes → `campaign_type='pdr'`, comportement identique.
+- `bun run build` + tests Vitest existants ; vérifier qu'une campagne investissement génère bien des cibles et que le comptage présence calcule les écarts.

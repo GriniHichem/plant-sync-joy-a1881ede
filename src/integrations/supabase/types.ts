@@ -6229,7 +6229,7 @@ export type Database = {
         | "conforme_c_eq_a"
         | "conforme_c_eq_b"
         | "recompte_ab"
-      inventory_entity_type: "pdr" | "organe"
+      inventory_entity_type: "pdr" | "organe" | "machine" | "equipement"
       inventory_target_status:
         | "a_compter"
         | "en_arbitrage"
@@ -6578,7 +6578,7 @@ export const Constants = {
         "conforme_c_eq_b",
         "recompte_ab",
       ],
-      inventory_entity_type: ["pdr", "organe"],
+      inventory_entity_type: ["pdr", "organe", "machine", "equipement"],
       inventory_target_status: [
         "a_compter",
         "en_arbitrage",

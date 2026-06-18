@@ -39,6 +39,8 @@ import DocumentPermissionsAdmin from "@/pages/parametres/DocumentPermissionsAdmi
 import PdrFamiliesAdmin from "@/pages/parametres/PdrFamiliesAdmin";
 import PdrStockPermissionsAdmin from "@/pages/parametres/PdrStockPermissionsAdmin";
 import ScanHistoryAdmin from "@/pages/parametres/ScanHistoryAdmin";
+import ImportData from "@/pages/parametres/ImportData";
+
 
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
 import OfList from "@/pages/gpao/OfList";
@@ -291,6 +293,7 @@ const App = () => (
               <Route path="/parametres/general" element={<GeneralSettings />} />
               <Route path="/parametres/pdr-stock-permissions" element={<PdrStockPermissionsAdmin />} />
               <Route path="/parametres/scan-history" element={<ScanHistoryAdmin />} />
+              <Route path="/parametres/import" element={<ImportData />} />
               <Route path="/scan-history" element={<Navigate to="/parametres/scan-history" replace />} />
               <Route path="/audit" element={<AuditPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />

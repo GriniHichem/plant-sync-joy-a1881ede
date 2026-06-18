@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock, Cog, Shield, Settings2, Database, Bell, Mail, CheckSquare, ScanLine } from "lucide-react";
+import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock, Cog, Shield, Settings2, Database, Bell, Mail, CheckSquare, ScanLine, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface Section {
@@ -46,6 +46,7 @@ const groups: SectionGroup[] = [
     label: "Configuration générale",
     icon: Settings2,
     items: [
+      { title: "Importation de données", description: "Importer machines, équipements, organes et PDR via CSV", icon: Upload, url: "/parametres/import" },
       { title: "Photos & Images", description: "Taille max des photos par entité", icon: ImageIcon, url: "/parametres/images" },
       { title: "SMTP & Emails", description: "Serveur SMTP, test, rappels d'échéance", icon: Mail, url: "/parametres/smtp" },
       { title: "Historique des scans", description: "Tous les scans QR / code-barres (succès, ambigus, échecs)", icon: ScanLine, url: "/parametres/scan-history" },

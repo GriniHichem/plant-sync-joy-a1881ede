@@ -1,73 +1,66 @@
-# Inventaire — Deux types de campagne : PDR et Investissement
+# Module d'importation CSV — Configuration
 
-## Objectif
-Aujourd'hui une campagne d'inventaire ne génère des articles à compter que pour les **PDR** (pièces de rechange), filtrés par famille PDR, avec double comptage Agent A/B + arbitrage C.
+Ajout d'un module unique d'importation dans les Paramètres, réservé aux **admins**, permettant d'importer en masse **Machines, Équipements, Organes et PDR** depuis des fichiers CSV (UTF-8, caractères français), avec template à télécharger pour chaque entité et création automatique des familles / sous-familles manquantes.
 
-On ajoute un **deuxième type exclusif** : **Investissement**, qui couvre **machines, équipements et organes**, filtré **par famille de machine**, avec choix des catégories à inclure. Le comptage se fait en **présence** (présent = 1 / absent = 0). Toute la mécanique double comptage A/B/C, écarts, arbitrage et clôture est réutilisée telle quelle.
+## Comportement validé
 
-Choix validés :
-- Type **exclusif** choisi à la création (PDR **ou** Investissement, jamais mélangé).
-- Investissement : filtrage **par famille de machine** + cases pour inclure **machine / équipement / organe**.
-- Comptage **présence** (présent/absent).
-- Affectation agents : **même logique par famille** que les PDR.
+- **Doublons** : choix à l'import (case à cocher « Mettre à jour les existants »). Par défaut les doublons sont ignorés ; si coché, les enregistrements existants (même code/référence) sont mis à jour.
+- **Liens manquants** : les **familles et sous-familles** sont créées automatiquement. Les autres cibles (ligne de production, machine/équipement parent) doivent déjà exister, sinon la ligne est rejetée avec un message clair.
+- **Format** : un seul module `/parametres/import` avec un sélecteur d'entité (4 onglets).
+- **Accès** : admin uniquement.
 
-## Comportement attendu
+## Parcours utilisateur
 
-### Création de campagne
-- En haut du formulaire : un choix **Type de campagne** (PDR / Investissement).
-- **PDR** → inchangé : familles PDR + agents par famille PDR (les cases « PDR / Organes » actuelles sont remplacées par ce sélecteur).
-- **Investissement** →
-  - Cases à cocher des catégories : **Machines**, **Équipements**, **Organes** (au moins une requise).
-  - Périmètre : liste des **familles de machine** (avec sous-familles).
-  - Affectations Agent A/B/(C) : familles autorisées = sous-ensemble des familles de machine du périmètre (même UI que PDR).
+```text
+Paramètres › Configuration générale › Importation de données
+   └─ /parametres/import
+        ├─ Onglet Machines      [Télécharger modèle] [Importer CSV]
+        ├─ Onglet Équipements   [Télécharger modèle] [Importer CSV]
+        ├─ Onglet Organes       [Télécharger modèle] [Importer CSV]
+        └─ Onglet PDR           [Télécharger modèle] [Importer CSV]
 
-### Lancement (génération des articles)
-- PDR : inchangé.
-- Investissement : pour chaque catégorie cochée, on crée un article à compter pour chaque actif **actif** dont la famille de machine est dans le périmètre :
-  - Machine → famille = sa propre `family_id`.
-  - Équipement → famille = sa propre `family_id`.
-  - Organe → famille = celle de sa machine (ou de son équipement) parente. Un organe sans famille rattachable est **ignoré** (impossible à affecter à un agent).
-  - `quantité système = 1` pour chaque actif.
+Import CSV (par onglet) :
+  1. Choix fichier  →  2. Mapping colonnes (auto)  →  3. Aperçu + validation
+  →  4. Options (☑ mettre à jour existants)  →  5. Import  →  6. Rapport
+```
 
-### Écran de comptage agent
-- Pour une campagne Investissement, l'agent voit ses familles de machine, scanne machine/équipement/organe.
-- Saisie en **présence** : deux boutons **Présent (1)** / **Absent (0)** au lieu du champ quantité libre. (PDR garde la saisie quantité décimale.)
-- Le bouton « Fiche » ouvre la bonne page selon le type (`/machines/:id`, `/equipements/:id`, `/organes/:id`, ou `/pdr/:id`).
+## Templates (colonnes des modèles CSV)
 
-### Suivi / détail campagne
-- Badge du type de campagne.
-- Le tableau écarts / A / B / C / décision reste identique (générique). Pour l'investissement, A et B valent 1 ou 0, l'écart révèle un actif vu par l'un et pas par l'autre.
-- Liste des campagnes : afficher le type.
+Chaque modèle est téléchargé avec **BOM UTF-8** + séparateur `;` (compatible Excel français) et une ligne d'exemple. Les colonnes de famille acceptent un **nom** (créé si absent) et une sous-famille via `Famille` + `Sous-famille`.
 
-## Détails techniques
+- **Machines** : `code*`, `designation*`, `famille`, `sous_famille`, `criticite` (A/B/C), `statut` (en_marche/arret/maintenance), `localisation`, `marque`, `modele`, `numero_serie`, `date_mise_en_service` (AAAA-MM-JJ), `description`, `code_erp`
+- **Équipements** : `code*`, `designation*`, `famille`, `sous_famille`, `type` (capteur/actionneur/convoyeur/peripherique/utilite/sous_ensemble/instrument/autre), `statut`, `criticite`, `criticite_maintenance`, `role_fonctionnel`, `machine_parent_code` (doit exister), `ligne` (doit exister), `marque`, `modele`, `numero_serie`, `localisation`, `date_mise_en_service`, `description`, `code_erp`
+- **Organes** : `code*`, `designation*`, `type` (mecanique/electrique/…), `statut`, `criticite`, `machine_parent_code` **ou** `equipement_parent_code` (au moins un, doit exister), `description`
+- **PDR** : `reference*`, `designation*`, `famille`, `sous_famille`, `statut_pdr` (strategique/commune), `approvisionnement` (local/importation/mixte), `stock_actuel`, `stock_min`, `stock_max`, `stock_securite`, `point_commande`, `delai_approvisionnement`, `pmp`, `devise` (défaut DA)
 
-### Migrations base de données
-1. **Enum type de campagne** : `CREATE TYPE inventory_campaign_type AS ENUM ('pdr','investissement')`.
-2. **Valeurs enum entités** : `ALTER TYPE inventory_entity_type ADD VALUE 'machine'` et `'equipement'` (`organe` existe déjà). À faire dans une migration distincte/préalable car PG interdit d'utiliser une valeur d'enum ajoutée dans la même transaction.
-3. **Colonnes `inventory_campaigns`** :
-   - `campaign_type inventory_campaign_type NOT NULL DEFAULT 'pdr'` (les campagnes existantes restent PDR).
-   - `scope_machines boolean NOT NULL DEFAULT false`, `scope_equipements boolean NOT NULL DEFAULT false` (réutilise `scope_organes` existant ; `scope_pdr` reste pour le type PDR).
-4. **`inv_family_descendants(uuid)`** : réécrire pour recurser sur l'union de `pdr_families` **et** `machine_families` (les UUID sont uniques par table, donc la résolution est correcte selon la table qui contient l'id). Ainsi `inv_campaign_authorized_families` et `inv_assignment_authorized_families` fonctionnent sans changement pour les deux types.
-5. **`inv_ensure_targets(uuid)`** : ajouter une branche selon `campaign_type` :
-   - `pdr` : logique actuelle inchangée.
-   - `investissement` : insertions conditionnelles selon `scope_machines/scope_equipements/scope_organes`, `qty_systeme = 1`, `family_id` résolue comme décrit, filtrées par `inv_campaign_authorized_families`, `ON CONFLICT DO NOTHING`. Organes : `family_id = COALESCE(machine.family_id, equipement.family_id)` et exclure ceux sans famille dans le périmètre.
-   - L'insertion des `inventory_results` reste générique.
-- `inv_register_count` / `inv_recompute_result` : **aucun changement** (déjà agnostiques au type, exigent juste un `family_id` non nul et autorisé → garanti par la résolution ci-dessus).
+Valeurs d'enum invalides → ligne rejetée avec message. Champs vides → valeur par défaut de la table.
+
+## Implémentation technique
+
+### Backend — RPC d'import (migration)
+Quatre fonctions `SECURITY DEFINER` (une par entité), p. ex. `import_machines(_rows jsonb, _update_existing boolean)`, qui :
+1. Vérifient le rôle admin via `has_role(auth.uid(),'admin')`, sinon `RAISE EXCEPTION`.
+2. Pour chaque ligne :
+   - Résolvent/créent la **famille** (par `name`, `is_active=true`) puis la **sous-famille** (par `name` + `parent_id` = famille) dans `machine_families` (machines/équipements) ou `pdr_families` (PDR).
+   - Résolvent les liens existants (`machine_parent_code`, `equipement_parent_code`, `ligne` via `production_lines.nom`) — si introuvable, accumulent une erreur et **sautent** la ligne.
+   - Valident les enums ; valeurs vides → défaut.
+   - `INSERT` si nouveau, ou `UPDATE` si `_update_existing` et code/référence déjà présent, sinon **skip**.
+   - Écrivent un `audit_logs` par mutation (auteur, action, table, valeurs) conformément à la convention du projet.
+3. Retournent un récapitulatif JSON `{ created, updated, skipped, errors:[{row,message}] }` (transaction unique → atomicité).
+
+> Les familles/sous-familles créées génèrent aussi leur propre entrée d'audit.
 
 ### Frontend
-- `src/hooks/useInventoryCampaigns.ts` : ajouter `campaign_type`, `scope_machines`, `scope_equipements` au type.
-- `src/pages/inventaire/InventoryCampaignNew.tsx` :
-  - Sélecteur de type ; chargement conditionnel des familles (`pdr_families` vs `machine_families`).
-  - Cases catégories pour l'investissement.
-  - À l'enregistrement : poser `campaign_type` et les `scope_*` adéquats ; `scope_pdr=false` pour investissement.
-- `src/pages/inventaire/InventoryCampaignDetail.tsx` : badge type ; libellés inchangés.
-- `src/pages/inventaire/InventoryCountScreen.tsx` :
-  - Charger les familles depuis `machine_families` si investissement.
-  - `ScanButton allowedTypes` selon le type (`["machine","equipement","organe"]` vs `["pdr","organe"]`).
-  - Mode présence : boutons Présent/Absent (envoient 1/0 via `inv_register_count`).
-  - Lien « Fiche » routé par `entity_type`.
-- `src/pages/inventaire/InventoryCampaignsList.tsx` : afficher le type.
+- **`src/pages/parametres/ImportData.tsx`** (nouveau) : onglets par entité (`Tabs` shadcn), bouton « Télécharger le modèle » (réutilise `exportToCsv` avec ligne d'exemple) et le composant d'import.
+- **`src/components/parametres/EntityImporter.tsx`** (nouveau, basé sur l'actuel `CsvImporter`) : étapes fichier → mapping → aperçu → options → rapport ; parse via PapaParse avec `encoding: "UTF-8"` ; appelle la RPC correspondante au lieu d'un `upsert` direct ; affiche le rapport détaillé (créés / mis à jour / ignorés / erreurs ligne par ligne).
+- **`src/pages/Parametres.tsx`** : ajout d'une carte « Importation de données » dans le groupe *Configuration générale* (icône `Upload`).
+- **`src/App.tsx`** : route `/parametres/import` protégée admin (même garde que les autres pages admin).
+- Définitions de champs/templates centralisées dans **`src/lib/importTemplates.ts`** (clé, label, requis, type, valeurs d'enum) — partagées entre génération du modèle, mapping et validation.
 
-### Vérifications
-- Compatibilité ascendante : campagnes existantes → `campaign_type='pdr'`, comportement identique.
-- `bun run build` + tests Vitest existants ; vérifier qu'une campagne investissement génère bien des cibles et que le comptage présence calcule les écarts.
+### Tests
+- `src/test/parametres/import-templates.test.ts` : validité des définitions de colonnes, génération de modèle (en-têtes + BOM), mapping auto et détection des enums invalides.
+
+## Notes
+- Aucune table existante n'est modifiée structurellement ; seules de nouvelles fonctions RPC sont ajoutées.
+- L'UTF-8 est garanti à l'export (BOM) et à l'import (PapaParse `encoding: UTF-8`).
+- Les familles créées sont visibles immédiatement dans « Familles machines » / « Familles PDR ».

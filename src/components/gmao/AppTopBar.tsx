@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ImpersonationDialog } from "@/components/admin/ImpersonationDialog";
 import { Eye } from "lucide-react";
-import logoEntreprise from "@/assets/logo-entreprise.jpg";
+import logoAsset from "@/assets/prod-in-time-logo.png.asset.json";
 import {
   IconDashboard, IconMachine, IconEquipment, IconFactory, IconSpare,
   IconTicket, IconPreventive, IconShift, IconAnalytics, IconChart,
@@ -183,10 +183,8 @@ function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left" className="w-[300px] p-4 overflow-y-auto">
         <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border/60">
-          <img src={logoEntreprise} alt="" className="h-9 w-9 rounded-md object-cover" />
-          <div className="flex flex-col leading-none">
-            <span className="text-[13px] font-extrabold tracking-[0.1em] uppercase">PROD IN TIME</span>
-            <span className="text-[9px] font-semibold tracking-[0.2em] text-muted-foreground/60 uppercase mt-1">GMAO · GPAO</span>
+          <div className="h-9 w-auto rounded-md overflow-hidden bg-black flex items-center justify-center px-2">
+            <img src={logoAsset.url} alt="Prod in Time" className="h-full w-auto object-contain" />
           </div>
         </div>
         <RRNavLink
@@ -272,16 +270,8 @@ export function AppTopBar() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2.5 shrink-0 group"
         >
-          <div className="h-9 w-9 rounded-md overflow-hidden border border-border/60 shadow-sm transition-transform group-hover:scale-105">
-            <img src={logoEntreprise} alt="Entreprise" className="h-full w-full object-cover" />
-          </div>
-          <div className="hidden sm:flex flex-col leading-none">
-            <span className="text-[13px] font-extrabold tracking-[0.12em] uppercase text-foreground">
-              PROD IN TIME
-            </span>
-            <span className="text-[9px] font-semibold tracking-[0.22em] text-muted-foreground/60 uppercase mt-1">
-              GMAO · GPAO
-            </span>
+          <div className="h-9 w-auto rounded-md overflow-hidden bg-black flex items-center justify-center px-2 border border-border/60 shadow-sm transition-transform group-hover:scale-105">
+            <img src={logoAsset.url} alt="Prod in Time" className="h-full w-auto object-contain" />
           </div>
         </button>
 

@@ -204,47 +204,18 @@ export default function Apps() {
                    : m.title.includes("contrôle")
                    ? "border-l-emerald-500"
                    : "";
-
-                 // ===== Dashboard : carte mise en avant (look distinct) =====
-                 if (isDashboard) {
-                   return (
-                     <button
-                       key={m.url}
-                       onClick={() => navigate(m.url)}
-                       aria-label={`${m.title} — ${m.description}`}
-                       className={cn(
-                         "group relative col-span-2 flex items-center text-left gap-4 p-4 rounded-xl overflow-hidden",
-                         "border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent",
-                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                         "transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-primary/40"
-                       )}
-                     >
-                       <span
-                         className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-primary/15 blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-300"
-                         aria-hidden
-                       />
-                       <div className="relative h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md group-hover:scale-105 transition-transform duration-200">
-                         <m.icon size={28} />
-                       </div>
-                       <div className="relative flex-1 min-w-0">
-                         <div className="flex items-center gap-2">
-                           <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-primary/80">
-                             Vue d'ensemble
-                           </span>
-                         </div>
-                         <p className="text-[15px] font-bold leading-tight text-foreground truncate">
-                           {m.title}
-                         </p>
-                         <p className="text-[11px] leading-snug text-muted-foreground line-clamp-1">
-                           {m.description}
-                         </p>
-                       </div>
-                       <span className="relative shrink-0 text-primary/60 group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200">
-                         →
-                       </span>
-                     </button>
-                   );
-                 }
+                 // Petite distinction subtile entre dashboards (bordure top colorée par catégorie)
+                 const dashTopColor = isDashboard
+                   ? m.category === "Maintenance"
+                     ? "border-t-sky-500"
+                     : m.category === "Production"
+                     ? "border-t-amber-500"
+                     : m.category === "Qualité"
+                     ? "border-t-emerald-500"
+                     : m.category === "Inventaire"
+                     ? "border-t-violet-500"
+                     : ""
+                   : "";
 
                  return (
                  <button
@@ -257,6 +228,8 @@ export default function Apps() {
                      "transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg",
                      isShift
                        ? `bg-card border-l-[3px] ${shiftColor} hover:border-primary/40`
+                       : isDashboard
+                       ? `bg-card border-t-[3px] ${dashTopColor} hover:border-primary/40`
                        : "bg-card hover:border-primary/40"
                    )}
                  >

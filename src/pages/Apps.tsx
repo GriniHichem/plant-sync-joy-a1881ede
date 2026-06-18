@@ -89,6 +89,42 @@ const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: strin
   Configuration: IconSettings,
 };
 
+const CARD_THEME: Record<string, {
+  strip: string;
+  washFrom: string;
+  iconBg: string;
+  iconText: string;
+  hoverShadow: string;
+}> = {
+  sky: { strip: "bg-sky-500", washFrom: "from-sky-50/30", iconBg: "bg-sky-50", iconText: "text-sky-600", hoverShadow: "hover:shadow-sky-500/10" },
+  blue: { strip: "bg-blue-500", washFrom: "from-blue-50/30", iconBg: "bg-blue-50", iconText: "text-blue-600", hoverShadow: "hover:shadow-blue-500/10" },
+  cyan: { strip: "bg-cyan-500", washFrom: "from-cyan-50/30", iconBg: "bg-cyan-50", iconText: "text-cyan-600", hoverShadow: "hover:shadow-cyan-500/10" },
+  teal: { strip: "bg-teal-500", washFrom: "from-teal-50/30", iconBg: "bg-teal-50", iconText: "text-teal-600", hoverShadow: "hover:shadow-teal-500/10" },
+  indigo: { strip: "bg-indigo-600", washFrom: "from-indigo-50/30", iconBg: "bg-indigo-50", iconText: "text-indigo-600", hoverShadow: "hover:shadow-indigo-500/10" },
+  amber: { strip: "bg-amber-500", washFrom: "from-amber-50/30", iconBg: "bg-amber-50", iconText: "text-amber-600", hoverShadow: "hover:shadow-amber-500/10" },
+  rose: { strip: "bg-rose-500", washFrom: "from-rose-50/30", iconBg: "bg-rose-50", iconText: "text-rose-600", hoverShadow: "hover:shadow-rose-500/10" },
+  emerald: { strip: "bg-emerald-600", washFrom: "from-emerald-50/30", iconBg: "bg-emerald-50", iconText: "text-emerald-600", hoverShadow: "hover:shadow-emerald-500/10" },
+  violet: { strip: "bg-violet-500", washFrom: "from-violet-50/30", iconBg: "bg-violet-50", iconText: "text-violet-600", hoverShadow: "hover:shadow-violet-500/10" },
+  slate: { strip: "bg-slate-400", washFrom: "from-slate-50/30", iconBg: "bg-slate-100", iconText: "text-slate-600", hoverShadow: "hover:shadow-slate-500/10" },
+  stone: { strip: "bg-stone-400", washFrom: "from-stone-50/30", iconBg: "bg-stone-100", iconText: "text-stone-600", hoverShadow: "hover:shadow-stone-500/10" },
+  fuchsia: { strip: "bg-fuchsia-500", washFrom: "from-fuchsia-50/30", iconBg: "bg-fuchsia-50", iconText: "text-fuchsia-600", hoverShadow: "hover:shadow-fuchsia-500/10" },
+  orange: { strip: "bg-orange-500", washFrom: "from-orange-50/30", iconBg: "bg-orange-50", iconText: "text-orange-600", hoverShadow: "hover:shadow-orange-500/10" },
+  red: { strip: "bg-red-500", washFrom: "from-red-50/30", iconBg: "bg-red-50", iconText: "text-red-600", hoverShadow: "hover:shadow-red-500/10" },
+};
+
+function getTheme(m: AppModule) {
+  if (m.title === "Shift Maintenance") return CARD_THEME["indigo"];
+  if (m.title === "Shift Production") return CARD_THEME["emerald"];
+  if (m.title === "Shift contrôle") return CARD_THEME["orange"];
+  if (m.title === "Tableau de bord") return CARD_THEME["blue"];
+  if (m.title === "Dashboard Production") return CARD_THEME["amber"];
+  if (m.title === "Dashboard Qualité") return CARD_THEME["teal"];
+  if (m.title === "Dashboard Inventaire") return CARD_THEME["violet"];
+  const match = m.accent.match(/text-([a-z]+)-\d+/);
+  const key = match ? match[1] : "slate";
+  return CARD_THEME[key] ?? CARD_THEME["slate"];
+}
+
 export default function Apps() {
   const navigate = useNavigate();
   const { canView, loading } = usePermissions();
@@ -193,85 +229,77 @@ export default function Apps() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                {items.map((m) => {
-                 const isShift = m.badge === "Live";
-                 const isDashboard =
-                   m.title.toLowerCase().includes("dashboard") ||
-                   m.title === "Tableau de bord";
-                 const shiftColor = m.title.includes("Maintenance")
-                   ? "border-l-blue-500"
-                   : m.title.includes("Production")
-                   ? "border-l-amber-500"
-                   : m.title.includes("contrôle")
-                   ? "border-l-emerald-500"
-                   : "";
-                 // Petite distinction subtile entre dashboards (bordure top colorée par catégorie)
-                 const dashTopColor = isDashboard
-                   ? m.category === "Maintenance"
-                     ? "border-t-sky-500"
-                     : m.category === "Production"
-                     ? "border-t-amber-500"
-                     : m.category === "Qualité"
-                     ? "border-t-emerald-500"
-                     : m.category === "Inventaire"
-                     ? "border-t-violet-500"
-                     : ""
-                   : "";
-
+                 const theme = getTheme(m);
                  return (
-                 <button
-                   key={m.url}
-                   onClick={() => navigate(m.url)}
-                   aria-label={`${m.title} — ${m.description}`}
-                   className={cn(
-                     "group relative flex flex-col items-center text-center gap-3 p-4 rounded-xl border overflow-hidden",
-                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                     "transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg",
-                     isShift
-                       ? `bg-card border-l-[3px] ${shiftColor} hover:border-primary/40`
-                       : isDashboard
-                       ? `bg-card border-t-[3px] ${dashTopColor} hover:border-primary/40`
-                       : "bg-card hover:border-primary/40"
-                   )}
-                 >
-                   {/* halo au survol */}
-                   <span
+                   <button
+                     key={m.url}
+                     onClick={() => navigate(m.url)}
+                     aria-label={`${m.title} — ${m.description}`}
                      className={cn(
-                       "pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 h-24 w-24 rounded-full blur-2xl opacity-0",
-                       "bg-gradient-to-br group-hover:opacity-40 transition-opacity duration-300",
-                       m.accent
-                     )}
-                     aria-hidden
-                   />
-                   {m.badge && (
-                     <Badge
-                       variant="secondary"
-                       className={cn(
-                         "absolute top-2 right-2 h-5 px-1.5 text-[9px] font-bold tracking-wider uppercase border-0",
-                         isShift ? "bg-primary/15 text-primary" : "bg-primary/15 text-primary"
-                       )}
-                     >
-                       <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full animate-pulse bg-primary" />
-                       {m.badge}
-                     </Badge>
-                   )}
-                   <div
-                     className={cn(
-                       "relative h-14 w-14 rounded-2xl flex items-center justify-center border shadow-sm",
-                       "group-hover:scale-110 group-hover:shadow-md transition-all duration-200",
-                       "bg-gradient-to-br border-border/40", m.accent
+                       "group relative flex flex-col items-center text-center gap-3 p-5 rounded-xl border overflow-hidden",
+                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                       "transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg",
+                       "bg-card",
+                       theme.hoverShadow
                      )}
                    >
-                     <m.icon size={26} />
-                   </div>
-                   <div className="relative space-y-1 min-h-[3.5rem]">
-                     <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors">
-                       {m.title}
-                     </p>
-                     <p className="text-[10.5px] leading-snug line-clamp-2 text-muted-foreground">
-                       {m.description}
-                     </p>
-                   </div>
-                 </button>
+                     {/* Left accent strip */}
+                     <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", theme.strip)} />
+                     
+                     {/* Hover wash gradient */}
+                     <div className={cn(
+                       "absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                       theme.washFrom
+                     )} />
+                     
+                     {m.badge && (
+                       <Badge
+                         variant="secondary"
+                         className={cn(
+                           "absolute top-3 right-3 h-5 px-2 text-[9px] font-bold tracking-wider uppercase border-0",
+                           m.badge === "Live"
+                             ? "bg-green-50 text-green-700 border border-green-100"
+                             : "bg-primary/15 text-primary"
+                         )}
+                       >
+                         {m.badge === "Live" ? (
+                           <>
+                             <span className="relative flex h-2 w-2 mr-1">
+                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                             </span>
+                             {m.badge}
+                           </>
+                         ) : (
+                           <>
+                             <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full animate-pulse bg-primary" />
+                             {m.badge}
+                           </>
+                         )}
+                       </Badge>
+                     )}
+                     
+                     <div
+                       className={cn(
+                         "relative h-14 w-14 rounded-2xl flex items-center justify-center border shadow-sm",
+                         "group-hover:scale-110 group-hover:shadow-md transition-all duration-200",
+                         "border-border/40",
+                         theme.iconBg,
+                         theme.iconText
+                       )}
+                     >
+                       <m.icon size={26} />
+                     </div>
+                     
+                     <div className="relative space-y-1 min-h-[3.5rem]">
+                       <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+                         {m.title}
+                       </p>
+                       <p className="text-[10.5px] leading-snug line-clamp-2 text-muted-foreground">
+                         {m.description}
+                       </p>
+                     </div>
+                   </button>
                  );
                })}
             </div>

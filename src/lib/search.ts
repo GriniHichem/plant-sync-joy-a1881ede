@@ -6,7 +6,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { parseSearchQuery, type ParsedQuery } from "@/lib/searchQueryParser";
-import { KNOWN_MODULE_KEYS } from "@/lib/searchCatalog";
+import { resolveModuleKey } from "@/lib/searchCatalog";
 
 export interface SearchResult {
   module: string;

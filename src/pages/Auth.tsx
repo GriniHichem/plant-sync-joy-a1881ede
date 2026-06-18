@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import logoEntreprise from "@/assets/logo-entreprise.jpg";
-import logoAmour from "@/assets/logo-amour.jpg";
+import logoAsset from "@/assets/prod-in-time-logo.png.asset.json";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -57,12 +56,12 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-3">
-            <img src={logoEntreprise} alt="Entreprise" className="h-14 w-14 rounded-xl object-cover" />
-            <img src={logoAmour} alt="Amour" className="h-12 object-contain rounded" />
+        <CardHeader className="text-center space-y-3">
+          <div className="flex items-center justify-center">
+            <div className="h-40 w-auto rounded-xl overflow-hidden bg-black flex items-center justify-center px-4">
+              <img src={logoAsset.url} alt="Prod in Time" className="h-full w-auto object-contain" />
+            </div>
           </div>
-          <CardTitle className="text-xl font-bold tracking-widest uppercase">PROD IN TIME</CardTitle>
           <p className="text-xs text-muted-foreground tracking-wide">GMAO & GPAO</p>
           <CardDescription>
             {isLogin ? "Connectez-vous à votre espace" : "Créer un nouveau compte"}

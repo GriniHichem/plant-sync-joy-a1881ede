@@ -192,70 +192,115 @@ export default function Apps() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-              {items.map((m) => {
-                const isShift = m.badge === "Live";
-                const shiftColor = m.title.includes("Maintenance")
-                  ? "border-l-blue-500"
-                  : m.title.includes("Production")
-                  ? "border-l-amber-500"
-                  : m.title.includes("contrôle")
-                  ? "border-l-emerald-500"
-                  : "";
-                return (
-                <button
-                  key={m.url}
-                  onClick={() => navigate(m.url)}
-                  aria-label={`${m.title} — ${m.description}`}
-                  className={cn(
-                    "group relative flex flex-col items-center text-center gap-3 p-4 rounded-xl border overflow-hidden",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                    "transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg",
-                    isShift
-                      ? `bg-card border-l-[3px] ${shiftColor} hover:border-primary/40`
-                      : "bg-card hover:border-primary/40"
-                  )}
-                >
-                  {/* halo au survol */}
-                  <span
-                    className={cn(
-                      "pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 h-24 w-24 rounded-full blur-2xl opacity-0",
-                      "bg-gradient-to-br group-hover:opacity-40 transition-opacity duration-300",
-                      m.accent
-                    )}
-                    aria-hidden
-                  />
-                  {m.badge && (
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "absolute top-2 right-2 h-5 px-1.5 text-[9px] font-bold tracking-wider uppercase border-0",
-                        isShift ? "bg-primary/15 text-primary" : "bg-primary/15 text-primary"
-                      )}
-                    >
-                      <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full animate-pulse bg-primary" />
-                      {m.badge}
-                    </Badge>
-                  )}
-                  <div
-                    className={cn(
-                      "relative h-14 w-14 rounded-2xl flex items-center justify-center border shadow-sm",
-                      "group-hover:scale-110 group-hover:shadow-md transition-all duration-200",
-                      "bg-gradient-to-br border-border/40", m.accent
-                    )}
-                  >
-                    <m.icon size={26} />
-                  </div>
-                  <div className="relative space-y-1 min-h-[3.5rem]">
-                    <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors">
-                      {m.title}
-                    </p>
-                    <p className="text-[10.5px] leading-snug line-clamp-2 text-muted-foreground">
-                      {m.description}
-                    </p>
-                  </div>
-                </button>
-                );
-              })}
+               {items.map((m) => {
+                 const isShift = m.badge === "Live";
+                 const isDashboard =
+                   m.title.toLowerCase().includes("dashboard") ||
+                   m.title === "Tableau de bord";
+                 const shiftColor = m.title.includes("Maintenance")
+                   ? "border-l-blue-500"
+                   : m.title.includes("Production")
+                   ? "border-l-amber-500"
+                   : m.title.includes("contrôle")
+                   ? "border-l-emerald-500"
+                   : "";
+
+                 // ===== Dashboard : carte mise en avant (look distinct) =====
+                 if (isDashboard) {
+                   return (
+                     <button
+                       key={m.url}
+                       onClick={() => navigate(m.url)}
+                       aria-label={`${m.title} — ${m.description}`}
+                       className={cn(
+                         "group relative col-span-2 flex items-center text-left gap-4 p-4 rounded-xl overflow-hidden",
+                         "border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent",
+                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                         "transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg hover:border-primary/40"
+                       )}
+                     >
+                       <span
+                         className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-primary/15 blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-300"
+                         aria-hidden
+                       />
+                       <div className="relative h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md group-hover:scale-105 transition-transform duration-200">
+                         <m.icon size={28} />
+                       </div>
+                       <div className="relative flex-1 min-w-0">
+                         <div className="flex items-center gap-2">
+                           <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-primary/80">
+                             Vue d'ensemble
+                           </span>
+                         </div>
+                         <p className="text-[15px] font-bold leading-tight text-foreground truncate">
+                           {m.title}
+                         </p>
+                         <p className="text-[11px] leading-snug text-muted-foreground line-clamp-1">
+                           {m.description}
+                         </p>
+                       </div>
+                       <span className="relative shrink-0 text-primary/60 group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200">
+                         →
+                       </span>
+                     </button>
+                   );
+                 }
+
+                 return (
+                 <button
+                   key={m.url}
+                   onClick={() => navigate(m.url)}
+                   aria-label={`${m.title} — ${m.description}`}
+                   className={cn(
+                     "group relative flex flex-col items-center text-center gap-3 p-4 rounded-xl border overflow-hidden",
+                     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                     "transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg",
+                     isShift
+                       ? `bg-card border-l-[3px] ${shiftColor} hover:border-primary/40`
+                       : "bg-card hover:border-primary/40"
+                   )}
+                 >
+                   {/* halo au survol */}
+                   <span
+                     className={cn(
+                       "pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 h-24 w-24 rounded-full blur-2xl opacity-0",
+                       "bg-gradient-to-br group-hover:opacity-40 transition-opacity duration-300",
+                       m.accent
+                     )}
+                     aria-hidden
+                   />
+                   {m.badge && (
+                     <Badge
+                       variant="secondary"
+                       className={cn(
+                         "absolute top-2 right-2 h-5 px-1.5 text-[9px] font-bold tracking-wider uppercase border-0",
+                         isShift ? "bg-primary/15 text-primary" : "bg-primary/15 text-primary"
+                       )}
+                     >
+                       <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full animate-pulse bg-primary" />
+                       {m.badge}
+                     </Badge>
+                   )}
+                   <div
+                     className={cn(
+                       "relative h-14 w-14 rounded-2xl flex items-center justify-center border shadow-sm",
+                       "group-hover:scale-110 group-hover:shadow-md transition-all duration-200",
+                       "bg-gradient-to-br border-border/40", m.accent
+                     )}
+                   >
+                     <m.icon size={26} />
+                   </div>
+                   <div className="relative space-y-1 min-h-[3.5rem]">
+                     <p className="text-[13px] font-semibold leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+                       {m.title}
+                     </p>
+                     <p className="text-[10.5px] leading-snug line-clamp-2 text-muted-foreground">
+                       {m.description}
+                     </p>
+                   </div>
+                 </button>
+                 );
+               })}
             </div>
           </section>
         );

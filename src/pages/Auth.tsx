@@ -58,9 +58,7 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
           <div className="flex items-center justify-center">
-            <div className="h-40 w-auto rounded-xl overflow-hidden bg-black flex items-center justify-center px-4">
-              <img src={logoAsset.url} alt="Prod in Time" className="h-full w-auto object-contain" />
-            </div>
+            <img src={logoAsset.url} alt="Prod in Time" className="h-48 w-auto object-contain" />
           </div>
           <p className="text-xs text-muted-foreground tracking-wide">GMAO & GPAO</p>
           <CardDescription>

@@ -183,9 +183,7 @@ function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left" className="w-[300px] p-4 overflow-y-auto">
         <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border/60">
-          <div className="h-9 w-auto rounded-md overflow-hidden bg-black flex items-center justify-center px-2">
-            <img src={logoAsset.url} alt="Prod in Time" className="h-full w-auto object-contain" />
-          </div>
+          <img src={logoAsset.url} alt="Prod in Time" className="h-10 w-auto object-contain rounded-md" />
         </div>
         <RRNavLink
           to="/apps"
@@ -270,9 +268,7 @@ export function AppTopBar() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2.5 shrink-0 group"
         >
-          <div className="h-9 w-auto rounded-md overflow-hidden bg-black flex items-center justify-center px-2 border border-border/60 shadow-sm transition-transform group-hover:scale-105">
-            <img src={logoAsset.url} alt="Prod in Time" className="h-full w-auto object-contain" />
-          </div>
+          <img src={logoAsset.url} alt="Prod in Time" className="h-10 w-auto object-contain rounded-md border border-border/60 shadow-sm transition-transform group-hover:scale-105" />
         </button>
 
         <div className="hidden md:block h-7 w-px bg-border/60 mx-2" />

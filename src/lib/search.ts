@@ -37,11 +37,13 @@ export interface GlobalSearchOptions {
   signal?: AbortSignal;
 }
 
-/** Sanitize : retire les modules inconnus pour ne pas casser le RPC. */
+/** Sanitize : résout les alias et retire les modules inconnus. */
 function sanitizeModules(modules: string[]): string[] {
   if (!modules.length) return [];
-  const known = new Set<string>(KNOWN_MODULE_KEYS);
-  return modules.filter((m) => known.has(m));
+  const resolved = modules
+    .map((m) => resolveModuleKey(m))
+    .filter((m): m is string => Boolean(m));
+  return Array.from(new Set(resolved));
 }
 
 /** Applique les exclusions client-side sur snippet/label/code. */

@@ -6070,6 +6070,34 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_enum: {
+        Args: { _allowed: string[]; _default: string; _val: string }
+        Returns: string
+      }
+      import_equipements: {
+        Args: { _rows: Json; _update_existing: boolean }
+        Returns: Json
+      }
+      import_machines: {
+        Args: { _rows: Json; _update_existing: boolean }
+        Returns: Json
+      }
+      import_organes: {
+        Args: { _rows: Json; _update_existing: boolean }
+        Returns: Json
+      }
+      import_pdr: {
+        Args: { _rows: Json; _update_existing: boolean }
+        Returns: Json
+      }
+      import_resolve_mfamily: {
+        Args: { _fam: string; _sub: string }
+        Returns: string
+      }
+      import_resolve_pfamily: {
+        Args: { _fam: string; _sub: string }
+        Returns: string
+      }
       inv_assignment_authorized_families: {
         Args: { p_assignment_id: string }
         Returns: string[]

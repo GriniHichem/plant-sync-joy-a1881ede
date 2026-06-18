@@ -10,6 +10,7 @@ import {
 describe("searchCatalog", () => {
   it("exposes all modules indexed in Phase 1 (DB)", () => {
     // Si on ajoute une table indexée DB, elle DOIT être enregistrée ici.
+    // Les clés correspondent aux noms de module renvoyés par le RPC global_search.
     const expected = [
       "machines",
       "equipements",
@@ -18,19 +19,21 @@ describe("searchCatalog", () => {
       "pdr",
       "tickets",
       "interventions",
-      "ordres_fabrication",
+      "of",
       "products",
       "articles",
       "recipes",
-      "consumptions",
+      "consommations",
       "arrets",
-      "preventif_plans",
+      "preventif",
       "notifications",
-      "audit_logs",
-      "validation_requests",
-      "entity_documents",
-      "pdr_stock_movements",
-      "pdr_family_suppliers",
+      "audit",
+      "validations",
+      "documents",
+      "pdr_movements",
+      "fournisseurs",
+      "quality_nc",
+      "quality_actions",
     ].sort();
     expect([...KNOWN_MODULE_KEYS].sort()).toEqual(expected);
   });
@@ -40,10 +43,11 @@ describe("searchCatalog", () => {
       expect(m.label).toBeTruthy();
       expect(m.pluralLabel).toBeTruthy();
       expect(m.icon).toBeTruthy();
-      expect(m.group).toMatch(/Industriel|Production|Maintenance|Stock|Système/);
+      expect(m.group).toMatch(
+        /Industriel|Production|Maintenance|Qualité|Stock|Système/,
+      );
       expect(typeof m.buildUrl).toBe("function");
       const url = m.buildUrl("abc-123");
-      expect(url).toContain("abc-123");
       expect(url.startsWith("/")).toBe(true);
     }
   });
@@ -62,12 +66,11 @@ describe("searchCatalog", () => {
   it("groups modules by category for facet rendering", () => {
     const groups = listModulesByGroup();
     expect(Object.keys(groups).sort()).toEqual(
-      ["Industriel", "Maintenance", "Production", "Stock", "Système"].sort(),
+      ["Industriel", "Maintenance", "Production", "Qualité", "Stock", "Système"].sort(),
     );
     expect(groups.Maintenance.some((m) => m.key === "tickets")).toBe(true);
-    expect(groups.Production.some((m) => m.key === "ordres_fabrication")).toBe(
-      true,
-    );
+    expect(groups.Production.some((m) => m.key === "of")).toBe(true);
+    expect(groups.Qualité.some((m) => m.key === "quality_nc")).toBe(true);
     expect(groups.Stock.some((m) => m.key === "pdr")).toBe(true);
   });
 

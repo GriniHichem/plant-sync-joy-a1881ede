@@ -2,9 +2,10 @@
  * Catalogue de modules indexés.
  * Mapping module → libellé, route, icône et formateurs d'affichage.
  *
- * Convention : toute nouvelle table indexée (avec search_vector + trigger DB)
- * DOIT être enregistrée ici, sinon les résultats apparaîtront sans icône
- * ni route cliquable.
+ * IMPORTANT : les clés DOIVENT correspondre EXACTEMENT aux noms de module
+ * renvoyés par le RPC `global_search` côté base (ex: `of`, `preventif`,
+ * `audit`, `quality_nc`…). Sinon les résultats tombent sur FALLBACK_MODULE
+ * (icône générique + route cassée).
  */
 
 import type { LucideIcon } from "lucide-react";
@@ -26,6 +27,7 @@ import {
   Package,
   Pill,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   TicketCheck,
   Truck,
@@ -42,19 +44,21 @@ export type SearchModuleKey =
   | "pdr"
   | "tickets"
   | "interventions"
-  | "ordres_fabrication"
+  | "of"
   | "products"
   | "articles"
   | "recipes"
-  | "consumptions"
+  | "consommations"
   | "arrets"
-  | "preventif_plans"
+  | "preventif"
   | "notifications"
-  | "audit_logs"
-  | "validation_requests"
-  | "entity_documents"
-  | "pdr_stock_movements"
-  | "pdr_family_suppliers";
+  | "audit"
+  | "validations"
+  | "documents"
+  | "pdr_movements"
+  | "fournisseurs"
+  | "quality_nc"
+  | "quality_actions";
 
 export interface ModuleDefinition {
   key: SearchModuleKey;
@@ -65,7 +69,13 @@ export interface ModuleDefinition {
   /** Icône Lucide */
   icon: LucideIcon;
   /** Catégorie haute pour les facettes */
-  group: "Industriel" | "Production" | "Maintenance" | "Stock" | "Système";
+  group:
+    | "Industriel"
+    | "Production"
+    | "Maintenance"
+    | "Qualité"
+    | "Stock"
+    | "Système";
   /**
    * Construit l'URL de la fiche entité.
    * Reçoit `entityId` brut renvoyé par `global_search`.
@@ -110,7 +120,7 @@ const MODULES: Record<SearchModuleKey, ModuleDefinition> = {
     icon: Workflow,
     group: "Industriel",
     accent: "bg-primary/10 text-primary",
-    buildUrl: (id) => `/lignes?ligne=${id}`,
+    buildUrl: (id) => `/lignes/${id}`,
   },
   pdr: {
     key: "pdr",
@@ -137,10 +147,10 @@ const MODULES: Record<SearchModuleKey, ModuleDefinition> = {
     icon: Wrench,
     group: "Maintenance",
     accent: "bg-destructive/10 text-destructive",
-    buildUrl: (id) => `/maintenance/journal?intervention=${id}`,
+    buildUrl: (id) => `/tickets/${id}`,
   },
-  ordres_fabrication: {
-    key: "ordres_fabrication",
+  of: {
+    key: "of",
     label: "OF",
     pluralLabel: "Ordres de fabrication",
     icon: FactoryIcon,
@@ -175,14 +185,14 @@ const MODULES: Record<SearchModuleKey, ModuleDefinition> = {
     accent: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
     buildUrl: (id) => `/gpao/recettes?recipe=${id}`,
   },
-  consumptions: {
-    key: "consumptions",
+  consommations: {
+    key: "consommations",
     label: "Consommation",
     pluralLabel: "Consommations",
     icon: Activity,
     group: "Production",
     accent: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-    buildUrl: (id) => `/gpao/consommation?id=${id}`,
+    buildUrl: () => `/gpao/consommations`,
   },
   arrets: {
     key: "arrets",
@@ -191,10 +201,10 @@ const MODULES: Record<SearchModuleKey, ModuleDefinition> = {
     icon: Flame,
     group: "Production",
     accent: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-    buildUrl: (id) => `/gpao/arrets?id=${id}`,
+    buildUrl: () => `/gpao/arrets`,
   },
-  preventif_plans: {
-    key: "preventif_plans",
+  preventif: {
+    key: "preventif",
     label: "Préventif",
     pluralLabel: "Plans préventifs",
     icon: ClipboardCheck,
@@ -209,59 +219,123 @@ const MODULES: Record<SearchModuleKey, ModuleDefinition> = {
     icon: Bell,
     group: "Système",
     accent: "bg-muted text-foreground",
-    buildUrl: (id) => `/notifications?id=${id}`,
+    buildUrl: () => `/notifications`,
   },
-  audit_logs: {
-    key: "audit_logs",
+  audit: {
+    key: "audit",
     label: "Audit",
     pluralLabel: "Journal d'audit",
     icon: History,
     group: "Système",
     accent: "bg-muted text-foreground",
-    buildUrl: (id) => `/audit?id=${id}`,
+    buildUrl: () => `/audit`,
   },
-  validation_requests: {
-    key: "validation_requests",
+  validations: {
+    key: "validations",
     label: "Validation",
     pluralLabel: "Demandes de validation",
     icon: ShieldCheck,
     group: "Système",
     accent: "bg-muted text-foreground",
-    buildUrl: (id) => `/validations?id=${id}`,
+    buildUrl: () => `/validations`,
   },
-  entity_documents: {
-    key: "entity_documents",
+  documents: {
+    key: "documents",
     label: "Document",
     pluralLabel: "Documents",
     icon: FileText,
     group: "Système",
     accent: "bg-muted text-foreground",
-    buildUrl: (id) => `/documents?id=${id}`,
+    buildUrl: () => `/documents`,
   },
-  pdr_stock_movements: {
-    key: "pdr_stock_movements",
+  pdr_movements: {
+    key: "pdr_movements",
     label: "Mouvement PDR",
     pluralLabel: "Mouvements PDR",
     icon: Truck,
     group: "Stock",
     accent: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-    buildUrl: (id) => `/pdr/mouvements?id=${id}`,
+    buildUrl: (id) => `/pdr/${id}`,
   },
-  pdr_family_suppliers: {
-    key: "pdr_family_suppliers",
+  fournisseurs: {
+    key: "fournisseurs",
     label: "Fournisseur PDR",
     pluralLabel: "Fournisseurs PDR",
     icon: Users,
     group: "Stock",
     accent: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-    buildUrl: (id) => `/parametres/pdr/familles?id=${id}`,
+    buildUrl: () => `/parametres`,
   },
+  quality_nc: {
+    key: "quality_nc",
+    label: "Non-conformité",
+    pluralLabel: "Non-conformités",
+    icon: ShieldAlert,
+    group: "Qualité",
+    accent: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+    buildUrl: (id) => `/qualite/non-conformites?id=${id}`,
+  },
+  quality_actions: {
+    key: "quality_actions",
+    label: "Action qualité",
+    pluralLabel: "Actions qualité",
+    icon: ClipboardCheck,
+    group: "Qualité",
+    accent: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
+    buildUrl: (id) => `/qualite/actions?id=${id}`,
+  },
+};
+
+/** Alias FR/EN → clé canonique (pour la syntaxe `module:…`). */
+const MODULE_ALIASES: Record<string, SearchModuleKey> = {
+  machine: "machines",
+  equipement: "equipements",
+  équipement: "equipements",
+  equipements: "equipements",
+  organe: "organes",
+  ligne: "lignes",
+  ofs: "of",
+  ordres_fabrication: "of",
+  produit: "products",
+  produits: "products",
+  article: "articles",
+  recette: "recipes",
+  recettes: "recipes",
+  recipes: "recipes",
+  consommation: "consommations",
+  consumptions: "consommations",
+  arret: "arrets",
+  arrêt: "arrets",
+  arrêts: "arrets",
+  preventif_plans: "preventif",
+  préventif: "preventif",
+  ticket: "tickets",
+  intervention: "interventions",
+  notification: "notifications",
+  audit_logs: "audit",
+  validation: "validations",
+  validation_requests: "validations",
+  document: "documents",
+  entity_documents: "documents",
+  mouvement: "pdr_movements",
+  pdr_stock_movements: "pdr_movements",
+  fournisseur: "fournisseurs",
+  pdr_family_suppliers: "fournisseurs",
+  nc: "quality_nc",
+  "non-conformite": "quality_nc",
+  "non-conformité": "quality_nc",
+  quality_non_conformities: "quality_nc",
+  action: "quality_actions",
+  actions: "quality_actions",
 };
 
 export function getModuleDefinition(
   module: string,
 ): ModuleDefinition | null {
-  return (MODULES as Record<string, ModuleDefinition>)[module] ?? null;
+  const direct = (MODULES as Record<string, ModuleDefinition>)[module];
+  if (direct) return direct;
+  const alias = MODULE_ALIASES[module.toLowerCase()];
+  return alias ? MODULES[alias] : null;
 }
 
 export function listModules(): ModuleDefinition[] {
@@ -281,9 +355,18 @@ export const KNOWN_MODULE_KEYS: SearchModuleKey[] = Object.keys(
   MODULES,
 ) as SearchModuleKey[];
 
+/** Résout un terme libre (`module:…`) vers une clé canonique connue, ou null. */
+export function resolveModuleKey(input: string): SearchModuleKey | null {
+  const lower = input.toLowerCase();
+  if ((MODULES as Record<string, ModuleDefinition>)[lower]) {
+    return lower as SearchModuleKey;
+  }
+  return MODULE_ALIASES[lower] ?? null;
+}
+
 /** Fallback icône / label si la DB renvoie un module inconnu */
 export const FALLBACK_MODULE: ModuleDefinition = {
-  key: "audit_logs",
+  key: "audit",
   label: "Résultat",
   pluralLabel: "Autres",
   icon: Settings,

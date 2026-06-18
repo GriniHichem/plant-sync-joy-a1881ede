@@ -6070,6 +6070,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_articles: {
+        Args: { _rows: Json; _update_existing: boolean }
+        Returns: Json
+      }
       import_enum: {
         Args: { _allowed: string[]; _default: string; _val: string }
         Returns: string
@@ -6090,11 +6094,19 @@ export type Database = {
         Args: { _rows: Json; _update_existing: boolean }
         Returns: Json
       }
+      import_products: {
+        Args: { _rows: Json; _update_existing: boolean }
+        Returns: Json
+      }
       import_resolve_mfamily: {
         Args: { _fam: string; _sub: string }
         Returns: string
       }
       import_resolve_pfamily: {
+        Args: { _fam: string; _sub: string }
+        Returns: string
+      }
+      import_resolve_prodfamily: {
         Args: { _fam: string; _sub: string }
         Returns: string
       }

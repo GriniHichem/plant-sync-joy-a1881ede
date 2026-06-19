@@ -338,6 +338,7 @@ export function AppTopBar() {
                   )}
                 </div>
                 <Avatar className="h-8 w-8 border border-border/60">
+                  {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
                   <AvatarFallback className="text-[11px] bg-primary/10 text-primary font-bold">
                     {initials}
                   </AvatarFallback>

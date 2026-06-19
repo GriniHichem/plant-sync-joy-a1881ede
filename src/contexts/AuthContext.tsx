@@ -137,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       hasRole,
       isImpersonating: !!impersonation,
       signOut,
+      refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>

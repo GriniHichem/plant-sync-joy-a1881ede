@@ -25,6 +25,7 @@ interface AuthContextType {
   hasRole: (role: AppRole) => boolean;
   isImpersonating: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);

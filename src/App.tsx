@@ -40,6 +40,7 @@ import PdrFamiliesAdmin from "@/pages/parametres/PdrFamiliesAdmin";
 import PdrStockPermissionsAdmin from "@/pages/parametres/PdrStockPermissionsAdmin";
 import ScanHistoryAdmin from "@/pages/parametres/ScanHistoryAdmin";
 import ImportData from "@/pages/parametres/ImportData";
+import MonProfil from "@/pages/MonProfil";
 
 
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";

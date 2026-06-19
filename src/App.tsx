@@ -40,6 +40,7 @@ import PdrFamiliesAdmin from "@/pages/parametres/PdrFamiliesAdmin";
 import PdrStockPermissionsAdmin from "@/pages/parametres/PdrStockPermissionsAdmin";
 import ScanHistoryAdmin from "@/pages/parametres/ScanHistoryAdmin";
 import ImportData from "@/pages/parametres/ImportData";
+import MonProfil from "@/pages/MonProfil";
 
 
 import GpaoDashboard from "@/pages/gpao/GpaoDashboard";
@@ -215,6 +216,7 @@ const App = () => (
               {/* GMAO */}
               <Route path="/" element={<Dashboard />} />
               <Route path="/apps" element={<Apps />} />
+              <Route path="/mon-profil" element={<MonProfil />} />
               <Route path="/securite" element={<SecurityHub />} />
               <Route path="/parametres/access-control" element={<Navigate to="/securite" replace />} />
               <Route path="/machines" element={<MachinesList />} />

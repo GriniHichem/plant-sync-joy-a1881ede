@@ -15,7 +15,7 @@ import {
 } from "@/components/icons/IndustrialIcons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -338,6 +338,7 @@ export function AppTopBar() {
                   )}
                 </div>
                 <Avatar className="h-8 w-8 border border-border/60">
+                  {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} className="object-cover" />}
                   <AvatarFallback className="text-[11px] bg-primary/10 text-primary font-bold">
                     {initials}
                   </AvatarFallback>
@@ -356,6 +357,12 @@ export function AppTopBar() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/mon-profil")} className="gap-2">
+                <Avatar className="h-4 w-4">
+                  <AvatarFallback className="text-[8px] bg-primary/10 text-primary font-bold">{initials}</AvatarFallback>
+                </Avatar>
+                Mon profil
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/parametres")} className="gap-2">
                 <IconSettings size={15} />
                 Paramètres

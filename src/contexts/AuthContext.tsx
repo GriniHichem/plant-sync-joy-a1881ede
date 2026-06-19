@@ -25,6 +25,7 @@ interface AuthContextType {
   hasRole: (role: AppRole) => boolean;
   isImpersonating: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -112,6 +113,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasRole = (role: AppRole) => effectiveRoles.includes(role);
 
+  const refreshProfile = async () => {
+    if (user) await fetchProfile(user.id);
+  };
+
   const signOut = async () => {
     try { await logAuthEvent("logout", { email: user?.email ?? undefined }); } catch { /* ignore */ }
     await supabase.auth.signOut();
@@ -132,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       hasRole,
       isImpersonating: !!impersonation,
       signOut,
+      refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>

@@ -4,8 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ImpersonationDialog } from "@/components/admin/ImpersonationDialog";
 import { Eye } from "lucide-react";
-import logoAsset from "@/assets/prod-in-time-logo.png.asset.json";
-import logoAmour from "@/assets/logo-amour.jpg.asset.json";
+import logoAsset from "@/assets/brand/prod-in-time-logo.png";
+import logoAmour from "@/assets/brand/logo-amour.jpg";
 import {
   IconDashboard, IconMachine, IconEquipment, IconFactory, IconSpare,
   IconTicket, IconPreventive, IconShift, IconAnalytics, IconChart,
@@ -184,8 +184,8 @@ function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left" className="w-[300px] p-4 overflow-y-auto">
         <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border/60">
-          <img src={logoAmour.url} alt="Amour" className="h-7 w-auto object-contain rounded" />
-          <img src={logoAsset.url} alt="Prod in Time" className="h-10 w-auto object-contain rounded-md" />
+          <img src={logoAmour} alt="Amour" className="h-7 w-auto object-contain rounded" />
+          <img src={logoAsset} alt="Prod in Time" className="h-10 w-auto object-contain rounded-md" />
         </div>
         <RRNavLink
           to="/apps"
@@ -270,8 +270,8 @@ export function AppTopBar() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2.5 shrink-0 group"
         >
-          <img src={logoAmour.url} alt="Amour" className="h-7 w-auto object-contain rounded transition-transform group-hover:scale-105" />
-          <img src={logoAsset.url} alt="Prod in Time" className="h-10 w-auto object-contain rounded-md border border-border/60 shadow-sm transition-transform group-hover:scale-105" />
+          <img src={logoAmour} alt="Amour" className="h-7 w-auto object-contain rounded transition-transform group-hover:scale-105" />
+          <img src={logoAsset} alt="Prod in Time" className="h-10 w-auto object-contain rounded-md border border-border/60 shadow-sm transition-transform group-hover:scale-105" />
         </button>
 
         <div className="hidden md:block h-7 w-px bg-border/60 mx-2" />

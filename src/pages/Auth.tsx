@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import logoAsset from "@/assets/prod-in-time-logo.png.asset.json";
-import logoAmour from "@/assets/logo-amour.jpg.asset.json";
+import logoAsset from "@/assets/brand/prod-in-time-logo.png";
+import logoAmour from "@/assets/brand/logo-amour.jpg";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -59,10 +59,10 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3">
           <div className="flex items-center justify-center">
-            <img src={logoAsset.url} alt="Prod in Time" className="h-48 w-auto object-contain" />
+            <img src={logoAsset} alt="Prod in Time" className="h-48 w-auto object-contain" />
           </div>
           <div className="flex items-center justify-center">
-            <img src={logoAmour.url} alt="Amour" className="h-10 w-auto object-contain rounded" />
+            <img src={logoAmour} alt="Amour" className="h-10 w-auto object-contain rounded" />
           </div>
           <p className="text-xs text-muted-foreground tracking-wide">GMAO & GPAO</p>
           <CardDescription>

@@ -439,6 +439,53 @@ export default function UsersAdmin() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete user confirmation dialog */}
+      <Dialog open={!!deleteProfile} onOpenChange={(open) => { if (!open) { setDeleteProfile(null); setConfirmName(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Supprimer l'utilisateur</DialogTitle>
+            <DialogDescription>
+              Cette action est <strong>irréversible</strong>. Le compte, le profil, les rôles et les photos de{" "}
+              <strong>{deleteFullName}</strong> seront définitivement supprimés.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>
+                Pour confirmer, saisissez le nom complet : <strong>{deleteFullName}</strong>
+              </Label>
+              <Input
+                value={confirmName}
+                onChange={(e) => setConfirmName(e.target.value)}
+                className="h-12"
+                placeholder={deleteFullName}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 h-12"
+                onClick={() => { setDeleteProfile(null); setConfirmName(""); }}
+                disabled={deleting}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1 h-12"
+                onClick={handleDeleteUser}
+                disabled={!canConfirmDelete || deleting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deleting ? "Suppression..." : "Supprimer définitivement"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }

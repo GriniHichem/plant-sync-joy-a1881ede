@@ -366,10 +366,23 @@ export default function UsersAdmin() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)} title="Modifier le profil">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)} title="Modifier le profil">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => { setDeleteProfile(p); setConfirmName(""); }}
+                          disabled={p.user_id === user?.id}
+                          title={p.user_id === user?.id ? "Vous ne pouvez pas vous supprimer" : "Supprimer l'utilisateur"}
+                          className="text-destructive hover:text-destructive disabled:opacity-30"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
+
                   </TableRow>
                 );
               })}

@@ -68,6 +68,11 @@ export default function UsersAdmin() {
   const [newRole, setNewRole] = useState("");
   const [creating, setCreating] = useState(false);
 
+  // Delete user dialog
+  const [deleteProfile, setDeleteProfile] = useState<any>(null);
+  const [confirmName, setConfirmName] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   const load = async () => {
     const [pRes, rRes, imgRes] = await Promise.all([
       supabase.from("profiles").select("*").order("last_name"),

@@ -1,37 +1,38 @@
-# Extension du module d'importation — Produits finis & Articles de consommation
+## Objectif
+Permettre à un administrateur de **supprimer un utilisateur** depuis la page « Utilisateurs & Rôles », avec une confirmation sécurisée : il faut **retaper le nom complet de l'utilisateur** pour valider la suppression.
 
-Ajouter deux entités au module d'importation existant (`/parametres/import`), avec la **même logique** que machines/équipements/organes/PDR : template CSV téléchargeable (UTF-8, séparateur `;`), mapping, aperçu, option de mise à jour des doublons, création automatique des familles/sous-familles manquantes, rapport détaillé et journalisation d'audit.
+## Fonctionnement côté utilisateur
+- Un bouton corbeille rouge apparaît dans la colonne « Actions » de chaque ligne utilisateur (à côté du crayon de modification).
+- Un administrateur ne peut pas se supprimer lui-même (bouton désactivé sur sa propre ligne).
+- Au clic, une fenêtre de confirmation s'ouvre :
+  - Avertissement clair : action irréversible, suppression du compte, du profil, des rôles et des photos.
+  - Un champ texte demandant de **saisir exactement le nom complet** (Prénom Nom) de l'utilisateur.
+  - Le bouton « Supprimer définitivement » reste désactivé tant que le texte saisi ne correspond pas exactement au nom.
+- Après suppression : message de confirmation et rafraîchissement de la liste.
 
-## Entités ajoutées
+## Détails techniques
 
-Deux nouveaux onglets dans le module (qui passera de 4 à 6 onglets) :
-- **Produits finis** (`products`)
-- **Articles de consommation** (`articles`)
+### 1. Nouvelle edge function `admin-delete-user`
+Calquée sur `admin-create-user` (auto-hébergeable, `verify_jwt = false` dans `config.toml`) :
+- Vérifie le bearer token et que l'appelant a le rôle `admin` (via `has_role`).
+- Refuse si l'appelant tente de supprimer son propre compte.
+- Reçoit `{ user_id }`.
+- Supprime via `admin.auth.admin.deleteUser(user_id)` (les lignes `profiles` et `user_roles` liées à `auth.users` sont supprimées en cascade ; nettoyage explicite de secours si nécessaire).
+- Enregistre un évènement dans `audit_logs` (auteur = appelant, action de suppression, valeurs supprimées) conformément aux règles du projet.
+- Retourne `{ ok: true }` ou une erreur.
 
-Les deux partagent la table `product_families` (familles + sous-familles via `parent_id`), créées automatiquement si absentes — comme pour les machines/PDR.
+### 2. Déclaration dans `supabase/config.toml`
+Ajout du bloc :
+```toml
+[functions.admin-delete-user]
+verify_jwt = false
+```
 
-## Templates (colonnes des modèles CSV)
+### 3. UI dans `src/pages/parametres/UsersAdmin.tsx`
+- Ajout d'un état pour la fenêtre de suppression (`deleteProfile`, `confirmName`, `deleting`).
+- Bouton corbeille dans la colonne Actions (désactivé pour l'utilisateur courant via `user.id`).
+- `Dialog` de confirmation avec champ de saisie du nom complet et validation stricte (`confirmName.trim() === \`${first_name} ${last_name}\`.trim()`).
+- Appel `supabase.functions.invoke("admin-delete-user", { body: { user_id } })`, gestion des toasts succès/erreur, puis `load()`.
 
-- **Produits finis** : `code*`, `designation*`, `famille`, `sous_famille`, `unite` (défaut g), `unite_base` (défaut g), `poids_unitaire`, `description`, `code_erp`
-- **Articles de consommation** : `code*`, `designation*`, `famille`, `sous_famille`, `unite` (défaut g), `stock_actuel`, `stock_min`, `prix_unitaire`, `fournisseur`, `description`, `code_erp`
-
-Champs vides → valeur par défaut de la table. Doublon détecté sur `code`.
-
-## Implémentation technique
-
-### Backend (migration)
-- **`import_resolve_prodfamily(_fam, _sub)`** : résout/crée la famille puis la sous-famille dans `product_families` (mêmes audit_logs que les helpers existants).
-- **`import_products(_rows jsonb, _update_existing boolean)`** et **`import_articles(_rows jsonb, _update_existing boolean)`** : `SECURITY DEFINER`, contrôle `has_role(auth.uid(),'admin')`, boucle par ligne avec gestion d'erreur, insert/update/skip selon l'option, audit (`module = 'gpao'`), retour `{ created, updated, skipped, errors:[] }`.
-- `GRANT EXECUTE` aux `authenticated` pour les deux fonctions.
-
-### Frontend
-- **`src/lib/importTemplates.ts`** : ajouter les entrées `products` et `articles` dans `IMPORT_TEMPLATES` (clés, labels, requis, types, défauts/exemples).
-- **`src/pages/parametres/ImportData.tsx`** : ajouter `"products"` et `"articles"` à la liste `ENTITIES` (grille d'onglets adaptée à 6 éléments).
-- Aucun changement nécessaire dans `EntityImporter.tsx` (générique, piloté par le template).
-
-### Tests
-- Étendre `src/test/parametres/import-templates.test.ts` pour couvrir les 6 entités (présence, clé unique, champs requis, génération de modèle).
-
-## Notes
-- Aucune table existante modifiée structurellement ; uniquement de nouvelles fonctions RPC.
-- Comportement identique au module déjà livré (UTF-8, doublons au choix, familles auto).
+## Aucune migration de base de données nécessaire
+La suppression passe par l'API admin Auth ; les tables liées se nettoient en cascade.

@@ -193,6 +193,18 @@ export default function MaintenanceShiftIntervention() {
         .single();
       if (error) throw error;
 
+      // Consume maintenance stock held for this ticket (generates leftover return automatically)
+      for (const h of holdings) {
+        const qte = Math.max(0, Math.min(h.quantite, parseInt(consumed[h.id] ?? String(h.quantite), 10) || 0));
+        try {
+          await consumeMaintenanceHolding({
+            holding_id: h.id, intervention_id: (interv as any).id, qte_consomme: qte,
+          });
+        } catch (e) { console.warn("[shift.intervention] holding consume failed", e); }
+      }
+
+
+
       if (closeTicket) {
         // Compute KPI durations: arrest = decl→now, intervention = prise_en_charge→now (or null fallback)
         const tempsArret = ticket.heure_declaration

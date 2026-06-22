@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Factory, Eye, Settings, Plus, CalendarCheck } from "lucide-react";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function LinesList() {
   const navigate = useNavWithFrom();

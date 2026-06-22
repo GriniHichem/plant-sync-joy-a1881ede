@@ -230,9 +230,11 @@ export default function ProductDetail() {
                 <Label>Description</Label>
                 <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
               </div>
-              <Button onClick={handleSave} disabled={saving} className="h-12">
-                <Save className="h-4 w-4 mr-2" /> {saving ? "Enregistrement..." : "Enregistrer"}
-              </Button>
+              {canEdit("produits") && (
+                <Button onClick={handleSave} disabled={saving} className="h-12">
+                  <Save className="h-4 w-4 mr-2" /> {saving ? "Enregistrement..." : "Enregistrer"}
+                </Button>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -327,9 +327,11 @@ export default function LineSynoptic() {
             <Factory className="h-10 w-10 mx-auto mb-3 opacity-20" />
             <p className="text-base font-medium mb-1">Aucune machine configurée</p>
             <p className="text-sm mb-4">Configurez le processus de cette ligne pour afficher le synoptique.</p>
-            <Button onClick={() => nav(`/lignes/${id}/config`)}>
-              <Settings className="h-4 w-4 mr-2" /> Configurer la ligne
-            </Button>
+            {canEdit("lignes") && (
+              <Button onClick={() => nav(`/lignes/${id}/config`)}>
+                <Settings className="h-4 w-4 mr-2" /> Configurer la ligne
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : visibleMachines.length === 0 ? (

@@ -2397,6 +2397,7 @@ export type Database = {
           stock_actuel: number
           stock_max: number
           stock_min: number
+          stock_reserve: number
           stock_securite: number
           temperature_max: number | null
           temperature_min: number | null
@@ -2460,6 +2461,7 @@ export type Database = {
           stock_actuel?: number
           stock_max?: number
           stock_min?: number
+          stock_reserve?: number
           stock_securite?: number
           temperature_max?: number | null
           temperature_min?: number | null
@@ -2523,6 +2525,7 @@ export type Database = {
           stock_actuel?: number
           stock_max?: number
           stock_min?: number
+          stock_reserve?: number
           stock_securite?: number
           temperature_max?: number | null
           temperature_min?: number | null
@@ -2947,6 +2950,238 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pdr_position_status"
             referencedColumns: ["position_id"]
+          },
+        ]
+      }
+      pdr_maintenance_holdings: {
+        Row: {
+          created_at: string
+          holder_id: string
+          id: string
+          intervention_id: string | null
+          pdr_id: string
+          quantite: number
+          request_item_id: string | null
+          statut: Database["public"]["Enums"]["pdr_holding_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          holder_id: string
+          id?: string
+          intervention_id?: string | null
+          pdr_id: string
+          quantite: number
+          request_item_id?: string | null
+          statut?: Database["public"]["Enums"]["pdr_holding_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          holder_id?: string
+          id?: string
+          intervention_id?: string | null
+          pdr_id?: string
+          quantite?: number
+          request_item_id?: string | null
+          statut?: Database["public"]["Enums"]["pdr_holding_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_maintenance_holdings_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_maintenance_holdings_pdr_id_fkey"
+            columns: ["pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_maintenance_holdings_request_item_id_fkey"
+            columns: ["request_item_id"]
+            isOneToOne: false
+            referencedRelation: "pdr_request_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdr_request_items: {
+        Row: {
+          cause_remplacement: string | null
+          commentaire: string | null
+          created_at: string
+          dispo_snapshot: boolean | null
+          id: string
+          pdr_id: string
+          position_id: string | null
+          prepared_at: string | null
+          prepared_by: string | null
+          quantite_demandee: number
+          quantite_preparee: number | null
+          quantite_prise: number | null
+          refused_reason: string | null
+          request_id: string
+          statut: Database["public"]["Enums"]["pdr_request_item_status"]
+          taken_at: string | null
+          taken_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          cause_remplacement?: string | null
+          commentaire?: string | null
+          created_at?: string
+          dispo_snapshot?: boolean | null
+          id?: string
+          pdr_id: string
+          position_id?: string | null
+          prepared_at?: string | null
+          prepared_by?: string | null
+          quantite_demandee: number
+          quantite_preparee?: number | null
+          quantite_prise?: number | null
+          refused_reason?: string | null
+          request_id: string
+          statut?: Database["public"]["Enums"]["pdr_request_item_status"]
+          taken_at?: string | null
+          taken_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cause_remplacement?: string | null
+          commentaire?: string | null
+          created_at?: string
+          dispo_snapshot?: boolean | null
+          id?: string
+          pdr_id?: string
+          position_id?: string | null
+          prepared_at?: string | null
+          prepared_by?: string | null
+          quantite_demandee?: number
+          quantite_preparee?: number | null
+          quantite_prise?: number | null
+          refused_reason?: string | null
+          request_id?: string
+          statut?: Database["public"]["Enums"]["pdr_request_item_status"]
+          taken_at?: string | null
+          taken_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_request_items_pdr_id_fkey"
+            columns: ["pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pdr_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdr_requests: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          intervention_id: string | null
+          ligne_id: string | null
+          machine_id: string | null
+          numero: string
+          preventive_plan_id: string | null
+          priorite: string
+          refused_reason: string | null
+          requested_by: string
+          statut: Database["public"]["Enums"]["pdr_request_status"]
+          ticket_id: string | null
+          type: Database["public"]["Enums"]["pdr_request_type"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intervention_id?: string | null
+          ligne_id?: string | null
+          machine_id?: string | null
+          numero: string
+          preventive_plan_id?: string | null
+          priorite?: string
+          refused_reason?: string | null
+          requested_by?: string
+          statut?: Database["public"]["Enums"]["pdr_request_status"]
+          ticket_id?: string | null
+          type?: Database["public"]["Enums"]["pdr_request_type"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intervention_id?: string | null
+          ligne_id?: string | null
+          machine_id?: string | null
+          numero?: string
+          preventive_plan_id?: string | null
+          priorite?: string
+          refused_reason?: string | null
+          requested_by?: string
+          statut?: Database["public"]["Enums"]["pdr_request_status"]
+          ticket_id?: string | null
+          type?: Database["public"]["Enums"]["pdr_request_type"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_requests_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_requests_ligne_id_fkey"
+            columns: ["ligne_id"]
+            isOneToOne: false
+            referencedRelation: "production_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_requests_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_requests_preventive_plan_id_fkey"
+            columns: ["preventive_plan_id"]
+            isOneToOne: false
+            referencedRelation: "preventive_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pdr_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5952,6 +6187,10 @@ export type Database = {
         Args: { _request_id: string; _user_id: string }
         Returns: boolean
       }
+      cancel_pdr_request: {
+        Args: { p_motif?: string; p_request_id: string }
+        Returns: undefined
+      }
       check_document_permission: {
         Args: { _action: string; _entity_type: string; _user_id: string }
         Returns: boolean
@@ -5959,6 +6198,21 @@ export type Database = {
       check_permission: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
+      }
+      confirm_request_item_taken: {
+        Args: { p_item_id: string; p_qte?: number }
+        Returns: string
+      }
+      consume_maintenance_holding: {
+        Args: {
+          p_cause?: string
+          p_commentaire?: string
+          p_holding_id: string
+          p_intervention_id: string
+          p_position_id?: string
+          p_qte_consomme: number
+        }
+        Returns: undefined
       }
       derive_shift_type_from_now: {
         Args: never
@@ -6145,9 +6399,23 @@ export type Database = {
         Returns: boolean
       }
       open_my_work_session: { Args: never; Returns: Json }
+      pdr_request_audit: {
+        Args: {
+          p_action: string
+          p_label: string
+          p_new: Json
+          p_old: Json
+          p_record_id: string
+        }
+        Returns: undefined
+      }
       quality_shift_refresh_links: {
         Args: { p_quality_shift_id: string }
         Returns: number
+      }
+      refuse_request_item: {
+        Args: { p_item_id: string; p_motif: string }
+        Returns: undefined
       }
       resolve_scanned_code: {
         Args: { p_code: string }
@@ -6185,6 +6453,10 @@ export type Database = {
       }
       set_recipe_status: {
         Args: { p_reason?: string; p_recipe_id: string; p_status: string }
+        Returns: undefined
+      }
+      set_request_item_ready: {
+        Args: { p_comment?: string; p_item_id: string; p_qte?: number }
         Returns: undefined
       }
       shift_cycle_slot: {
@@ -6353,6 +6625,21 @@ export type Database = {
         | "automatisme"
         | "instrumentation"
         | "autre"
+      pdr_holding_status: "en_main" | "consomme" | "retourne"
+      pdr_request_item_status:
+        | "demandee"
+        | "prete"
+        | "prise"
+        | "refusee"
+        | "annulee"
+      pdr_request_status:
+        | "demandee"
+        | "prete"
+        | "partielle"
+        | "prise"
+        | "refusee"
+        | "annulee"
+      pdr_request_type: "curative" | "preventive"
       quality_action_priority: "low" | "medium" | "high" | "critical"
       quality_action_status:
         | "open"
@@ -6711,6 +6998,23 @@ export const Constants = {
         "instrumentation",
         "autre",
       ],
+      pdr_holding_status: ["en_main", "consomme", "retourne"],
+      pdr_request_item_status: [
+        "demandee",
+        "prete",
+        "prise",
+        "refusee",
+        "annulee",
+      ],
+      pdr_request_status: [
+        "demandee",
+        "prete",
+        "partielle",
+        "prise",
+        "refusee",
+        "annulee",
+      ],
+      pdr_request_type: ["curative", "preventive"],
       quality_action_priority: ["low", "medium", "high", "critical"],
       quality_action_status: [
         "open",

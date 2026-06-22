@@ -264,6 +264,11 @@ export default function MaintenanceShiftIntervention() {
           <p className="text-sm mt-2">{ticket.description}</p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Button asChild variant="outline" className="w-full min-h-[44px]">
+            <Link to={`/maintenance/shift/pieces?ticket=${ticket.id}${ticket.machine_id ? `&machine=${ticket.machine_id}` : ""}`}>
+              <Package className="h-4 w-4 mr-2" /> Demander / prendre des pièces
+            </Link>
+          </Button>
           <div>
             <Label>Description de l'intervention *</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Diagnostic, gestes effectués..." />

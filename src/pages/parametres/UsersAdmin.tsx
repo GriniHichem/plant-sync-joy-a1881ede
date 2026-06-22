@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Shield, Trash2, Users, Camera, Pencil, UserPlus } from "lucide-react";
+import { ArrowLeft, Plus, Shield, Trash2, Users, Camera, Pencil, UserPlus, KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Constants } from "@/integrations/supabase/types";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
@@ -73,6 +73,44 @@ export default function UsersAdmin() {
   const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  // Emails (read-only) + password reset
+  const [emails, setEmails] = useState<Record<string, string>>({});
+  const [pwdProfile, setPwdProfile] = useState<any>(null);
+  const [newPwd, setNewPwd] = useState("");
+  const [savingPwd, setSavingPwd] = useState(false);
+
+  const loadEmails = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-ops", {
+        body: { action: "list_emails" },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setEmails((data as any)?.emails || {});
+    } catch {
+      /* silently ignore — emails are best-effort */
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!pwdProfile || newPwd.length < 6) return;
+    setSavingPwd(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-ops", {
+        body: { action: "set_password", user_id: pwdProfile.user_id, password: newPwd },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "Mot de passe réinitialisé", description: `${pwdProfile.first_name} ${pwdProfile.last_name} peut se connecter avec le nouveau mot de passe.` });
+      setPwdProfile(null);
+      setNewPwd("");
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingPwd(false);
+    }
+  };
+
   const load = async () => {
     const [pRes, rRes, imgRes] = await Promise.all([
       supabase.from("profiles").select("*").order("last_name"),
@@ -84,7 +122,7 @@ export default function UsersAdmin() {
     setEntityImages(imgRes.data || []);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadEmails(); }, []);
 
   useEffect(() => {
     if (!photoUserId) load();
@@ -329,14 +367,15 @@ export default function UsersAdmin() {
               <TableRow>
                 <TableHead className="w-10"></TableHead>
                 <TableHead>Nom</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Poste</TableHead>
                 <TableHead>Rôles</TableHead>
-                <TableHead className="w-20">Actions</TableHead>
+                <TableHead className="w-28">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground"><Users className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun utilisateur</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground"><Users className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun utilisateur</TableCell></TableRow>
               ) : filtered.map((p) => {
                 const userRoles = getUserRoles(p.user_id);
                 const img = entityImages.find((i: any) => i.entity_id === p.user_id);
@@ -351,6 +390,7 @@ export default function UsersAdmin() {
                       </button>
                     </TableCell>
                     <TableCell className="font-medium">{p.first_name} {p.last_name}</TableCell>
+                    <TableCell className="text-muted-foreground">{emails[p.user_id] || "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{p.poste || "—"}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -369,6 +409,9 @@ export default function UsersAdmin() {
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)} title="Modifier le profil">
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setPwdProfile(p); setNewPwd(""); }} title="Réinitialiser le mot de passe">
+                          <KeyRound className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -485,7 +528,44 @@ export default function UsersAdmin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Reset password dialog */}
+      <Dialog open={!!pwdProfile} onOpenChange={(open) => { if (!open) { setPwdProfile(null); setNewPwd(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+            <DialogDescription>
+              Définissez un nouveau mot de passe pour <strong>{pwdProfile?.first_name} {pwdProfile?.last_name}</strong>
+              {pwdProfile && emails[pwdProfile.user_id] ? ` (${emails[pwdProfile.user_id]})` : ""}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nouveau mot de passe *</Label>
+              <Input
+                type="text"
+                value={newPwd}
+                onChange={(e) => setNewPwd(e.target.value)}
+                className="h-12"
+                minLength={6}
+                placeholder="Min. 6 caractères"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 h-12" onClick={() => { setPwdProfile(null); setNewPwd(""); }} disabled={savingPwd}>
+                Annuler
+              </Button>
+              <Button className="flex-1 h-12" onClick={handleResetPassword} disabled={newPwd.length < 6 || savingPwd}>
+                <KeyRound className="h-4 w-4 mr-2" />
+                {savingPwd ? "Enregistrement..." : "Définir le mot de passe"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
 
   );
 }

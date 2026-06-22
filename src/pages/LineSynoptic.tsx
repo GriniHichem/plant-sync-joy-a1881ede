@@ -449,9 +449,11 @@ export default function LineSynoptic() {
       {/* Mobile floating actions */}
       {isMobile && (
         <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-30">
-          <Button size="icon" variant="outline" className="h-12 w-12 rounded-full shadow-lg bg-background" onClick={() => nav(`/lignes/${id}/config`)}>
-            <Settings className="h-5 w-5" />
-          </Button>
+          {canEdit("lignes") && (
+            <Button size="icon" variant="outline" className="h-12 w-12 rounded-full shadow-lg bg-background" onClick={() => nav(`/lignes/${id}/config`)}>
+              <Settings className="h-5 w-5" />
+            </Button>
+          )}
           {canCreate("tickets") && machines.length > 0 && (
             <Button
               size="icon"

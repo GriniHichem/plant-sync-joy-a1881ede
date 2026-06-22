@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Shield, Trash2, Users, Camera, Pencil, UserPlus } from "lucide-react";
+import { ArrowLeft, Plus, Shield, Trash2, Users, Camera, Pencil, UserPlus, KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Constants } from "@/integrations/supabase/types";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";

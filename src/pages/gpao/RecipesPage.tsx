@@ -24,7 +24,6 @@ interface RecipesPageProps {
 }
 
 export default function RecipesPage({ readOnly = false, hideHeader = false }: RecipesPageProps = {}) {
-  const { hasRole } = useAuth();
   const { canEdit } = usePermissions();
   const { toast } = useToast();
   const [recipes, setRecipes] = useState<any[]>([]);

@@ -73,6 +73,44 @@ export default function UsersAdmin() {
   const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  // Emails (read-only) + password reset
+  const [emails, setEmails] = useState<Record<string, string>>({});
+  const [pwdProfile, setPwdProfile] = useState<any>(null);
+  const [newPwd, setNewPwd] = useState("");
+  const [savingPwd, setSavingPwd] = useState(false);
+
+  const loadEmails = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-ops", {
+        body: { action: "list_emails" },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setEmails((data as any)?.emails || {});
+    } catch {
+      /* silently ignore — emails are best-effort */
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!pwdProfile || newPwd.length < 6) return;
+    setSavingPwd(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-user-ops", {
+        body: { action: "set_password", user_id: pwdProfile.user_id, password: newPwd },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "Mot de passe réinitialisé", description: `${pwdProfile.first_name} ${pwdProfile.last_name} peut se connecter avec le nouveau mot de passe.` });
+      setPwdProfile(null);
+      setNewPwd("");
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingPwd(false);
+    }
+  };
+
   const load = async () => {
     const [pRes, rRes, imgRes] = await Promise.all([
       supabase.from("profiles").select("*").order("last_name"),

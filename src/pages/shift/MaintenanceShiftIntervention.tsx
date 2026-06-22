@@ -35,6 +35,10 @@ export default function MaintenanceShiftIntervention() {
   const [closeTicket, setCloseTicket] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Maintenance stock held for this ticket (intermediate stock to consume on closure)
+  const [holdings, setHoldings] = useState<any[]>([]);
+  const [consumed, setConsumed] = useState<Record<string, string>>({});
+
   // List state (no ticketId)
   const [openTickets, setOpenTickets] = useState<any[]>([]);
 

@@ -209,6 +209,7 @@ const App = () => (
             <Route path="/maintenance/shift/live" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenancierShiftView /></ProtectedShiftRoute>} />
             <Route path="/maintenance/shift/intervention" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenanceShiftIntervention /></ProtectedShiftRoute>} />
             <Route path="/maintenance/shift/intervention/:ticketId" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenanceShiftIntervention /></ProtectedShiftRoute>} />
+            <Route path="/maintenance/shift/pieces" element={<ProtectedShiftRoute kind="maintenance" allowWithoutShift><MaintenancePieces /></ProtectedShiftRoute>} />
             {/* Quality kiosk */}
             <Route path="/qualite/shift/live" element={<ProtectedShiftRoute kind="quality" allowWithoutShift><QualiteShiftScreen /></ProtectedShiftRoute>} />
             <Route path="/qualite/shift/check" element={<ProtectedShiftRoute kind="quality"><QualityShiftCheck /></ProtectedShiftRoute>} />

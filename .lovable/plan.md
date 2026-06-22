@@ -1,67 +1,83 @@
-# Correction des droits par défaut (production / maintenance / qualité)
+# Gestion des demandes de pièces (PDR) en shift maintenance
 
-## Principe retenu (validé)
-- **Bureau méthode** = autorité sur tout le **référentiel industriel** : schéma des lignes, liste des équipements, liste/​catalogue PDR, machines, organes.
-- **Responsable qualité** = autorité sur **recettes et produits**.
-- **Maintenance** = exécute les **interventions et la gestion de maintenance** (préventif, tickets, shift maintenance) **dans le cadre dessiné par la méthode** — donc lecture seule sur le référentiel industriel.
-- **Atelier (chef de ligne / opérateur)** = **opérationnel uniquement** (OF, arrêts, consommations, shift, tickets) — lecture seule sur tout référentiel.
-- **Méthode d'application : corrections ciblées** — on ne modifie QUE les cellules incohérentes ci-dessous, tout le reste (et vos personnalisations) est conservé.
+Ajout d'un circuit complet **demande → préparation magasin → prise confirmée maintenance → consommation**, avec réservation du stock, stock maintenance intermédiaire, double validation, audit et notifications. Couvre le curatif (ticket) et le préventif (plan).
 
-## Modifications de `role_permissions` (V=voir, C=créer, E=éditer, D=supprimer)
+## Cycle de vie d'une demande
 
-### Production
-- **chef_ligne** — retirer l'écriture sur le référentiel :
-  - recettes : VCE → V
-  - produits : VCE → V
-  - articles : VCE → V
-  - conservé : OF (VCE), arrêts (VCE), consommations (VCE), shift_production (VCE), tickets (VC), gpao_dashboard (VCE)
-- **resp_production** — recettes/produits passent à la qualité :
-  - recettes : VCED → V
-  - produits : VCED → V
-  - conservé : OF, arrêts, consommations, shift_production, gpao_dashboard, articles (référentiel d'exploitation conservé)
-- **operateur** — déjà minimal, aucun changement.
+```text
+ MAINTENANCE                 MAGASIN (gestionnaire_magasin)        MAINTENANCE
+ ───────────                 ──────────────────────────────       ───────────
+ [Demandée] ──réserve qty──> [Prête] (qté préparée) ───────────> [Prise] (taked)
+     │                           │                                  │ sortie stock
+     │                           └──> [Refusée] (motif)             └──> + stock maintenance
+     └──> [Annulée] (par le demandeur)        (libère la réservation)
+```
 
-### Maintenance (référentiel industriel → lecture seule)
-- **maintenancier** :
-  - lignes : VCE → V
-  - machines : VCE → V
-  - organes : VCE → V
-  - equipements : VCE → V
-  - pdr : VCE → V
-  - conservé : préventif (VCE), tickets (VCED), shift_maintenance (VCE), dashboard/historique/journal
-- **resp_maintenance** :
-  - lignes : VCED → V
-  - machines : VCED → V
-  - organes : VCED → V
-  - equipements : VCED → V
-  - pdr : VCED → V
-  - conservé (gestion maintenance) : préventif (VCED), tickets (VCED), shift_maintenance (VCED), historique, journal, analytiques, dashboard, validations
+- **Réservation à la demande** : `pdr.stock_reserve += qté`. Affichage `Disponible = stock_actuel − stock_reserve`.
+- **Prise confirmée** : libère la réservation, génère une **sortie de consommation** (`pdr_stock_movements type=sortie`, `stock_actuel −= qté`) et crédite le **stock maintenance intermédiaire**.
+- **Clôture intervention** : les pièces réellement posées sont consommées depuis le stock maintenance (lien `intervention_pdr`, sans re-décrémenter le stock principal) ; le reliquat est **retourné** au stock principal (mouvement `entrée`).
+- Refus / annulation : libèrent la réservation, aucun mouvement de stock.
 
-### Qualité (autorité recettes/produits)
-- **responsable_controle_qualite** :
-  - recettes : V → VCE
-  - produits : V → VCE
-  - conservé : tous les modules qualité (VCED)
-- **directeur_qualite** :
-  - recettes : V → VCED
-  - produits : V → VCED
-  - conservé : tous les modules qualité (VCED)
-- **controleur_qualite** — inchangé (référentiel en lecture, contrôles/NC/shift en création-édition).
+## Préventif
+- Le **resp. maintenance** (depuis le plan / méthode) **et** le **maintenancier** peuvent créer une demande préventive (`type=preventive`, liée au `preventive_plan_id`).
+- Le maintenancier **valide la pose** (respect) lors de l'exécution : confirmation de la prise + consommation à la clôture.
 
-### Méthode (confirmer l'autorité référentiel)
-- **bureau_methode** :
-  - recettes : VCE → V (les recettes passent à la qualité)
-  - conservé / confirmé comme autorité industrielle : lignes (VCE), machines (VCE), organes (VCE), equipements (VCE), pdr (VCE)
+## Fenêtres / écrans
 
-## Vérification UI
-Après les mises à jour, contrôler que les pages concernées respectent bien `canEdit/canCreate/canDelete` du hook `usePermissions` (boutons masqués/désactivés) :
-- éditeur de schéma de ligne (module `lignes`)
-- pages recettes et produits
-- pages machines / organes / équipements / PDR
+1. **Côté maintenance — Demander des pièces** (dans le kiosque shift, onglet « Pièces »)
+   - Filtres **Famille → Sous-famille** (`pdr_families` + `pdr.sous_famille`), recherche réf/désignation.
+   - Pour chaque pièce : saisie **quantité voulue**, badge **Disponible (n)** ou **Non disponible** (calculé sur `stock_actuel − stock_reserve`).
+   - Panier multi-lignes, rattaché au ticket (curatif) ou au plan (préventif).
+2. **Côté magasin — File des demandes (temps réel)** (`/pdr/demandes`)
+   - Liste live (realtime) des demandes en cours, triées par priorité/ancienneté.
+   - Actions par ligne : **Prête** (qté préparée) ou **Refusée** (motif).
+3. **Côté maintenance — Mes pièces à prendre**
+   - Liste des lignes `Prête` ; bouton **Confirmer la prise (taked)** → sortie + stock maintenance.
+   - Vue du **stock maintenance** détenu (par pièce) avec retour possible.
 
-Si une page n'effectue pas le contrôle (boutons visibles sans droit), ajouter la garde de permission côté frontend (présentation uniquement — pas de changement de logique métier). La sécurité réelle reste assurée par les RLS existantes.
+Statuts affichés via badges (convention Matte Ceramic existante), pastilles pulse pour le temps réel.
 
-## Détails techniques
-- Appliqué via des `UPDATE` ciblés sur `public.role_permissions` (clé `role` + `module`), sans `DELETE`/recréation — aucune personnalisation existante touchée.
-- Résolution multi-rôles inchangée (fusion logique OR dans `usePermissions`), donc un utilisateur cumulant plusieurs rôles garde l'union de ses droits.
-- Aucun changement de schéma, d'enum `app_role`, ni de RLS.
+## Modèle de données (migration)
+
+- `pdr.stock_reserve` (integer, default 0) — quantité réservée.
+- **`pdr_requests`** : `numero` (auto), `type` (curative|preventive), `ticket_id?`, `preventive_plan_id?`, `intervention_id?`, `machine_id?`, `ligne_id?`, `requested_by`, `priorite`, `statut` (demandee|prete|partielle|prise|refusee|annulee), `commentaire`, `created_by/updated_by`.
+- **`pdr_request_items`** : `request_id`, `pdr_id`, `quantite_demandee`, `quantite_preparee`, `quantite_prise`, `statut`, `dispo_snapshot` (bool), `position_id?`, `cause_remplacement?`, `commentaire`, traçabilité magasin (`prepared_by/at`) et maintenance (`taken_by/at`), `refused_reason?`.
+- **`pdr_maintenance_holdings`** : ledger du stock maintenance — `pdr_id`, `request_item_id`, `holder_id`, `quantite`, `statut` (en_main|consomme|retourne), traçabilité.
+
+Toutes les tables : `GRANT` (authenticated + service_role), RLS via `has_role()`, colonnes `created_at/updated_at` + trigger, auto-numérotation `numero` (pattern existant).
+
+## Logique serveur (fonctions SECURITY DEFINER + triggers)
+- `create_pdr_request(...)` : crée demande + lignes, **réserve** le stock, audit.
+- `set_request_item_ready(item_id, qte_preparee)` : rôle `gestionnaire_magasin`, statut→prete, audit + notif demandeur.
+- `confirm_request_item_taken(item_id, qte_prise)` : rôle maintenance, libère réserve, **sortie** stock + holding maintenance, statut→prise, audit + notif.
+- `refuse_request_item(item_id, motif)` / `cancel_pdr_request(id)` : libèrent la réserve, audit + notif.
+- `consume_maintenance_holding(...)` à la clôture : lie `intervention_pdr`, marque holding consommé, retourne le reliquat (entrée). Mise à jour de l'écran de clôture pour utiliser le stock maintenance au lieu de la saisie libre.
+- Agrégation du statut de la demande (prete/partielle/prise) recalculée par trigger sur les lignes.
+
+## Permissions & rôles
+- Demander : `maintenancier`, `resp_maintenance`, `admin`.
+- Préparer / refuser : `gestionnaire_magasin`, `admin`.
+- Confirmer la prise : `maintenancier`, `resp_maintenance`, `admin`.
+- Réutilise `pdr_stock_permissions` (`can_create_exit`) pour borner la génération de sortie.
+
+## Audit, notifications & temps réel
+- Chaque transition écrit un `audit_logs` (auteur, raison, anciennes/nouvelles valeurs) — règle mémoire.
+- Notifications in-app : demande créée → magasin ; prête → demandeur ; prise/refus → parties concernées (via le module notifications, jamais depuis lui-même).
+- Realtime Supabase sur `pdr_requests` / `pdr_request_items` pour les deux files.
+
+## Fichiers concernés (indicatif)
+- Migration SQL (tables, colonne, RLS, GRANT, fonctions, triggers, numérotation).
+- Hooks : `usePdrRequests`, `usePdrMaintenanceStock` (+ realtime).
+- UI : nouvel onglet « Pièces » dans le kiosque shift + composant de demande (filtres famille/sous-famille, dispo), page magasin `/pdr/demandes`, vue « prise » maintenance.
+- Adaptation de `MaintenanceShiftIntervention` (clôture → consommation depuis stock maintenance) et `PreventifDetail`/exécution (demande + validation pose).
+- Sidebar/route + permissions.
+
+## Étapes
+1. Migration BD (schéma + réservation + fonctions + RLS/GRANT + numérotation).
+2. Hooks données + realtime.
+3. Écran « Demander » (maintenance) avec filtres famille/sous-famille et disponibilité.
+4. File magasin temps réel (prête/refusée).
+5. Confirmation prise + stock maintenance.
+6. Intégration clôture intervention → consommation auto + retour reliquat.
+7. Branche préventif (resp. maintenance demande, maintenancier valide).
+8. Audit + notifications + tests Vitest (transitions, réservation, sortie).

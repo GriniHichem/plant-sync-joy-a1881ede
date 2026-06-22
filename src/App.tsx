@@ -107,6 +107,8 @@ import ProductionShiftDeclare from "@/pages/shift/ProductionShiftDeclare";
 import ProductionShiftStop from "@/pages/shift/ProductionShiftStop";
 import ProductionShiftTicket from "@/pages/shift/ProductionShiftTicket";
 import MaintenanceShiftIntervention from "@/pages/shift/MaintenanceShiftIntervention";
+import MaintenancePieces from "@/pages/shift/MaintenancePieces";
+import PdrRequestsQueue from "@/pages/pdr/PdrRequestsQueue";
 import QualityShiftCheck from "@/pages/shift/QualityShiftCheck";
 import QualityShiftNc from "@/pages/shift/QualityShiftNc";
 import QualityShiftLines from "@/pages/shift/QualityShiftLines";

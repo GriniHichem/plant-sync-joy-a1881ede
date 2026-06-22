@@ -1,38 +1,67 @@
-## Objectif
-Permettre à un administrateur de **supprimer un utilisateur** depuis la page « Utilisateurs & Rôles », avec une confirmation sécurisée : il faut **retaper le nom complet de l'utilisateur** pour valider la suppression.
+# Correction des droits par défaut (production / maintenance / qualité)
 
-## Fonctionnement côté utilisateur
-- Un bouton corbeille rouge apparaît dans la colonne « Actions » de chaque ligne utilisateur (à côté du crayon de modification).
-- Un administrateur ne peut pas se supprimer lui-même (bouton désactivé sur sa propre ligne).
-- Au clic, une fenêtre de confirmation s'ouvre :
-  - Avertissement clair : action irréversible, suppression du compte, du profil, des rôles et des photos.
-  - Un champ texte demandant de **saisir exactement le nom complet** (Prénom Nom) de l'utilisateur.
-  - Le bouton « Supprimer définitivement » reste désactivé tant que le texte saisi ne correspond pas exactement au nom.
-- Après suppression : message de confirmation et rafraîchissement de la liste.
+## Principe retenu (validé)
+- **Bureau méthode** = autorité sur tout le **référentiel industriel** : schéma des lignes, liste des équipements, liste/​catalogue PDR, machines, organes.
+- **Responsable qualité** = autorité sur **recettes et produits**.
+- **Maintenance** = exécute les **interventions et la gestion de maintenance** (préventif, tickets, shift maintenance) **dans le cadre dessiné par la méthode** — donc lecture seule sur le référentiel industriel.
+- **Atelier (chef de ligne / opérateur)** = **opérationnel uniquement** (OF, arrêts, consommations, shift, tickets) — lecture seule sur tout référentiel.
+- **Méthode d'application : corrections ciblées** — on ne modifie QUE les cellules incohérentes ci-dessous, tout le reste (et vos personnalisations) est conservé.
+
+## Modifications de `role_permissions` (V=voir, C=créer, E=éditer, D=supprimer)
+
+### Production
+- **chef_ligne** — retirer l'écriture sur le référentiel :
+  - recettes : VCE → V
+  - produits : VCE → V
+  - articles : VCE → V
+  - conservé : OF (VCE), arrêts (VCE), consommations (VCE), shift_production (VCE), tickets (VC), gpao_dashboard (VCE)
+- **resp_production** — recettes/produits passent à la qualité :
+  - recettes : VCED → V
+  - produits : VCED → V
+  - conservé : OF, arrêts, consommations, shift_production, gpao_dashboard, articles (référentiel d'exploitation conservé)
+- **operateur** — déjà minimal, aucun changement.
+
+### Maintenance (référentiel industriel → lecture seule)
+- **maintenancier** :
+  - lignes : VCE → V
+  - machines : VCE → V
+  - organes : VCE → V
+  - equipements : VCE → V
+  - pdr : VCE → V
+  - conservé : préventif (VCE), tickets (VCED), shift_maintenance (VCE), dashboard/historique/journal
+- **resp_maintenance** :
+  - lignes : VCED → V
+  - machines : VCED → V
+  - organes : VCED → V
+  - equipements : VCED → V
+  - pdr : VCED → V
+  - conservé (gestion maintenance) : préventif (VCED), tickets (VCED), shift_maintenance (VCED), historique, journal, analytiques, dashboard, validations
+
+### Qualité (autorité recettes/produits)
+- **responsable_controle_qualite** :
+  - recettes : V → VCE
+  - produits : V → VCE
+  - conservé : tous les modules qualité (VCED)
+- **directeur_qualite** :
+  - recettes : V → VCED
+  - produits : V → VCED
+  - conservé : tous les modules qualité (VCED)
+- **controleur_qualite** — inchangé (référentiel en lecture, contrôles/NC/shift en création-édition).
+
+### Méthode (confirmer l'autorité référentiel)
+- **bureau_methode** :
+  - recettes : VCE → V (les recettes passent à la qualité)
+  - conservé / confirmé comme autorité industrielle : lignes (VCE), machines (VCE), organes (VCE), equipements (VCE), pdr (VCE)
+
+## Vérification UI
+Après les mises à jour, contrôler que les pages concernées respectent bien `canEdit/canCreate/canDelete` du hook `usePermissions` (boutons masqués/désactivés) :
+- éditeur de schéma de ligne (module `lignes`)
+- pages recettes et produits
+- pages machines / organes / équipements / PDR
+
+Si une page n'effectue pas le contrôle (boutons visibles sans droit), ajouter la garde de permission côté frontend (présentation uniquement — pas de changement de logique métier). La sécurité réelle reste assurée par les RLS existantes.
 
 ## Détails techniques
-
-### 1. Nouvelle edge function `admin-delete-user`
-Calquée sur `admin-create-user` (auto-hébergeable, `verify_jwt = false` dans `config.toml`) :
-- Vérifie le bearer token et que l'appelant a le rôle `admin` (via `has_role`).
-- Refuse si l'appelant tente de supprimer son propre compte.
-- Reçoit `{ user_id }`.
-- Supprime via `admin.auth.admin.deleteUser(user_id)` (les lignes `profiles` et `user_roles` liées à `auth.users` sont supprimées en cascade ; nettoyage explicite de secours si nécessaire).
-- Enregistre un évènement dans `audit_logs` (auteur = appelant, action de suppression, valeurs supprimées) conformément aux règles du projet.
-- Retourne `{ ok: true }` ou une erreur.
-
-### 2. Déclaration dans `supabase/config.toml`
-Ajout du bloc :
-```toml
-[functions.admin-delete-user]
-verify_jwt = false
-```
-
-### 3. UI dans `src/pages/parametres/UsersAdmin.tsx`
-- Ajout d'un état pour la fenêtre de suppression (`deleteProfile`, `confirmName`, `deleting`).
-- Bouton corbeille dans la colonne Actions (désactivé pour l'utilisateur courant via `user.id`).
-- `Dialog` de confirmation avec champ de saisie du nom complet et validation stricte (`confirmName.trim() === \`${first_name} ${last_name}\`.trim()`).
-- Appel `supabase.functions.invoke("admin-delete-user", { body: { user_id } })`, gestion des toasts succès/erreur, puis `load()`.
-
-## Aucune migration de base de données nécessaire
-La suppression passe par l'API admin Auth ; les tables liées se nettoient en cascade.
+- Appliqué via des `UPDATE` ciblés sur `public.role_permissions` (clé `role` + `module`), sans `DELETE`/recréation — aucune personnalisation existante touchée.
+- Résolution multi-rôles inchangée (fusion logique OR dans `usePermissions`), donc un utilisateur cumulant plusieurs rôles garde l'union de ses droits.
+- Aucun changement de schéma, d'enum `app_role`, ni de RLS.

@@ -97,9 +97,11 @@ export default function LinesList() {
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/preventif?line=${l.id}`)} className="h-8 w-8" title="Plans préventifs">
                         <CalendarCheck className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/lignes/${l.id}/config`)} className="h-8 w-8">
-                        <Settings className="h-3.5 w-3.5" />
-                      </Button>
+                      {canEdit("lignes") && (
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/lignes/${l.id}/config`)} className="h-8 w-8">
+                          <Settings className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

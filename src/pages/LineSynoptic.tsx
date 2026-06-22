@@ -44,7 +44,7 @@ export default function LineSynoptic() {
   const nav = useNavWithFrom();
   const goBack = useSmartBack("/lignes");
   const { user } = useAuth();
-  const { canCreate } = usePermissions();
+  const { canCreate, canEdit } = usePermissions();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 

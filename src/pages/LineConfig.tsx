@@ -32,6 +32,7 @@ export default function LineConfig() {
   const navigate = useNavigate();
   const goBack = useSmartBack(`/lignes/${id}`);
   const { toast } = useToast();
+  const { canEdit, loading: permLoading } = usePermissions();
   const [line, setLine] = useState<any>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [allMachines, setAllMachines] = useState<any[]>([]);

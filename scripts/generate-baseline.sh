@@ -111,6 +111,49 @@ BUCKETS
 
   echo ""
   echo "-- ============================================================================="
+  echo "-- 4) DROITS EXECUTE SUR LES FONCTIONS (durcissement sécurité)"
+  echo "-- ============================================================================="
+  # pg_dump --schema-only n'émet pas toujours de GRANT EXECUTE explicite quand les
+  # fonctions reposent sur les privilèges par défaut. Sur une base auto-hébergée,
+  # cela peut casser les politiques RLS qui appellent has_role() côté 'authenticated'.
+  # On rejoue donc le même durcissement que les migrations de sécurité :
+  #  - REVOKE de anon/public sur toutes les fonctions public
+  #  - re-GRANT EXECUTE à authenticated (non-trigger) + service_role (toutes)
+  #  - re-GRANT EXECUTE à anon uniquement pour resolve_scanned_code (scan pré-auth)
+  cat <<'FNGRANTS'
+DO $fn$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN
+    SELECT p.oid,
+           p.proname,
+           pg_get_function_identity_arguments(p.oid) AS args,
+           (p.prorettype = 'trigger'::regtype) AS is_trigger
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+  LOOP
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION public.%I(%s) FROM anon, public;', r.proname, r.args);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION public.%I(%s) TO service_role;', r.proname, r.args);
+    IF NOT r.is_trigger THEN
+      EXECUTE format('GRANT EXECUTE ON FUNCTION public.%I(%s) TO authenticated;', r.proname, r.args);
+    END IF;
+  END LOOP;
+
+  -- Scan QR/code-barres avant authentification : exécutable par anon.
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'resolve_scanned_code'
+  ) THEN
+    EXECUTE 'GRANT EXECUTE ON FUNCTION public.resolve_scanned_code(text) TO anon;';
+  END IF;
+END
+$fn$;
+
+FNGRANTS
+
+  echo "-- ============================================================================="
   echo "-- FIN DU BASELINE"
   echo "-- ============================================================================="
 } > "$OUT"

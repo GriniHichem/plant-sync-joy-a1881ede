@@ -34,7 +34,7 @@ export default function ProductDetail() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const entityImages = useEntityImages("produit", id);
-  const { canDelete } = usePermissions();
+  const { canDelete, canEdit } = usePermissions();
   // Form
   const [code, setCode] = useState("");
   const [designation, setDesignation] = useState("");

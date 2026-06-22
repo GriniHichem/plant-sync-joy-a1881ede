@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowUp, ArrowDown, Plus, Trash2, Eye, Save } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
+import { ArrowLeft, ArrowUp, ArrowDown, Plus, Trash2, Eye, Save, Lock } from "lucide-react";
 
 interface Assignment {
   id: string;
@@ -31,6 +32,7 @@ export default function LineConfig() {
   const navigate = useNavigate();
   const goBack = useSmartBack(`/lignes/${id}`);
   const { toast } = useToast();
+  const { canEdit, loading: permLoading } = usePermissions();
   const [line, setLine] = useState<any>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [allMachines, setAllMachines] = useState<any[]>([]);
@@ -140,7 +142,36 @@ export default function LineConfig() {
     load();
   };
 
-  if (!line) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
+  if (!line || permLoading) return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
+
+  if (!canEdit("lignes")) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={goBack} className="h-10 w-10">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">Configurer — {line.code}</h1>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <Lock className="h-10 w-10 text-muted-foreground" />
+            <p className="font-semibold">Accès en lecture seule</p>
+            <p className="text-sm text-muted-foreground max-w-md">
+              La modification du schéma de ligne (machines, équipements, ordre du
+              processus) est réservée au bureau méthode.
+            </p>
+            <Button variant="outline" onClick={() => navigate(`/lignes/${id}`)}>
+              <Eye className="h-4 w-4 mr-2" /> Voir le synoptique
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-4">

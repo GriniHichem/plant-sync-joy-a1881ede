@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -23,7 +23,7 @@ interface RecipesPageProps {
 }
 
 export default function RecipesPage({ readOnly = false, hideHeader = false }: RecipesPageProps = {}) {
-  const { hasRole } = useAuth();
+  const { canEdit } = usePermissions();
   const { toast } = useToast();
   const [recipes, setRecipes] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -74,7 +74,7 @@ export default function RecipesPage({ readOnly = false, hideHeader = false }: Re
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [expandedVersion, setExpandedVersion] = useState<string | null>(null);
 
-  const canManage = !readOnly && (hasRole("admin") || hasRole("resp_production") || hasRole("responsable_controle_qualite") || hasRole("directeur_qualite"));
+  const canManage = !readOnly && canEdit("recettes");
 
 
   const load = async () => {

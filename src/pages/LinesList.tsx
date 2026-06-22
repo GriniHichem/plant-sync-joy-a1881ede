@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Factory, Eye, Settings, Plus, CalendarCheck } from "lucide-react";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function LinesList() {
   const navigate = useNavWithFrom();
+  const { canEdit } = usePermissions();
   const [lines, setLines] = useState<any[]>([]);
   const [machineCounts, setMachineCounts] = useState<Record<string, number>>({});
 
@@ -95,9 +97,11 @@ export default function LinesList() {
                       <Button variant="ghost" size="icon" onClick={() => navigate(`/preventif?line=${l.id}`)} className="h-8 w-8" title="Plans préventifs">
                         <CalendarCheck className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/lignes/${l.id}/config`)} className="h-8 w-8">
-                        <Settings className="h-3.5 w-3.5" />
-                      </Button>
+                      {canEdit("lignes") && (
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/lignes/${l.id}/config`)} className="h-8 w-8">
+                          <Settings className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

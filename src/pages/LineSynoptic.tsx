@@ -44,7 +44,7 @@ export default function LineSynoptic() {
   const nav = useNavWithFrom();
   const goBack = useSmartBack("/lignes");
   const { user } = useAuth();
-  const { canCreate } = usePermissions();
+  const { canCreate, canEdit } = usePermissions();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -296,9 +296,11 @@ export default function LineSynoptic() {
             <Button variant="outline" onClick={() => nav(`/preventif?line=${id}`)} className="h-10">
               <CalendarCheck className="h-4 w-4 mr-1.5" /> Plans préventifs
             </Button>
-            <Button variant="outline" onClick={() => nav(`/lignes/${id}/config`)} className="h-10">
-              <Settings className="h-4 w-4 mr-1.5" /> Configurer
-            </Button>
+            {canEdit("lignes") && (
+              <Button variant="outline" onClick={() => nav(`/lignes/${id}/config`)} className="h-10">
+                <Settings className="h-4 w-4 mr-1.5" /> Configurer
+              </Button>
+            )}
           </>
         )}
       </div>
@@ -325,9 +327,11 @@ export default function LineSynoptic() {
             <Factory className="h-10 w-10 mx-auto mb-3 opacity-20" />
             <p className="text-base font-medium mb-1">Aucune machine configurée</p>
             <p className="text-sm mb-4">Configurez le processus de cette ligne pour afficher le synoptique.</p>
-            <Button onClick={() => nav(`/lignes/${id}/config`)}>
-              <Settings className="h-4 w-4 mr-2" /> Configurer la ligne
-            </Button>
+            {canEdit("lignes") && (
+              <Button onClick={() => nav(`/lignes/${id}/config`)}>
+                <Settings className="h-4 w-4 mr-2" /> Configurer la ligne
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : visibleMachines.length === 0 ? (
@@ -445,9 +449,11 @@ export default function LineSynoptic() {
       {/* Mobile floating actions */}
       {isMobile && (
         <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-30">
-          <Button size="icon" variant="outline" className="h-12 w-12 rounded-full shadow-lg bg-background" onClick={() => nav(`/lignes/${id}/config`)}>
-            <Settings className="h-5 w-5" />
-          </Button>
+          {canEdit("lignes") && (
+            <Button size="icon" variant="outline" className="h-12 w-12 rounded-full shadow-lg bg-background" onClick={() => nav(`/lignes/${id}/config`)}>
+              <Settings className="h-5 w-5" />
+            </Button>
+          )}
           {canCreate("tickets") && machines.length > 0 && (
             <Button
               size="icon"

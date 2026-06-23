@@ -54,7 +54,6 @@ export default function PreventifDetail() {
   const [execOpen, setExecOpen] = useState(false);
   const [execNotes, setExecNotes] = useState("");
   const [execLoading, setExecLoading] = useState(false);
-  const [execLoading, setExecLoading] = useState(false);
   const [execDureeMinutes, setExecDureeMinutes] = useState<number>(0);
   const [execStartTime, setExecStartTime] = useState("");
 

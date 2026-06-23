@@ -177,7 +177,7 @@ function ap(modules: string[], preset: Preset, base: Record<string, Preset> = {}
 }
 
 const MAINT_MODS = ["dashboard", "machines", "equipements", "organes", "lignes", "pdr", "tickets", "preventif", "shift_maintenance", "journal", "historique", "analytiques"];
-const LOG_MODS = ["pdr_demandes", "shift_magasin"];
+const LOG_MODS = ["pdr_demandes", "shift_magasin", "journal_stock"];
 const PROD_MODS = ["gpao_dashboard", "of", "produits", "articles", "recettes", "shift_production", "consommations", "arrets"];
 const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift"];
 const INV_MODS = ["inventaire", "inventaire_campagnes"];

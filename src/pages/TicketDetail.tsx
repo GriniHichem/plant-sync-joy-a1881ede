@@ -142,7 +142,7 @@ export default function TicketDetail() {
     supabase.from("pdr").select("id, reference, designation, stock_actuel").eq("is_active", true).order("reference").then(({ data }) => setPdrList(data || []));
   }, [id, user]);
 
-  useShiftRealtime(`ticket-hold-${id ?? "none"}`, "pdr_maintenance_holdings", loadHoldings, !!id && !!user);
+  useShiftRealtime(`ticket-hold-${user?.id ?? "none"}`, "pdr_maintenance_holdings", loadHoldings, !!user);
 
 
   const addCollaborator = async () => {

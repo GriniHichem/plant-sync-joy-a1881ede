@@ -83,7 +83,7 @@ const MODULES: AppModule[] = [
   { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/recherche", icon: IconSearch, category: "Configuration", permissionModule: "recherche", accent: "from-fuchsia-600/15 to-fuchsia-600/5 text-fuchsia-600" },
 ];
 
-const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Production", "Qualité", "Inventaire", "Configuration"];
+const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Stock PDR", "Production", "Qualité", "Inventaire", "Configuration"];
 
 const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: string }>> = {
   Maintenance: IconMaintenance,

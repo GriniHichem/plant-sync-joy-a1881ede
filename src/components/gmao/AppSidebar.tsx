@@ -102,6 +102,7 @@ export function AppSidebar() {
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
   const isGmaoActive = visibleGmao.some((i) => isActive(i.url));
+  const isStockActive = visibleStock.some((i) => isActive(i.url));
   const isGpaoActive = visibleGpao.some((i) => isActive(i.url));
   const isQualiteActive = visibleQualite.some((i) => isActive(i.url));
   const isAdminActive = visibleAdmin.some((i) => isActive(i.url));
@@ -109,6 +110,7 @@ export function AppSidebar() {
   const showQualite = visibleQualite.length > 0;
   const showInventaire = visibleInventaire.length > 0;
   const showGmao = visibleGmao.length > 0;
+  const showStock = visibleStock.length > 0;
   const showGpao = visibleGpao.length > 0;
   const showAdmin = visibleAdmin.length > 0;
 

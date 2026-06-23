@@ -6488,6 +6488,7 @@ export type Database = {
         | "directeur_qualite"
         | "responsable_inventaire"
         | "agent_inventaire"
+        | "responsable_magasin"
       approvisionnement_type: "local" | "importation" | "mixte"
       arret_type:
         | "panne"
@@ -6844,6 +6845,7 @@ export const Constants = {
         "directeur_qualite",
         "responsable_inventaire",
         "agent_inventaire",
+        "responsable_magasin",
       ],
       approvisionnement_type: ["local", "importation", "mixte"],
       arret_type: [

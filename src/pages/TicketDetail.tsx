@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,7 @@ import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { checkValidationRequired, createValidationRequest } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { InterventionPdrLineEditor, type InterventionPdrLine } from "@/components/pdr/InterventionPdrLineEditor";
-import { CAUSE_OPTIONS } from "@/components/pdr/InterventionPdrLineEditor";
+import { consumeMaintenanceHolding } from "@/hooks/usePdrRequests";
 
 export default function TicketDetail() {
   const { id } = useParams();

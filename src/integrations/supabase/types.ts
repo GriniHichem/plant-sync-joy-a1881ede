@@ -791,11 +791,12 @@ export type Database = {
           compteur_initial_new: number | null
           created_at: string
           id: string
-          intervention_id: string
+          intervention_id: string | null
           pdr_id: string
           photo_apres_path: string | null
           photo_avant_path: string | null
           position_id: string | null
+          preventive_execution_id: string | null
           quantite: number
         }
         Insert: {
@@ -805,11 +806,12 @@ export type Database = {
           compteur_initial_new?: number | null
           created_at?: string
           id?: string
-          intervention_id: string
+          intervention_id?: string | null
           pdr_id: string
           photo_apres_path?: string | null
           photo_avant_path?: string | null
           position_id?: string | null
+          preventive_execution_id?: string | null
           quantite?: number
         }
         Update: {
@@ -819,11 +821,12 @@ export type Database = {
           compteur_initial_new?: number | null
           created_at?: string
           id?: string
-          intervention_id?: string
+          intervention_id?: string | null
           pdr_id?: string
           photo_apres_path?: string | null
           photo_avant_path?: string | null
           position_id?: string | null
+          preventive_execution_id?: string | null
           quantite?: number
         }
         Relationships: [
@@ -854,6 +857,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "pdr_position_status"
             referencedColumns: ["position_id"]
+          },
+          {
+            foreignKeyName: "intervention_pdr_preventive_execution_id_fkey"
+            columns: ["preventive_execution_id"]
+            isOneToOne: false
+            referencedRelation: "preventive_executions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3422,31 +3432,43 @@ export type Database = {
           checklist_results: Json | null
           created_at: string
           date_execution: string
+          duree_minutes: number | null
           executed_by: string
+          heure_debut: string | null
+          heure_fin: string | null
           id: string
           notes: string | null
           pdr_used: Json | null
           plan_id: string
+          statut: string
         }
         Insert: {
           checklist_results?: Json | null
           created_at?: string
           date_execution?: string
+          duree_minutes?: number | null
           executed_by: string
+          heure_debut?: string | null
+          heure_fin?: string | null
           id?: string
           notes?: string | null
           pdr_used?: Json | null
           plan_id: string
+          statut?: string
         }
         Update: {
           checklist_results?: Json | null
           created_at?: string
           date_execution?: string
+          duree_minutes?: number | null
           executed_by?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
           id?: string
           notes?: string | null
           pdr_used?: Json | null
           plan_id?: string
+          statut?: string
         }
         Relationships: [
           {
@@ -6220,6 +6242,17 @@ export type Database = {
           p_commentaire?: string
           p_holding_id: string
           p_intervention_id: string
+          p_position_id?: string
+          p_qte_consomme: number
+        }
+        Returns: undefined
+      }
+      consume_maintenance_holding_preventive: {
+        Args: {
+          p_cause?: string
+          p_commentaire?: string
+          p_execution_id: string
+          p_holding_id: string
           p_position_id?: string
           p_qte_consomme: number
         }

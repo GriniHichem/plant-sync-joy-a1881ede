@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Printer, Loader2 } from "lucide-react";
@@ -64,13 +65,13 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
         const totalStopMin = (stops ?? []).reduce((s: number, x: any) => s + Number(x.duree_minutes || 0), 0);
         totals.push({ label: "Quantité produite", value: totalProd });
         totals.push({ label: "Rebut", value: totalRebut });
-        totals.push({ label: "Arrêts (min)", value: totalStopMin });
+        totals.push({ label: "Arrêts", value: formatDuration(totalStopMin) });
         totals.push({ label: "Tickets ouverts", value: (tickets ?? []).length });
         (decl ?? []).forEach((d: any) =>
           events.push({ time: d.heure_production, type: "Déclaration", label: `Qté ${d.quantite_produite} (rebut ${d.quantite_rebut ?? 0})`, detail: d.notes ?? undefined }),
         );
         (stops ?? []).forEach((s: any) =>
-          events.push({ time: s.heure_debut, type: "Arrêt", label: `${String(s.type).replace("_", " ")} • ${s.duree_minutes} min`, detail: s.description }),
+          events.push({ time: s.heure_debut, type: "Arrêt", label: `${String(s.type).replace("_", " ")} • ${formatDuration(s.duree_minutes)}`, detail: s.description }),
         );
         (tickets ?? []).forEach((t: any) =>
           events.push({ time: t.created_at, type: "Ticket", label: `${t.numero} (${t.priorite})`, detail: t.description }),
@@ -99,7 +100,7 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
         }, 0);
         totals.push({ label: "Interventions", value: (interv ?? []).length });
         totals.push({ label: "Tickets clôturés", value: (closedTickets ?? []).length });
-        totals.push({ label: "Temps intervention (min)", value: totalMin });
+        totals.push({ label: "Temps intervention", value: formatDuration(totalMin) });
         (interv ?? []).forEach((i: any) =>
           events.push({
             time: i.date_debut,

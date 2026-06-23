@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -204,7 +205,7 @@ export default function OfDetail() {
           ["Recette", of.recipes?.name || "—"],
           ["Mode", (of as any).shift_modes?.label || "3x8"],
           ["Début prévu", of.date_debut_prevue ? new Date(of.date_debut_prevue).toLocaleDateString("fr-FR") : "—"],
-          ["Arrêts", totalStopMin > 0 ? `${totalStopMin} min` : "0 min"],
+          ["Arrêts", formatDuration(totalStopMin)],
         ].map(([label, val]) => (
           <Card key={label as string}>
             <CardContent className="p-3">
@@ -275,7 +276,7 @@ export default function OfDetail() {
                             <Badge variant="destructive" className="text-xs">{stats.ticketCount}</Badge>
                           ) : "—"}
                         </TableCell>
-                        <TableCell className="tabular-nums">{stats.stopMin > 0 ? `${stats.stopMin} min` : "—"}</TableCell>
+                        <TableCell className="tabular-nums">{stats.stopMin > 0 ? formatDuration(stats.stopMin) : "—"}</TableCell>
                         <TableCell>
                           <Badge variant={s.statut === "termine" ? "secondary" : "default"} className="text-xs capitalize">
                             {(s.statut || "en_cours").replace("_", " ")}
@@ -376,7 +377,7 @@ export default function OfDetail() {
                       <TableCell className="capitalize">{s.type.replace("_", " ")}</TableCell>
                       <TableCell className="tabular-nums">{new Date(s.heure_debut).toLocaleString("fr-FR")}</TableCell>
                       <TableCell className="tabular-nums">{s.heure_fin ? new Date(s.heure_fin).toLocaleString("fr-FR") : "En cours"}</TableCell>
-                      <TableCell className="tabular-nums font-medium">{s.duree_minutes ? `${s.duree_minutes} min` : "—"}</TableCell>
+                      <TableCell className="tabular-nums font-medium">{s.duree_minutes ? formatDuration(s.duree_minutes) : "—"}</TableCell>
                       <TableCell>{s.ticket_id ? <span className="text-primary cursor-pointer" onClick={() => navigate(`/tickets/${s.ticket_id}`)}>Voir</span> : "—"}</TableCell>
                     </TableRow>
                   ))}
@@ -566,7 +567,7 @@ export default function OfDetail() {
                     {detailStops.map((s) => (
                       <div key={s.id} className="flex justify-between text-xs py-1.5 px-3 rounded bg-amber-50 dark:bg-amber-900/20">
                         <span className="capitalize">{s.type.replace("_", " ")}</span>
-                        <span className="tabular-nums">{s.duree_minutes ? `${s.duree_minutes} min` : "en cours"}</span>
+                        <span className="tabular-nums">{s.duree_minutes ? formatDuration(s.duree_minutes) : "en cours"}</span>
                       </div>
                     ))}
                   </div>

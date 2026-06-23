@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration } from "@/lib/utils";
 import type { ShiftKind } from "@/contexts/ActiveShiftContext";
 
 export interface ShiftKpi {
@@ -19,12 +20,7 @@ export interface ShiftSessionStats {
 
 /** Format minutes -> "1h23" / "47 min". */
 function fmtMinutes(min: number): string {
-  if (!Number.isFinite(min) || min <= 0) return "0 min";
-  const m = Math.round(min);
-  if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60);
-  const r = m % 60;
-  return r === 0 ? `${h}h` : `${h}h${String(r).padStart(2, "0")}`;
+  return formatDuration(min);
 }
 
 /** Compute minute delta between two ISO timestamps; clamped to >= 0. */

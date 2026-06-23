@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -365,7 +366,7 @@ export default function MachineDetail() {
                                 <span className="tabular-nums">→ {new Date(i.date_fin).toLocaleString("fr-FR")}</span>
                               )}
                               {duration != null && (
-                                <span className="font-medium text-foreground">Durée: {duration} min</span>
+                                <span className="font-medium text-foreground">Durée: {formatDuration(duration)}</span>
                               )}
                             </div>
                             {i.intervention_pdr && i.intervention_pdr.length > 0 && (
@@ -419,7 +420,7 @@ export default function MachineDetail() {
                           {new Date(t.heure_declaration).toLocaleDateString("fr-FR")}
                         </TableCell>
                         <TableCell className="tabular-nums">
-                          {t.temps_arret_minutes ? <span className="text-destructive font-medium">{t.temps_arret_minutes} min</span> : "—"}
+                          {t.temps_arret_minutes ? <span className="text-destructive font-medium">{formatDuration(t.temps_arret_minutes)}</span> : "—"}
                         </TableCell>
                       </TableRow>
                     ))

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Factory, Package, ClipboardList, TrendingUp, BarChart3, AlertTriangle, FolderTree, ShieldAlert, Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -229,7 +230,7 @@ export default function GpaoDashboard() {
                         <p className="text-sm font-medium capitalize">{s.type.replace("_", " ")}</p>
                         <p className="text-xs text-muted-foreground">{s.production_lines?.designation}</p>
                       </div>
-                      <span className="text-xs tabular-nums font-medium">{s.duree_minutes ? `${s.duree_minutes} min` : "En cours"}</span>
+                      <span className="text-xs tabular-nums font-medium">{s.duree_minutes ? formatDuration(s.duree_minutes) : "En cours"}</span>
                     </div>
                   </div>
                 ))}

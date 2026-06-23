@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, PackagePlus, ListChecks, HandHelping, Boxes, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PdrRequestComposer } from "@/components/pdr/PdrRequestComposer";
-import { usePdrRequestQueue, useMyPdrRequests, confirmItemTaken, cancelPdrRequest } from "@/hooks/usePdrRequests";
+import { ConfirmTakeDialog } from "@/components/pdr/ConfirmTakeDialog";
+import { usePdrRequestQueue, useMyPdrRequests, confirmItemTaken, cancelPdrRequest, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
 import { useMaintenanceHoldings } from "@/hooks/useMaintenanceHoldings";
 
 const ITEM_BADGE: Record<string, { label: string; cls: string }> = {
@@ -37,9 +38,11 @@ export default function MaintenancePieces() {
     [queue],
   );
 
+  const [takeTarget, setTakeTarget] = useState<{ req: PdrRequest; it: PdrRequestItem } | null>(null);
+
   const handleTake = async (itemId: string, qte: number) => {
     setBusy(true);
-    try { await confirmItemTaken(itemId, qte); toast({ title: "Prise confirmée — pièce transférée à la maintenance" }); }
+    try { await confirmItemTaken(itemId, qte); toast({ title: "Prise confirmée — pièce transférée à la maintenance" }); setTakeTarget(null); }
     catch (e: any) { toast({ title: "Erreur", description: e.message, variant: "destructive" }); }
     finally { setBusy(false); }
   };
@@ -92,7 +95,7 @@ export default function MaintenancePieces() {
                 <p className="text-xs text-muted-foreground truncate">{it.pdr?.designation}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">{req.numero} · préparé : {it.quantite_preparee ?? it.quantite_demandee}</p>
               </div>
-              <Button size="sm" className="h-10" disabled={busy} onClick={() => handleTake(it.id, it.quantite_preparee ?? it.quantite_demandee)}>
+              <Button size="sm" className="h-10" disabled={busy} onClick={() => setTakeTarget({ req, it })}>
                 Confirmer la prise
               </Button>
             </CardContent></Card>
@@ -150,6 +153,15 @@ export default function MaintenancePieces() {
           ))}
         </TabsContent>
       </Tabs>
+
+      <ConfirmTakeDialog
+        open={!!takeTarget}
+        request={takeTarget?.req ?? null}
+        item={takeTarget?.it ?? null}
+        busy={busy}
+        onConfirm={(qte) => takeTarget && handleTake(takeTarget.it.id, qte)}
+        onCancel={() => setTakeTarget(null)}
+      />
     </div>
   );
 }

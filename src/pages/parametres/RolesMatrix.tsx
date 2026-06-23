@@ -35,6 +35,8 @@ const MODULE_GROUPS = [
       { key: "organes", label: "Organes" },
       { key: "lignes", label: "Lignes & synoptique" },
       { key: "pdr", label: "Pièces de rechange" },
+      { key: "pdr_demandes", label: "Demandes pièces (magasin)" },
+      { key: "shift_magasin", label: "Shift Magasin" },
       { key: "tickets", label: "Tickets" },
       { key: "preventif", label: "Préventif" },
       { key: "shift_maintenance", label: "Shift Maintenance" },

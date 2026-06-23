@@ -230,7 +230,7 @@ export default function GpaoDashboard() {
                         <p className="text-sm font-medium capitalize">{s.type.replace("_", " ")}</p>
                         <p className="text-xs text-muted-foreground">{s.production_lines?.designation}</p>
                       </div>
-                      <span className="text-xs tabular-nums font-medium">{s.duree_minutes ? `${s.duree_minutes} min` : "En cours"}</span>
+                      <span className="text-xs tabular-nums font-medium">{s.duree_minutes ? formatDuration(s.duree_minutes) : "En cours"}</span>
                     </div>
                   </div>
                 ))}

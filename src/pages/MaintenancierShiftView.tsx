@@ -59,7 +59,7 @@ function PriorityBadge({ priority }: { priority: string }) {
 export default function MaintenancierShiftView() {
   const { user } = useAuth();
   const navigate = useNavWithFrom();
-  const { tickets, plans, loading, restrictedToShiftLines } = useMaintenanceShiftWorkload();
+  const { tickets, plans, loading, restrictedToShiftLines, inProgressPlanIds } = useMaintenanceShiftWorkload();
 
   // Collect all machine IDs for image fetching
   const allMachineIds = useMemo(() => {
@@ -174,6 +174,9 @@ export default function MaintenancierShiftView() {
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">{item.frequence}</Badge>
                               {item.prochaine_echeance && new Date(item.prochaine_echeance) < new Date() && (
                                 <Badge variant="destructive" className="text-[10px] px-1.5 py-0">En retard</Badge>
+                              )}
+                              {inProgressPlanIds.includes(item.id) && (
+                                <Badge className="text-[10px] px-1.5 py-0 bg-green-600 hover:bg-green-600">En cours</Badge>
                               )}
                             </div>
                             {item.type_maintenance && (

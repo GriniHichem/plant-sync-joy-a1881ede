@@ -183,6 +183,25 @@ export async function consumeMaintenanceHolding(input: {
 }
 
 /**
+ * Consume a held piece onto a PREVENTIVE plan execution (leftover returned to magasin,
+ * exactly like the curative consumeMaintenanceHolding).
+ */
+export async function consumePreventiveHolding(input: {
+  holding_id: string; execution_id: string; qte_consomme: number;
+  position_id?: string | null; cause?: string | null; commentaire?: string | null;
+}) {
+  const { error } = await supabase.rpc("consume_maintenance_holding_preventive", {
+    p_holding_id: input.holding_id,
+    p_execution_id: input.execution_id,
+    p_qte_consomme: input.qte_consomme,
+    p_position_id: input.position_id ?? null,
+    p_cause: input.cause ?? null,
+    p_commentaire: input.commentaire ?? null,
+  } as any);
+  if (error) throw error;
+}
+
+/**
  * Consume a partial quantity from the maintainer's mini-stock (holding) onto an intervention.
  * Unlike consumeMaintenanceHolding, the leftover STAYS in the mini-stock (decremented),
  * available for other tickets — nothing is returned to the warehouse here.

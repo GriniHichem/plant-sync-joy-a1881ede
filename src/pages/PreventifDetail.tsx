@@ -15,9 +15,10 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Label } from "@/components/ui/label";
 import { logAudit } from "@/lib/audit";
+import { consumePreventiveHolding } from "@/hooks/usePdrRequests";
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   brouillon: { label: "Brouillon", variant: "secondary" },
@@ -43,10 +44,15 @@ export default function PreventifDetail() {
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [executions, setExecutions] = useState<any[]>([]);
 
-  // Execution dialog state
+  // Open (in-progress) execution + held pieces
+  const [openExec, setOpenExec] = useState<any>(null);
+  const [holdings, setHoldings] = useState<any[]>([]);
+  const [consumedQty, setConsumedQty] = useState<Record<string, string>>({});
+  const [starting, setStarting] = useState(false);
+
+  // Execution dialog state (clôture)
   const [execOpen, setExecOpen] = useState(false);
   const [execNotes, setExecNotes] = useState("");
-  const [execPdrUsed, setExecPdrUsed] = useState<Record<string, boolean>>({});
   const [execLoading, setExecLoading] = useState(false);
   const [execDureeMinutes, setExecDureeMinutes] = useState<number>(0);
   const [execStartTime, setExecStartTime] = useState("");
@@ -61,7 +67,10 @@ export default function PreventifDetail() {
     ]);
     if (pRes.data) setPlan(pRes.data);
     setPlanPdr(ppRes.data || []);
-    setExecutions(eRes.data || []);
+    const execs = eRes.data || [];
+    setExecutions(execs);
+    const open = execs.find((e: any) => e.statut === "en_cours" && (!user || e.executed_by === user.id)) || null;
+    setOpenExec(open);
 
     const userIds = (aRes.data || []).map((a: any) => a.user_id);
     setAssigneeIds(userIds);
@@ -69,6 +78,26 @@ export default function PreventifDetail() {
       const { data: profiles } = await supabase.from("profiles").select("user_id, first_name, last_name").in("user_id", userIds);
       setAssignees(profiles || []);
     }
+    await loadHoldings();
+  };
+
+  // Pieces taken (held) by the user for this plan's validated requests
+  const loadHoldings = async () => {
+    if (!id || !user) { setHoldings([]); return; }
+    const { data: reqs } = await supabase.from("pdr_requests" as any).select("id").eq("preventive_plan_id", id);
+    const reqIds = (reqs ?? []).map((r: any) => r.id);
+    if (reqIds.length === 0) { setHoldings([]); return; }
+    const { data: items } = await supabase.from("pdr_request_items" as any).select("id").in("request_id", reqIds);
+    const itemIds = (items ?? []).map((i: any) => i.id);
+    if (itemIds.length === 0) { setHoldings([]); return; }
+    const { data: holds } = await supabase
+      .from("pdr_maintenance_holdings" as any)
+      .select("*, pdr(reference, designation)")
+      .eq("holder_id", user.id).eq("statut", "en_main").in("request_item_id", itemIds);
+    setHoldings((holds as any) ?? []);
+    const init: Record<string, string> = {};
+    (holds ?? []).forEach((h: any) => { init[h.id] = String(h.quantite); });
+    setConsumedQty(init);
   };
 
   useEffect(() => { loadAll(); }, [id]);
@@ -92,76 +121,100 @@ export default function PreventifDetail() {
   };
 
   const isAssigned = user ? assigneeIds.includes(user.id) : false;
-  const canExecute = plan && (plan as any).statut_plan === "valide" && (isAssigned || hasRole("admin") || hasRole("resp_maintenance"));
+  const canWork = plan && (plan as any).statut_plan === "valide" && (isAssigned || hasRole("admin") || hasRole("resp_maintenance"));
+
+  // ===== Commencer : crée une exécution en cours =====
+  const startExecution = async () => {
+    if (!user || !id) return;
+    setStarting(true);
+    try {
+      const now = new Date();
+      const { data: exec, error } = await supabase.from("preventive_executions").insert({
+        plan_id: id,
+        executed_by: user.id,
+        statut: "en_cours",
+        heure_debut: now.toISOString(),
+      } as any).select("*").single();
+      if (error) throw error;
+      await logAudit({
+        action_type: "create", module: "preventif" as any, entity_type: "preventive_execution",
+        entity_id: (exec as any).id, entity_label: plan?.title,
+        action_label: "Début intervention plan préventif", severity: "low",
+        new_values: { plan_id: id, heure_debut: now.toISOString() },
+      });
+      toast({ title: "Intervention démarrée", description: "Vous pouvez demander/prendre des pièces puis clôturer." });
+      await loadAll();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setStarting(false);
+    }
+  };
 
   const openExecDialog = () => {
     setExecNotes("");
     setExecDureeMinutes(0);
     const now = new Date();
     setExecStartTime(now.toTimeString().slice(0, 5));
-    // C3: opt-in by default — opérateur coche uniquement les PDR réellement utilisées
-    // (sinon décrémentation PMP fausse à chaque exécution).
-    const pdrMap: Record<string, boolean> = {};
-    planPdr.forEach(pp => { pdrMap[pp.id] = false; });
-    setExecPdrUsed(pdrMap);
     setExecOpen(true);
   };
 
+  // ===== Terminer : clôture l'exécution en cours + consomme les pièces prêtées =====
   const submitExecution = async () => {
-    if (!user || !id) return;
+    if (!user || !id || !openExec) return;
     if (execDureeMinutes <= 0) {
       toast({ title: "Durée obligatoire", description: "Veuillez saisir la durée de l'intervention", variant: "destructive" });
       return;
     }
     setExecLoading(true);
     try {
-      const usedPlanPdr = planPdr.filter(pp => execPdrUsed[pp.id]);
-      const pdrUsedList = usedPlanPdr.map(pp => ({ pdr_id: pp.pdr_id, reference: pp.pdr?.reference, quantite: pp.quantite }));
+      // Consommation des pièces prêtées (reliquat retourné au magasin auto)
+      for (const h of holdings) {
+        const qte = Math.max(0, Math.min(h.quantite, parseInt(consumedQty[h.id] ?? String(h.quantite), 10) || 0));
+        try {
+          await consumePreventiveHolding({ holding_id: h.id, execution_id: openExec.id, qte_consomme: qte });
+        } catch (e) { console.warn("[preventif] holding consume failed", e); }
+      }
 
-      const { data: exec, error } = await supabase.from("preventive_executions").insert({
-        plan_id: id,
-        executed_by: user.id,
+      const consumedList = holdings.map((h) => ({
+        pdr_id: h.pdr_id, reference: h.pdr?.reference,
+        quantite: Math.max(0, Math.min(h.quantite, parseInt(consumedQty[h.id] ?? String(h.quantite), 10) || 0)),
+      })).filter((c) => c.quantite > 0);
+
+      const now = new Date();
+      const { error } = await supabase.from("preventive_executions").update({
+        statut: "terminee",
+        heure_fin: now.toISOString(),
+        duree_minutes: execDureeMinutes,
         notes: [
           execStartTime ? `Début: ${execStartTime}` : null,
           `Durée: ${execDureeMinutes} min`,
           execNotes || null,
         ].filter(Boolean).join(" | "),
-        pdr_used: pdrUsedList as any,
-      }).select("id").single();
-
+        pdr_used: consumedList as any,
+      } as any).eq("id", openExec.id);
       if (error) throw error;
 
-      // PDR consumption for preventive plans goes EXCLUSIVELY through the validated request workflow
-      // (demande → préparation magasin → prise). No direct stock decrement here anymore.
-      if (usedPlanPdr.length > 0) {
-        toast({
-          title: "Pièces à demander",
-          description: "Les pièces préventives doivent être demandées via « Demander des pièces » (préparation magasin + prise).",
-        });
-      }
-
       // Update plan: derniere_execution + prochaine_echeance
-      const now = new Date();
       const days = FREQUENCE_DAYS[plan.frequence] || 30;
       const nextDate = new Date(now.getTime() + days * 86400000);
-
       await supabase.from("preventive_plans").update({
         derniere_execution: now.toISOString(),
         prochaine_echeance: nextDate.toISOString(),
       } as any).eq("id", id);
 
       await logAudit({
-        action_type: "create", module: "preventif" as any, entity_type: "preventive_execution",
-        entity_id: exec?.id ?? id!, entity_label: plan?.title,
-        action_label: "Exécution plan préventif",
+        action_type: "update", module: "preventif" as any, entity_type: "preventive_execution",
+        entity_id: openExec.id, entity_label: plan?.title,
+        action_label: "Clôture intervention plan préventif",
         new_values: {
           plan_id: id, duree_minutes: execDureeMinutes, heure_debut: execStartTime,
-          pdr_used: pdrUsedList, prochaine_echeance: nextDate.toISOString(),
+          pdr_used: consumedList, prochaine_echeance: nextDate.toISOString(),
         },
         severity: "low",
       });
 
-      toast({ title: "Exécution enregistrée", description: `Prochaine échéance : ${nextDate.toLocaleDateString("fr-FR")}` });
+      toast({ title: "Intervention clôturée", description: `Prochaine échéance : ${nextDate.toLocaleDateString("fr-FR")}` });
       setExecOpen(false);
       loadAll();
     } catch (err: any) {
@@ -192,9 +245,14 @@ export default function PreventifDetail() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {canExecute && (
+          {canWork && !openExec && (
+            <Button onClick={startExecution} disabled={starting} className="h-12 px-4 bg-green-600 hover:bg-green-700">
+              <Play className="h-4 w-4 mr-2" /> {starting ? "Démarrage..." : "Commencer"}
+            </Button>
+          )}
+          {canWork && openExec && (
             <Button onClick={openExecDialog} className="h-12 px-4 bg-green-600 hover:bg-green-700">
-              <ClipboardCheck className="h-4 w-4 mr-2" /> Exécuter
+              <ClipboardCheck className="h-4 w-4 mr-2" /> Terminer
             </Button>
           )}
           {canEdit("preventif") && (plan as any).statut_plan === "brouillon" && (
@@ -217,11 +275,28 @@ export default function PreventifDetail() {
               <Edit className="h-4 w-4 mr-2" /> Modifier
             </Button>
           )}
-          <Button variant="outline" onClick={() => navigate(`/maintenance/shift/pieces?plan=${id}${plan.machine_id ? `&machine=${plan.machine_id}` : ""}`)} className="h-12 px-4">
-            <Package className="h-4 w-4 mr-2" /> Demander des pièces
-          </Button>
+          {openExec && (
+            <Button variant="outline" onClick={() => navigate(`/maintenance/shift/pieces?plan=${id}&exec=${openExec.id}${plan.machine_id ? `&machine=${plan.machine_id}` : ""}`)} className="h-12 px-4">
+              <Package className="h-4 w-4 mr-2" /> Demander / prendre des pièces
+            </Button>
+          )}
         </div>
       </div>
+
+      {openExec && (
+        <Card className="border-green-600/40 bg-green-50/40 dark:bg-green-950/10">
+          <CardContent className="flex items-center gap-3 p-4 flex-wrap">
+            <ClipboardCheck className="h-5 w-5 text-green-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Intervention en cours</p>
+              <p className="text-xs text-muted-foreground">
+                Démarrée {openExec.heure_debut ? new Date(openExec.heure_debut).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}
+                {holdings.length > 0 ? ` · ${holdings.length} pièce(s) prêtée(s)` : ""}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="info">
         <TabsList className="h-11">
@@ -318,19 +393,27 @@ export default function PreventifDetail() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Durée</TableHead>
                     <TableHead>Exécuté par</TableHead>
-                    <TableHead>PDR utilisées</TableHead>
+                    <TableHead>PDR consommées</TableHead>
                     <TableHead>Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {executions.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Aucune exécution</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Aucune exécution</TableCell></TableRow>
                   ) : executions.map((e: any) => {
                     const pdrUsed = Array.isArray(e.pdr_used) ? e.pdr_used : [];
                     return (
                       <TableRow key={e.id}>
                         <TableCell className="tabular-nums text-sm">{new Date(e.date_execution).toLocaleDateString("fr-FR")}</TableCell>
+                        <TableCell>
+                          <Badge variant={e.statut === "en_cours" ? "outline" : "default"} className="text-[10px]">
+                            {e.statut === "en_cours" ? "En cours" : "Terminée"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="tabular-nums text-sm">{e.duree_minutes ? `${e.duree_minutes} min` : "—"}</TableCell>
                         <TableCell className="text-sm">
                           {assignees.find((a: any) => a.user_id === e.executed_by)
                             ? `${assignees.find((a: any) => a.user_id === e.executed_by)?.first_name} ${assignees.find((a: any) => a.user_id === e.executed_by)?.last_name}`
@@ -362,7 +445,7 @@ export default function PreventifDetail() {
       <Dialog open={execOpen} onOpenChange={setExecOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Exécuter le plan préventif</DialogTitle>
+            <DialogTitle>Terminer l'intervention préventive</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             {/* Timing */}
@@ -395,34 +478,37 @@ export default function PreventifDetail() {
               </div>
             </div>
 
-            {/* PDR utilisées */}
-            {planPdr.length > 0 && (
+            {/* Pièces prêtées — quantité consommée */}
+            {holdings.length > 0 && (
               <div>
                 <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                  <Package className="h-3.5 w-3.5 text-muted-foreground" /> PDR utilisées
+                  <Package className="h-3.5 w-3.5 text-muted-foreground" /> Pièces prises — quantité consommée
                 </Label>
-                <p className="text-xs text-muted-foreground mb-2">Cochez uniquement les PDR réellement consommées (le stock sera décrémenté).</p>
+                <p className="text-xs text-muted-foreground mb-2">Le reliquat non consommé est automatiquement retourné au stock magasin.</p>
                 <div className="border rounded-lg divide-y">
-                  {planPdr.map((pp: any) => (
-                    <div key={pp.id} className="flex items-center gap-3 p-2.5 hover:bg-muted/50 transition-colors">
-                      <Checkbox
-                        id={`pdr-${pp.id}`}
-                        checked={execPdrUsed[pp.id] ?? false}
-                        onCheckedChange={(v) => setExecPdrUsed(prev => ({ ...prev, [pp.id]: !!v }))}
+                  {holdings.map((h: any) => (
+                    <div key={h.id} className="flex items-center gap-3 p-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-xs font-semibold truncate">{h.pdr?.reference}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{h.pdr?.designation} · pris : {h.quantite}</p>
+                      </div>
+                      <Input
+                        type="number" min={0} max={h.quantite}
+                        value={consumedQty[h.id] ?? String(h.quantite)}
+                        onChange={(e) => setConsumedQty((m) => ({ ...m, [h.id]: e.target.value }))}
+                        className="h-10 w-20 tabular-nums"
                       />
-                      <label htmlFor={`pdr-${pp.id}`} className="flex-1 cursor-pointer">
-                        <span className="text-sm font-mono font-medium">{pp.pdr?.reference}</span>
-                        <span className="text-sm text-muted-foreground ml-2">— {pp.pdr?.designation}</span>
-                        <Badge variant="outline" className="ml-2 text-xs">×{pp.quantite}</Badge>
-                      </label>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {Object.values(execPdrUsed).filter(Boolean).length}/{planPdr.length} pièce(s) sélectionnée(s)
-                </p>
               </div>
             )}
+            {holdings.length === 0 && (
+              <p className="text-xs text-muted-foreground rounded-md border border-dashed p-2.5">
+                Aucune pièce prise. Si l'intervention nécessite des pièces, utilisez « Demander / prendre des pièces » avant de clôturer.
+              </p>
+            )}
+
 
             {/* Notes */}
             <div>
@@ -440,7 +526,7 @@ export default function PreventifDetail() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setExecOpen(false)}>Annuler</Button>
             <Button onClick={submitExecution} disabled={execLoading} className="bg-green-600 hover:bg-green-700">
-              {execLoading ? "Enregistrement..." : "Confirmer l'exécution"}
+              {execLoading ? "Clôture..." : "Clôturer l'intervention"}
             </Button>
           </DialogFooter>
         </DialogContent>

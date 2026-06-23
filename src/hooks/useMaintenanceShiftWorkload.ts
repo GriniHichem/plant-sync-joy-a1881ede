@@ -39,6 +39,8 @@ export interface MaintenanceWorkload {
   /** True if the workload is restricted to the shift's lines */
   restrictedToShiftLines: boolean;
   shiftLineIds: string[];
+  /** Plan ids ayant une exécution préventive en cours */
+  inProgressPlanIds: string[];
 }
 
 /**
@@ -53,6 +55,8 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
   const [tickets, setTickets] = useState<MaintenanceWorkloadTicket[]>([]);
   const [plans, setPlans] = useState<MaintenanceWorkloadPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inProgressPlanIds, setInProgressPlanIds] = useState<string[]>([]);
+
 
   const shiftLineIds = useMemo(() => shift?.line_ids ?? [], [shift]);
   const restrictedToShiftLines = shiftLineIds.length > 0;
@@ -120,6 +124,19 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
     }
     const { data: loadedTickets } = await tq.order("heure_declaration", { ascending: false });
 
+    // Plans avec une exécution en cours (intervention démarrée)
+    const loadedPlanIds = (loadedPlans as any[]).map((p) => p.id);
+    let openIds: string[] = [];
+    if (loadedPlanIds.length > 0) {
+      const { data: openExecs } = await supabase
+        .from("preventive_executions")
+        .select("plan_id")
+        .eq("statut", "en_cours")
+        .in("plan_id", loadedPlanIds);
+      openIds = Array.from(new Set((openExecs ?? []).map((e: any) => e.plan_id)));
+    }
+    setInProgressPlanIds(openIds);
+
     setPlans(loadedPlans as any[]);
     setTickets((loadedTickets ?? []) as any[]);
     setLoading(false);
@@ -135,9 +152,10 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
       .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "preventive_plans" }, () => refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "preventive_plan_assignees" }, () => refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "preventive_executions" }, () => refresh())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user, refresh]);
 
-  return { tickets, plans, loading, refresh, restrictedToShiftLines, shiftLineIds };
+  return { tickets, plans, loading, refresh, restrictedToShiftLines, shiftLineIds, inProgressPlanIds };
 }

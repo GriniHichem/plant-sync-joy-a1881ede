@@ -117,11 +117,34 @@ export default function TicketDetail() {
     })));
   };
 
+  // Pièces détenues par l'utilisateur connecté pour les demandes liées à ce ticket
+  const loadHoldings = async () => {
+    if (!id || !user) { setHoldings([]); return; }
+    const { data: reqs } = await supabase.from("pdr_requests" as any).select("id").eq("ticket_id", id);
+    const reqIds = (reqs ?? []).map((r: any) => r.id);
+    if (reqIds.length === 0) { setHoldings([]); return; }
+    const { data: items } = await supabase.from("pdr_request_items" as any).select("id").in("request_id", reqIds);
+    const itemIds = (items ?? []).map((i: any) => i.id);
+    if (itemIds.length === 0) { setHoldings([]); return; }
+    const { data: holds } = await supabase
+      .from("pdr_maintenance_holdings" as any)
+      .select("*, pdr(reference, designation)")
+      .eq("holder_id", user.id).eq("statut", "en_main").in("request_item_id", itemIds);
+    setHoldings((holds as any) ?? []);
+    const init: Record<string, string> = {};
+    (holds ?? []).forEach((h: any) => { init[h.id] = String(h.quantite); });
+    setConsumed(init);
+  };
+
   useEffect(() => {
     loadTicket();
     loadMaintenanciers();
+    loadHoldings();
     supabase.from("pdr").select("id, reference, designation, stock_actuel").eq("is_active", true).order("reference").then(({ data }) => setPdrList(data || []));
-  }, [id]);
+  }, [id, user]);
+
+  useShiftRealtime(`ticket-hold-${id ?? "none"}`, "pdr_maintenance_holdings", loadHoldings, !!id && !!user);
+
 
   const addCollaborator = async () => {
     if (!newCollabId || !id) return;

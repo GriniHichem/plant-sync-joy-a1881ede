@@ -365,7 +365,7 @@ export default function MachineDetail() {
                                 <span className="tabular-nums">→ {new Date(i.date_fin).toLocaleString("fr-FR")}</span>
                               )}
                               {duration != null && (
-                                <span className="font-medium text-foreground">Durée: {duration} min</span>
+                                <span className="font-medium text-foreground">Durée: {formatDuration(duration)}</span>
                               )}
                             </div>
                             {i.intervention_pdr && i.intervention_pdr.length > 0 && (

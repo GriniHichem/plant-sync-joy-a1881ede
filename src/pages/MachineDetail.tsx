@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useNavWithFrom } from "@/hooks/useNavWithFrom";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

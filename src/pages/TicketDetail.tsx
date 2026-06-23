@@ -747,87 +747,27 @@ export default function TicketDetail() {
               )}
             </div>
 
-            {/* PDR utilisées (avec sélection de position si applicable) */}
+            {/* Pièces : exclusivement via le circuit de demande validé */}
             <div className="space-y-2">
               <Label className="text-xs flex items-center gap-1"><Package className="h-3 w-3" /> Pièces utilisées</Label>
-              <InterventionPdrLineEditor
-                pdrList={pdrList}
-                machineId={ticket.machine_id}
-                equipementId={ticket.equipement_id}
-                onAdd={addPdrLine}
-              />
-              {selectedPdr.length > 0 && (
-                <div className="space-y-1">
-                  {selectedPdr.map((sp) => {
-                    const pdr = pdrList.find((p) => p.id === sp.pdr_id);
-                    const causeLabel = sp.cause_remplacement ? CAUSE_OPTIONS.find((c) => c.value === sp.cause_remplacement)?.label : null;
-                    return (
-                      <div key={`${sp.pdr_id}-${sp.position_id || ""}`} className="text-sm py-1.5 px-3 rounded bg-muted/50">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate">{pdr?.reference} — {pdr?.designation}</span>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="tabular-nums font-medium">×{sp.quantite}</span>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive"
-                              onClick={() => removePdrLine(sp.pdr_id, sp.position_id)}>×</Button>
-                          </div>
-                        </div>
-                        {sp.position_label && (
-                          <div className="text-[11px] text-muted-foreground mt-0.5">
-                            Position : <span className="font-medium">{sp.position_label}</span>
-                            {causeLabel && <> · {causeLabel}</>}
-                            {sp.compteur_fin != null && sp.compteur_max != null && (
-                              <> · {sp.compteur_fin.toFixed(0)}/{sp.compteur_max} {sp.unite || ""}</>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <Button asChild variant="outline" className="w-full h-11">
+                <Link to={`/maintenance/shift/pieces?ticket=${id}${ticket.machine_id ? `&machine=${ticket.machine_id}` : ""}`}>
+                  <Package className="h-4 w-4 mr-2" /> Demander / prendre des pièces
+                </Link>
+              </Button>
+              <p className="text-[11px] text-muted-foreground">
+                La consommation de pièces passe par le circuit demande → préparation magasin → prise.
+                Les pièces prises sont consommées automatiquement à la résolution (reliquat retourné au stock).
+              </p>
             </div>
 
             <StickyActionBar>
-              <Button onClick={() => {
-                const positionLines = selectedPdr.filter((p) => p.position_id);
-                if (positionLines.length > 0) { setConfirmOpen(true); }
-                else { handleResolve(); }
-              }} className="w-full h-12">Résoudre</Button>
+              <Button onClick={() => handleResolve()} className="w-full h-12">Résoudre</Button>
             </StickyActionBar>
           </CardContent>
         </Card>
       )}
 
-      {/* Confirmation de remplacement de positions */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Confirmer le remplacement</DialogTitle></DialogHeader>
-          <div className="space-y-2 text-sm">
-            {selectedPdr.filter((sp) => sp.position_id).map((sp) => {
-              const pdr = pdrList.find((p) => p.id === sp.pdr_id);
-              const stockApres = pdr ? Math.max(0, pdr.stock_actuel - sp.quantite) : 0;
-              return (
-                <div key={`${sp.pdr_id}-${sp.position_id}`} className="rounded border p-2 bg-muted/40">
-                  <div><span className="text-muted-foreground">PDR :</span> <span className="font-medium">{pdr?.reference}</span></div>
-                  <div><span className="text-muted-foreground">Machine :</span> {ticket?.machines?.designation || "—"}</div>
-                  <div><span className="text-muted-foreground">Position :</span> <span className="font-medium">{sp.position_label}</span></div>
-                  {sp.compteur_fin != null && (
-                    <div><span className="text-muted-foreground">Compteur actuel :</span> <span className="tabular-nums">{sp.compteur_fin.toFixed(0)} {sp.unite || ""}</span></div>
-                  )}
-                  {sp.compteur_max != null && (
-                    <div><span className="text-muted-foreground">Durée max :</span> <span className="tabular-nums">{sp.compteur_max} {sp.unite || ""}</span></div>
-                  )}
-                  <div><span className="text-muted-foreground">Stock après :</span> <span className="tabular-nums">{stockApres}</span></div>
-                </div>
-              );
-            })}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Annuler</Button>
-            <Button onClick={async () => { setConfirmOpen(false); await handleResolve(); }}>Confirmer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {canCloseTicket && (
         <StickyActionBar>

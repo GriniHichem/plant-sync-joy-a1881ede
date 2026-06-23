@@ -152,6 +152,7 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
       .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "preventive_plans" }, () => refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "preventive_plan_assignees" }, () => refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "preventive_executions" }, () => refresh())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user, refresh]);

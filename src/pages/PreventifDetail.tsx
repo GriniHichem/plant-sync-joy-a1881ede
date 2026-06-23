@@ -475,34 +475,37 @@ export default function PreventifDetail() {
               </div>
             </div>
 
-            {/* PDR utilisées */}
-            {planPdr.length > 0 && (
+            {/* Pièces prêtées — quantité consommée */}
+            {holdings.length > 0 && (
               <div>
                 <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                  <Package className="h-3.5 w-3.5 text-muted-foreground" /> PDR utilisées
+                  <Package className="h-3.5 w-3.5 text-muted-foreground" /> Pièces prises — quantité consommée
                 </Label>
-                <p className="text-xs text-muted-foreground mb-2">Cochez uniquement les PDR réellement consommées (le stock sera décrémenté).</p>
+                <p className="text-xs text-muted-foreground mb-2">Le reliquat non consommé est automatiquement retourné au stock magasin.</p>
                 <div className="border rounded-lg divide-y">
-                  {planPdr.map((pp: any) => (
-                    <div key={pp.id} className="flex items-center gap-3 p-2.5 hover:bg-muted/50 transition-colors">
-                      <Checkbox
-                        id={`pdr-${pp.id}`}
-                        checked={execPdrUsed[pp.id] ?? false}
-                        onCheckedChange={(v) => setExecPdrUsed(prev => ({ ...prev, [pp.id]: !!v }))}
+                  {holdings.map((h: any) => (
+                    <div key={h.id} className="flex items-center gap-3 p-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-xs font-semibold truncate">{h.pdr?.reference}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{h.pdr?.designation} · pris : {h.quantite}</p>
+                      </div>
+                      <Input
+                        type="number" min={0} max={h.quantite}
+                        value={consumedQty[h.id] ?? String(h.quantite)}
+                        onChange={(e) => setConsumedQty((m) => ({ ...m, [h.id]: e.target.value }))}
+                        className="h-10 w-20 tabular-nums"
                       />
-                      <label htmlFor={`pdr-${pp.id}`} className="flex-1 cursor-pointer">
-                        <span className="text-sm font-mono font-medium">{pp.pdr?.reference}</span>
-                        <span className="text-sm text-muted-foreground ml-2">— {pp.pdr?.designation}</span>
-                        <Badge variant="outline" className="ml-2 text-xs">×{pp.quantite}</Badge>
-                      </label>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {Object.values(execPdrUsed).filter(Boolean).length}/{planPdr.length} pièce(s) sélectionnée(s)
-                </p>
               </div>
             )}
+            {holdings.length === 0 && (
+              <p className="text-xs text-muted-foreground rounded-md border border-dashed p-2.5">
+                Aucune pièce prise. Si l'intervention nécessite des pièces, utilisez « Demander / prendre des pièces » avant de clôturer.
+              </p>
+            )}
+
 
             {/* Notes */}
             <div>

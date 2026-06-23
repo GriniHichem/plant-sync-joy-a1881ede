@@ -118,23 +118,21 @@ export default function TicketDetail() {
     })));
   };
 
-  // Pièces détenues par l'utilisateur connecté pour les demandes liées à ce ticket
+  // Tout le mini-stock du maintenancier connecté (toutes ses pièces en_main, tous tickets confondus)
   const loadHoldings = async () => {
-    if (!id || !user) { setHoldings([]); return; }
-    const { data: reqs } = await supabase.from("pdr_requests" as any).select("id").eq("ticket_id", id);
-    const reqIds = (reqs ?? []).map((r: any) => r.id);
-    if (reqIds.length === 0) { setHoldings([]); return; }
-    const { data: items } = await supabase.from("pdr_request_items" as any).select("id").in("request_id", reqIds);
-    const itemIds = (items ?? []).map((i: any) => i.id);
-    if (itemIds.length === 0) { setHoldings([]); return; }
+    if (!user) { setHoldings([]); return; }
     const { data: holds } = await supabase
       .from("pdr_maintenance_holdings" as any)
       .select("*, pdr(reference, designation)")
-      .eq("holder_id", user.id).eq("statut", "en_main").in("request_item_id", itemIds);
+      .eq("holder_id", user.id).eq("statut", "en_main")
+      .gt("quantite", 0)
+      .order("created_at", { ascending: false });
     setHoldings((holds as any) ?? []);
-    const init: Record<string, string> = {};
-    (holds ?? []).forEach((h: any) => { init[h.id] = String(h.quantite); });
-    setConsumed(init);
+    setConsumed((prev) => {
+      const next = { ...prev };
+      (holds ?? []).forEach((h: any) => { if (next[h.id] === undefined) next[h.id] = String(h.quantite); });
+      return next;
+    });
   };
 
   useEffect(() => {

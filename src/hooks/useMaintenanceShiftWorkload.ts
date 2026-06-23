@@ -39,6 +39,8 @@ export interface MaintenanceWorkload {
   /** True if the workload is restricted to the shift's lines */
   restrictedToShiftLines: boolean;
   shiftLineIds: string[];
+  /** Plan ids ayant une exécution préventive en cours */
+  inProgressPlanIds: string[];
 }
 
 /**

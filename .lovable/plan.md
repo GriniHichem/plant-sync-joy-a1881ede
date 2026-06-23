@@ -1,54 +1,39 @@
-# Espace Magasin : rôles, kiosque magasinier & tableau de bord responsable
+# Utiliser ses pièces en stock depuis le ticket
 
-## Contexte
-Aujourd'hui le rôle magasinier existe (`gestionnaire_magasin`, libellé « Gest. Magasin ») et la file **Demandes pièces** est seulement une page du menu GMAO (`/pdr/demandes`). Il n'y a **ni kiosque shift magasin, ni rôle responsable magasin, ni tableau de bord magasin**. On comble ces trois manques sans toucher au cycle de validation des pièces (RPC inchangées).
+## Problème
+Dans le détail d'un ticket, section **« Pièces utilisées »**, il n'y a qu'un bouton qui renvoie vers le circuit *Demander / prendre des pièces*. Le maintenancier qui détient déjà des pièces dans son **stock maintenance** (holdings, déjà « prises » au magasin) ne peut pas les **voir ni indiquer la quantité réellement consommée** sur cette page. La consommation se fait silencieusement à la résolution, à quantité pleine, sans contrôle.
 
-## 1. Nouveau rôle « Responsable Magasin »
-- Ajout de la valeur `responsable_magasin` à l'enum de rôles (`n` / `app_role`).
-- Intégration partout où les rôles sont déclarés et libellés :
-  - `AuthContext` (type des rôles)
-  - `RolesMatrix`, `RolesTab`, `UsersAdmin`, `PdrStockPermissionsAdmin`, `DocumentPermissionsAdmin` (libellé « Responsable Magasin », groupe Logistique)
-  - `ruleCatalog` (notifications/validations)
-- Droits par défaut du responsable magasin : `pdr` (complet), `pdr_demandes`, `articles`, `dashboard`, `inventaire`/`inventaire_campagnes`, lecture machines/équipements/organes, `notifications`, `apps`, `recherche`. Il hérite des capacités magasinier + supervision.
-- Le magasinier (`gestionnaire_magasin`) reçoit explicitement l'accès au **module Demandes pièces** (voir §2).
+Le kiosque shift (`MaintenanceShiftIntervention`) gère déjà ça correctement : il affiche les pièces détenues avec un champ quantité consommée. La page ticket classique, elle, ne le fait pas.
 
-## 2. Module « Demandes pièces » dans la logique d'accès
-Actuellement la file réutilise le droit `pdr`. On en fait un **module à part entière** `pdr_demandes` pour piloter finement qui prépare les pièces :
-- Ajout du module dans la matrice des rôles (`RolesMatrix`) et la page d'accès (`RolesTab`), avec les autres modules.
-- Ajout d'une entrée dans la page **Applications** (`Apps.tsx`) catégorie Maintenance/Logistique.
-- Garde de route sur `/pdr/demandes` basée sur `pdr_demandes` (rétro-compatible : magasinier + responsable magasin + admin l'ont).
-- Sidebar GMAO : l'entrée « Demandes pièces » passe sur le module `pdr_demandes`.
+## Objectif
+Reproduire dans `TicketDetail.tsx`, section « Pièces utilisées », le même comportement que le kiosque : afficher les pièces détenues pour ce ticket et permettre de saisir la quantité consommée, le reliquat retournant au stock.
 
-## 3. Kiosque shift magasinier (plein écran)
-Nouvel espace tactile dédié, sur le modèle des kiosques maintenance/production/qualité (sans barre latérale), **sans dépendre d'une session shift** (le magasin n'a pas d'équipes shift) — accès réservé par rôle.
-- Route `/magasin/shift` (accueil) :
-  - **Magasinier** → kiosque opérationnel plein écran.
-  - **Responsable magasin / admin** → console responsable (voir §4).
-- Carte dans **Applications** : « Shift Magasin » (badge Live).
-- Kiosque magasinier — onglets, cibles 48px, temps réel :
-  - **À préparer** : file des demandes ouvertes avec recherche, filtres (statut, type curatif/préventif, priorité), tri (urgence/ancienneté), compteurs en haut, alerte stock insuffisant, « Tout préparer », préparer/refuser ligne par ligne. Reprend la logique déjà construite dans `PdrRequestsQueue`, factorisée pour être réutilisée dans le kiosque.
-  - **Sorties / Entrées** : saisie rapide des mouvements de stock du magasinier (réutilise les RPC mouvements existantes selon ses droits `pdr_stock_permissions`).
-  - **Historique** : ses demandes traitées / mouvements récents.
+## Changements (UI uniquement, frontend)
 
-## 4. Tableau de bord Responsable Magasin
-Console accessible via `/magasin/shift` (responsable/admin) et carte dédiée dans Applications.
-- **Vue temps réel de toute l'activité magasin** :
-  - Mouvements (entrées / sorties / corrections / inventaire) avec : pièce, quantité, **demandeur**, **ticket / OF / plan lié**, **magasinier ayant exécuté**, **horodatage**, motif/détails.
-  - Demandes de pièces en cours (par statut) et délais de préparation.
-  - Compteurs synthèse : à préparer, prêtes en attente, en rupture, sorties du jour, entrées du jour.
-  - Filtres (période, type de mouvement, magasinier, demandeur, recherche pièce/ticket) + export CSV (composant `ExportCsvButton` existant).
-- Lecture seule supervision (pas de double saisie) ; s'appuie sur `pdr_stock_movements`, `pdr_requests`/`pdr_request_items`, jointures profils/tickets/OF.
+### 1. Charger les holdings du ticket
+Dans `src/pages/TicketDetail.tsx`, ajouter un chargement des pièces détenues par l'utilisateur connecté pour les demandes liées à ce ticket (même logique que `loadHoldings` du kiosque) :
+- `pdr_requests` où `ticket_id = id`
+- → `pdr_request_items`
+- → `pdr_maintenance_holdings` (`holder_id = user`, `statut = 'en_main'`) avec `pdr(reference, designation)`
+- État local `holdings` + `consumed` (quantité saisie par pièce), initialisé à la quantité détenue.
+- Rafraîchissement via `useShiftRealtime` sur `pdr_maintenance_holdings`.
 
-## Détails techniques
-- **Migration** : `ALTER TYPE ... ADD VALUE 'responsable_magasin'` ; insertion des lignes `role_permissions` par défaut pour `responsable_magasin` et ajout du module `pdr_demandes` (et droits magasinier correspondants) ; pas de nouvelle table.
-- **RLS** : élargir les policies de lecture des mouvements/demandes pour `responsable_magasin` (mêmes conditions que `gestionnaire_magasin` + supervision lecture globale). Aucune nouvelle capacité d'écriture hors RPC déjà autorisées.
-- **Front** : nouveaux fichiers `src/pages/magasin/MagasinShiftHome` (routeur rôle), `MagasinKiosk` (magasinier), `MagasinDashboard` (responsable) ; factorisation de la file existante en composant partagé. Routes ajoutées dans `App.tsx`. Thème industriel, IBM Plex Sans, cibles 48px, tokens existants.
-- **Aucune modification du circuit réservation/sortie** : préparation/prise/consommation passent toujours par `set_request_item_ready` / `refuse_request_item` / `confirm_request_item_taken` / `consume_maintenance_holding`.
+### 2. Affichage dans « Pièces utilisées »
+Sous le bouton existant, ajouter un encart (visible seulement si des holdings existent) listant chaque pièce détenue :
+- référence, désignation, quantité prise
+- un champ numérique « quantité consommée » (0 → quantité détenue)
+- note « Le reliquat non consommé est retourné au stock magasin. »
+
+Le bouton « Demander / prendre des pièces » reste, pour les pièces non encore prises.
+
+### 3. Consommation à la résolution
+Dans `handleResolve`, remplacer la boucle actuelle (qui consomme toutes les holdings à quantité pleine) par une consommation utilisant la **quantité saisie** dans `consumed`, bornée à la quantité détenue — comme le kiosque. Toujours via le RPC `consumeMaintenanceHolding` (aucun insert direct, le circuit validé est conservé).
 
 ## Hors périmètre
-- Pas de système d'équipes/rotations shift pour le magasin (accès par rôle, pas par session).
-- Pas de refonte du catalogue PDR ni des mouvements de stock existants.
+- Aucune modification de base de données, RPC ou RLS.
+- Pas de changement au circuit demande → préparation → prise.
+- Le bypass éventuel d'autres écrans (préventif, sorties manuelles) n'est pas traité ici.
 
-## Questions ouvertes (je pars sur ces hypothèses sauf avis contraire)
-- Le kiosque magasinier ne requiert **pas** de session shift ouverte.
-- Le responsable magasin a une **vue lecture** globale (il ne prépare pas lui-même, sauf s'il a aussi le rôle magasinier).
+## Détails techniques
+- Réutiliser les imports déjà présents (`consumeMaintenanceHolding`, `useShiftRealtime`, `useAuth`).
+- La logique de consommation est strictement identique à `MaintenanceShiftIntervention.tsx` (lignes 88-104 et 196-204) pour garantir la cohérence du ledger (stock_actuel / stock_reserve gérés côté RPC).

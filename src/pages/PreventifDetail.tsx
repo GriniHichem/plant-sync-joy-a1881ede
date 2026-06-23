@@ -250,9 +250,14 @@ export default function PreventifDetail() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {canExecute && (
+          {canWork && !openExec && (
+            <Button onClick={startExecution} disabled={starting} className="h-12 px-4 bg-green-600 hover:bg-green-700">
+              <Play className="h-4 w-4 mr-2" /> {starting ? "Démarrage..." : "Commencer"}
+            </Button>
+          )}
+          {canWork && openExec && (
             <Button onClick={openExecDialog} className="h-12 px-4 bg-green-600 hover:bg-green-700">
-              <ClipboardCheck className="h-4 w-4 mr-2" /> Exécuter
+              <ClipboardCheck className="h-4 w-4 mr-2" /> Terminer
             </Button>
           )}
           {canEdit("preventif") && (plan as any).statut_plan === "brouillon" && (
@@ -275,11 +280,28 @@ export default function PreventifDetail() {
               <Edit className="h-4 w-4 mr-2" /> Modifier
             </Button>
           )}
-          <Button variant="outline" onClick={() => navigate(`/maintenance/shift/pieces?plan=${id}${plan.machine_id ? `&machine=${plan.machine_id}` : ""}`)} className="h-12 px-4">
-            <Package className="h-4 w-4 mr-2" /> Demander des pièces
-          </Button>
+          {openExec && (
+            <Button variant="outline" onClick={() => navigate(`/maintenance/shift/pieces?plan=${id}&exec=${openExec.id}${plan.machine_id ? `&machine=${plan.machine_id}` : ""}`)} className="h-12 px-4">
+              <Package className="h-4 w-4 mr-2" /> Demander / prendre des pièces
+            </Button>
+          )}
         </div>
       </div>
+
+      {openExec && (
+        <Card className="border-green-600/40 bg-green-50/40 dark:bg-green-950/10">
+          <CardContent className="flex items-center gap-3 p-4 flex-wrap">
+            <ClipboardCheck className="h-5 w-5 text-green-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Intervention en cours</p>
+              <p className="text-xs text-muted-foreground">
+                Démarrée {openExec.heure_debut ? new Date(openExec.heure_debut).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}
+                {holdings.length > 0 ? ` · ${holdings.length} pièce(s) prêtée(s)` : ""}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="info">
         <TabsList className="h-11">

@@ -567,7 +567,7 @@ export default function OfDetail() {
                     {detailStops.map((s) => (
                       <div key={s.id} className="flex justify-between text-xs py-1.5 px-3 rounded bg-amber-50 dark:bg-amber-900/20">
                         <span className="capitalize">{s.type.replace("_", " ")}</span>
-                        <span className="tabular-nums">{s.duree_minutes ? `${s.duree_minutes} min` : "en cours"}</span>
+                        <span className="tabular-nums">{s.duree_minutes ? formatDuration(s.duree_minutes) : "en cours"}</span>
                       </div>
                     ))}
                   </div>

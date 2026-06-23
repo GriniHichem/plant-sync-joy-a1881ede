@@ -205,7 +205,7 @@ export default function OfDetail() {
           ["Recette", of.recipes?.name || "—"],
           ["Mode", (of as any).shift_modes?.label || "3x8"],
           ["Début prévu", of.date_debut_prevue ? new Date(of.date_debut_prevue).toLocaleDateString("fr-FR") : "—"],
-          ["Arrêts", totalStopMin > 0 ? `${totalStopMin} min` : "0 min"],
+          ["Arrêts", formatDuration(totalStopMin)],
         ].map(([label, val]) => (
           <Card key={label as string}>
             <CardContent className="p-3">

@@ -1,125 +1,37 @@
-## Audit — problèmes confirmés
+# Tableau magasinier des demandes de pièces — refonte fonctionnelle
 
-1. **Contournement direct depuis le ticket**
-   - L’écran détail ticket permet encore d’ajouter des “Pièces utilisées”.
-   - À la résolution, il écrit directement dans `intervention_pdr`, décrémente `pdr.stock_actuel`, puis crée une sortie stock.
-   - Résultat : consommation possible sans demande, sans préparation magasin, sans double validation.
+Le tableau existe déjà : **Demandes pièces** (`/pdr/demandes`, menu GMAO), en temps réel. On le rend complet et rapide pour le magasinier, **sans toucher au cycle de validation** (les actions passent toujours par les RPC `set_request_item_ready` / `refuse_request_item`).
 
-2. **Contournement direct depuis le préventif**
-   - L’exécution préventive décrémente encore directement le stock pour les PDR cochées.
-   - Cela contourne la règle décidée : les PDR préventives doivent passer par demande + préparation + prise/réception.
+## Ce qui change (uniquement `src/pages/pdr/PdrRequestsQueue.tsx` + petit ajout hook)
 
-3. **Règles backend trop ouvertes**
-   - Les rôles maintenance peuvent gérer directement `intervention_pdr`.
-   - Les mouvements stock peuvent être créés directement par un utilisateur authentifié si `user_id = auth.uid()`.
-   - Les holdings maintenance peuvent être manipulés directement par maintenance.
-   - Les demandes/items peuvent être modifiés directement, alors que le flux doit passer par les fonctions métier.
+### 1. Barre de recherche & filtres (en haut, sticky)
+- **Recherche instantanée** : réf pièce, désignation, n° de demande, n° de ticket, code machine.
+- **Filtre statut** : Demandée / Prête / Partielle / Prise / Refusée / Annulée.
+- **Filtre type & priorité** : Curatif/Préventif + niveau (critique, haute, normale, basse).
+- **Bouton reset** (RotateCcw) visible seulement si un filtre est actif (convention projet).
 
-4. **Fonction de prise pas assez stricte**
-   - La confirmation de prise accepte une quantité qui peut dépasser la quantité préparée.
-   - Le stock est forcé à zéro si dépassement, au lieu de bloquer l’opération.
-   - Il faut empêcher toute sortie si la quantité réelle disponible ne couvre pas la prise.
+### 2. Deux onglets
+- **À traiter** (par défaut) : demandes ouvertes (`demandee`, `prete`, `partielle`).
+- **Historique** : demandes clôturées (`prise`, `refusee`, `annulee`) — via `usePdrRequestQueue(true)` (le hook accepte déjà `includeClosed`). Lecture seule.
 
-## Correction proposée
+### 3. Compteurs en haut (cartes synthèse)
+- **À préparer** (lignes `demandee`), **Prêtes en attente de prise** (`prete`), **En rupture** (lignes où `quantité demandée > stock disponible`).
 
-### 1. Supprimer les contournements UI
+### 4. Tri de la file
+- Par **urgence** (priorité critique → basse) ou par **ancienneté** (plus ancienne d'abord). Sélecteur simple, défaut = urgence puis date.
 
-- Dans l’écran ticket :
-  - retirer le bloc “Pièces utilisées” qui permet de choisir une PDR librement ;
-  - remplacer par un bouton unique **Demander / prendre des pièces** ;
-  - afficher seulement les pièces déjà prises via le stock maintenance intermédiaire.
+### 5. Actions rapides de préparation
+- **Alerte stock insuffisant** : badge rouge sur la ligne quand `quantité demandée > stock_actuel − stock_reserve`, et le dialogue « Prête » plafonne/avertit sur la quantité.
+- **Tout préparer en un clic** : sur une demande dont toutes les lignes ont assez de stock, bouton « Tout préparer » qui appelle `set_request_item_ready` pour chaque ligne `demandee` (séquentiellement). Désactivé si une ligne est en rupture.
+- Les actions ligne par ligne (Prête / Refuser) restent inchangées.
 
-- À la résolution/clôture ticket :
-  - supprimer toute décrémentation directe de `pdr.stock_actuel` ;
-  - supprimer toute création directe de `pdr_stock_movements` ;
-  - consommer uniquement les `pdr_maintenance_holdings` validés par le cycle demande → prête → prise.
+## Détails techniques
+- Filtrage/tri/recherche **côté client** (mémoïsé avec `useMemo`) sur les données déjà chargées en temps réel — rapide, pas de requêtes supplémentaires.
+- Onglet Historique : un second appel `usePdrRequestQueue(true)` filtré sur statuts clôturés (limité aux ~100 récents).
+- Compteurs dérivés des lignes des demandes ouvertes.
+- Respect du thème industriel (IBM Plex Sans, cibles tactiles 48px, badges existants), aucun style codé en dur.
+- Aucune modification de schéma ni de RLS : le magasinier garde exactement les mêmes droits, on n'ajoute que de l'ergonomie d'affichage et le batch « Tout préparer » qui réutilise le RPC autorisé.
 
-- Dans le préventif :
-  - supprimer la décrémentation directe sur exécution ;
-  - garder le bouton **Demander des pièces** ;
-  - l’exécution peut enregistrer les tâches réalisées, mais la consommation PDR doit venir uniquement des pièces reçues/prêtes/pris via le workflow.
-
-### 2. Verrouiller le backend contre toute écriture directe
-
-Créer une migration de sécurité qui :
-
-- bloque l’insertion directe dans `intervention_pdr` depuis le client ;
-- bloque l’insertion directe dans `pdr_stock_movements` depuis le client ;
-- bloque la création/modification directe de `pdr_maintenance_holdings` ;
-- limite les modifications directes des demandes/items :
-  - création de demande autorisée par l’écran maintenance ;
-  - changement de statut uniquement via fonctions métier ;
-  - préparation uniquement par magasin ;
-  - prise uniquement par maintenance.
-
-Les fonctions backend `set_request_item_ready`, `confirm_request_item_taken`, `consume_maintenance_holding`, `cancel_pdr_request`, `refuse_request_item` resteront les seuls points d’écriture métier.
-
-### 3. Durcir les fonctions métier
-
-- `set_request_item_ready` :
-  - refuser quantité préparée <= 0 ;
-  - refuser quantité préparée > quantité demandée ;
-  - refuser si stock disponible insuffisant, sauf préparation partielle explicite.
-
-- `confirm_request_item_taken` :
-  - accepter uniquement une ligne au statut `prete` ;
-  - refuser quantité prise <= 0 ;
-  - refuser quantité prise > quantité préparée ;
-  - refuser quantité prise > stock disponible réel ;
-  - ne jamais utiliser `GREATEST(0, stock - qte)` pour masquer une erreur ;
-  - décrémenter stock seulement si toutes les validations passent ;
-  - créer automatiquement le mouvement de sortie et le stock maintenance intermédiaire.
-
-- `consume_maintenance_holding` :
-  - refuser tout holding non issu d’une demande validée ;
-  - refuser si le détenteur n’est pas l’utilisateur courant ou un responsable autorisé ;
-  - créer `intervention_pdr` uniquement depuis cette fonction ;
-  - retourner automatiquement le reliquat au stock magasin.
-
-### 4. Ajouter un garde-fou base de données final
-
-Ajouter des triggers de protection :
-
-- si quelqu’un tente une écriture directe non autorisée dans `intervention_pdr`, l’opération est rejetée ;
-- si quelqu’un tente une sortie directe PDR sans source `pdr_request`, l’opération est rejetée ;
-- si quelqu’un tente de modifier `pdr.stock_actuel` hors fonction métier autorisée, l’opération est rejetée pour les sorties maintenance.
-
-Objectif : même si un écran ancien, une requête manuelle, ou une erreur future existe, la base bloque.
-
-### 5. Améliorer l’écran maintenance sans ralentir les opérations
-
-- Garder le flux rapide :
-  - “Demander” ;
-  - “À prendre” ;
-  - “Mon stock maintenance”.
-
-- Ajouter sur l’écran ticket/shift une vue simple :
-  - pièces demandées ;
-  - pièces prêtes ;
-  - pièces prises ;
-  - reliquat prévu.
-
-- La clôture affiche uniquement les pièces réellement en main, avec quantité consommée rapide.
-
-### 6. Vérification finale
-
-- Tester qu’un maintenancier ne peut plus :
-  - ajouter une pièce directement dans un ticket ;
-  - décrémenter le stock depuis un ticket ;
-  - consommer une PDR préventive sans demande ;
-  - créer un mouvement stock direct.
-
-- Tester que le bon cycle fonctionne toujours :
-
-```text
-Maintenance demande
-→ Magasin prépare/refuse
-→ Maintenance confirme la prise
-→ Stock principal décrémenté + stock maintenance crédité
-→ Intervention consomme
-→ Reliquat retourne automatiquement au stock magasin
-```
-
-## Résultat attendu
-
-Après correction, aucune consommation PDR ne sera possible sans demande validée par le magasin et confirmée par la maintenance.
+## Hors périmètre
+- Pas de changement du circuit de réservation/sortie de stock.
+- Pas de nouveaux droits ni de nouvelles tables.

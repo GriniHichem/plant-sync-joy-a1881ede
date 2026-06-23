@@ -419,7 +419,7 @@ export default function MachineDetail() {
                           {new Date(t.heure_declaration).toLocaleDateString("fr-FR")}
                         </TableCell>
                         <TableCell className="tabular-nums">
-                          {t.temps_arret_minutes ? <span className="text-destructive font-medium">{t.temps_arret_minutes} min</span> : "—"}
+                          {t.temps_arret_minutes ? <span className="text-destructive font-medium">{formatDuration(t.temps_arret_minutes)}</span> : "—"}
                         </TableCell>
                       </TableRow>
                     ))

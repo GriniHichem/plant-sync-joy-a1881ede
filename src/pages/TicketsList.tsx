@@ -349,7 +349,7 @@ export default function TicketsList() {
                     <TableCell><StatusBadge type="priority" value={t.priorite} /></TableCell>
                     <TableCell><StatusBadge type="ticket" value={t.statut} /></TableCell>
                     <TableCell className="tabular-nums text-muted-foreground">{new Date(t.heure_declaration).toLocaleDateString("fr-FR")}</TableCell>
-                    <TableCell className="tabular-nums">{t.temps_arret_minutes ? `${t.temps_arret_minutes} min` : "—"}</TableCell>
+                    <TableCell className="tabular-nums">{t.temps_arret_minutes ? formatDuration(t.temps_arret_minutes) : "—"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

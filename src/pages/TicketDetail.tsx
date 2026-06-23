@@ -465,7 +465,6 @@ export default function TicketDetail() {
           }
         }
       } catch (e) { console.warn("[ticket.resolve] holdings load failed", e); }
-    }
       // Close any still-open collaboration interventions (started at addCollaborator time)
       const openCollabIntvIds = interventions
         .filter((i) =>

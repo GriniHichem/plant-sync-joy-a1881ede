@@ -64,7 +64,7 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
         const totalStopMin = (stops ?? []).reduce((s: number, x: any) => s + Number(x.duree_minutes || 0), 0);
         totals.push({ label: "Quantité produite", value: totalProd });
         totals.push({ label: "Rebut", value: totalRebut });
-        totals.push({ label: "Arrêts (min)", value: totalStopMin });
+        totals.push({ label: "Arrêts", value: formatDuration(totalStopMin) });
         totals.push({ label: "Tickets ouverts", value: (tickets ?? []).length });
         (decl ?? []).forEach((d: any) =>
           events.push({ time: d.heure_production, type: "Déclaration", label: `Qté ${d.quantite_produite} (rebut ${d.quantite_rebut ?? 0})`, detail: d.notes ?? undefined }),

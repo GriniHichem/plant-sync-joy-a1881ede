@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Factory, Package, ClipboardList, TrendingUp, BarChart3, AlertTriangle, FolderTree, ShieldAlert, Wrench } from "lucide-react";
 import { useNavigate } from "react-router-dom";

@@ -135,6 +135,7 @@ const ROLES = [
   { key: "controleur_qualite", label: "Contrôleur Qualité", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300", group: "Qualité" },
 
   { key: "gestionnaire_magasin", label: "Gest. Magasin", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300", group: "Logistique" },
+  { key: "responsable_magasin", label: "Resp. Magasin", color: "bg-purple-200 text-purple-900 dark:bg-purple-900/40 dark:text-purple-200", group: "Logistique" },
   { key: "responsable_inventaire", label: "Resp. Inventaire", color: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/30 dark:text-fuchsia-300", group: "Logistique" },
   { key: "agent_inventaire", label: "Agent Inventaire", color: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300", group: "Logistique" },
 ];

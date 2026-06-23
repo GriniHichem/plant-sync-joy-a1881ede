@@ -454,58 +454,30 @@ export default function TicketDetail() {
     );
     if (activeIntervention) {
       await supabase.from("interventions").update({ statut: "terminee" as any, date_fin: now }).eq("id", activeIntervention.id);
-      if (selectedPdr.length > 0) {
-        await supabase.from("intervention_pdr").insert(selectedPdr.map((p) => ({
-          intervention_id: activeIntervention.id,
-          pdr_id: p.pdr_id,
-          quantite: p.quantite,
-          position_id: p.position_id ?? null,
-          compteur_fin: p.compteur_fin ?? null,
-          cause_remplacement: p.cause_remplacement ?? null,
-          commentaire_technique: p.commentaire_technique ?? null,
-          compteur_initial_new: p.compteur_initial_new ?? null,
-        } as any)));
-        for (const p of selectedPdr) {
-          const pdrItem = pdrList.find((x) => x.id === p.pdr_id);
-          if (pdrItem) {
-            const stockApres = Math.max(0, pdrItem.stock_actuel - p.quantite);
-            await supabase.from("pdr").update({ stock_actuel: stockApres }).eq("id", p.pdr_id);
-            const { data: mvt } = await supabase.from("pdr_stock_movements").insert({
-              pdr_id: p.pdr_id, type: "sortie" as any, quantite: p.quantite,
-              stock_avant: pdrItem.stock_actuel, stock_apres: stockApres,
-              source_type: "ticket", source_id: id,
-              reference_source: ticket.numero, motif: `Ticket ${ticket.numero}`,
-              user_id: user?.id,
-            }).select("id").single();
-
-            // Post-hoc validation: PDR exit tied to intervention/ticket (never blocks the field action)
-            try {
-              const { rule, enforcement } = await checkValidationRequired({
-                module: "pdr_stock", action_type: "exit_intervention", entity_type: "pdr_movement",
-              });
-              if (enforcement === "post_hoc" && rule && mvt?.id) {
-                await createValidationRequest({
-                  rule,
-                  request_type: "exit_intervention",
-                  module: "pdr_stock",
-                  requested_action: "exit_intervention",
-                  entity_type: "pdr_movement",
-                  entity_id: p.pdr_id,
-                  entity_code: pdrItem.code,
-                  entity_label: pdrItem.designation,
-                  target_record_id: mvt.id,
-                  title: `Sortie PDR ${pdrItem.code} (ticket ${ticket.numero})`,
-                  description: `Quantité: ${p.quantite} | Stock: ${pdrItem.stock_actuel} → ${stockApres}`,
-                  old_values: { stock_actuel: pdrItem.stock_actuel },
-                  proposed_values: { stock_actuel: stockApres, quantite: p.quantite },
-                  metadata: { ticket_id: id, ticket_numero: ticket.numero, intervention_id: activeIntervention.id },
-                  action_url: `/tickets/${id}`,
+      // PDR consumption goes exclusively through the validated request workflow.
+      // Consume any maintenance holdings already taken for this ticket (leftover auto-returned to stock).
+      try {
+        const { data: reqs } = await supabase.from("pdr_requests" as any).select("id").eq("ticket_id", id);
+        const reqIds = (reqs ?? []).map((r: any) => r.id);
+        if (reqIds.length > 0) {
+          const { data: items } = await supabase.from("pdr_request_items" as any).select("id").in("request_id", reqIds);
+          const itemIds = (items ?? []).map((i: any) => i.id);
+          if (itemIds.length > 0) {
+            const { data: holds } = await supabase
+              .from("pdr_maintenance_holdings" as any)
+              .select("id, quantite")
+              .eq("statut", "en_main").in("request_item_id", itemIds);
+            for (const h of holds ?? []) {
+              try {
+                await consumeMaintenanceHolding({
+                  holding_id: (h as any).id, intervention_id: activeIntervention.id, qte_consomme: (h as any).quantite,
                 });
-              }
-            } catch (e) { console.warn("[validation] pdr exit check failed", e); }
+              } catch (e) { console.warn("[ticket.resolve] holding consume failed", e); }
+            }
           }
         }
-      }
+      } catch (e) { console.warn("[ticket.resolve] holdings load failed", e); }
+    }
       // Close any still-open collaboration interventions (started at addCollaborator time)
       const openCollabIntvIds = interventions
         .filter((i) =>

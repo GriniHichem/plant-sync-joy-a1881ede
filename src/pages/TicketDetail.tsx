@@ -469,31 +469,22 @@ export default function TicketDetail() {
     );
     if (activeIntervention) {
       await supabase.from("interventions").update({ statut: "terminee" as any, date_fin: now }).eq("id", activeIntervention.id);
-      // PDR consumption goes exclusively through the validated request workflow.
-      // Consume any maintenance holdings already taken for this ticket (leftover auto-returned to stock).
+      // Consommer les pièces sélectionnées dans le mini-stock du maintenancier.
+      // Le reliquat reste dans son mini-stock (pas de retour magasin ici).
       try {
-        const { data: reqs } = await supabase.from("pdr_requests" as any).select("id").eq("ticket_id", id);
-        const reqIds = (reqs ?? []).map((r: any) => r.id);
-        if (reqIds.length > 0) {
-          const { data: items } = await supabase.from("pdr_request_items" as any).select("id").in("request_id", reqIds);
-          const itemIds = (items ?? []).map((i: any) => i.id);
-          if (itemIds.length > 0) {
-            const { data: holds } = await supabase
-              .from("pdr_maintenance_holdings" as any)
-              .select("id, quantite")
-              .eq("statut", "en_main").in("request_item_id", itemIds);
-            for (const h of holds ?? []) {
-              const held = (h as any).quantite;
-              const qte = Math.max(0, Math.min(held, parseInt(consumed[(h as any).id] ?? String(held), 10) || 0));
-              try {
-                await consumeMaintenanceHolding({
-                  holding_id: (h as any).id, intervention_id: activeIntervention.id, qte_consomme: qte,
-                });
-              } catch (e) { console.warn("[ticket.resolve] holding consume failed", e); }
-            }
-          }
+        for (const h of holdings) {
+          if (!selected[h.id]) continue;
+          const held = h.quantite;
+          const qte = Math.max(0, Math.min(held, parseInt(consumed[h.id] ?? "0", 10) || 0));
+          if (qte <= 0) continue;
+          try {
+            await consumeFromMinistock({
+              holding_id: h.id, intervention_id: activeIntervention.id, qte_consomme: qte,
+            });
+          } catch (e) { console.warn("[ticket.resolve] ministock consume failed", e); }
         }
-      } catch (e) { console.warn("[ticket.resolve] holdings load failed", e); }
+        await loadHoldings();
+      } catch (e) { console.warn("[ticket.resolve] ministock consume error", e); }
       // Close any still-open collaboration interventions (started at addCollaborator time)
       const openCollabIntvIds = interventions
         .filter((i) =>

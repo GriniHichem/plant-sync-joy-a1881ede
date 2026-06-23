@@ -131,31 +131,13 @@ export default function PreventifDetail() {
 
       if (error) throw error;
 
-      // B5: decrement PDR stock + log movement (preventive consumption was previously invisible to PMP).
-      // R1: maybeSingle + per-PDR try/catch — a disabled/missing PDR must NOT abort the whole loop.
-      const skippedPdr: string[] = [];
-      for (const pp of usedPlanPdr) {
-        try {
-          const { data: cur } = await supabase
-            .from("pdr").select("stock_actuel, reference, designation").eq("id", pp.pdr_id).maybeSingle();
-          if (!cur) { skippedPdr.push(pp.pdr?.reference || pp.pdr_id); continue; }
-          const stockAvant = Number(cur.stock_actuel) || 0;
-          const stockApres = Math.max(0, stockAvant - Number(pp.quantite || 0));
-          await supabase.from("pdr").update({ stock_actuel: stockApres }).eq("id", pp.pdr_id);
-          await supabase.from("pdr_stock_movements").insert({
-            pdr_id: pp.pdr_id, type: "sortie" as any, quantite: pp.quantite,
-            stock_avant: stockAvant, stock_apres: stockApres,
-            source_type: "preventive_execution", source_id: exec?.id ?? null,
-            reference_source: plan?.title, motif: `Préventif ${plan?.title}`,
-            user_id: user.id,
-          } as any);
-        } catch (e) {
-          console.warn("[preventif] PDR decrement failed", pp.pdr_id, e);
-          skippedPdr.push(pp.pdr?.reference || pp.pdr_id);
-        }
-      }
-      if (skippedPdr.length > 0) {
-        toast({ title: "PDR ignorées", description: `Stock non décrémenté: ${skippedPdr.join(", ")}`, variant: "destructive" });
+      // PDR consumption for preventive plans goes EXCLUSIVELY through the validated request workflow
+      // (demande → préparation magasin → prise). No direct stock decrement here anymore.
+      if (usedPlanPdr.length > 0) {
+        toast({
+          title: "Pièces à demander",
+          description: "Les pièces préventives doivent être demandées via « Demander des pièces » (préparation magasin + prise).",
+        });
       }
 
       // Update plan: derniere_execution + prochaine_echeance

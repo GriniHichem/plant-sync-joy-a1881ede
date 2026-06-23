@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, PackagePlus, ListChecks, HandHelping, Boxes, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PdrRequestComposer } from "@/components/pdr/PdrRequestComposer";
-import { usePdrRequestQueue, useMyPdrRequests, confirmItemTaken, cancelPdrRequest } from "@/hooks/usePdrRequests";
+import { ConfirmTakeDialog } from "@/components/pdr/ConfirmTakeDialog";
+import { usePdrRequestQueue, useMyPdrRequests, confirmItemTaken, cancelPdrRequest, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
 import { useMaintenanceHoldings } from "@/hooks/useMaintenanceHoldings";
 
 const ITEM_BADGE: Record<string, { label: string; cls: string }> = {

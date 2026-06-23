@@ -156,5 +156,5 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
     return () => { supabase.removeChannel(ch); };
   }, [user, refresh]);
 
-  return { tickets, plans, loading, refresh, restrictedToShiftLines, shiftLineIds };
+  return { tickets, plans, loading, refresh, restrictedToShiftLines, shiftLineIds, inProgressPlanIds };
 }

@@ -20,6 +20,7 @@ import { checkValidationRequired, createValidationRequest } from "@/lib/validati
 import { logAudit } from "@/lib/audit";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { consumeMaintenanceHolding } from "@/hooks/usePdrRequests";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 
 export default function TicketDetail() {
   const { id } = useParams();
@@ -36,6 +37,10 @@ export default function TicketDetail() {
 
   const [pdrList, setPdrList] = useState<any[]>([]);
   const [pendingResolve, setPendingResolve] = useState<null | (() => Promise<void>)>(null);
+
+  // Pièces détenues en stock maintenance pour ce ticket
+  const [holdings, setHoldings] = useState<any[]>([]);
+  const [consumed, setConsumed] = useState<Record<string, string>>({});
 
   // Co-intervenants
   const [maintenanciers, setMaintenanciers] = useState<any[]>([]);

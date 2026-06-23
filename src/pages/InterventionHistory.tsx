@@ -509,8 +509,8 @@ export default function InterventionHistory() {
                           {r.technicien_id && (
                             <span>Par: <span className="font-medium text-foreground">{profileMap[r.technicien_id] ?? "—"}</span></span>
                           )}
-                          {dur != null && <span className="tabular-nums">⏱ {dur} min</span>}
-                          {dt != null && dt > 0 && <span className="tabular-nums">⏸ arrêt {dt} min</span>}
+                          {dur != null && <span className="tabular-nums">⏱ {formatDuration(dur)}</span>}
+                          {dt != null && dt > 0 && <span className="tabular-nums">⏸ arrêt {formatDuration(dt)}</span>}
                         </div>
                       </div>
                     </div>

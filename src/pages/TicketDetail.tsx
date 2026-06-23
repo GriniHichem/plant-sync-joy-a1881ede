@@ -35,8 +35,6 @@ export default function TicketDetail() {
   const [solution, setSolution] = useState("");
 
   const [pdrList, setPdrList] = useState<any[]>([]);
-  const [selectedPdr, setSelectedPdr] = useState<InterventionPdrLine[]>([]);
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingResolve, setPendingResolve] = useState<null | (() => Promise<void>)>(null);
 
   // Co-intervenants
@@ -344,17 +342,8 @@ export default function TicketDetail() {
     }
   };
 
-  const addPdrLine = (line: InterventionPdrLine) => {
-    setSelectedPdr((prev) => {
-      // de-dup by (pdr, position) so same PDR can target multiple positions
-      const key = `${line.pdr_id}::${line.position_id || ""}`;
-      if (prev.find((p) => `${p.pdr_id}::${p.position_id || ""}` === key)) return prev;
-      return [...prev, line];
-    });
-  };
 
-  const removePdrLine = (pdrId: string, positionId?: string | null) =>
-    setSelectedPdr((prev) => prev.filter((p) => !(p.pdr_id === pdrId && (p.position_id || null) === (positionId || null))));
+
 
   const handleResolve = async () => {
     if (!causeRacine || !solution) {

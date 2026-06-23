@@ -53,7 +53,7 @@ export default function PreventifDetail() {
   // Execution dialog state (clôture)
   const [execOpen, setExecOpen] = useState(false);
   const [execNotes, setExecNotes] = useState("");
-  const [execPdrUsed, setExecPdrUsed] = useState<Record<string, boolean>>({});
+  const [execLoading, setExecLoading] = useState(false);
   const [execLoading, setExecLoading] = useState(false);
   const [execDureeMinutes, setExecDureeMinutes] = useState<number>(0);
   const [execStartTime, setExecStartTime] = useState("");

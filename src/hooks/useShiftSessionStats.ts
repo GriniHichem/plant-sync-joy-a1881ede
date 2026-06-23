@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDuration } from "@/lib/utils";
 import type { ShiftKind } from "@/contexts/ActiveShiftContext";
 
 export interface ShiftKpi {

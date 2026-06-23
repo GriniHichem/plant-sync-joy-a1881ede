@@ -87,6 +87,7 @@ const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance"
 
 const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: string }>> = {
   Maintenance: IconMaintenance,
+  "Stock PDR": IconSpare,
   Production: IconProduction,
   Qualité: IconControl,
   Inventaire: IconInventory,

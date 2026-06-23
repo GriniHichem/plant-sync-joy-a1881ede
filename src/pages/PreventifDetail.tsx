@@ -67,7 +67,10 @@ export default function PreventifDetail() {
     ]);
     if (pRes.data) setPlan(pRes.data);
     setPlanPdr(ppRes.data || []);
-    setExecutions(eRes.data || []);
+    const execs = eRes.data || [];
+    setExecutions(execs);
+    const open = execs.find((e: any) => e.statut === "en_cours" && (!user || e.executed_by === user.id)) || null;
+    setOpenExec(open);
 
     const userIds = (aRes.data || []).map((a: any) => a.user_id);
     setAssigneeIds(userIds);
@@ -75,6 +78,26 @@ export default function PreventifDetail() {
       const { data: profiles } = await supabase.from("profiles").select("user_id, first_name, last_name").in("user_id", userIds);
       setAssignees(profiles || []);
     }
+    await loadHoldings();
+  };
+
+  // Pieces taken (held) by the user for this plan's validated requests
+  const loadHoldings = async () => {
+    if (!id || !user) { setHoldings([]); return; }
+    const { data: reqs } = await supabase.from("pdr_requests" as any).select("id").eq("preventive_plan_id", id);
+    const reqIds = (reqs ?? []).map((r: any) => r.id);
+    if (reqIds.length === 0) { setHoldings([]); return; }
+    const { data: items } = await supabase.from("pdr_request_items" as any).select("id").in("request_id", reqIds);
+    const itemIds = (items ?? []).map((i: any) => i.id);
+    if (itemIds.length === 0) { setHoldings([]); return; }
+    const { data: holds } = await supabase
+      .from("pdr_maintenance_holdings" as any)
+      .select("*, pdr(reference, designation)")
+      .eq("holder_id", user.id).eq("statut", "en_main").in("request_item_id", itemIds);
+    setHoldings((holds as any) ?? []);
+    const init: Record<string, string> = {};
+    (holds ?? []).forEach((h: any) => { init[h.id] = String(h.quantite); });
+    setConsumedQty(init);
   };
 
   useEffect(() => { loadAll(); }, [id]);

@@ -276,7 +276,7 @@ export default function OfDetail() {
                             <Badge variant="destructive" className="text-xs">{stats.ticketCount}</Badge>
                           ) : "—"}
                         </TableCell>
-                        <TableCell className="tabular-nums">{stats.stopMin > 0 ? `${stats.stopMin} min` : "—"}</TableCell>
+                        <TableCell className="tabular-nums">{stats.stopMin > 0 ? formatDuration(stats.stopMin) : "—"}</TableCell>
                         <TableCell>
                           <Badge variant={s.statut === "termine" ? "secondary" : "default"} className="text-xs capitalize">
                             {(s.statut || "en_cours").replace("_", " ")}

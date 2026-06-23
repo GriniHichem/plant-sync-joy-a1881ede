@@ -70,7 +70,7 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
           events.push({ time: d.heure_production, type: "Déclaration", label: `Qté ${d.quantite_produite} (rebut ${d.quantite_rebut ?? 0})`, detail: d.notes ?? undefined }),
         );
         (stops ?? []).forEach((s: any) =>
-          events.push({ time: s.heure_debut, type: "Arrêt", label: `${String(s.type).replace("_", " ")} • ${s.duree_minutes} min`, detail: s.description }),
+          events.push({ time: s.heure_debut, type: "Arrêt", label: `${String(s.type).replace("_", " ")} • ${formatDuration(s.duree_minutes)}`, detail: s.description }),
         );
         (tickets ?? []).forEach((t: any) =>
           events.push({ time: t.created_at, type: "Ticket", label: `${t.numero} (${t.priorite})`, detail: t.description }),

@@ -217,6 +217,8 @@ const App = () => (
             <Route path="/qualite/shift/check" element={<ProtectedShiftRoute kind="quality"><QualityShiftCheck /></ProtectedShiftRoute>} />
             <Route path="/qualite/shift/nc" element={<ProtectedShiftRoute kind="quality"><QualityShiftNc /></ProtectedShiftRoute>} />
             <Route path="/qualite/shift/lignes" element={<ProtectedShiftRoute kind="quality"><QualityShiftLines /></ProtectedShiftRoute>} />
+            {/* Magasin kiosk (full screen, no sidebar) */}
+            <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
             <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
               <Route path="/" element={<Dashboard />} />

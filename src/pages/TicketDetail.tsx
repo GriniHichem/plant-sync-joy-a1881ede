@@ -618,7 +618,7 @@ export default function TicketDetail() {
             </div>
           )}
           {ticket.heure_resolution && <InfoItem label="Résolution" value={fmtDate(ticket.heure_resolution)} icon={<Wrench className="h-3 w-3" />} mono />}
-          {ticket.temps_arret_minutes != null && <InfoItem label="Temps d'arrêt" value={`${ticket.temps_arret_minutes} min`} highlight />}
+          {ticket.temps_arret_minutes != null && <InfoItem label="Temps d'arrêt" value={formatDuration(ticket.temps_arret_minutes)} highlight />}
           {ticket.temps_intervention_minutes != null && <InfoItem label="Temps intervention" value={`${ticket.temps_intervention_minutes} min`} mono />}
           {ticket.cause_racine && <InfoItem label="Cause racine" value={ticket.cause_racine} full />}
           {ticket.solution && <InfoItem label="Solution" value={ticket.solution} full />}

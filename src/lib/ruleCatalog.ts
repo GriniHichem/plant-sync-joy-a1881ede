@@ -225,6 +225,7 @@ export const ROLES = [
   "chef_ligne",
   "operateur",
   "gestionnaire_magasin",
+  "responsable_magasin",
   "bureau_methode",
   "auditeur",
   "controleur_qualite",

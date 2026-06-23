@@ -53,6 +53,9 @@ const OPEN_STATUSES: PdrRequestStatus[] = ["demandee", "prete", "partielle"];
 export function usePdrRequestQueue(includeClosed = false) {
   const [requests, setRequests] = useState<PdrRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  // Unique channel suffix per hook instance so multiple queues (open/closed,
+  // several pages) don't collide on the same realtime channel name.
+  const [uid] = useState(() => Math.random().toString(36).slice(2, 9));
 
   const reload = useCallback(async () => {
     let q = supabase.from("pdr_requests" as any).select(SELECT).order("created_at", { ascending: false });
@@ -63,8 +66,9 @@ export function usePdrRequestQueue(includeClosed = false) {
   }, [includeClosed]);
 
   useEffect(() => { reload(); }, [reload]);
-  useShiftRealtime("pdr-queue-requests", "pdr_requests", reload, true);
-  useShiftRealtime("pdr-queue-items", "pdr_request_items", reload, true);
+  useShiftRealtime(`pdr-queue-requests-${uid}`, "pdr_requests", reload, true);
+  useShiftRealtime(`pdr-queue-items-${uid}`, "pdr_request_items", reload, true);
+
 
   return { requests, loading, reload };
 }

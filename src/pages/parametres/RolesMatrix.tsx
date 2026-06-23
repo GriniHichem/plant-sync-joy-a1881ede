@@ -35,6 +35,8 @@ const MODULE_GROUPS = [
       { key: "organes", label: "Organes" },
       { key: "lignes", label: "Lignes & synoptique" },
       { key: "pdr", label: "Pièces de rechange" },
+      { key: "pdr_demandes", label: "Demandes pièces (magasin)" },
+      { key: "shift_magasin", label: "Shift Magasin" },
       { key: "tickets", label: "Tickets" },
       { key: "preventif", label: "Préventif" },
       { key: "shift_maintenance", label: "Shift Maintenance" },
@@ -133,6 +135,7 @@ const ROLES = [
   { key: "controleur_qualite", label: "Contrôleur Qualité", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300", group: "Qualité" },
 
   { key: "gestionnaire_magasin", label: "Gest. Magasin", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300", group: "Logistique" },
+  { key: "responsable_magasin", label: "Resp. Magasin", color: "bg-purple-200 text-purple-900 dark:bg-purple-900/40 dark:text-purple-200", group: "Logistique" },
   { key: "responsable_inventaire", label: "Resp. Inventaire", color: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/30 dark:text-fuchsia-300", group: "Logistique" },
   { key: "agent_inventaire", label: "Agent Inventaire", color: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300", group: "Logistique" },
 ];
@@ -173,12 +176,13 @@ function ap(modules: string[], preset: Preset, base: Record<string, Preset> = {}
 }
 
 const MAINT_MODS = ["dashboard", "machines", "equipements", "organes", "lignes", "pdr", "tickets", "preventif", "shift_maintenance", "journal", "historique", "analytiques"];
+const LOG_MODS = ["pdr_demandes", "shift_magasin"];
 const PROD_MODS = ["gpao_dashboard", "of", "produits", "articles", "recettes", "shift_production", "consommations", "arrets"];
 const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift"];
 const INV_MODS = ["inventaire", "inventaire_campagnes"];
 const GOV_MODS = ["audit", "validations", "validations_rules", "notifications", "notifications_rules", "securite"];
 const CFG_MODS = ["parametres", "utilisateurs", "referentiels", "documents", "pdr_stock_config", "qualite_parametres", "smtp", "general", "images", "recherche", "apps"];
-const ALL_KEYS = [...MAINT_MODS, ...PROD_MODS, ...QUALITY_MODS, ...INV_MODS, ...GOV_MODS, ...CFG_MODS];
+const ALL_KEYS = [...MAINT_MODS, ...LOG_MODS, ...PROD_MODS, ...QUALITY_MODS, ...INV_MODS, ...GOV_MODS, ...CFG_MODS];
 
 const ROLE_DEFAULTS: Record<string, Record<string, Preset>> = {
   admin: ap(ALL_KEYS, FULL),
@@ -197,7 +201,8 @@ const ROLE_DEFAULTS: Record<string, Record<string, Preset>> = {
   responsable_controle_qualite: { ...ap(QUALITY_MODS, FULL), of: RO, produits: RO, articles: RO, recettes: RO, dashboard: RO, machines: RO, lignes: RO, analytiques: RO, qualite_parametres: RW, notifications: RW, apps: RO, recherche: RO },
   controleur_qualite: { qualite: RW, qualite_dashboard: RO, qualite_of: RO, qualite_indicateurs: RO, qualite_controles: RW, qualite_nc: RW, qualite_actions: RO, qualite_recettes: RO, qualite_tracabilite: RO, qualite_rapports: RO, qualite_shift: RW, of: RO, produits: RO, lignes: RO, machines: RO, notifications: RO, apps: RO, recherche: RO },
 
-  gestionnaire_magasin: { pdr: FULL, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RO, apps: RO, recherche: RO },
+  gestionnaire_magasin: { pdr: FULL, pdr_demandes: RW, shift_magasin: RO, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RO, apps: RO, recherche: RO },
+  responsable_magasin: { pdr: FULL, pdr_demandes: FULL, shift_magasin: RO, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, pdr_stock_config: RO, journal: RO, historique: RO, analytiques: RO, documents: RO, audit: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RW, apps: RO, recherche: RO },
   responsable_inventaire: { inventaire: FULL, inventaire_campagnes: FULL, pdr: RW, articles: RO, dashboard: RO, machines: RO, organes: RO, analytiques: RO, notifications: RW, apps: RO, recherche: RO },
   agent_inventaire: { inventaire: RW, inventaire_campagnes: RW, pdr: RO, articles: RO, machines: RO, organes: RO, apps: RO, recherche: RO },
 };

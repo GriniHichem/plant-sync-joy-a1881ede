@@ -113,6 +113,8 @@ import QualityShiftCheck from "@/pages/shift/QualityShiftCheck";
 import QualityShiftNc from "@/pages/shift/QualityShiftNc";
 import QualityShiftLines from "@/pages/shift/QualityShiftLines";
 import { ShiftHomePage } from "@/components/shift/ShiftHomePage";
+import MagasinShiftHome from "@/pages/magasin/MagasinShiftHome";
+import MagasinKiosk from "@/pages/magasin/MagasinKiosk";
 
 const queryClient = new QueryClient();
 
@@ -188,6 +190,20 @@ function ProtectedShiftRoute({
   );
 }
 
+function ProtectedKioskRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+}
+
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -215,6 +231,8 @@ const App = () => (
             <Route path="/qualite/shift/check" element={<ProtectedShiftRoute kind="quality"><QualityShiftCheck /></ProtectedShiftRoute>} />
             <Route path="/qualite/shift/nc" element={<ProtectedShiftRoute kind="quality"><QualityShiftNc /></ProtectedShiftRoute>} />
             <Route path="/qualite/shift/lignes" element={<ProtectedShiftRoute kind="quality"><QualityShiftLines /></ProtectedShiftRoute>} />
+            {/* Magasin kiosk (full screen, no sidebar) */}
+            <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
             <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
               <Route path="/" element={<Dashboard />} />
@@ -246,6 +264,8 @@ const App = () => (
                   operatorRoles={["maintenancier"]}
                 />
               } />
+              {/* Magasin shift home — keepers redirected to kiosk, managers see dashboard */}
+              <Route path="/magasin/shift" element={<MagasinShiftHome />} />
               <Route path="/maintenance/journal" element={<InterventionJournal />} />
               <Route path="/maintenance/historique" element={<InterventionHistory />} />
               <Route path="/analytics" element={<AnalyticsPage />} />

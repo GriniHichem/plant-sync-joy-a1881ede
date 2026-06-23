@@ -21,6 +21,7 @@ const SYSTEM_ROLE_LABELS: Record<string, string> = {
   chef_ligne: "Chef de Ligne",
   operateur: "Opérateur",
   gestionnaire_magasin: "Gestionnaire Magasin",
+  responsable_magasin: "Responsable Magasin",
   bureau_methode: "Bureau Méthode",
   auditeur: "Auditeur",
   controleur_qualite: "Contrôleur Qualité",

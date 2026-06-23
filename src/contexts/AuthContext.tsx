@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAuthEvent } from "@/lib/audit";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 
-type AppRole = "admin" | "resp_maintenance" | "maintenancier" | "resp_production" | "chef_ligne" | "operateur" | "gestionnaire_magasin" | "bureau_methode" | "responsable_si" | "auditeur" | "controleur_qualite" | "responsable_controle_qualite" | "directeur_qualite" | "responsable_inventaire" | "agent_inventaire";
+type AppRole = "admin" | "resp_maintenance" | "maintenancier" | "resp_production" | "chef_ligne" | "operateur" | "gestionnaire_magasin" | "responsable_magasin" | "bureau_methode" | "responsable_si" | "auditeur" | "controleur_qualite" | "responsable_controle_qualite" | "directeur_qualite" | "responsable_inventaire" | "agent_inventaire";
 
 interface Profile {
   id: string;

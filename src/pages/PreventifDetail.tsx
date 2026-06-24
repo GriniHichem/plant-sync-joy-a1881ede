@@ -612,6 +612,15 @@ export default function PreventifDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmTakeDialog
+        open={!!takeTarget}
+        request={takeTarget?.req ?? null}
+        item={takeTarget?.it ?? null}
+        busy={takeBusy}
+        onConfirm={(qte) => takeTarget && handleTake(takeTarget.it.id, qte)}
+        onCancel={() => setTakeTarget(null)}
+      />
     </div>
   );
 }

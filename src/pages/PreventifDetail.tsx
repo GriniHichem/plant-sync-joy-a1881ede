@@ -467,6 +467,7 @@ export default function PreventifDetail() {
           <TabsTrigger value="pdr" className="h-9"><Package className="h-3.5 w-3.5 mr-1" />PDR</TabsTrigger>
           <TabsTrigger value="assignees" className="h-9"><Users className="h-3.5 w-3.5 mr-1" />Affectés</TabsTrigger>
           <TabsTrigger value="executions" className="h-9"><CalendarCheck className="h-3.5 w-3.5 mr-1" />Exécutions</TabsTrigger>
+          <TabsTrigger value="historique" className="h-9"><History className="h-3.5 w-3.5 mr-1" />Historique PDR</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info">

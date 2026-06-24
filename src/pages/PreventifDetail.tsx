@@ -106,7 +106,33 @@ export default function PreventifDetail() {
     setConsumedQty(init);
   };
 
-  useEffect(() => { loadAll(); }, [id]);
+  // All requests of this plan with their items (état demandée / prête / prise)
+  const loadPlanRequests = async () => {
+    if (!id) { setPlanRequests([]); return; }
+    const { data } = await supabase
+      .from("pdr_requests" as any)
+      .select(
+        "*, machines(id, code, designation), tickets(id, numero), items:pdr_request_items(*, pdr(id, reference, designation, stock_actuel, stock_reserve, unite_stock))",
+      )
+      .eq("preventive_plan_id", id)
+      .order("created_at", { ascending: false });
+    setPlanRequests((data as any) ?? []);
+  };
+
+  const handleTake = async (itemId: string, qte: number) => {
+    setTakeBusy(true);
+    try {
+      await confirmItemTaken(itemId, qte);
+      toast({ title: "Prise confirmée — pièce transférée à la maintenance" });
+      setTakeTarget(null);
+      await loadHoldings();
+      await loadPlanRequests();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setTakeBusy(false);
+    }
+  };
 
   const updateStatut = async (newStatut: string) => {
     const oldStatut = (plan as any)?.statut_plan;

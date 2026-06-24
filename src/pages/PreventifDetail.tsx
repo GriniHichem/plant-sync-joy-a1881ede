@@ -603,6 +603,42 @@ export default function PreventifDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="historique">
+          <Card>
+            <CardContent className="pt-6">
+              {histByPiece.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Aucun mouvement de pièce pour ce plan</p>
+              ) : (
+                <div className="space-y-4">
+                  {histByPiece.map((g) => (
+                    <div key={g.pdrId} className="rounded-lg border">
+                      <div className="px-4 py-2.5 border-b bg-muted/40">
+                        <p className="font-mono text-sm font-semibold">{g.reference}</p>
+                        <p className="text-xs text-muted-foreground">{g.designation}</p>
+                      </div>
+                      <ul className="divide-y">
+                        {g.events.map((ev, i) => (
+                          <li key={i} className="flex items-center gap-3 px-4 py-2.5">
+                            <span className="text-xs text-muted-foreground tabular-nums w-28 shrink-0">
+                              {new Date(ev.date).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            <Badge variant="outline" className={`text-[10px] shrink-0 ${HIST_META[ev.type].cls}`}>{HIST_META[ev.type].label}</Badge>
+                            <span className="text-sm font-medium tabular-nums shrink-0">×{ev.qte}</span>
+                            <span className="text-xs text-muted-foreground truncate flex-1">
+                              {ev.user ? `par ${ev.user}` : ""}
+                              {ev.note ? `${ev.user ? " · " : ""}${ev.note}` : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Execution Dialog */}

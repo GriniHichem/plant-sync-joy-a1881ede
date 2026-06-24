@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Edit, CheckCircle, PauseCircle, Play, CalendarCheck, Package, Users, ClipboardCheck, Clock, Timer } from "lucide-react";
+import { ArrowLeft, Edit, CheckCircle, PauseCircle, Play, CalendarCheck, Package, Users, ClipboardCheck, Clock, Timer, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +56,10 @@ export default function PreventifDetail() {
   const [takeTarget, setTakeTarget] = useState<{ req: PdrRequest; it: PdrRequestItem } | null>(null);
   const [takeBusy, setTakeBusy] = useState(false);
 
+  // Consumptions (intervention_pdr) of this plan + resolved user names
+  const [consumptions, setConsumptions] = useState<any[]>([]);
+  const [profileMap, setProfileMap] = useState<Record<string, string>>({});
+
   // Execution dialog state (clôture)
   const [execOpen, setExecOpen] = useState(false);
   const [execNotes, setExecNotes] = useState("");
@@ -86,6 +90,47 @@ export default function PreventifDetail() {
     }
     await loadHoldings();
     await loadPlanRequests();
+    await loadHistory(execs);
+  };
+
+  // Consumptions (intervention_pdr) tied to this plan's executions + user names
+  const loadHistory = async (execs: any[]) => {
+    if (!id) { setConsumptions([]); return; }
+    const execIds = (execs ?? []).map((e: any) => e.id);
+    let cons: any[] = [];
+    if (execIds.length > 0) {
+      const { data } = await supabase
+        .from("intervention_pdr" as any)
+        .select("*, pdr(reference, designation)")
+        .in("preventive_execution_id", execIds);
+      cons = (data as any) ?? [];
+    }
+    setConsumptions(cons);
+
+    // Resolve all user ids involved in the PDR lifecycle
+    const { data: reqs } = await supabase
+      .from("pdr_requests" as any)
+      .select("requested_by, created_by, items:pdr_request_items(prepared_by, taken_by)")
+      .eq("preventive_plan_id", id);
+    const userIds = new Set<string>();
+    ((reqs as any[]) ?? []).forEach((r) => {
+      if (r.requested_by) userIds.add(r.requested_by);
+      if (r.created_by) userIds.add(r.created_by);
+      (r.items ?? []).forEach((it: any) => {
+        if (it.prepared_by) userIds.add(it.prepared_by);
+        if (it.taken_by) userIds.add(it.taken_by);
+      });
+    });
+    (execs ?? []).forEach((e: any) => { if (e.executed_by) userIds.add(e.executed_by); });
+    const ids = [...userIds];
+    if (ids.length > 0) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, first_name, last_name").in("user_id", ids);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((p: any) => { map[p.user_id] = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "—"; });
+      setProfileMap(map);
+    } else {
+      setProfileMap({});
+    }
   };
 
   // Pieces taken (held) by the user for this plan's validated requests
@@ -271,6 +316,51 @@ export default function PreventifDetail() {
   const itemsAPrendre = allReqItems.filter(({ it }) => it.statut === "prete");
   const itemsEnPreparation = allReqItems.filter(({ it }) => it.statut === "demandee");
 
+  // ===== Historique PDR : chronologie par pièce =====
+  const userName = (uid?: string | null) => (uid ? (profileMap[uid] || "—") : "—");
+  const execLabel = (execId?: string | null) => {
+    const e = executions.find((x: any) => x.id === execId);
+    return e ? `exéc. du ${new Date(e.date_execution).toLocaleDateString("fr-FR")}` : "exécution";
+  };
+  type HistEvent = { ts: number; type: "demandee" | "preparee" | "prise" | "consommee"; date: string; qte: number; user: string; note?: string };
+  const histByPiece: { pdrId: string; reference: string; designation: string; events: HistEvent[] }[] = (() => {
+    const groups = new Map<string, { pdrId: string; reference: string; designation: string; events: HistEvent[] }>();
+    const ensure = (pdrId: string, reference: string, designation: string) => {
+      if (!groups.has(pdrId)) groups.set(pdrId, { pdrId, reference, designation, events: [] });
+      return groups.get(pdrId)!;
+    };
+    allReqItems.forEach(({ req, it }) => {
+      const pid = it.pdr_id as string;
+      const g = ensure(pid, it.pdr?.reference ?? "—", it.pdr?.designation ?? "");
+      if ((it as any).created_at || req.created_at) {
+        g.events.push({ ts: new Date(req.created_at).getTime(), type: "demandee", date: req.created_at, qte: it.quantite_demandee ?? 0, user: userName(req.requested_by || (req as any).created_by), note: req.numero });
+      }
+      if ((it as any).prepared_at) {
+        g.events.push({ ts: new Date((it as any).prepared_at).getTime(), type: "preparee", date: (it as any).prepared_at, qte: it.quantite_preparee ?? it.quantite_demandee ?? 0, user: userName((it as any).prepared_by) });
+      }
+      if ((it as any).taken_at) {
+        const reliquat = Math.max(0, (it.quantite_demandee ?? 0) - (it.quantite_prise ?? 0));
+        g.events.push({ ts: new Date((it as any).taken_at).getTime(), type: "prise", date: (it as any).taken_at, qte: it.quantite_prise ?? 0, user: userName((it as any).taken_by), note: reliquat > 0 ? `reliquat ${reliquat} non fourni` : undefined });
+      }
+    });
+    consumptions.forEach((c: any) => {
+      const pid = c.pdr_id as string;
+      const g = ensure(pid, c.pdr?.reference ?? "—", c.pdr?.designation ?? "");
+      g.events.push({ ts: new Date(c.created_at).getTime(), type: "consommee", date: c.created_at, qte: c.quantite ?? 0, user: "", note: execLabel(c.preventive_execution_id) });
+    });
+    return [...groups.values()]
+      .map((g) => ({ ...g, events: g.events.sort((a, b) => a.ts - b.ts) }))
+      .sort((a, b) => (b.events[0]?.ts ?? 0) - (a.events[0]?.ts ?? 0));
+  })();
+
+  const HIST_META: Record<HistEvent["type"], { label: string; cls: string }> = {
+    demandee: { label: "Demandée", cls: "text-blue-600 border-blue-600/40" },
+    preparee: { label: "Préparée", cls: "text-amber-600 border-amber-600/40" },
+    prise: { label: "Prise", cls: "text-emerald-600 border-emerald-600/40" },
+    consommee: { label: "Consommée", cls: "text-purple-600 border-purple-600/40" },
+  };
+
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
@@ -377,6 +467,7 @@ export default function PreventifDetail() {
           <TabsTrigger value="pdr" className="h-9"><Package className="h-3.5 w-3.5 mr-1" />PDR</TabsTrigger>
           <TabsTrigger value="assignees" className="h-9"><Users className="h-3.5 w-3.5 mr-1" />Affectés</TabsTrigger>
           <TabsTrigger value="executions" className="h-9"><CalendarCheck className="h-3.5 w-3.5 mr-1" />Exécutions</TabsTrigger>
+          <TabsTrigger value="historique" className="h-9"><History className="h-3.5 w-3.5 mr-1" />Historique PDR</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info">
@@ -509,6 +600,42 @@ export default function PreventifDetail() {
                   })}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="historique">
+          <Card>
+            <CardContent className="pt-6">
+              {histByPiece.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Aucun mouvement de pièce pour ce plan</p>
+              ) : (
+                <div className="space-y-4">
+                  {histByPiece.map((g) => (
+                    <div key={g.pdrId} className="rounded-lg border">
+                      <div className="px-4 py-2.5 border-b bg-muted/40">
+                        <p className="font-mono text-sm font-semibold">{g.reference}</p>
+                        <p className="text-xs text-muted-foreground">{g.designation}</p>
+                      </div>
+                      <ul className="divide-y">
+                        {g.events.map((ev, i) => (
+                          <li key={i} className="flex items-center gap-3 px-4 py-2.5">
+                            <span className="text-xs text-muted-foreground tabular-nums w-28 shrink-0">
+                              {new Date(ev.date).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            <Badge variant="outline" className={`text-[10px] shrink-0 ${HIST_META[ev.type].cls}`}>{HIST_META[ev.type].label}</Badge>
+                            <span className="text-sm font-medium tabular-nums shrink-0">×{ev.qte}</span>
+                            <span className="text-xs text-muted-foreground truncate flex-1">
+                              {ev.user ? `par ${ev.user}` : ""}
+                              {ev.note ? `${ev.user ? " · " : ""}${ev.note}` : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

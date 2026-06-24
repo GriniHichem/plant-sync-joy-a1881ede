@@ -1,47 +1,64 @@
-# Améliorer la consommation des PDR dans le plan préventif
-
-## Problème constaté
-Lors d'une intervention préventive, seules les pièces **déjà prises** (holdings `en_main` de l'utilisateur) apparaissent à la clôture. Les pièces **déjà demandées** pour le plan mais encore en cours de préparation au magasin (statut `demandée`/`prête`) sont invisibles dans `PreventifDetail`. Le maintenancier ne voit donc pas qu'il a des pièces à récupérer avant de pouvoir les consommer.
-
-Décision : on **garde le circuit** demande → préparation magasin → prise. On ajoute simplement la visibilité et l'action de prise au bon endroit.
+# Onglet « Historique PDR » dans le plan préventif
 
 ## Objectif
-Dans la page du plan préventif, pendant une intervention en cours :
-- afficher toutes les pièces demandées pour ce plan avec leur statut (demandée / prête à prendre / prise),
-- permettre de **confirmer la prise** d'une pièce prête directement depuis le plan (réutilise le dialog existant),
-- garder la consommation des pièces prises au moment de **Terminer**, comme aujourd'hui.
+Ajouter un onglet dans la page d'un plan préventif (`PreventifDetail`) qui retrace, sous forme de chronologie, **chaque événement du cycle de vie des pièces** liées au plan :
+- **Demande** (quantité demandée, par qui, quand)
+- **Préparation magasin** (quantité préparée, par qui, quand)
+- **Prise** (quantité prise, par qui, quand, + reliquat non fourni)
+- **Consommation** à la clôture (quantité consommée, exécution liée, + reliquat retourné magasin)
+
+Aucune migration : toutes les données existent déjà.
+
+## Sources de données (déjà en base)
+```text
+pdr_requests          → numero, created_at, created_by/requested_by, statut
+pdr_request_items     → quantite_demandee, prepared_at/by + quantite_preparee,
+                        taken_at/by + quantite_prise, pdr(reference, designation)
+intervention_pdr      → quantite, created_at, preventive_execution_id  (consommation préventive)
+preventive_executions → pour relier la consommation à une exécution datée
+profiles              → first_name, last_name pour afficher les utilisateurs
+```
+
+Reliquats calculés :
+- **Reliquat de prise** = `quantite_demandee − quantite_prise` (pièce demandée non entièrement fournie)
+- **Reliquat retourné magasin** = `quantite_prise − quantite_consommée` (déduit à la clôture)
 
 ## Parcours cible
 ```text
-Intervention en cours
-  ├─ Pièces demandées (vue d'état)
-  │     • Demandée   → en attente magasin
-  │     • Prête      → [Confirmer la prise]  ──► devient « Prise »
-  │     • Prise      → consommable à la clôture
-  └─ Terminer → saisie durée + quantités consommées (pièces prises)
-                reliquat retourné au magasin (inchangé)
+Onglet « Historique PDR »
+  Réf. PIECE-001 — Roulement
+   ● 24/06 09:12  Demandée    ×4   par M. Dupont   (DEM-2026-014)
+   ● 24/06 09:40  Préparée    ×4   par Magasinier
+   ● 24/06 10:05  Prise       ×3   par M. Dupont   reliquat 1 non fourni
+   ● 24/06 11:30  Consommée   ×2   exéc. du 24/06  reliquat 1 retourné magasin
 ```
 
-## Changements (frontend uniquement, aucune migration)
+## Changements (frontend uniquement)
 
-### 1. `src/pages/PreventifDetail.tsx`
-- **Charger les demandes complètes du plan**, pas seulement les holdings. Récupérer `pdr_requests` (filtrées `preventive_plan_id = id`) avec leurs `pdr_request_items` et le `pdr` lié, en plus des holdings actuels.
-- **Bandeau « Intervention en cours »** : afficher un récap chiffré (ex. « 2 à prendre · 1 prise ») et lister les pièces avec leur statut.
-- Pour chaque item au statut `prête`, bouton **« Confirmer la prise »** ouvrant le `ConfirmTakeDialog` existant (`src/components/pdr/ConfirmTakeDialog.tsx`) et appelant `confirmItemTaken` (déjà exporté par `usePdrRequests`). Après prise, recharger holdings + demandes.
-- Pour les items au statut `demandée`, afficher un badge « En préparation (magasin) » non actionnable.
-- **Dialog Terminer** : inchangé sur la logique de consommation des holdings, mais ajouter un avertissement si des pièces du plan sont encore `prête`/`demandée` non prises (« X pièce(s) demandée(s) non prise(s) ne seront pas consommées »), sans bloquer la clôture.
+### `src/pages/PreventifDetail.tsx`
+1. **Nouvel onglet** `historique` dans la `TabsList` (icône `History`), après « Exécutions ».
+2. **Chargement** dans `loadAll` :
+   - Réutiliser `planRequests` déjà chargé (contient items + dates + quantités).
+   - Charger `intervention_pdr` filtré sur les `preventive_execution_id` des `executions` du plan, avec `pdr(reference, designation)`, pour la consommation.
+   - Étendre le `SELECT` de `loadPlanRequests` pour inclure `prepared_by`, `prepared_at`, `quantite_preparee`, `taken_by`, `taken_at`, `quantite_prise` (déjà présents via `*`).
+   - Récupérer les profils de tous les `user_id` impliqués (requested_by, prepared_by, taken_by) en plus des assignés, dans une map id→nom.
+3. **Construction de la chronologie** (helper local, pur, dans le composant) :
+   - Grouper par pièce (`pdr_id` + référence).
+   - Pour chaque item : produire les événements `demandée`, `préparée` (si `prepared_at`), `prise` (si `taken_at`) avec date, utilisateur, quantité.
+   - Pour chaque `intervention_pdr` (consommation) : événement `consommée` avec date, quantité, exécution liée.
+   - Trier les événements par date au sein de chaque pièce.
+4. **Rendu** : une carte par pièce avec une liste verticale d'événements ; chaque ligne = badge type (couleur par type), date formatée `fr-FR`, quantité `tabular-nums`, nom utilisateur, et mention reliquat le cas échéant. État vide « Aucun mouvement de pièce pour ce plan ».
 
-### 2. Réutilisation existante
-- `confirmItemTaken`, `usePdrRequests` : déjà en place.
-- `ConfirmTakeDialog` : déjà en place, accepte `request` + `item`.
-- `consumePreventiveHolding` à la clôture : inchangé.
+### Réutilisation
+- Pas de nouveau hook ni de RPC : lecture directe via le client `supabase` comme le reste du fichier.
+- Formatage dates/quantités identique à l'existant (gramme, 4 décimales, `toLocaleString fr-FR`).
 
 ## Hors périmètre
-- Aucun changement de base de données.
-- Aucun changement au circuit magasin (préparation/prise) ni à la logique curative.
-- Pas de consommation directe depuis le stock magasin (le circuit est conservé, conformément au choix).
+- Aucune migration ni changement de schéma.
+- Aucun changement au circuit demande → préparation → prise → consommation.
+- Aucun export CSV (peut être ajouté ultérieurement si souhaité).
 
 ## Détails techniques
-- La liste des demandes réutilise le même `SELECT` que `usePdrRequests` ; on peut filtrer côté requête sur `preventive_plan_id`.
-- La prise passe toujours par `confirmItemTaken` (RPC `confirm_request_item_taken`) → crée/alimente le holding `en_main`, qui devient alors consommable à la clôture via `consume_maintenance_holding_preventive`.
-- Précision quantités inchangée (gramme, 4 décimales).
+- La consommation préventive est tracée dans `intervention_pdr.preventive_execution_id` (alimentée par la RPC `consume_maintenance_holding_preventive`). On relie ces lignes au plan via les exécutions du plan déjà chargées dans `executions`.
+- Les utilisateurs sont résolus côté client via une map `profiles` (un seul `select ... in (userIds)`), pour éviter les jointures auth interdites.
+- Le reliquat de prise et le reliquat retourné sont calculés en mémoire à partir des quantités, pas stockés.

@@ -18,7 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { Label } from "@/components/ui/label";
 import { logAudit } from "@/lib/audit";
-import { consumePreventiveHolding } from "@/hooks/usePdrRequests";
+import { consumePreventiveHolding, confirmItemTaken, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
+import { ConfirmTakeDialog } from "@/components/pdr/ConfirmTakeDialog";
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   brouillon: { label: "Brouillon", variant: "secondary" },
@@ -50,6 +51,11 @@ export default function PreventifDetail() {
   const [consumedQty, setConsumedQty] = useState<Record<string, string>>({});
   const [starting, setStarting] = useState(false);
 
+  // Pieces requested for this plan (full requests with items)
+  const [planRequests, setPlanRequests] = useState<PdrRequest[]>([]);
+  const [takeTarget, setTakeTarget] = useState<{ req: PdrRequest; it: PdrRequestItem } | null>(null);
+  const [takeBusy, setTakeBusy] = useState(false);
+
   // Execution dialog state (clôture)
   const [execOpen, setExecOpen] = useState(false);
   const [execNotes, setExecNotes] = useState("");
@@ -79,6 +85,7 @@ export default function PreventifDetail() {
       setAssignees(profiles || []);
     }
     await loadHoldings();
+    await loadPlanRequests();
   };
 
   // Pieces taken (held) by the user for this plan's validated requests
@@ -100,7 +107,37 @@ export default function PreventifDetail() {
     setConsumedQty(init);
   };
 
+  // All requests of this plan with their items (état demandée / prête / prise)
+  const loadPlanRequests = async () => {
+    if (!id) { setPlanRequests([]); return; }
+    const { data } = await supabase
+      .from("pdr_requests" as any)
+      .select(
+        "*, machines(id, code, designation), tickets(id, numero), items:pdr_request_items(*, pdr(id, reference, designation, stock_actuel, stock_reserve, unite_stock))",
+      )
+      .eq("preventive_plan_id", id)
+      .order("created_at", { ascending: false });
+    setPlanRequests((data as any) ?? []);
+  };
+
+  const handleTake = async (itemId: string, qte: number) => {
+    setTakeBusy(true);
+    try {
+      await confirmItemTaken(itemId, qte);
+      toast({ title: "Prise confirmée — pièce transférée à la maintenance" });
+      setTakeTarget(null);
+      await loadHoldings();
+      await loadPlanRequests();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally {
+      setTakeBusy(false);
+    }
+  };
+
   useEffect(() => { loadAll(); }, [id]);
+
+
 
   const updateStatut = async (newStatut: string) => {
     const oldStatut = (plan as any)?.statut_plan;
@@ -229,6 +266,11 @@ export default function PreventifDetail() {
   const statutInfo = STATUT_LABELS[(plan as any).statut_plan] || STATUT_LABELS.valide;
   const isOverdue = plan.prochaine_echeance && new Date(plan.prochaine_echeance) < new Date();
 
+  // Items demandés pour ce plan, à plat avec leur demande parente
+  const allReqItems = planRequests.flatMap((r) => (r.items ?? []).map((it) => ({ req: r, it })));
+  const itemsAPrendre = allReqItems.filter(({ it }) => it.statut === "prete");
+  const itemsEnPreparation = allReqItems.filter(({ it }) => it.statut === "demandee");
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
@@ -285,15 +327,45 @@ export default function PreventifDetail() {
 
       {openExec && (
         <Card className="border-green-600/40 bg-green-50/40 dark:bg-green-950/10">
-          <CardContent className="flex items-center gap-3 p-4 flex-wrap">
-            <ClipboardCheck className="h-5 w-5 text-green-600 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">Intervention en cours</p>
-              <p className="text-xs text-muted-foreground">
-                Démarrée {openExec.heure_debut ? new Date(openExec.heure_debut).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}
-                {holdings.length > 0 ? ` · ${holdings.length} pièce(s) prêtée(s)` : ""}
-              </p>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <ClipboardCheck className="h-5 w-5 text-green-600 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">Intervention en cours</p>
+                <p className="text-xs text-muted-foreground">
+                  Démarrée {openExec.heure_debut ? new Date(openExec.heure_debut).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—"}
+                  {` · ${holdings.length} prise(s)`}
+                  {itemsAPrendre.length > 0 ? ` · ${itemsAPrendre.length} à prendre` : ""}
+                  {itemsEnPreparation.length > 0 ? ` · ${itemsEnPreparation.length} en préparation` : ""}
+                </p>
+              </div>
             </div>
+
+            {(itemsAPrendre.length > 0 || itemsEnPreparation.length > 0) && (
+              <div className="border rounded-lg divide-y bg-background">
+                {itemsAPrendre.map(({ req, it }) => (
+                  <div key={it.id} className="flex items-center gap-3 p-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-mono text-xs font-semibold truncate">{it.pdr?.reference}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{it.pdr?.designation} · {req.numero} · préparé : {it.quantite_preparee ?? it.quantite_demandee}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-600/40">Prête</Badge>
+                    <Button size="sm" className="h-9" disabled={takeBusy} onClick={() => setTakeTarget({ req, it })}>
+                      Confirmer la prise
+                    </Button>
+                  </div>
+                ))}
+                {itemsEnPreparation.map(({ req, it }) => (
+                  <div key={it.id} className="flex items-center gap-3 p-2.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-mono text-xs font-semibold truncate">{it.pdr?.reference}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{it.pdr?.designation} · {req.numero} · demandé : {it.quantite_demandee}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-600/40">En préparation (magasin)</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -301,6 +373,7 @@ export default function PreventifDetail() {
       <Tabs defaultValue="info">
         <TabsList className="h-11">
           <TabsTrigger value="info" className="h-9">Infos</TabsTrigger>
+
           <TabsTrigger value="pdr" className="h-9"><Package className="h-3.5 w-3.5 mr-1" />PDR</TabsTrigger>
           <TabsTrigger value="assignees" className="h-9"><Users className="h-3.5 w-3.5 mr-1" />Affectés</TabsTrigger>
           <TabsTrigger value="executions" className="h-9"><CalendarCheck className="h-3.5 w-3.5 mr-1" />Exécutions</TabsTrigger>
@@ -509,6 +582,14 @@ export default function PreventifDetail() {
               </p>
             )}
 
+            {(itemsAPrendre.length + itemsEnPreparation.length) > 0 && (
+              <p className="text-xs rounded-md border border-amber-600/40 bg-amber-50/40 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400 p-2.5">
+                {itemsAPrendre.length + itemsEnPreparation.length} pièce(s) demandée(s) non prise(s) ne seront pas consommées. Prenez-les avant de clôturer si besoin.
+              </p>
+            )}
+
+
+
 
             {/* Notes */}
             <div>
@@ -531,6 +612,15 @@ export default function PreventifDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmTakeDialog
+        open={!!takeTarget}
+        request={takeTarget?.req ?? null}
+        item={takeTarget?.it ?? null}
+        busy={takeBusy}
+        onConfirm={(qte) => takeTarget && handleTake(takeTarget.it.id, qte)}
+        onCancel={() => setTakeTarget(null)}
+      />
     </div>
   );
 }

@@ -135,6 +135,10 @@ export default function PreventifDetail() {
     }
   };
 
+  useEffect(() => { loadAll(); }, [id]);
+
+
+
   const updateStatut = async (newStatut: string) => {
     const oldStatut = (plan as any)?.statut_plan;
     const { error } = await supabase.from("preventive_plans").update({ statut_plan: newStatut } as any).eq("id", id);

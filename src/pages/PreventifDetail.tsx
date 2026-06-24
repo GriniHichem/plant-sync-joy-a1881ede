@@ -582,6 +582,14 @@ export default function PreventifDetail() {
               </p>
             )}
 
+            {(itemsAPrendre.length + itemsEnPreparation.length) > 0 && (
+              <p className="text-xs rounded-md border border-amber-600/40 bg-amber-50/40 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400 p-2.5">
+                {itemsAPrendre.length + itemsEnPreparation.length} pièce(s) demandée(s) non prise(s) ne seront pas consommées. Prenez-les avant de clôturer si besoin.
+              </p>
+            )}
+
+
+
 
             {/* Notes */}
             <div>

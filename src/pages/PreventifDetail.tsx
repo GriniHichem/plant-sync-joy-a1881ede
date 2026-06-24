@@ -56,6 +56,10 @@ export default function PreventifDetail() {
   const [takeTarget, setTakeTarget] = useState<{ req: PdrRequest; it: PdrRequestItem } | null>(null);
   const [takeBusy, setTakeBusy] = useState(false);
 
+  // Consumptions (intervention_pdr) of this plan + resolved user names
+  const [consumptions, setConsumptions] = useState<any[]>([]);
+  const [profileMap, setProfileMap] = useState<Record<string, string>>({});
+
   // Execution dialog state (clôture)
   const [execOpen, setExecOpen] = useState(false);
   const [execNotes, setExecNotes] = useState("");

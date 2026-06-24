@@ -90,6 +90,47 @@ export default function PreventifDetail() {
     }
     await loadHoldings();
     await loadPlanRequests();
+    await loadHistory(execs);
+  };
+
+  // Consumptions (intervention_pdr) tied to this plan's executions + user names
+  const loadHistory = async (execs: any[]) => {
+    if (!id) { setConsumptions([]); return; }
+    const execIds = (execs ?? []).map((e: any) => e.id);
+    let cons: any[] = [];
+    if (execIds.length > 0) {
+      const { data } = await supabase
+        .from("intervention_pdr" as any)
+        .select("*, pdr(reference, designation)")
+        .in("preventive_execution_id", execIds);
+      cons = (data as any) ?? [];
+    }
+    setConsumptions(cons);
+
+    // Resolve all user ids involved in the PDR lifecycle
+    const { data: reqs } = await supabase
+      .from("pdr_requests" as any)
+      .select("requested_by, created_by, items:pdr_request_items(prepared_by, taken_by)")
+      .eq("preventive_plan_id", id);
+    const userIds = new Set<string>();
+    ((reqs as any[]) ?? []).forEach((r) => {
+      if (r.requested_by) userIds.add(r.requested_by);
+      if (r.created_by) userIds.add(r.created_by);
+      (r.items ?? []).forEach((it: any) => {
+        if (it.prepared_by) userIds.add(it.prepared_by);
+        if (it.taken_by) userIds.add(it.taken_by);
+      });
+    });
+    (execs ?? []).forEach((e: any) => { if (e.executed_by) userIds.add(e.executed_by); });
+    const ids = [...userIds];
+    if (ids.length > 0) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, first_name, last_name").in("user_id", ids);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((p: any) => { map[p.user_id] = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "—"; });
+      setProfileMap(map);
+    } else {
+      setProfileMap({});
+    }
   };
 
   // Pieces taken (held) by the user for this plan's validated requests

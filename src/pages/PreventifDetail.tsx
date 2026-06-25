@@ -54,6 +54,14 @@ export default function PreventifDetail() {
   const [consumedQty, setConsumedQty] = useState<Record<string, string>>({});
   const [starting, setStarting] = useState(false);
 
+  // Action partagée (session commune) + contributions par maintenancier
+  const [activeSession, setActiveSession] = useState<any>(null);
+  const [sessionContribs, setSessionContribs] = useState<any[]>([]);
+  const [closingAction, setClosingAction] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
+  const [reopening, setReopening] = useState(false);
+
   // Pieces requested for this plan (full requests with items)
   const [planRequests, setPlanRequests] = useState<PdrRequest[]>([]);
   const [takeTarget, setTakeTarget] = useState<{ req: PdrRequest; it: PdrRequestItem } | null>(null);

@@ -566,24 +566,40 @@ export default function PreventifDetail() {
                   <TableRow>
                     <TableHead>Référence</TableHead>
                     <TableHead>Désignation</TableHead>
-                    <TableHead>Quantité</TableHead>
+                    <TableHead className="text-right">Prévu</TableHead>
+                    <TableHead className="text-right">Demandé</TableHead>
+                    <TableHead className="text-right">Pris</TableHead>
+                    <TableHead className="text-right">Consommé</TableHead>
+                    <TableHead className="text-right">Reliquat</TableHead>
+                    <TableHead>État</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {planPdr.length === 0 ? (
-                    <TableRow><TableCell colSpan={3} className="text-center py-6 text-muted-foreground">Aucune PDR</TableCell></TableRow>
-                  ) : planPdr.map((pp: any) => (
-                    <TableRow key={pp.id}>
-                      <TableCell className="font-mono text-sm">{pp.pdr?.reference}</TableCell>
-                      <TableCell>{pp.pdr?.designation}</TableCell>
-                      <TableCell className="tabular-nums">×{pp.quantite}</TableCell>
-                    </TableRow>
-                  ))}
+                  {pdrOverview.length === 0 ? (
+                    <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Aucune PDR planifiée ni demandée pour ce plan</TableCell></TableRow>
+                  ) : pdrOverview.map((r) => {
+                    const reliquat = Math.max(0, r.prevu - r.consomme);
+                    return (
+                      <TableRow key={r.pdrId}>
+                        <TableCell className="font-mono text-sm">{r.reference}</TableCell>
+                        <TableCell>{r.designation}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.prevu || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.demande || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.pris || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">{r.consomme || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.prevu > 0 ? reliquat : "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`text-[10px] ${PDR_STATUT_META[r.statut].cls}`}>{PDR_STATUT_META[r.statut].label}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
+
 
         <TabsContent value="assignees">
           <Card>

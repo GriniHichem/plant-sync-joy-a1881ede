@@ -67,6 +67,14 @@ export default function PreventifDetail() {
   const [execDureeMinutes, setExecDureeMinutes] = useState<number>(0);
   const [execStartTime, setExecStartTime] = useState("");
 
+  // Ad-hoc (pièces non prévues) consommées directement du stock magasin
+  type AdhocLine = { pdr_id: string; reference: string; designation: string; quantite: number; stock: number };
+  const [adhocLines, setAdhocLines] = useState<AdhocLine[]>([]);
+  const [pdrCatalog, setPdrCatalog] = useState<{ id: string; reference: string; designation: string; stock_actuel: number }[]>([]);
+  const [adhocSearch, setAdhocSearch] = useState("");
+  const [adhocPdrId, setAdhocPdrId] = useState("");
+  const [adhocQte, setAdhocQte] = useState("1");
+
   const loadAll = async () => {
     if (!id) return;
     const [pRes, ppRes, aRes, eRes] = await Promise.all([

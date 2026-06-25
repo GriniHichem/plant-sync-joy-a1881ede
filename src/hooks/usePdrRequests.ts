@@ -221,23 +221,4 @@ export async function consumeFromMinistock(input: {
   if (error) throw error;
 }
 
-/**
- * Consume an UNPLANNED (ad-hoc) piece directly from the warehouse stock onto a
- * PREVENTIVE plan execution in progress. No prior request/holding required —
- * used to handle surprises discovered during the intervention.
- */
-export async function consumeAdhocPdrPreventive(input: {
-  execution_id: string; pdr_id: string; qte_consomme: number;
-  position_id?: string | null; cause?: string | null; commentaire?: string | null;
-}) {
-  const { error } = await supabase.rpc("consume_adhoc_pdr_preventive", {
-    p_execution_id: input.execution_id,
-    p_pdr_id: input.pdr_id,
-    p_qte: input.qte_consomme,
-    p_position_id: input.position_id ?? null,
-    p_cause: input.cause ?? null,
-    p_commentaire: input.commentaire ?? null,
-  } as any);
-  if (error) throw error;
-}
 

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Edit, CheckCircle, PauseCircle, Play, CalendarCheck, Package, Users, ClipboardCheck, Clock, Timer, History } from "lucide-react";
+import { ArrowLeft, Edit, CheckCircle, PauseCircle, Play, CalendarCheck, Package, Users, ClipboardCheck, Clock, Timer, History, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { Label } from "@/components/ui/label";
 import { logAudit } from "@/lib/audit";
-import { consumePreventiveHolding, confirmItemTaken, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
+import { consumePreventiveHolding, consumeAdhocPdrPreventive, confirmItemTaken, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
 import { ConfirmTakeDialog } from "@/components/pdr/ConfirmTakeDialog";
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -66,6 +67,14 @@ export default function PreventifDetail() {
   const [execLoading, setExecLoading] = useState(false);
   const [execDureeMinutes, setExecDureeMinutes] = useState<number>(0);
   const [execStartTime, setExecStartTime] = useState("");
+
+  // Ad-hoc (pièces non prévues) consommées directement du stock magasin
+  type AdhocLine = { pdr_id: string; reference: string; designation: string; quantite: number; stock: number };
+  const [adhocLines, setAdhocLines] = useState<AdhocLine[]>([]);
+  const [pdrCatalog, setPdrCatalog] = useState<{ id: string; reference: string; designation: string; stock_actuel: number }[]>([]);
+  const [adhocSearch, setAdhocSearch] = useState("");
+  const [adhocPdrId, setAdhocPdrId] = useState("");
+  const [adhocQte, setAdhocQte] = useState("1");
 
   const loadAll = async () => {
     if (!id) return;
@@ -233,13 +242,44 @@ export default function PreventifDetail() {
     }
   };
 
-  const openExecDialog = () => {
+  const openExecDialog = async () => {
     setExecNotes("");
     setExecDureeMinutes(0);
+    setAdhocLines([]);
+    setAdhocSearch("");
+    setAdhocPdrId("");
+    setAdhocQte("1");
     const now = new Date();
     setExecStartTime(now.toTimeString().slice(0, 5));
     setExecOpen(true);
+    // Charge le catalogue PDR (référence, désignation, stock) pour la saisie ad-hoc
+    const { data } = await supabase
+      .from("pdr")
+      .select("id, reference, designation, stock_actuel")
+      .order("reference", { ascending: true })
+      .limit(500);
+    setPdrCatalog((data as any) ?? []);
   };
+
+  const addAdhocLine = () => {
+    if (!adhocPdrId) return;
+    const p = pdrCatalog.find((x) => x.id === adhocPdrId);
+    if (!p) return;
+    const qte = parseInt(adhocQte, 10) || 0;
+    if (qte <= 0) return;
+    setAdhocLines((prev) => {
+      const existing = prev.find((l) => l.pdr_id === p.id);
+      if (existing) {
+        return prev.map((l) => (l.pdr_id === p.id ? { ...l, quantite: l.quantite + qte } : l));
+      }
+      return [...prev, { pdr_id: p.id, reference: p.reference, designation: p.designation, quantite: qte, stock: p.stock_actuel ?? 0 }];
+    });
+    setAdhocPdrId("");
+    setAdhocQte("1");
+    setAdhocSearch("");
+  };
+
+  const removeAdhocLine = (pdrId: string) => setAdhocLines((prev) => prev.filter((l) => l.pdr_id !== pdrId));
 
   // ===== Terminer : clôture l'exécution en cours + consomme les pièces prêtées =====
   const submitExecution = async () => {
@@ -258,10 +298,21 @@ export default function PreventifDetail() {
         } catch (e) { console.warn("[preventif] holding consume failed", e); }
       }
 
-      const consumedList = holdings.map((h) => ({
-        pdr_id: h.pdr_id, reference: h.pdr?.reference,
-        quantite: Math.max(0, Math.min(h.quantite, parseInt(consumedQty[h.id] ?? String(h.quantite), 10) || 0)),
-      })).filter((c) => c.quantite > 0);
+      // Consommation des pièces non prévues (ad-hoc) directement du stock magasin
+      for (const l of adhocLines) {
+        if (l.quantite <= 0) continue;
+        try {
+          await consumeAdhocPdrPreventive({ execution_id: openExec.id, pdr_id: l.pdr_id, qte_consomme: l.quantite });
+        } catch (e) { console.warn("[preventif] adhoc consume failed", e); }
+      }
+
+      const consumedList = [
+        ...holdings.map((h) => ({
+          pdr_id: h.pdr_id, reference: h.pdr?.reference,
+          quantite: Math.max(0, Math.min(h.quantite, parseInt(consumedQty[h.id] ?? String(h.quantite), 10) || 0)),
+        })),
+        ...adhocLines.map((l) => ({ pdr_id: l.pdr_id, reference: l.reference, quantite: l.quantite, adhoc: true })),
+      ].filter((c) => c.quantite > 0);
 
       const now = new Date();
       const { error } = await supabase.from("preventive_executions").update({
@@ -715,7 +766,81 @@ export default function PreventifDetail() {
               </p>
             )}
 
+            {/* Pièces non prévues (ad-hoc) — consommées directement du stock magasin */}
+            <div>
+              <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                <Plus className="h-3.5 w-3.5 text-muted-foreground" /> Ajouter une pièce non prévue
+              </Label>
+              <p className="text-xs text-muted-foreground mb-2">Imprévu pendant l'intervention : consommé directement du stock magasin (sans demande).</p>
+              <div className="flex gap-2 flex-col sm:flex-row">
+                <Select value={adhocPdrId} onValueChange={setAdhocPdrId}>
+                  <SelectTrigger className="h-10 flex-1">
+                    <SelectValue placeholder="Sélectionner une pièce" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="px-2 py-1.5">
+                      <Input
+                        autoFocus
+                        placeholder="Rechercher réf / désignation…"
+                        value={adhocSearch}
+                        onChange={(e) => setAdhocSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="h-9"
+                      />
+                    </div>
+                    {pdrCatalog
+                      .filter((p) => {
+                        const q = adhocSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return p.reference.toLowerCase().includes(q) || (p.designation ?? "").toLowerCase().includes(q);
+                      })
+                      .slice(0, 50)
+                      .map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.reference} — {p.designation} ({p.stock_actuel ?? 0})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Input
+                    type="number" min={1} value={adhocQte}
+                    onChange={(e) => setAdhocQte(e.target.value)}
+                    className="h-10 w-20 tabular-nums" placeholder="Qté"
+                  />
+                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={addAdhocLine} disabled={!adhocPdrId}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
+              {adhocLines.length > 0 && (
+                <div className="border rounded-lg divide-y mt-2">
+                  {adhocLines.map((l) => {
+                    const over = l.quantite > l.stock;
+                    return (
+                      <div key={l.pdr_id} className="flex items-center gap-3 p-2.5">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-xs font-semibold truncate">{l.reference}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {l.designation} · stock : {l.stock}
+                          </p>
+                          {over && (
+                            <p className="text-[11px] text-destructive flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" /> Quantité supérieure au stock disponible
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-sm font-medium tabular-nums shrink-0">×{l.quantite}</span>
+                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive" onClick={() => removeAdhocLine(l.pdr_id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
 
             {/* Notes */}

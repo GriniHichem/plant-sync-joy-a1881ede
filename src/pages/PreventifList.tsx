@@ -311,6 +311,7 @@ export default function PreventifList() {
                       className={`cursor-pointer hover:bg-muted/50 ${isOverdue ? "bg-destructive/5" : ""}`}
                       onClick={() => navigate(`/preventif/${p.id}`)}
                     >
+                      <TableCell className="font-mono text-xs">{p.numero || "—"}</TableCell>
                       <TableCell className="font-medium">{p.title}</TableCell>
                       <TableCell>
                         <p className="text-sm">{p.machines?.designation}</p>

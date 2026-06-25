@@ -263,33 +263,78 @@ export default function PreventifDetail() {
   };
 
   const isAssigned = user ? assigneeIds.includes(user.id) : false;
-  const canWork = plan && (plan as any).statut_plan === "valide" && (isAssigned || hasRole("admin") || hasRole("resp_maintenance"));
+  const isResponsable = hasRole("admin") || hasRole("resp_maintenance");
+  const canWork = plan && (plan as any).statut_plan === "valide" && (isAssigned || isResponsable);
 
-  // ===== Commencer : crée une exécution en cours =====
+  // Verrou : action déjà clôturée + prochaine échéance non atteinte → on ne relance pas
+  const isLockedUntilEcheance = !!plan && !activeSession
+    && !!plan.prochaine_echeance && new Date(plan.prochaine_echeance) > new Date()
+    && !!plan.derniere_execution;
+
+  // ===== Commencer / rejoindre l'action commune =====
   const startExecution = async () => {
     if (!user || !id) return;
     setStarting(true);
     try {
-      const now = new Date();
-      const { data: exec, error } = await supabase.from("preventive_executions").insert({
-        plan_id: id,
-        executed_by: user.id,
-        statut: "en_cours",
-        heure_debut: now.toISOString(),
-      } as any).select("*").single();
+      const { data: execId, error } = await supabase.rpc("start_or_join_preventive_action" as any, { p_plan_id: id });
       if (error) throw error;
       await logAudit({
         action_type: "create", module: "preventif" as any, entity_type: "preventive_execution",
-        entity_id: (exec as any).id, entity_label: plan?.title,
-        action_label: "Début intervention plan préventif", severity: "low",
-        new_values: { plan_id: id, heure_debut: now.toISOString() },
+        entity_id: (execId as any) ?? id, entity_label: plan?.title,
+        action_label: "Début / reprise intervention plan préventif", severity: "low",
+        new_values: { plan_id: id },
       });
-      toast({ title: "Intervention démarrée", description: "Vous pouvez demander/prendre des pièces puis clôturer." });
+      toast({ title: "Intervention démarrée", description: "Vous pouvez demander/prendre des pièces puis clôturer votre part." });
+      await loadAll();
+    } catch (err: any) {
+      toast({ title: "Action impossible", description: err.message, variant: "destructive" });
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  // ===== Clôturer l'action commune (affecté ou responsable) =====
+  const closeAction = async () => {
+    if (!activeSession) return;
+    setClosingAction(true);
+    try {
+      const { error } = await supabase.rpc("close_preventive_action" as any, { p_session_id: activeSession.id });
+      if (error) throw error;
+      await logAudit({
+        action_type: "update", module: "preventif" as any, entity_type: "preventive_action_session",
+        entity_id: activeSession.id, entity_label: plan?.title,
+        action_label: "Clôture action préventive commune", severity: "low",
+        new_values: { plan_id: id },
+      });
+      toast({ title: "Action clôturée", description: "Verrouillée jusqu'à la prochaine échéance." });
       await loadAll();
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     } finally {
-      setStarting(false);
+      setClosingAction(false);
+    }
+  };
+
+  // ===== Débloquer (responsable) une action verrouillée =====
+  const reopenAction = async () => {
+    if (!id || !reopenReason.trim()) return;
+    setReopening(true);
+    try {
+      const { error } = await supabase.rpc("reopen_preventive_action" as any, { p_plan_id: id, p_reason: reopenReason.trim() });
+      if (error) throw error;
+      await logAudit({
+        action_type: "update", module: "preventif" as any, entity_type: "preventive_action_session",
+        entity_id: id, entity_label: plan?.title,
+        action_label: "Déblocage exceptionnel action préventive", severity: "medium",
+        new_values: { plan_id: id, motif: reopenReason.trim() },
+      });
+      toast({ title: "Action débloquée", description: "Vous pouvez redémarrer l'intervention." });
+      setReopenOpen(false); setReopenReason("");
+      await loadAll();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } finally {
+      setReopening(false);
     }
   };
 

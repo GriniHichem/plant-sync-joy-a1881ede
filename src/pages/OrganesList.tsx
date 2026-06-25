@@ -142,9 +142,12 @@ export default function OrganesList() {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Aucun organe</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Aucun organe</TableCell></TableRow>
               ) : filtered.map((r) => (
                 <TableRow key={r.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(`/organes/${r.id}`)}>
+                  <TableCell className="w-10 pr-0">
+                    <EntityThumbnail imageUrl={organeImages[r.id]} alt={r.designation} size="sm" rounded="md" enableLightbox />
+                  </TableCell>
                   <TableCell className="font-mono">{r.code}</TableCell>
                   <TableCell>{r.designation}</TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{TYPE_LABELS[r.type]}</Badge></TableCell>

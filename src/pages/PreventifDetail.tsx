@@ -262,21 +262,11 @@ export default function PreventifDetail() {
         } catch (e) { console.warn("[preventif] holding consume failed", e); }
       }
 
-      // Consommation des pièces non prévues (ad-hoc) directement du stock magasin
-      for (const l of adhocLines) {
-        if (l.quantite <= 0) continue;
-        try {
-          await consumeAdhocPdrPreventive({ execution_id: openExec.id, pdr_id: l.pdr_id, qte_consomme: l.quantite });
-        } catch (e) { console.warn("[preventif] adhoc consume failed", e); }
-      }
+      const consumedList = holdings.map((h) => ({
+        pdr_id: h.pdr_id, reference: h.pdr?.reference,
+        quantite: Math.max(0, Math.min(h.quantite, parseInt(consumedQty[h.id] ?? String(h.quantite), 10) || 0)),
+      })).filter((c) => c.quantite > 0);
 
-      const consumedList = [
-        ...holdings.map((h) => ({
-          pdr_id: h.pdr_id, reference: h.pdr?.reference,
-          quantite: Math.max(0, Math.min(h.quantite, parseInt(consumedQty[h.id] ?? String(h.quantite), 10) || 0)),
-        })),
-        ...adhocLines.map((l) => ({ pdr_id: l.pdr_id, reference: l.reference, quantite: l.quantite, adhoc: true })),
-      ].filter((c) => c.quantite > 0);
 
       const now = new Date();
       const { error } = await supabase.from("preventive_executions").update({

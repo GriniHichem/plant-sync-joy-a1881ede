@@ -26,6 +26,8 @@ export default function MaintenanceShiftIntervention() {
   const navigate = useNavigate();
 
   const [ticket, setTicket] = useState<any>(null);
+  const [declarant, setDeclarant] = useState<any>(null);
+  const [of, setOf] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   // Form state
@@ -70,9 +72,19 @@ export default function MaintenanceShiftIntervention() {
       .select("*, machines(id, code, designation), production_lines(code, designation)")
       .eq("id", ticketId)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         setTicket(data);
         setLoading(false);
+        if (data?.declarant_id) {
+          const { data: prof } = await supabase
+            .from("profiles").select("first_name, last_name, poste").eq("user_id", data.declarant_id).maybeSingle();
+          setDeclarant(prof ?? null);
+        } else setDeclarant(null);
+        if (data?.of_id) {
+          const { data: ofData } = await supabase
+            .from("ordres_fabrication").select("numero, products(designation)").eq("id", data.of_id).maybeSingle();
+          setOf(ofData ?? null);
+        } else setOf(null);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId, user]);
@@ -300,6 +312,29 @@ export default function MaintenanceShiftIntervention() {
           <p className="text-xs text-muted-foreground">
             {ticket.machines ? `${ticket.machines.code} — ${ticket.machines.designation}` : "Sans machine"}
           </p>
+          {/* Infos essentielles pour comprendre / communiquer rapidement */}
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {ticket.heure_declaration && (
+              <Badge variant="outline" className="text-[11px] font-normal">
+                Ouvert le {new Date(ticket.heure_declaration).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </Badge>
+            )}
+            {declarant && (
+              <Badge variant="outline" className="text-[11px] font-normal">
+                Par {declarant.first_name} {declarant.last_name}{declarant.poste ? ` (${declarant.poste})` : ""}
+              </Badge>
+            )}
+            {of?.numero && (
+              <Badge variant="outline" className="text-[11px] font-normal">
+                OF {of.numero}{of.products?.designation ? ` — ${of.products.designation}` : ""}
+              </Badge>
+            )}
+            {ticket.production_lines && (
+              <Badge variant="outline" className="text-[11px] font-normal">
+                Ligne {ticket.production_lines.code}
+              </Badge>
+            )}
+          </div>
           <p className="text-sm mt-2">{ticket.description}</p>
         </CardHeader>
         <CardContent className="space-y-4">

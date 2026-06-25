@@ -50,6 +50,7 @@ export default function TicketDetail() {
   const [newCollabId, setNewCollabId] = useState("");
   const [newCollabRole, setNewCollabRole] = useState<"aide" | "co_intervenant">("aide");
   const [assigneeName, setAssigneeName] = useState<string>("");
+  const [declarantName, setDeclarantName] = useState<string>("");
 
   // Handover (transfer / release)
   const [transferTargetId, setTransferTargetId] = useState("");

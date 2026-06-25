@@ -26,6 +26,8 @@ export default function MaintenanceShiftIntervention() {
   const navigate = useNavigate();
 
   const [ticket, setTicket] = useState<any>(null);
+  const [declarant, setDeclarant] = useState<any>(null);
+  const [of, setOf] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   // Form state

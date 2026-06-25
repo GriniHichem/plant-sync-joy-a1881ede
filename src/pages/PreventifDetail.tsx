@@ -218,6 +218,9 @@ export default function PreventifDetail() {
   useShiftRealtime(`prv-req-${id ?? "x"}`, "pdr_requests", reloadPdrLive, !!id, id ? `preventive_plan_id=eq.${id}` : undefined);
   useShiftRealtime(`prv-items-${id ?? "x"}`, "pdr_request_items", reloadPdrLive, !!id);
   useShiftRealtime(`prv-hold-${id ?? "x"}`, "pdr_maintenance_holdings", reloadPdrLive, !!id);
+  // Temps réel sur l'action commune et les contributions (multi-shift / multi-intervenant)
+  useShiftRealtime(`prv-sess-${id ?? "x"}`, "preventive_action_sessions", () => loadAll(), !!id, id ? `plan_id=eq.${id}` : undefined);
+  useShiftRealtime(`prv-exec-${id ?? "x"}`, "preventive_executions", () => loadAll(), !!id, id ? `plan_id=eq.${id}` : undefined);
 
   // Demander en un clic les pièces prévues (nomenclature) non encore demandées.
   const requestPlannedPieces = async () => {

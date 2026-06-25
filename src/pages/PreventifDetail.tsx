@@ -720,81 +720,30 @@ export default function PreventifDetail() {
               </p>
             )}
 
-            {/* Pièces non prévues (ad-hoc) — consommées directement du stock magasin */}
-            <div>
-              <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                <Plus className="h-3.5 w-3.5 text-muted-foreground" /> Ajouter une pièce non prévue
-              </Label>
-              <p className="text-xs text-muted-foreground mb-2">Imprévu pendant l'intervention : consommé directement du stock magasin (sans demande).</p>
-              <div className="flex gap-2 flex-col sm:flex-row">
-                <Select value={adhocPdrId} onValueChange={setAdhocPdrId}>
-                  <SelectTrigger className="h-10 flex-1">
-                    <SelectValue placeholder="Sélectionner une pièce" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="px-2 py-1.5">
-                      <Input
-                        autoFocus
-                        placeholder="Rechercher réf / désignation…"
-                        value={adhocSearch}
-                        onChange={(e) => setAdhocSearch(e.target.value)}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        className="h-9"
-                      />
-                    </div>
-                    {pdrCatalog
-                      .filter((p) => {
-                        const q = adhocSearch.trim().toLowerCase();
-                        if (!q) return true;
-                        return p.reference.toLowerCase().includes(q) || (p.designation ?? "").toLowerCase().includes(q);
-                      })
-                      .slice(0, 50)
-                      .map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.reference} — {p.designation} ({p.stock_actuel ?? 0})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex gap-2">
-                  <Input
-                    type="number" min={1} value={adhocQte}
-                    onChange={(e) => setAdhocQte(e.target.value)}
-                    className="h-10 w-20 tabular-nums" placeholder="Qté"
-                  />
-                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={addAdhocLine} disabled={!adhocPdrId}>
-                    <Plus className="h-4 w-4" />
+            {/* Pièce manquante : passer par le circuit de demande (jamais de consommation directe) */}
+            <div className="rounded-md border border-dashed p-2.5 flex items-start gap-2">
+              <Package className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">
+                  Pièce manquante ou imprévu ? Fermez ce dialogue et utilisez « Demander / prendre des pièces ». Le magasin prépare et valide, puis vous confirmez ici la quantité consommée.
+                </p>
+                {openExec && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-9"
+                    onClick={() => {
+                      setExecOpen(false);
+                      navigate(`/maintenance/shift/pieces?plan=${id}&exec=${openExec.id}${plan.machine_id ? `&machine=${plan.machine_id}` : ""}`);
+                    }}
+                  >
+                    <Package className="h-4 w-4 mr-2" /> Demander / prendre des pièces
                   </Button>
-                </div>
+                )}
               </div>
-
-              {adhocLines.length > 0 && (
-                <div className="border rounded-lg divide-y mt-2">
-                  {adhocLines.map((l) => {
-                    const over = l.quantite > l.stock;
-                    return (
-                      <div key={l.pdr_id} className="flex items-center gap-3 p-2.5">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-mono text-xs font-semibold truncate">{l.reference}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {l.designation} · stock : {l.stock}
-                          </p>
-                          {over && (
-                            <p className="text-[11px] text-destructive flex items-center gap-1">
-                              <AlertTriangle className="h-3 w-3" /> Quantité supérieure au stock disponible
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-sm font-medium tabular-nums shrink-0">×{l.quantite}</span>
-                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive" onClick={() => removeAdhocLine(l.pdr_id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
+
 
 
             {/* Notes */}

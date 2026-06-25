@@ -579,7 +579,53 @@ export default function PreventifDetail() {
         </div>
       </div>
 
+      {isLockedUntilEcheance && (
+        <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/10">
+          <CardContent className="p-4 flex items-center gap-3">
+            <PauseCircle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">Action clôturée — verrouillée</p>
+              <p className="text-xs text-muted-foreground">
+                Prochaine intervention le {plan.prochaine_echeance ? new Date(plan.prochaine_echeance).toLocaleDateString("fr-FR") : "—"}.
+                {isResponsable ? " Vous pouvez débloquer en cas d'urgence (motif requis)." : " Contactez le responsable maintenance en cas d'urgence."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeSession && sessionContribs.length > 0 && (
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold">Action commune — {sessionContribs.length} intervenant(s)</p>
+            </div>
+            <div className="border rounded-lg divide-y bg-background">
+              {sessionContribs.map((c: any) => (
+                <div key={c.id} className="flex items-center gap-3 p-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {profileMap[c.executed_by] || (assignees.find((a: any) => a.user_id === c.executed_by) ? `${assignees.find((a: any) => a.user_id === c.executed_by)?.first_name} ${assignees.find((a: any) => a.user_id === c.executed_by)?.last_name}` : "—")}
+                      {user && c.executed_by === user.id ? " (vous)" : ""}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {c.heure_debut ? `Depuis ${new Date(c.heure_debut).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` : "—"}
+                      {c.duree_minutes ? ` · ${c.duree_minutes} min` : ""}
+                    </p>
+                  </div>
+                  <Badge variant={c.statut === "en_cours" ? "outline" : "default"} className="text-[10px]">
+                    {c.statut === "en_cours" ? "En cours" : "Part clôturée"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {openExec && (
+
         <Card className="border-green-600/40 bg-green-50/40 dark:bg-green-950/10">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-3 flex-wrap">

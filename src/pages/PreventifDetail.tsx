@@ -899,7 +899,7 @@ export default function PreventifDetail() {
       <Dialog open={execOpen} onOpenChange={setExecOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Terminer l'intervention préventive</DialogTitle>
+            <DialogTitle>Terminer ma part — intervention préventive</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             {/* Timing */}

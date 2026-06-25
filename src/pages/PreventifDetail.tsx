@@ -95,7 +95,24 @@ export default function PreventifDetail() {
     setPlanPdr(ppRes.data || []);
     const execs = eRes.data || [];
     setExecutions(execs);
-    const open = execs.find((e: any) => e.statut === "en_cours" && (!user || e.executed_by === user.id)) || null;
+
+    // Session d'action commune ouverte pour ce plan
+    const { data: sessions } = await supabase
+      .from("preventive_action_sessions" as any)
+      .select("*")
+      .eq("plan_id", id)
+      .eq("statut", "en_cours")
+      .order("opened_at", { ascending: false })
+      .limit(1);
+    const session = (sessions as any[])?.[0] ?? null;
+    setActiveSession(session);
+
+    // Contributions de la session ouverte (toutes personnes confondues)
+    const contribs = session ? execs.filter((e: any) => e.session_id === session.id) : [];
+    setSessionContribs(contribs);
+
+    // Ma contribution en cours (note + stock m'appartiennent)
+    const open = contribs.find((e: any) => user && e.executed_by === user.id && e.statut === "en_cours") || null;
     setOpenExec(open);
 
     const userIds = (aRes.data || []).map((a: any) => a.user_id);

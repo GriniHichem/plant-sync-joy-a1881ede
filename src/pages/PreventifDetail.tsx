@@ -424,6 +424,7 @@ export default function PreventifDetail() {
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold truncate">{plan.title}</h1>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {(plan as any).numero && <Badge variant="outline" className="text-xs font-mono">{(plan as any).numero}</Badge>}
             <Badge variant={statutInfo.variant} className="text-xs">{statutInfo.label}</Badge>
             <Badge variant="outline" className="text-xs capitalize">{plan.frequence}</Badge>
             {isOverdue && <Badge variant="destructive" className="text-xs">En retard</Badge>}

@@ -1,64 +1,44 @@
-# Onglet « Historique PDR » dans le plan préventif
+# Consommation PDR robuste en préventif (clôture)
 
 ## Objectif
-Ajouter un onglet dans la page d'un plan préventif (`PreventifDetail`) qui retrace, sous forme de chronologie, **chaque événement du cycle de vie des pièces** liées au plan :
-- **Demande** (quantité demandée, par qui, quand)
-- **Préparation magasin** (quantité préparée, par qui, quand)
-- **Prise** (quantité prise, par qui, quand, + reliquat non fourni)
-- **Consommation** à la clôture (quantité consommée, exécution liée, + reliquat retourné magasin)
+Permettre au maintenancier, à la clôture d'un plan préventif en cours, de :
+1. **Confirmer** la consommation prévue des pièces déjà prises en main (holdings) — quantité ajustable, reliquat retourné au magasin (déjà en place, on le fiabilise).
+2. **Ajouter des pièces non prévues (ad-hoc)** directement depuis le stock magasin pour gérer les imprévus, sans demande préalable.
+3. **Garder la remarque** d'exécution (déjà présente).
 
-Aucune migration : toutes les données existent déjà.
+Le tout en gardant la logique simple, rapide, et sans bloquer l'opération.
 
-## Sources de données (déjà en base)
+## État actuel
+- Backend déjà en place et vérifié : RPC `consume_maintenance_holding_preventive` (pièces prises) et `consume_adhoc_pdr_preventive` (pièces non prévues, type `pdr_adhoc`, garde-fou backend OK).
+- Frontend `PreventifDetail.tsx` : le dialogue « Terminer l'intervention » consomme seulement les holdings. Pas de saisie ad-hoc.
+- Le wrapper `consumeAdhocPdrPreventive` n'existe pas encore dans `usePdrRequests.ts`.
+
+## Changements
+
+### 1. `src/hooks/usePdrRequests.ts`
+Ajouter le wrapper :
 ```text
-pdr_requests          → numero, created_at, created_by/requested_by, statut
-pdr_request_items     → quantite_demandee, prepared_at/by + quantite_preparee,
-                        taken_at/by + quantite_prise, pdr(reference, designation)
-intervention_pdr      → quantite, created_at, preventive_execution_id  (consommation préventive)
-preventive_executions → pour relier la consommation à une exécution datée
-profiles              → first_name, last_name pour afficher les utilisateurs
+consumeAdhocPdrPreventive({ execution_id, pdr_id, qte_consomme, position_id?, cause?, commentaire? })
+  -> supabase.rpc("consume_adhoc_pdr_preventive", { ... })
 ```
 
-Reliquats calculés :
-- **Reliquat de prise** = `quantite_demandee − quantite_prise` (pièce demandée non entièrement fournie)
-- **Reliquat retourné magasin** = `quantite_prise − quantite_consommée` (déduit à la clôture)
+### 2. `src/pages/PreventifDetail.tsx` — dialogue de clôture
+- Charger la liste PDR disponible (référence, désignation, stock_actuel) pour la recherche ad-hoc (réutiliser un simple `supabase.from("pdr").select(...)`, filtré par recherche, limité).
+- Nouvelle section **« Ajouter une pièce non prévue »** dans le dialogue :
+  - Champ recherche (réf / désignation) + sélection pièce + quantité.
+  - Liste locale des pièces ad-hoc ajoutées (avec suppression ligne), affichage du stock dispo et alerte si quantité > stock.
+- État local : `adhocLines: { pdr_id, reference, designation, quantite, stock }[]`.
+- À la validation `submitExecution` (séquentiel, après les holdings) :
+  - Pour chaque ligne ad-hoc avec qte > 0 : `consumeAdhocPdrPreventive(...)` (try/catch tolérant, log si échec, ne bloque pas la clôture).
+  - Inclure les pièces ad-hoc dans `consumedList` (`pdr_used`) et dans le log d'audit.
+- Réinitialiser `adhocLines` à l'ouverture du dialogue (`openExecDialog`).
+- L'historique PDR (onglet) reprend automatiquement ces consommations via `intervention_pdr` (déjà branché sur `preventive_execution_id`), aucune modif supplémentaire.
 
-## Parcours cible
-```text
-Onglet « Historique PDR »
-  Réf. PIECE-001 — Roulement
-   ● 24/06 09:12  Demandée    ×4   par M. Dupont   (DEM-2026-014)
-   ● 24/06 09:40  Préparée    ×4   par Magasinier
-   ● 24/06 10:05  Prise       ×3   par M. Dupont   reliquat 1 non fourni
-   ● 24/06 11:30  Consommée   ×2   exéc. du 24/06  reliquat 1 retourné magasin
-```
-
-## Changements (frontend uniquement)
-
-### `src/pages/PreventifDetail.tsx`
-1. **Nouvel onglet** `historique` dans la `TabsList` (icône `History`), après « Exécutions ».
-2. **Chargement** dans `loadAll` :
-   - Réutiliser `planRequests` déjà chargé (contient items + dates + quantités).
-   - Charger `intervention_pdr` filtré sur les `preventive_execution_id` des `executions` du plan, avec `pdr(reference, designation)`, pour la consommation.
-   - Étendre le `SELECT` de `loadPlanRequests` pour inclure `prepared_by`, `prepared_at`, `quantite_preparee`, `taken_by`, `taken_at`, `quantite_prise` (déjà présents via `*`).
-   - Récupérer les profils de tous les `user_id` impliqués (requested_by, prepared_by, taken_by) en plus des assignés, dans une map id→nom.
-3. **Construction de la chronologie** (helper local, pur, dans le composant) :
-   - Grouper par pièce (`pdr_id` + référence).
-   - Pour chaque item : produire les événements `demandée`, `préparée` (si `prepared_at`), `prise` (si `taken_at`) avec date, utilisateur, quantité.
-   - Pour chaque `intervention_pdr` (consommation) : événement `consommée` avec date, quantité, exécution liée.
-   - Trier les événements par date au sein de chaque pièce.
-4. **Rendu** : une carte par pièce avec une liste verticale d'événements ; chaque ligne = badge type (couleur par type), date formatée `fr-FR`, quantité `tabular-nums`, nom utilisateur, et mention reliquat le cas échéant. État vide « Aucun mouvement de pièce pour ce plan ».
-
-### Réutilisation
-- Pas de nouveau hook ni de RPC : lecture directe via le client `supabase` comme le reste du fichier.
-- Formatage dates/quantités identique à l'existant (gramme, 4 décimales, `toLocaleString fr-FR`).
-
-## Hors périmètre
-- Aucune migration ni changement de schéma.
-- Aucun changement au circuit demande → préparation → prise → consommation.
-- Aucun export CSV (peut être ajouté ultérieurement si souhaité).
+## Garde-fous (sécurité / non-régression)
+- On ne touche ni aux triggers ni aux RPC (déjà validés).
+- Consommations toujours via RPC métier (jamais d'écriture directe stock).
+- La clôture reste possible même sans pièce ; les erreurs sur une ligne n'empêchent pas la clôture des autres et de l'exécution.
+- Validation UI : quantité > 0 et ≤ stock dispo avant envoi (alerte visuelle, non bloquante au sens où on n'envoie pas une ligne invalide).
 
 ## Détails techniques
-- La consommation préventive est tracée dans `intervention_pdr.preventive_execution_id` (alimentée par la RPC `consume_maintenance_holding_preventive`). On relie ces lignes au plan via les exécutions du plan déjà chargées dans `executions`.
-- Les utilisateurs sont résolus côté client via une map `profiles` (un seul `select ... in (userIds)`), pour éviter les jointures auth interdites.
-- Le reliquat de prise et le reliquat retourné sont calculés en mémoire à partir des quantités, pas stockés.
+Fichiers modifiés : `src/hooks/usePdrRequests.ts`, `src/pages/PreventifDetail.tsx`. Aucune migration nécessaire (backend prêt). Réutilisation des composants UI existants (Input, Select/Command, Button, Badge).

@@ -190,6 +190,33 @@ export default function PreventifDetail() {
 
   useEffect(() => { loadAll(); }, [id]);
 
+  // Temps réel : dès que le magasin prépare/valide une pièce, la liste se met à jour sans recharger.
+  const reloadPdrLive = () => { loadPlanRequests(); loadHoldings(); };
+  useShiftRealtime(`prv-req-${id ?? "x"}`, "pdr_requests", reloadPdrLive, !!id, id ? `preventive_plan_id=eq.${id}` : undefined);
+  useShiftRealtime(`prv-items-${id ?? "x"}`, "pdr_request_items", reloadPdrLive, !!id);
+  useShiftRealtime(`prv-hold-${id ?? "x"}`, "pdr_maintenance_holdings", reloadPdrLive, !!id);
+
+  // Demander en un clic les pièces prévues (nomenclature) non encore demandées.
+  const requestPlannedPieces = async () => {
+    if (!id) return;
+    const alreadyRequested = new Set(allReqItems.map(({ it }) => it.pdr_id));
+    const toRequest = planPdr
+      .filter((pp: any) => (pp.pdr_id ?? pp.pdr?.id) && !alreadyRequested.has(pp.pdr_id ?? pp.pdr?.id))
+      .map((pp: any) => ({ pdr_id: pp.pdr_id ?? pp.pdr?.id, quantite_demandee: pp.quantite ?? 1 }));
+    if (toRequest.length === 0) { toast({ title: "Toutes les pièces prévues sont déjà demandées" }); return; }
+    setRequestingPlanned(true);
+    try {
+      await createPdrRequest({
+        type: "preventive", preventive_plan_id: id, machine_id: plan?.machine_id ?? null,
+        priorite: isOverdue ? "haute" : "normale", items: toRequest,
+      });
+      toast({ title: "Pièces prévues demandées au magasin" });
+      reloadPdrLive();
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    } finally { setRequestingPlanned(false); }
+  };
+
 
 
   const updateStatut = async (newStatut: string) => {

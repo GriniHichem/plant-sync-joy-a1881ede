@@ -18,8 +18,11 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { Label } from "@/components/ui/label";
 import { logAudit } from "@/lib/audit";
-import { consumePreventiveHolding, confirmItemTaken, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
+import { consumePreventiveHolding, confirmItemTaken, createPdrRequest, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
 import { ConfirmTakeDialog } from "@/components/pdr/ConfirmTakeDialog";
+import { PdrRequestComposer } from "@/components/pdr/PdrRequestComposer";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
+import { Plus, PackagePlus } from "lucide-react";
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   brouillon: { label: "Brouillon", variant: "secondary" },

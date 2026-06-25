@@ -145,7 +145,7 @@ export default function EquipmentsList() {
                 return (
                 <TableRow key={e.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/equipements/${e.id}`)}>
                   <TableCell className="w-10 pr-0">
-                    <EntityThumbnail imageUrl={img?.image_url} alt={e.designation} size="sm" rounded="md" />
+                    <EntityThumbnail imageUrl={img?.image_url} alt={e.designation} size="sm" rounded="md" enableLightbox />
                   </TableCell>
                   <TableCell className="font-mono font-medium">{e.code}</TableCell>
                   <TableCell>{e.designation}</TableCell>

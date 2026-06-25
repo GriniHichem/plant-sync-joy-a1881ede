@@ -1021,6 +1021,37 @@ export default function PreventifDetail() {
         onConfirm={(qte) => takeTarget && handleTake(takeTarget.it.id, qte)}
         onCancel={() => setTakeTarget(null)}
       />
+
+      {/* Déblocage responsable */}
+      <Dialog open={reopenOpen} onOpenChange={setReopenOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Débloquer l'action (responsable)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Cette action est verrouillée jusqu'à la prochaine échéance. Indiquez le motif du déblocage exceptionnel (tracé dans l'audit).
+            </p>
+            <div>
+              <Label htmlFor="reopen-reason">Motif</Label>
+              <Textarea
+                id="reopen-reason"
+                value={reopenReason}
+                onChange={(e) => setReopenReason(e.target.value)}
+                placeholder="Ex : panne récurrente avant échéance, contrôle complémentaire…"
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReopenOpen(false)}>Annuler</Button>
+            <Button onClick={reopenAction} disabled={reopening || !reopenReason.trim()}>
+              {reopening ? "Déblocage..." : "Débloquer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { Label } from "@/components/ui/label";
 import { logAudit } from "@/lib/audit";
-import { consumePreventiveHolding, confirmItemTaken, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
+import { consumePreventiveHolding, consumeAdhocPdrPreventive, confirmItemTaken, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
 import { ConfirmTakeDialog } from "@/components/pdr/ConfirmTakeDialog";
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {

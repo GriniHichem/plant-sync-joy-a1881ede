@@ -283,6 +283,7 @@ export default function PreventifList() {
           <Table>
              <TableHeader>
               <TableRow>
+                <TableHead>N° Action</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Machine</TableHead>
                 <TableHead>Ligne</TableHead>

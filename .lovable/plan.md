@@ -1,52 +1,52 @@
+# Plan — Action préventive partagée & sécurisée
+
 ## Objectif
+Quand plusieurs maintenanciers sont affectés au même plan préventif, ils travaillent sur **une seule action commune** mais chacun reste responsable de **sa note** et de **sa consommation de stock**. Empêcher les fausses déclarations et les ré-ouvertures abusives, sans bloquer le travail en 2x8 / 3x8.
 
-Permettre au maintenancier, **sans quitter le plan préventif en cours**, de :
-1. Demander une pièce non prévue (panneau intégré dans la carte « Intervention en cours »).
-2. Voir automatiquement (temps réel) quand le magasin l'a préparée.
-3. Confirmer la prise en un geste.
-4. Confirmer la quantité consommée à la clôture.
+## Décisions retenues
+- Action **partagée**, mais **chacun clôture sa propre contribution** (note + consommation).
+- Après clôture de l'action : **verrou** — impossible de relancer avant la prochaine échéance ; **le responsable maintenance peut débloquer** (motif audité).
+- **Transmission entre shifts** : une action ouverte reste reprenable et clôturable par un autre maintenancier d'un autre shift.
+- Clôture finale par **un affecté OU le responsable**, en **conservant tout l'historique détaillé** de chaque intervenant.
 
-Tout en gardant le **cycle sécurisé** déjà figé : Demande → Préparation magasin → Prise → Consommation. Aucune consommation directe du stock n'est introduite (la règle anti-contournement reste intacte).
+## Modèle de données (technique)
 
-## Ce qui change
+### Nouvelle table `preventive_action_sessions` (l'action commune)
+Une session = un cycle d'intervention pour un plan, rattachée à une échéance.
+- `plan_id`, `echeance_cible` (date d'échéance couverte), `statut` (`en_cours` / `terminee`), `opened_by`, `opened_at`, `closed_by`, `closed_at`, `reopened_by`, `reopen_reason`.
+- Index unique partiel : **une seule session non terminée par plan** (empêche les doublons / ré-ouvertures concurrentes).
+- GRANT + RLS : lecture pour tout authentifié (consultation/historique), écriture via fonctions métier ; déblocage réservé à `admin` / `resp_maintenance` via `has_role`.
 
-### 1. Demande inline dans la carte « Intervention en cours »
-Ajout d'un bloc dépliable **« + Demander une pièce non prévue »** directement dans la carte verte (`PreventifDetail.tsx`), réutilisant le composant existant `PdrRequestComposer` (recherche, famille/sous-famille, dispo en direct).
-- Pré-rempli avec `type="preventive"`, `preventivePlanId`, `machineId`.
-- À l'envoi (`onSubmitted`), la liste se recharge et le bloc se referme — le maintenancier reste sur le plan.
-- Le bouton « Demander / prendre des pièces » qui redirigeait vers une autre page devient secondaire (conservé en repli, mais le flux principal est inline).
+### Évolution de `preventive_executions` (contribution par personne)
+- Ajout `session_id` (FK vers la session). Une ligne = la contribution d'**un** maintenancier (sa note `notes`, son `pdr_used`, ses `duree_minutes`, `statut` par personne).
+- La consommation des holdings reste **par holder** (déjà le cas via `pdr_maintenance_holdings.holder_id`), donc chacun ne consomme que son propre stock pris.
 
-### 2. Temps réel (rapidité)
-Le détail du plan ne s'actualise qu'au montage aujourd'hui. Ajout d'abonnements temps réel (hook `useShiftRealtime`, déjà utilisé ailleurs) sur `pdr_requests`, `pdr_request_items` et `pdr_maintenance_holdings` filtrés sur ce plan :
-- Dès que le magasin prépare → la pièce passe de « En préparation » à « Prête » + bouton **Confirmer la prise** apparaît sans recharger.
-- Dès qu'une prise est confirmée → elle bascule dans « Pièces prises ».
+### Règles de verrou (triggers / fonctions)
+- `start_or_join_preventive_action(plan_id)` : ouvre la session si aucune n'est ouverte ; sinon **rejoint** la session existante en créant la contribution du user. Refuse si `prochaine_echeance` non atteinte ET dernière session du cycle déjà terminée (verrou).
+- `close_preventive_contribution(execution_id)` : clôture la contribution d'une personne.
+- `close_preventive_action(session_id)` : clôture l'action commune (affecté ou responsable), met à jour `derniere_execution` + recalcule `prochaine_echeance`, verrouille.
+- `reopen_preventive_action(session_id, reason)` : réservé responsable, audité.
 
-### 3. Confirmation de prise déjà en place — consolidée
-Le `ConfirmTakeDialog` (récap famille/qté demandée/dispo/reliquat) reste le point de confirmation, déjà branché. On s'assure qu'il s'ouvre aussi pour les pièces non prévues fraîchement préparées.
+## Changements UI (`src/pages/PreventifDetail.tsx`)
+1. **En-tête action** : bouton « Commencer » → ouvre/rejoint la session commune. Affiche « Action en cours — N intervenant(s) » avec la liste des affectés présents.
+2. **Bloc contributions** : une ligne par maintenancier (nom, statut sa part, durée), pour rendre visible qui a fait quoi.
+3. **Note par personne** : dans le dialogue de clôture, chacun ne saisit/voit que **sa** note ; les notes des autres restent en lecture seule dans l'historique.
+4. **Consommation par personne** : la section holdings affiche uniquement les pièces prises **par le user connecté** (déjà filtré par `holder_id`) — confirmation que chacun consomme son stock.
+5. **Bouton « Terminer »** : clôture *ma contribution* ; un second bouton « Clôturer l'action » (visible si affecté ou responsable) ferme l'action commune.
+6. **Verrou visuel** : si action clôturée et échéance non atteinte → « Commencer » désactivé avec mention « Prochaine intervention le {date} ». Bouton « Débloquer (responsable) » avec saisie de motif pour `admin` / `resp_maintenance`.
+7. **Onglet Exécutions / Historique PDR** : afficher toutes les contributions de toutes les sessions (intervenant, note, durée, PDR consommées) — historique complet conservé.
 
-### 4. Clôture inchangée mais clarifiée
-Le dialogue « Terminer » continue de ne lister que les pièces réellement prises (holdings) pour saisir la quantité consommée ; le reliquat retourne au magasin. Le bloc d'aide « pièce manquante » est remplacé par le même panneau inline de demande rapide.
+## Autres scénarios sécurisés couverts
+1. **Un seul maintenancier** : comportement actuel inchangé (1 session, 1 contribution).
+2. **Reprise inter-shift** : maintenancier du shift 2 rejoint l'action ouverte au shift 1, ajoute sa note + sa consommation, puis clôture.
+3. **Double déclaration empêchée** : l'index unique + le verrou échéance interdisent deux actions ouvertes ou une relance hâtive.
+4. **Abandon / oubli d'une action ouverte** : un job de fermeture (réutilise `auto-close-stale-shifts`) peut marquer une session restée ouverte au-delà d'un délai et notifier le responsable (option à confirmer).
+5. **Déblocage exceptionnel** : panne récurrente avant échéance → le responsable rouvre avec motif tracé (audit_logs).
+6. **Consommation sans prise** : impossible — chacun ne peut consommer que ce qu'il a réellement pris (holdings), reliquat retourné au magasin à la clôture.
+7. **Affecté retiré en cours** : sa contribution déjà saisie reste dans l'historique (immuable).
 
-## Améliorations proposées pour la rapidité / facilité
+## Vérification
+- TypeScript (`tsgo`) + tests Vitest existants.
+- Test manuel : 2 comptes maintenancier sur le même plan (session partagée, notes séparées, verrou après clôture, déblocage responsable).
 
-1. **Compteurs d'action en tête de carte** : badges cliquables « X à prendre » / « X en préparation » qui scrollent/filtrent la liste — repérage immédiat.
-2. **Bouton « Tout prendre »** : si plusieurs pièces sont « Prêtes », un seul clic ouvre une confirmation groupée (qté préparée par défaut) au lieu d'une par une.
-3. **Réutilisation des pièces déjà demandées** : suggestion en un clic des pièces de la nomenclature planifiée (`preventive_plan_pdr`) non encore demandées → « Demander les pièces prévues » en bloc.
-4. **Pré-remplissage durée** : calcul auto de la durée à la clôture à partir de `heure_debut` (modifiable), pour éviter la saisie manuelle.
-5. **Indicateur dispo dans la demande** : déjà présent (badge Disponible/Non dispo) ; ajout d'un tri « disponibles d'abord » pour accélérer le choix.
-6. **Notification magasin prioritaire** : marquer la priorité par défaut selon l'urgence du plan (ex. plan en retard → priorité haute).
-
-## Détails techniques
-
-Fichiers touchés (frontend uniquement) :
-- `src/pages/PreventifDetail.tsx` :
-  - État `showRequest` pour le panneau inline + intégration `PdrRequestComposer` avec `onSubmitted={() => { loadPlanRequests(); loadHoldings(); setShowRequest(false); }}`.
-  - Ajout des abonnements `useShiftRealtime` (3 tables) déclenchant `loadPlanRequests` / `loadHoldings`.
-  - Optionnel : helper « Demander les pièces prévues » à partir de `planPdr` via `createPdrRequest`.
-  - Pré-remplissage durée depuis `heure_debut`.
-- Aucune migration : les RPC `confirm_request_item_taken`, `consume_maintenance_holding_preventive` et `createPdrRequest` existent déjà.
-- Aucun changement de logique métier backend : on s'appuie sur le circuit sécurisé existant.
-
-## Hors périmètre
-- Pas de consommation directe du stock magasin (interdit, RPC neutralisée — on n'y touche pas).
-- Pas de modification des droits du maintenancier (toujours pas de modification du plan).
+Souhaitez-vous que j'inclus aussi l'auto-fermeture des actions oubliées (scénario 4) dans cette itération, ou on garde ça pour plus tard ?

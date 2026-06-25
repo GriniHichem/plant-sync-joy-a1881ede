@@ -854,7 +854,7 @@ export default function PreventifDetail() {
               <Package className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground">
-                  Pièce manquante ou imprévu ? Fermez ce dialogue et utilisez « Demander / prendre des pièces ». Le magasin prépare et valide, puis vous confirmez ici la quantité consommée.
+                  Pièce manquante ou imprévu ? Fermez ce dialogue et utilisez « Demander une pièce non prévue » sur l'intervention. Le magasin prépare et valide, puis vous confirmez la prise et la quantité consommée.
                 </p>
                 {openExec && (
                   <Button
@@ -862,12 +862,9 @@ export default function PreventifDetail() {
                     variant="outline"
                     size="sm"
                     className="mt-2 h-9"
-                    onClick={() => {
-                      setExecOpen(false);
-                      navigate(`/maintenance/shift/pieces?plan=${id}&exec=${openExec.id}${plan.machine_id ? `&machine=${plan.machine_id}` : ""}`);
-                    }}
+                    onClick={() => { setExecOpen(false); setShowRequest(true); }}
                   >
-                    <Package className="h-4 w-4 mr-2" /> Demander / prendre des pièces
+                    <PackagePlus className="h-4 w-4 mr-2" /> Demander une pièce non prévue
                   </Button>
                 )}
               </div>

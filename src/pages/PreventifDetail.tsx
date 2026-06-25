@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Edit, CheckCircle, PauseCircle, Play, CalendarCheck, Package, Users, ClipboardCheck, Clock, Timer, History, Plus, Trash2, AlertTriangle } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Edit, CheckCircle, PauseCircle, Play, CalendarCheck, Package, Users, ClipboardCheck, Clock, Timer, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { Label } from "@/components/ui/label";
 import { logAudit } from "@/lib/audit";
-import { consumePreventiveHolding, consumeAdhocPdrPreventive, confirmItemTaken, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
+import { consumePreventiveHolding, confirmItemTaken, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
 import { ConfirmTakeDialog } from "@/components/pdr/ConfirmTakeDialog";
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -68,13 +67,8 @@ export default function PreventifDetail() {
   const [execDureeMinutes, setExecDureeMinutes] = useState<number>(0);
   const [execStartTime, setExecStartTime] = useState("");
 
-  // Ad-hoc (pièces non prévues) consommées directement du stock magasin
-  type AdhocLine = { pdr_id: string; reference: string; designation: string; quantite: number; stock: number };
-  const [adhocLines, setAdhocLines] = useState<AdhocLine[]>([]);
-  const [pdrCatalog, setPdrCatalog] = useState<{ id: string; reference: string; designation: string; stock_actuel: number }[]>([]);
-  const [adhocSearch, setAdhocSearch] = useState("");
-  const [adhocPdrId, setAdhocPdrId] = useState("");
-  const [adhocQte, setAdhocQte] = useState("1");
+
+
 
   const loadAll = async () => {
     if (!id) return;
@@ -245,41 +239,11 @@ export default function PreventifDetail() {
   const openExecDialog = async () => {
     setExecNotes("");
     setExecDureeMinutes(0);
-    setAdhocLines([]);
-    setAdhocSearch("");
-    setAdhocPdrId("");
-    setAdhocQte("1");
     const now = new Date();
     setExecStartTime(now.toTimeString().slice(0, 5));
     setExecOpen(true);
-    // Charge le catalogue PDR (référence, désignation, stock) pour la saisie ad-hoc
-    const { data } = await supabase
-      .from("pdr")
-      .select("id, reference, designation, stock_actuel")
-      .order("reference", { ascending: true })
-      .limit(500);
-    setPdrCatalog((data as any) ?? []);
   };
 
-  const addAdhocLine = () => {
-    if (!adhocPdrId) return;
-    const p = pdrCatalog.find((x) => x.id === adhocPdrId);
-    if (!p) return;
-    const qte = parseInt(adhocQte, 10) || 0;
-    if (qte <= 0) return;
-    setAdhocLines((prev) => {
-      const existing = prev.find((l) => l.pdr_id === p.id);
-      if (existing) {
-        return prev.map((l) => (l.pdr_id === p.id ? { ...l, quantite: l.quantite + qte } : l));
-      }
-      return [...prev, { pdr_id: p.id, reference: p.reference, designation: p.designation, quantite: qte, stock: p.stock_actuel ?? 0 }];
-    });
-    setAdhocPdrId("");
-    setAdhocQte("1");
-    setAdhocSearch("");
-  };
-
-  const removeAdhocLine = (pdrId: string) => setAdhocLines((prev) => prev.filter((l) => l.pdr_id !== pdrId));
 
   // ===== Terminer : clôture l'exécution en cours + consomme les pièces prêtées =====
   const submitExecution = async () => {
@@ -298,21 +262,11 @@ export default function PreventifDetail() {
         } catch (e) { console.warn("[preventif] holding consume failed", e); }
       }
 
-      // Consommation des pièces non prévues (ad-hoc) directement du stock magasin
-      for (const l of adhocLines) {
-        if (l.quantite <= 0) continue;
-        try {
-          await consumeAdhocPdrPreventive({ execution_id: openExec.id, pdr_id: l.pdr_id, qte_consomme: l.quantite });
-        } catch (e) { console.warn("[preventif] adhoc consume failed", e); }
-      }
+      const consumedList = holdings.map((h) => ({
+        pdr_id: h.pdr_id, reference: h.pdr?.reference,
+        quantite: Math.max(0, Math.min(h.quantite, parseInt(consumedQty[h.id] ?? String(h.quantite), 10) || 0)),
+      })).filter((c) => c.quantite > 0);
 
-      const consumedList = [
-        ...holdings.map((h) => ({
-          pdr_id: h.pdr_id, reference: h.pdr?.reference,
-          quantite: Math.max(0, Math.min(h.quantite, parseInt(consumedQty[h.id] ?? String(h.quantite), 10) || 0)),
-        })),
-        ...adhocLines.map((l) => ({ pdr_id: l.pdr_id, reference: l.reference, quantite: l.quantite, adhoc: true })),
-      ].filter((c) => c.quantite > 0);
 
       const now = new Date();
       const { error } = await supabase.from("preventive_executions").update({
@@ -408,6 +362,55 @@ export default function PreventifDetail() {
     demandee: { label: "Demandée", cls: "text-blue-600 border-blue-600/40" },
     preparee: { label: "Préparée", cls: "text-amber-600 border-amber-600/40" },
     prise: { label: "Prise", cls: "text-emerald-600 border-emerald-600/40" },
+    consommee: { label: "Consommée", cls: "text-purple-600 border-purple-600/40" },
+  };
+
+  // ===== Onglet PDR : prévu (nomenclature) + état réel (demandé / pris / consommé) =====
+  type PdrRow = {
+    pdrId: string; reference: string; designation: string;
+    prevu: number; demande: number; pris: number; consomme: number;
+    statut: "non_demandee" | "demandee" | "prete" | "prise" | "refusee" | "consommee";
+  };
+  const pdrOverview: PdrRow[] = (() => {
+    const map = new Map<string, PdrRow>();
+    const ensure = (pdrId: string, reference: string, designation: string) => {
+      if (!map.has(pdrId)) {
+        map.set(pdrId, { pdrId, reference, designation, prevu: 0, demande: 0, pris: 0, consomme: 0, statut: "non_demandee" });
+      }
+      return map.get(pdrId)!;
+    };
+    // Nomenclature planifiée
+    planPdr.forEach((pp: any) => {
+      if (!pp.pdr_id && !pp.pdr) return;
+      const pid = pp.pdr_id ?? pp.pdr?.id;
+      const r = ensure(pid, pp.pdr?.reference ?? "—", pp.pdr?.designation ?? "");
+      r.prevu += pp.quantite ?? 0;
+    });
+    // Demandes / prises
+    allReqItems.forEach(({ it }) => {
+      const pid = it.pdr_id as string;
+      const r = ensure(pid, it.pdr?.reference ?? "—", it.pdr?.designation ?? "");
+      r.demande += it.quantite_demandee ?? 0;
+      r.pris += it.quantite_prise ?? 0;
+      const rank = { non_demandee: 0, refusee: 1, demandee: 2, prete: 3, prise: 4, consommee: 5 } as const;
+      const cur = it.statut === "refusee" ? "refusee" : it.statut === "prete" ? "prete" : it.statut === "prise" ? "prise" : "demandee";
+      if (rank[cur] > rank[r.statut]) r.statut = cur as PdrRow["statut"];
+    });
+    // Consommations réelles
+    consumptions.forEach((c: any) => {
+      const pid = c.pdr_id as string;
+      const r = ensure(pid, c.pdr?.reference ?? "—", c.pdr?.designation ?? "");
+      r.consomme += c.quantite ?? 0;
+    });
+    map.forEach((r) => { if (r.consomme > 0) r.statut = "consommee"; });
+    return [...map.values()].sort((a, b) => a.reference.localeCompare(b.reference));
+  })();
+  const PDR_STATUT_META: Record<PdrRow["statut"], { label: string; cls: string }> = {
+    non_demandee: { label: "Non demandée", cls: "text-muted-foreground border-border" },
+    demandee: { label: "Demandée", cls: "text-blue-600 border-blue-600/40" },
+    prete: { label: "Prête", cls: "text-amber-600 border-amber-600/40" },
+    prise: { label: "Prise", cls: "text-emerald-600 border-emerald-600/40" },
+    refusee: { label: "Refusée", cls: "text-destructive border-destructive/40" },
     consommee: { label: "Consommée", cls: "text-purple-600 border-purple-600/40" },
   };
 
@@ -563,24 +566,40 @@ export default function PreventifDetail() {
                   <TableRow>
                     <TableHead>Référence</TableHead>
                     <TableHead>Désignation</TableHead>
-                    <TableHead>Quantité</TableHead>
+                    <TableHead className="text-right">Prévu</TableHead>
+                    <TableHead className="text-right">Demandé</TableHead>
+                    <TableHead className="text-right">Pris</TableHead>
+                    <TableHead className="text-right">Consommé</TableHead>
+                    <TableHead className="text-right">Reliquat</TableHead>
+                    <TableHead>État</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {planPdr.length === 0 ? (
-                    <TableRow><TableCell colSpan={3} className="text-center py-6 text-muted-foreground">Aucune PDR</TableCell></TableRow>
-                  ) : planPdr.map((pp: any) => (
-                    <TableRow key={pp.id}>
-                      <TableCell className="font-mono text-sm">{pp.pdr?.reference}</TableCell>
-                      <TableCell>{pp.pdr?.designation}</TableCell>
-                      <TableCell className="tabular-nums">×{pp.quantite}</TableCell>
-                    </TableRow>
-                  ))}
+                  {pdrOverview.length === 0 ? (
+                    <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Aucune PDR planifiée ni demandée pour ce plan</TableCell></TableRow>
+                  ) : pdrOverview.map((r) => {
+                    const reliquat = Math.max(0, r.prevu - r.consomme);
+                    return (
+                      <TableRow key={r.pdrId}>
+                        <TableCell className="font-mono text-sm">{r.reference}</TableCell>
+                        <TableCell>{r.designation}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.prevu || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.demande || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.pris || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">{r.consomme || "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{r.prevu > 0 ? reliquat : "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`text-[10px] ${PDR_STATUT_META[r.statut].cls}`}>{PDR_STATUT_META[r.statut].label}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
+
 
         <TabsContent value="assignees">
           <Card>
@@ -766,81 +785,30 @@ export default function PreventifDetail() {
               </p>
             )}
 
-            {/* Pièces non prévues (ad-hoc) — consommées directement du stock magasin */}
-            <div>
-              <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                <Plus className="h-3.5 w-3.5 text-muted-foreground" /> Ajouter une pièce non prévue
-              </Label>
-              <p className="text-xs text-muted-foreground mb-2">Imprévu pendant l'intervention : consommé directement du stock magasin (sans demande).</p>
-              <div className="flex gap-2 flex-col sm:flex-row">
-                <Select value={adhocPdrId} onValueChange={setAdhocPdrId}>
-                  <SelectTrigger className="h-10 flex-1">
-                    <SelectValue placeholder="Sélectionner une pièce" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="px-2 py-1.5">
-                      <Input
-                        autoFocus
-                        placeholder="Rechercher réf / désignation…"
-                        value={adhocSearch}
-                        onChange={(e) => setAdhocSearch(e.target.value)}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        className="h-9"
-                      />
-                    </div>
-                    {pdrCatalog
-                      .filter((p) => {
-                        const q = adhocSearch.trim().toLowerCase();
-                        if (!q) return true;
-                        return p.reference.toLowerCase().includes(q) || (p.designation ?? "").toLowerCase().includes(q);
-                      })
-                      .slice(0, 50)
-                      .map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.reference} — {p.designation} ({p.stock_actuel ?? 0})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <div className="flex gap-2">
-                  <Input
-                    type="number" min={1} value={adhocQte}
-                    onChange={(e) => setAdhocQte(e.target.value)}
-                    className="h-10 w-20 tabular-nums" placeholder="Qté"
-                  />
-                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={addAdhocLine} disabled={!adhocPdrId}>
-                    <Plus className="h-4 w-4" />
+            {/* Pièce manquante : passer par le circuit de demande (jamais de consommation directe) */}
+            <div className="rounded-md border border-dashed p-2.5 flex items-start gap-2">
+              <Package className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">
+                  Pièce manquante ou imprévu ? Fermez ce dialogue et utilisez « Demander / prendre des pièces ». Le magasin prépare et valide, puis vous confirmez ici la quantité consommée.
+                </p>
+                {openExec && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-9"
+                    onClick={() => {
+                      setExecOpen(false);
+                      navigate(`/maintenance/shift/pieces?plan=${id}&exec=${openExec.id}${plan.machine_id ? `&machine=${plan.machine_id}` : ""}`);
+                    }}
+                  >
+                    <Package className="h-4 w-4 mr-2" /> Demander / prendre des pièces
                   </Button>
-                </div>
+                )}
               </div>
-
-              {adhocLines.length > 0 && (
-                <div className="border rounded-lg divide-y mt-2">
-                  {adhocLines.map((l) => {
-                    const over = l.quantite > l.stock;
-                    return (
-                      <div key={l.pdr_id} className="flex items-center gap-3 p-2.5">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-mono text-xs font-semibold truncate">{l.reference}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            {l.designation} · stock : {l.stock}
-                          </p>
-                          {over && (
-                            <p className="text-[11px] text-destructive flex items-center gap-1">
-                              <AlertTriangle className="h-3 w-3" /> Quantité supérieure au stock disponible
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-sm font-medium tabular-nums shrink-0">×{l.quantite}</span>
-                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive" onClick={() => removeAdhocLine(l.pdr_id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
+
 
 
             {/* Notes */}

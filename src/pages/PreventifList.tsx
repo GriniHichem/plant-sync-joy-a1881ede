@@ -152,6 +152,7 @@ export default function PreventifList() {
           <ExportCsvButton
             data={filtered}
             columns={[
+              { key: "numero", label: "N° Action" },
               { key: "title", label: "Plan" },
               { key: "machines.code", label: "Machine code" },
               { key: "machines.designation", label: "Machine" },

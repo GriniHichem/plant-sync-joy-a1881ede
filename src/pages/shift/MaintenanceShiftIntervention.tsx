@@ -312,6 +312,29 @@ export default function MaintenanceShiftIntervention() {
           <p className="text-xs text-muted-foreground">
             {ticket.machines ? `${ticket.machines.code} — ${ticket.machines.designation}` : "Sans machine"}
           </p>
+          {/* Infos essentielles pour comprendre / communiquer rapidement */}
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {ticket.heure_declaration && (
+              <Badge variant="outline" className="text-[11px] font-normal">
+                Ouvert le {new Date(ticket.heure_declaration).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </Badge>
+            )}
+            {declarant && (
+              <Badge variant="outline" className="text-[11px] font-normal">
+                Par {declarant.first_name} {declarant.last_name}{declarant.poste ? ` (${declarant.poste})` : ""}
+              </Badge>
+            )}
+            {of?.numero && (
+              <Badge variant="outline" className="text-[11px] font-normal">
+                OF {of.numero}{of.products?.designation ? ` — ${of.products.designation}` : ""}
+              </Badge>
+            )}
+            {ticket.production_lines && (
+              <Badge variant="outline" className="text-[11px] font-normal">
+                Ligne {ticket.production_lines.code}
+              </Badge>
+            )}
+          </div>
           <p className="text-sm mt-2">{ticket.description}</p>
         </CardHeader>
         <CardContent className="space-y-4">

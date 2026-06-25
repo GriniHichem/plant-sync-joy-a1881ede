@@ -619,15 +619,26 @@ export default function TicketDetail() {
             <div className="col-span-full">
               <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Pris en charge par</p>
               <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                <Badge variant="secondary" className="text-xs">{assigneeName || "—"} <span className="ml-1 opacity-70">(responsable)</span></Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {assigneeName || "—"}{" "}
+                  <span className="ml-1 opacity-70">
+                    {ticket.assignment_status === "transferred" ? "(transféré)" : "(responsable)"}
+                  </span>
+                </Badge>
                 {collaborators.map((c) => (
                   <Badge key={c.id} variant="outline" className="text-xs">
                     {c.full_name} <span className="ml-1 opacity-70">({c.role_label === "co_intervenant" ? "co-intervenant" : "aide"})</span>
                   </Badge>
                 ))}
               </div>
+              {ticket.assignment_status === "transferred" && (
+                <p className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1 mt-1">
+                  <ArrowRightLeft className="h-3 w-3" /> Ticket transféré à {assigneeName || "—"}
+                </p>
+              )}
             </div>
           )}
+
           {ticket.heure_resolution && <InfoItem label="Résolution" value={fmtDate(ticket.heure_resolution)} icon={<Wrench className="h-3 w-3" />} mono />}
           {ticket.temps_arret_minutes != null && <InfoItem label="Temps d'arrêt" value={formatDuration(ticket.temps_arret_minutes)} highlight />}
           {ticket.temps_intervention_minutes != null && <InfoItem label="Temps intervention" value={`${ticket.temps_intervention_minutes} min`} mono />}

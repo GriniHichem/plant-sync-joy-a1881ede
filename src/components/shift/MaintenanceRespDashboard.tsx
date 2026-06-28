@@ -69,10 +69,26 @@ export function MaintenanceRespDashboard() {
           <h1 className="text-2xl font-bold tracking-tight">Console Responsable Maintenance</h1>
           <p className="text-sm text-muted-foreground capitalize">{today}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={reload}>
-          <RefreshCw className="h-4 w-4 mr-1.5" /> Rafraîchir
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {maintenanceShift ? (
+            <Button size="sm" onClick={() => navigate("/maintenance/shift/live")}>
+              <Wrench className="h-4 w-4 mr-1.5" /> Aller à mon poste maintenancier
+            </Button>
+          ) : (
+            <SelfOpenShiftDialog kind="maintenance" />
+          )}
+          <Button variant="outline" size="sm" onClick={reload}>
+            <RefreshCw className="h-4 w-4 mr-1.5" /> Rafraîchir
+          </Button>
+        </div>
       </div>
+
+      {maintenanceShift && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 flex items-center gap-2">
+          <Wrench className="h-4 w-4 shrink-0" />
+          Mode intervention urgente actif — vous avez une session maintenancier ouverte. Vous pouvez prendre en charge des tickets et exécuter des interventions.
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

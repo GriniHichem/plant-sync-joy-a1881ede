@@ -12,7 +12,7 @@ import { formatDuration } from "@/lib/utils";
 import { useMaintenanceRespOverview } from "@/hooks/useMaintenanceRespOverview";
 import { RespShiftConsole } from "@/components/shift/RespShiftConsole";
 import { SelfOpenShiftDialog } from "@/components/shift/SelfOpenShiftDialog";
-import { useActiveShift } from "@/contexts/ActiveShiftContext";
+import { useActiveMaintenanceShift } from "@/hooks/useActiveMaintenanceShift";
 import { Wrench } from "lucide-react";
 
 function ageMinutes(iso?: string | null): number {
@@ -50,7 +50,7 @@ function Kpi({ label, value, sub, tone = "default", onClick }: { label: string; 
 export function MaintenanceRespDashboard() {
   const navigate = useNavWithFrom();
   const { tickets, preventives, movements, activeTechs, loading, reload, kpis } = useMaintenanceRespOverview();
-  const { maintenanceShift } = useActiveShift();
+  const { shift: maintenanceShift } = useActiveMaintenanceShift();
   const [showSessions, setShowSessions] = useState(false);
 
   const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });

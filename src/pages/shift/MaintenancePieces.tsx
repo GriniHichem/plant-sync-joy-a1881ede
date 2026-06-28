@@ -4,12 +4,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, PackagePlus, ListChecks, HandHelping, Boxes, Clock } from "lucide-react";
+import { ArrowLeft, PackagePlus, ListChecks, HandHelping, Boxes, Clock, ArrowRightLeft, Warehouse, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PdrRequestComposer } from "@/components/pdr/PdrRequestComposer";
 import { ConfirmTakeDialog } from "@/components/pdr/ConfirmTakeDialog";
+import { HoldingTransferDialog } from "@/components/pdr/HoldingTransferDialog";
 import { usePdrRequestQueue, useMyPdrRequests, confirmItemTaken, cancelPdrRequest, type PdrRequest, type PdrRequestItem } from "@/hooks/usePdrRequests";
-import { useMaintenanceHoldings } from "@/hooks/useMaintenanceHoldings";
+import { useMaintenanceHoldings, type MaintenanceHolding } from "@/hooks/useMaintenanceHoldings";
+import { useMyHoldingTransfers, confirmHoldingTransfer, cancelHoldingTransfer, type TransferDestination } from "@/hooks/usePdrHoldingTransfers";
 
 const ITEM_BADGE: Record<string, { label: string; cls: string }> = {
   demandee: { label: "Demandée", cls: "text-amber-600 border-amber-600/40" },

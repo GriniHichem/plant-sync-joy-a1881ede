@@ -95,6 +95,20 @@ export function PdrQueuePanel({ readOnly = false }: { readOnly?: boolean }) {
     finally { setBusy(false); }
   };
 
+  const confirmReturn = async (id: string) => {
+    setBusy(true);
+    try { await confirmHoldingTransfer(id); toast({ title: "Retour réceptionné — stock ré-incrémenté" }); }
+    catch (e: any) { toast({ title: "Erreur", description: e.message, variant: "destructive" }); }
+    finally { setBusy(false); }
+  };
+
+  const refuseReturn = async (id: string) => {
+    setBusy(true);
+    try { await cancelHoldingTransfer(id); toast({ title: "Retour refusé — pièce restituée au maintenancier" }); }
+    catch (e: any) { toast({ title: "Erreur", description: e.message, variant: "destructive" }); }
+    finally { setBusy(false); }
+  };
+
   const counters = useMemo(() => {
     let toPrepare = 0, ready = 0, short = 0;
     for (const r of openReqs) for (const it of r.items ?? []) {

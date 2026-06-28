@@ -2789,6 +2789,62 @@ export type Database = {
           },
         ]
       }
+      pdr_holding_transfers: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          destination: Database["public"]["Enums"]["pdr_transfer_destination"]
+          from_holder: string
+          id: string
+          motif: string | null
+          pdr_id: string
+          quantite: number
+          request_item_id: string | null
+          statut: Database["public"]["Enums"]["pdr_transfer_status"]
+          to_holder: string | null
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          destination: Database["public"]["Enums"]["pdr_transfer_destination"]
+          from_holder: string
+          id?: string
+          motif?: string | null
+          pdr_id: string
+          quantite: number
+          request_item_id?: string | null
+          statut?: Database["public"]["Enums"]["pdr_transfer_status"]
+          to_holder?: string | null
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          destination?: Database["public"]["Enums"]["pdr_transfer_destination"]
+          from_holder?: string
+          id?: string
+          motif?: string | null
+          pdr_id?: string
+          quantite?: number
+          request_item_id?: string | null
+          statut?: Database["public"]["Enums"]["pdr_transfer_status"]
+          to_holder?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdr_holding_transfers_pdr_id_fkey"
+            columns: ["pdr_id"]
+            isOneToOne: false
+            referencedRelation: "pdr"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdr_install_positions: {
         Row: {
           compteur_manuel: number | null
@@ -6278,6 +6334,10 @@ export type Database = {
         Args: { _request_id: string; _user_id: string }
         Returns: boolean
       }
+      cancel_holding_transfer: {
+        Args: { p_raison?: string; p_transfer_id: string }
+        Returns: undefined
+      }
       cancel_pdr_request: {
         Args: { p_motif?: string; p_request_id: string }
         Returns: undefined
@@ -6292,6 +6352,10 @@ export type Database = {
       }
       close_preventive_action: {
         Args: { p_session_id: string }
+        Returns: undefined
+      }
+      confirm_holding_transfer: {
+        Args: { p_transfer_id: string }
         Returns: undefined
       }
       confirm_request_item_taken: {
@@ -6490,6 +6554,16 @@ export type Database = {
       }
       import_resolve_prodfamily: {
         Args: { _fam: string; _sub: string }
+        Returns: string
+      }
+      initiate_holding_transfer: {
+        Args: {
+          p_destination: Database["public"]["Enums"]["pdr_transfer_destination"]
+          p_holding_id: string
+          p_motif?: string
+          p_qte: number
+          p_to_holder?: string
+        }
         Returns: string
       }
       inv_assignment_authorized_families: {
@@ -6777,6 +6851,8 @@ export type Database = {
         | "refusee"
         | "annulee"
       pdr_request_type: "curative" | "preventive"
+      pdr_transfer_destination: "maintainer" | "magasin"
+      pdr_transfer_status: "en_attente" | "confirme" | "refuse" | "annule"
       quality_action_priority: "low" | "medium" | "high" | "critical"
       quality_action_status:
         | "open"
@@ -7153,6 +7229,8 @@ export const Constants = {
         "annulee",
       ],
       pdr_request_type: ["curative", "preventive"],
+      pdr_transfer_destination: ["maintainer", "magasin"],
+      pdr_transfer_status: ["en_attente", "confirme", "refuse", "annule"],
       quality_action_priority: ["low", "medium", "high", "critical"],
       quality_action_status: [
         "open",

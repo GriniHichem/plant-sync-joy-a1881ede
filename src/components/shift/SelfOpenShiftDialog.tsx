@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useActiveShift, ShiftKind } from "@/contexts/ActiveShiftContext";
+import { useActiveShiftOptional, ShiftKind } from "@/contexts/ActiveShiftContext";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -49,7 +49,8 @@ interface Props {
 export function SelfOpenShiftDialog({ kind }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { refresh } = useActiveShift();
+  const activeShift = useActiveShiftOptional();
+  const refresh = activeShift?.refresh ?? (async () => {});
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [teams, setTeams] = useState<any[]>([]);

@@ -32,6 +32,11 @@ export function useActiveShift() {
   return ctx;
 }
 
+/** Safe variant that returns null when used outside the provider. */
+export function useActiveShiftOptional() {
+  return useContext(ActiveShiftContext);
+}
+
 export function ActiveShiftProvider({ kind, children }: { kind: ShiftKind; children: ReactNode }) {
   const prod = useActiveProductionShift();
   const maint = useActiveMaintenanceShift();

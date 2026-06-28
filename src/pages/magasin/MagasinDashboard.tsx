@@ -33,8 +33,12 @@ function withinPeriod(dateStr: string, period: string) {
 }
 
 export function MagasinDashboard() {
-  const { movements, loading, stats } = useMagasinActivity();
+  const navigate = useNavigate();
+  const { movements, loading, stats, reload } = useMagasinActivity();
   const { requests: openReqs } = usePdrRequestQueue(false);
+
+  const today = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");

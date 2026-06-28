@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useActiveShift, ShiftKind } from "@/contexts/ActiveShiftContext";
+import { useActiveShiftOptional, ShiftKind } from "@/contexts/ActiveShiftContext";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";

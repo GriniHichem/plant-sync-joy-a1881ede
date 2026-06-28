@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { RespShiftConsole } from "@/components/shift/RespShiftConsole";
+import { MaintenanceRespDashboard } from "@/components/shift/MaintenanceRespDashboard";
 import type { ShiftKind } from "@/contexts/ActiveShiftContext";
 
 interface Props {
@@ -38,5 +39,8 @@ export function ShiftHomePage({ kind, operatorRedirect, managerRoles, operatorRo
   }
 
   // Manager (or admin) → responsable console
+  if (kind === "maintenance") {
+    return <MaintenanceRespDashboard />;
+  }
   return <RespShiftConsole kind={kind} />;
 }

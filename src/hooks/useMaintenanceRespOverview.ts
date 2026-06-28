@@ -103,7 +103,7 @@ export function useMaintenanceRespOverview(): MaintenanceRespOverview {
       supabase
         .from("pdr_requests")
         .select("ticket_id")
-        .in("statut", ["en_attente", "preparation", "prete", "partielle"]),
+        .in("statut", ["demandee", "prete", "partielle"]),
     ]);
 
     const ticketRows = (ticketsRes.data as any[]) ?? [];

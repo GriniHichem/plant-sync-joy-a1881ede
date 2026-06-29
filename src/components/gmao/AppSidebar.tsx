@@ -37,8 +37,8 @@ const gmaoItems: NavItem[] = [
 ];
 
 const stockItems: NavItem[] = [
-  { title: "Pièces (PDR)", url: "/pdr", icon: IconSpare, module: "pdr" },
   { title: "Dashboard PDR", url: "/magasin/shift", icon: IconChart, module: "shift_magasin" },
+  { title: "Pièces (PDR)", url: "/pdr", icon: IconSpare, module: "pdr" },
   { title: "Shift Magasin", url: "/magasin/shift/live", icon: IconShift, module: "shift_magasin" },
   { title: "Journal Stock", url: "/magasin/journal", icon: IconJournal, module: "journal_stock" },
   { title: "Demandes pièces", url: "/pdr/demandes", icon: IconSpare, module: "pdr_demandes" },

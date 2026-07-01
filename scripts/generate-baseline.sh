@@ -154,6 +154,27 @@ $fn$;
 FNGRANTS
 
   echo "-- ============================================================================="
+  echo "-- 5) MATRICE DE PERMISSIONS PAR ROLE (config systeme, idempotente)"
+  echo "-- ============================================================================="
+  # role_permissions est une table de configuration (pas de donnee metier/utilisateur).
+  # Elle est indispensable au fonctionnement des menus/acces : sans elle, des modules
+  # comme shift_maintenance sont invisibles sur un deploiement auto-heberge.
+  # On rejoue la matrice complete depuis la base de reference au moment de la generation.
+  echo "INSERT INTO public.role_permissions (role, module, can_view, can_create, can_edit, can_delete)"
+  echo "VALUES"
+  psql "$SUPABASE_DB_URL" -t -A -F$'\t' \
+    -c "SELECT role, module, can_view, can_create, can_edit, can_delete FROM public.role_permissions ORDER BY role, module;" \
+    | awk -F'\t' 'NR>1{printf ",\n"} {printf "  ('\''%s'\'','\''%s'\'',%s,%s,%s,%s)", $1,$2, ($3=="t"?"true":"false"), ($4=="t"?"true":"false"), ($5=="t"?"true":"false"), ($6=="t"?"true":"false")}'
+  echo ""
+  echo "ON CONFLICT (role, module) DO UPDATE"
+  echo "  SET can_view = EXCLUDED.can_view,"
+  echo "      can_create = EXCLUDED.can_create,"
+  echo "      can_edit = EXCLUDED.can_edit,"
+  echo "      can_delete = EXCLUDED.can_delete;"
+  echo ""
+
+
+  echo "-- ============================================================================="
   echo "-- FIN DU BASELINE"
   echo "-- ============================================================================="
 } > "$OUT"

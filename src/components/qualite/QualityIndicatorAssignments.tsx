@@ -46,10 +46,18 @@ export const emptyAssignmentForm = (): AssignmentFormState => ({
   is_required: false,
   is_blocking: false,
   frequency_type: "",
+  frequency_minutes: "",
   notes: "",
 });
 
 const orNull = (v: string) => (v && v !== NONE ? v : null);
+
+const minutesOrNull = (s: string): number | null => {
+  const t = (s ?? "").toString().trim().replace(",", ".");
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+};
 
 export function buildAssignmentPayload(f: AssignmentFormState) {
   return {
@@ -61,6 +69,7 @@ export function buildAssignmentPayload(f: AssignmentFormState) {
     is_required: !!f.is_required,
     is_blocking: !!f.is_blocking,
     frequency_type: f.frequency_type ? f.frequency_type : null,
+    frequency_minutes: minutesOrNull(f.frequency_minutes),
     notes: f.notes.trim(),
   };
 }

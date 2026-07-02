@@ -116,6 +116,7 @@ export function buildIndicatorPayload(f: FormState) {
     indicator_type: f.indicator_type,
     category: f.category as any,
     frequency_type: f.frequency_type as any,
+    frequency_minutes: (() => { const v = parseDecimal(f.frequency_minutes ?? ""); return v && v > 0 ? Math.round(v) : null; })(),
     unit: isNum ? (f.unit.trim() || null) : null,
     target_value: isNum ? num(f.target_value) : null,
     min_value: isNum ? num(f.min_value) : null,

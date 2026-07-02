@@ -86,6 +86,7 @@ const emptyForm = (): FormState => ({
   indicator_type: "numeric",
   category: "autre",
   frequency_type: "manual",
+  frequency_minutes: "",
   unit: "",
   target_value: "",
   min_value: "",

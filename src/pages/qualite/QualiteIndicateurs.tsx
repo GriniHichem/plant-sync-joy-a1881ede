@@ -66,6 +66,7 @@ interface FormState {
   indicator_type: "numeric" | "boolean" | "text" | "select";
   category: string;
   frequency_type: string;
+  frequency_minutes: string;
   unit: string;
   target_value: string;
   min_value: string;

@@ -92,6 +92,8 @@ import QualiteDashboard from "@/pages/qualite/QualiteDashboard";
 import QualiteOf from "@/pages/qualite/QualiteOf";
 import QualiteIndicateurs from "@/pages/qualite/QualiteIndicateurs";
 import QualiteControles from "@/pages/qualite/QualiteControles";
+import QualiteSaisieLigne from "@/pages/qualite/QualiteSaisieLigne";
+import QualiteConsoleControle from "@/pages/qualite/QualiteConsoleControle";
 import QualiteNonConformites from "@/pages/qualite/QualiteNonConformites";
 import QualiteActions from "@/pages/qualite/QualiteActions";
 import QualiteRecettesNomenclatures from "@/pages/qualite/QualiteRecettesNomenclatures";

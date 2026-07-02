@@ -485,10 +485,20 @@ export default function QualityIndicatorAssignments() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end gap-4">
-              <label className="flex items-center gap-2"><Switch checked={form.is_required} onCheckedChange={(v) => setForm({ ...form, is_required: v })} /> Requis</label>
-              <label className="flex items-center gap-2"><Switch checked={form.is_blocking} onCheckedChange={(v) => setForm({ ...form, is_blocking: v })} /> Bloquant</label>
+            <div>
+              <Label>Fréquence (minutes)</Label>
+              <Input
+                inputMode="numeric"
+                value={form.frequency_minutes}
+                onChange={(e) => setForm({ ...form, frequency_minutes: e.target.value })}
+                placeholder="hérité — ex : 30, 60"
+              />
             </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2"><Switch checked={form.is_required} onCheckedChange={(v) => setForm({ ...form, is_required: v })} /> Requis</label>
+            <label className="flex items-center gap-2"><Switch checked={form.is_blocking} onCheckedChange={(v) => setForm({ ...form, is_blocking: v })} /> Bloquant</label>
           </div>
 
           <div>

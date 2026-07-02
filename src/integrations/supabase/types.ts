@@ -4558,6 +4558,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          frequency_minutes: number | null
           frequency_type:
             | Database["public"]["Enums"]["quality_frequency_type"]
             | null
@@ -4576,6 +4577,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          frequency_minutes?: number | null
           frequency_type?:
             | Database["public"]["Enums"]["quality_frequency_type"]
             | null
@@ -4594,6 +4596,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          frequency_minutes?: number | null
           frequency_type?:
             | Database["public"]["Enums"]["quality_frequency_type"]
             | null
@@ -4654,6 +4657,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          frequency_minutes: number | null
           frequency_type: Database["public"]["Enums"]["quality_frequency_type"]
           id: string
           indicator_type: Database["public"]["Enums"]["quality_indicator_type"]
@@ -4677,6 +4681,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          frequency_minutes?: number | null
           frequency_type?: Database["public"]["Enums"]["quality_frequency_type"]
           id?: string
           indicator_type: Database["public"]["Enums"]["quality_indicator_type"]
@@ -4700,6 +4705,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          frequency_minutes?: number | null
           frequency_type?: Database["public"]["Enums"]["quality_frequency_type"]
           id?: string
           indicator_type?: Database["public"]["Enums"]["quality_indicator_type"]
@@ -6877,6 +6883,9 @@ export type Database = {
         | "poids"
         | "controle_visuel"
         | "autre"
+        | "physico_chimique"
+        | "conditionnement"
+        | "organoleptique"
       quality_indicator_type: "numeric" | "boolean" | "text" | "select"
       role_fonctionnel:
         | "alimentation"
@@ -7257,6 +7266,9 @@ export const Constants = {
         "poids",
         "controle_visuel",
         "autre",
+        "physico_chimique",
+        "conditionnement",
+        "organoleptique",
       ],
       quality_indicator_type: ["numeric", "boolean", "text", "select"],
       role_fonctionnel: [

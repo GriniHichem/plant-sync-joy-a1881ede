@@ -44,6 +44,9 @@ export const FREQUENCIES = [
 ] as const;
 
 export const CATEGORIES = [
+  { value: "physico_chimique", label: "Physico-chimique" },
+  { value: "conditionnement", label: "Conditionnement" },
+  { value: "organoleptique", label: "Organoleptique" },
   { value: "produit_fini", label: "Produit fini" },
   { value: "emballage", label: "Emballage" },
   { value: "process", label: "Process" },
@@ -63,6 +66,7 @@ interface FormState {
   indicator_type: "numeric" | "boolean" | "text" | "select";
   category: string;
   frequency_type: string;
+  frequency_minutes?: string;
   unit: string;
   target_value: string;
   min_value: string;
@@ -82,6 +86,7 @@ const emptyForm = (): FormState => ({
   indicator_type: "numeric",
   category: "autre",
   frequency_type: "manual",
+  frequency_minutes: "",
   unit: "",
   target_value: "",
   min_value: "",
@@ -111,6 +116,7 @@ export function buildIndicatorPayload(f: FormState) {
     indicator_type: f.indicator_type,
     category: f.category as any,
     frequency_type: f.frequency_type as any,
+    frequency_minutes: (() => { const v = parseDecimal(f.frequency_minutes ?? ""); return v && v > 0 ? Math.round(v) : null; })(),
     unit: isNum ? (f.unit.trim() || null) : null,
     target_value: isNum ? num(f.target_value) : null,
     min_value: isNum ? num(f.min_value) : null,
@@ -153,6 +159,7 @@ interface Indicator {
   indicator_type: string;
   category: string;
   frequency_type: string;
+  frequency_minutes: number | null;
   unit: string | null;
   target_value: number | null;
   min_value: number | null;
@@ -240,6 +247,7 @@ export default function QualiteIndicateurs() {
       indicator_type: r.indicator_type as any,
       category: r.category,
       frequency_type: r.frequency_type,
+      frequency_minutes: r.frequency_minutes != null ? String(r.frequency_minutes) : "",
       unit: r.unit ?? "",
       target_value: r.target_value?.toString() ?? "",
       min_value: r.min_value?.toString() ?? "",
@@ -543,6 +551,19 @@ export default function QualiteIndicateurs() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div>
+            <Label>Fréquence (minutes)</Label>
+            <Input
+              inputMode="numeric"
+              value={form.frequency_minutes ?? ""}
+              onChange={(e) => setForm({ ...form, frequency_minutes: e.target.value })}
+              placeholder="ex : 30, 60 — cadence de contrôle en ligne"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Intervalle par défaut entre deux contrôles sur un OF. Surchargé par l'affectation produit.
+            </p>
           </div>
 
           {isNum && (

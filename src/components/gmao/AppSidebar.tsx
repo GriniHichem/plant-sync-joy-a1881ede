@@ -60,6 +60,8 @@ const qualiteItems: NavItem[] = [
   { title: "OF qualité", url: "/qualite/of", icon: IconOrder, module: "qualite_of" },
   { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics, module: "qualite_indicateurs" },
   { title: "Shift contrôle", url: "/qualite/shift", icon: Timer, module: "qualite_shift" },
+  { title: "Saisie en ligne", url: "/qualite/saisie", icon: ClipboardCheck, module: "qualite_controles" },
+  { title: "Console contrôle", url: "/qualite/console", icon: IconChart, module: "qualite_controles" },
   { title: "Contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
   { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle, module: "qualite_nc" },
   { title: "Actions", url: "/qualite/actions", icon: Wrench, module: "qualite_actions" },

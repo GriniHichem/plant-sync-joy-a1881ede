@@ -92,6 +92,8 @@ import QualiteDashboard from "@/pages/qualite/QualiteDashboard";
 import QualiteOf from "@/pages/qualite/QualiteOf";
 import QualiteIndicateurs from "@/pages/qualite/QualiteIndicateurs";
 import QualiteControles from "@/pages/qualite/QualiteControles";
+import QualiteSaisieLigne from "@/pages/qualite/QualiteSaisieLigne";
+import QualiteConsoleControle from "@/pages/qualite/QualiteConsoleControle";
 import QualiteNonConformites from "@/pages/qualite/QualiteNonConformites";
 import QualiteActions from "@/pages/qualite/QualiteActions";
 import QualiteRecettesNomenclatures from "@/pages/qualite/QualiteRecettesNomenclatures";
@@ -352,6 +354,8 @@ const App = () => (
                 />
               } />
               <Route path="/qualite/indicateurs" element={<QualiteIndicateurs />} />
+              <Route path="/qualite/saisie" element={<QualiteSaisieLigne />} />
+              <Route path="/qualite/console" element={<QualiteConsoleControle />} />
               <Route path="/qualite/controles" element={<QualiteControles />} />
               <Route path="/qualite/non-conformites" element={<QualiteNonConformites />} />
               <Route path="/qualite/actions" element={<QualiteActions />} />

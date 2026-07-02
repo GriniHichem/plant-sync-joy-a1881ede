@@ -33,6 +33,7 @@ export interface AssignmentFormState {
   is_required: boolean;
   is_blocking: boolean;
   frequency_type: string; // "" = inherit
+  frequency_minutes: string; // "" = inherit
   notes: string;
 }
 
@@ -45,10 +46,18 @@ export const emptyAssignmentForm = (): AssignmentFormState => ({
   is_required: false,
   is_blocking: false,
   frequency_type: "",
+  frequency_minutes: "",
   notes: "",
 });
 
 const orNull = (v: string) => (v && v !== NONE ? v : null);
+
+const minutesOrNull = (s: string): number | null => {
+  const t = (s ?? "").toString().trim().replace(",", ".");
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+};
 
 export function buildAssignmentPayload(f: AssignmentFormState) {
   return {
@@ -60,6 +69,7 @@ export function buildAssignmentPayload(f: AssignmentFormState) {
     is_required: !!f.is_required,
     is_blocking: !!f.is_blocking,
     frequency_type: f.frequency_type ? f.frequency_type : null,
+    frequency_minutes: minutesOrNull(f.frequency_minutes),
     notes: f.notes.trim(),
   };
 }
@@ -97,6 +107,7 @@ interface Assignment {
   is_required: boolean;
   is_blocking: boolean;
   frequency_type: string | null;
+  frequency_minutes: number | null;
   notes: string;
   updated_at: string;
 }
@@ -201,6 +212,7 @@ export default function QualityIndicatorAssignments() {
       is_required: a.is_required,
       is_blocking: a.is_blocking,
       frequency_type: a.frequency_type ?? "",
+      frequency_minutes: a.frequency_minutes != null ? String(a.frequency_minutes) : "",
       notes: a.notes ?? "",
     });
     setExplicitGlobal(scopeOf(a) === "global");
@@ -365,7 +377,10 @@ export default function QualityIndicatorAssignments() {
                     <TableCell>{renderTarget(a)}</TableCell>
                     <TableCell>{a.is_required ? <Badge>Oui</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
                     <TableCell>{a.is_blocking ? <Badge variant="destructive">Oui</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
-                    <TableCell>{a.frequency_type ? (FREQUENCIES.find((f) => f.value === a.frequency_type)?.label ?? a.frequency_type) : <span className="text-muted-foreground">hérité</span>}</TableCell>
+                    <TableCell>
+                      {a.frequency_type ? (FREQUENCIES.find((f) => f.value === a.frequency_type)?.label ?? a.frequency_type) : <span className="text-muted-foreground">hérité</span>}
+                      {a.frequency_minutes != null && <span className="ml-1 text-xs text-muted-foreground">({a.frequency_minutes} min)</span>}
+                    </TableCell>
                     <TableCell className="text-right space-x-1">
                       {canEdit("qualite_indicateurs") && (
                         <Button size="sm" variant="ghost" onClick={() => openEdit(a)}><Edit className="h-4 w-4" /></Button>
@@ -473,10 +488,20 @@ export default function QualityIndicatorAssignments() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end gap-4">
-              <label className="flex items-center gap-2"><Switch checked={form.is_required} onCheckedChange={(v) => setForm({ ...form, is_required: v })} /> Requis</label>
-              <label className="flex items-center gap-2"><Switch checked={form.is_blocking} onCheckedChange={(v) => setForm({ ...form, is_blocking: v })} /> Bloquant</label>
+            <div>
+              <Label>Fréquence (minutes)</Label>
+              <Input
+                inputMode="numeric"
+                value={form.frequency_minutes}
+                onChange={(e) => setForm({ ...form, frequency_minutes: e.target.value })}
+                placeholder="hérité — ex : 30, 60"
+              />
             </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2"><Switch checked={form.is_required} onCheckedChange={(v) => setForm({ ...form, is_required: v })} /> Requis</label>
+            <label className="flex items-center gap-2"><Switch checked={form.is_blocking} onCheckedChange={(v) => setForm({ ...form, is_blocking: v })} /> Bloquant</label>
           </div>
 
           <div>

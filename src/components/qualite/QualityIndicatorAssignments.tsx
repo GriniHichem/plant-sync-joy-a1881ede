@@ -212,6 +212,7 @@ export default function QualityIndicatorAssignments() {
       is_required: a.is_required,
       is_blocking: a.is_blocking,
       frequency_type: a.frequency_type ?? "",
+      frequency_minutes: a.frequency_minutes != null ? String(a.frequency_minutes) : "",
       notes: a.notes ?? "",
     });
     setExplicitGlobal(scopeOf(a) === "global");

@@ -352,6 +352,8 @@ const App = () => (
                 />
               } />
               <Route path="/qualite/indicateurs" element={<QualiteIndicateurs />} />
+              <Route path="/qualite/saisie" element={<QualiteSaisieLigne />} />
+              <Route path="/qualite/console" element={<QualiteConsoleControle />} />
               <Route path="/qualite/controles" element={<QualiteControles />} />
               <Route path="/qualite/non-conformites" element={<QualiteNonConformites />} />
               <Route path="/qualite/actions" element={<QualiteActions />} />

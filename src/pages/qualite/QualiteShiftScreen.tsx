@@ -411,6 +411,13 @@ export default function QualiteShiftScreen() {
           </div>
         </div>
       </ResponsiveDialog>
+
+      {/* Dialog historique de saisie */}
+      {shift && (
+        <ResponsiveDialog open={openHistory} onOpenChange={setOpenHistory} title="Historique de saisie du shift" description="Consultez toutes les valeurs saisies et filtrez rapidement par contrôle.">
+          <ShiftHistoryPanel qualityShiftId={shift.id} filterOfId={selectedOf?.id} />
+        </ResponsiveDialog>
+      )}
     </div>
   );
 }

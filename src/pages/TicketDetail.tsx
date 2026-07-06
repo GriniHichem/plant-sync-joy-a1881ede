@@ -85,6 +85,14 @@ export default function TicketDetail() {
       } else {
         setDeclarantName("");
       }
+      // Resolve quality risk declarant name
+      if (data.quality_risk && data.quality_risk_declared_by) {
+        const { data: qprof } = await supabase
+          .from("profiles").select("first_name,last_name").eq("user_id", data.quality_risk_declared_by).maybeSingle();
+        setQualityRiskByName(qprof ? `${qprof.first_name ?? ""} ${qprof.last_name ?? ""}`.trim() : "");
+      } else {
+        setQualityRiskByName("");
+      }
     }
 
     const { data: intData } = await supabase

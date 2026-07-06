@@ -344,6 +344,8 @@ export default function QualiteShiftScreen() {
                   </Card>
 
                   <MaintenanceRiskPanel ofId={selectedOf.id} ofNumero={selectedOf.numero} lineId={selectedOf.line_id} />
+
+                  <ShiftHistoryPanel qualityShiftId={shift.id} filterOfId={selectedOf.id} />
                 </>
               )}
             </div>

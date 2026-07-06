@@ -6437,6 +6437,19 @@ export type Database = {
           template_id: string
         }[]
       }
+      get_maintenance_context_for_of: {
+        Args: { p_of_id: string }
+        Returns: {
+          id: string
+          kind: string
+          label: string
+          ligne_id: string
+          machine_id: string
+          numero: string
+          priorite: string
+          statut: string
+        }[]
+      }
       get_position_counter: { Args: { p_position_id: string }; Returns: number }
       get_quality_indicators_for_of: {
         Args: { p_of_id: string }

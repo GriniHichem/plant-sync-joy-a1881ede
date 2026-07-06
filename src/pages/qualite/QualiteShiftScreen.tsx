@@ -41,6 +41,7 @@ export default function QualiteShiftScreen() {
   const [lines, setLines] = useState<any[]>([]);
   const [openStart, setOpenStart] = useState(false);
   const [openClose, setOpenClose] = useState(false);
+  const [openHistory, setOpenHistory] = useState(false);
   const [startTeamId, setStartTeamId] = useState<string>("");
   const [startLineIds, setStartLineIds] = useState<string[]>([]);
   const [observations, setObservations] = useState("");

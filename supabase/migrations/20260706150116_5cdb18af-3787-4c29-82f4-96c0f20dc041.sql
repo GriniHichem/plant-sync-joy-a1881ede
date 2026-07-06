@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.attach_quality_risk_to_ticket(uuid, text, text, text, uuid, uuid, uuid) FROM PUBLIC, anon;

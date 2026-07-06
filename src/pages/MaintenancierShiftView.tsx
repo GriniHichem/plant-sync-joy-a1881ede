@@ -142,8 +142,10 @@ export default function MaintenancierShiftView() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-mono font-bold text-foreground">{item.numero}</span>
+                              {item.quality_risk && <ShieldAlert className={`h-3.5 w-3.5 ${item.quality_risk_level === "critique" ? "text-destructive" : "text-amber-600"}`} />}
                               <PriorityBadge priority={item.priorite} />
                               <Badge variant={item.statut === "ouvert" ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 capitalize">{item.statut.replace("_", " ")}</Badge>
+
                             </div>
                             <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{item.description}</p>
                             {item.heure_declaration && (

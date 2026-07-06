@@ -1,34 +1,78 @@
-# Corriger l'affichage du bilan de shift (console responsable)
+# Risque qualité ↔ Maintenance (tickets / préventif)
 
-## Problème
+Relier la qualité à la maintenance : le contrôle qualité peut ouvrir un ticket « risque qualité » (choix ligne + machine, demande d'intervention, décision arrêt/maintien production), ou attacher un risque qualité à un ticket existant. Le maintenancier voit clairement cette information, et tout ticket à risque qualité est marqué d'une icône dédiée.
 
-Dans `src/components/shift/ShiftSummaryDialog.tsx`, l'aperçu à l'écran et la version imprimée partagent **le même bloc HTML brut** (`<h1>`, `<h2>`, `<table>`, `<div class="totals">`…). Ce HTML n'est stylé que par le CSS injecté dans la fenêtre d'impression. À l'écran, dans le Dialog, ces balises n'ont aucun style (Tailwind neutralise les styles par défaut) → titres minuscules, tableau sans bordures, cartes d'indicateurs cassées. D'où le rendu « catastrophique ».
+## 1. Base de données (migration)
 
-## Solution
+Ajout de colonnes sur `public.tickets` (aucune table nouvelle) :
 
-Séparer clairement les deux rendus :
-- **Écran** : un vrai rendu React stylé avec les tokens du design system (cartes, badges, listes lisibles, responsive).
-- **Impression** : garder une fonction qui génère le HTML simple actuel (inchangé), uniquement pour `window.print`.
+- `quality_risk` boolean NOT NULL DEFAULT false — drapeau risque qualité
+- `quality_risk_level` text — `mineur` | `majeur` | `critique`
+- `quality_risk_note` text — description du risque qualité
+- `quality_production_decision` text — `arret` | `maintien` (recommandation qualité)
+- `quality_risk_declared_by` uuid — auteur qualité
+- `quality_risk_declared_at` timestamptz
+- `quality_shift_id` uuid — lien vers le shift qualité (`quality_shifts`)
+- `quality_check_id` uuid, `quality_nc_id` uuid — liens optionnels vers le contrôle/NC d'origine
 
-Aucune logique de données ni requête n'est modifiée — uniquement la présentation.
+Index partiel `WHERE quality_risk = true` pour les listes.
 
-## Changements — `ShiftSummaryDialog.tsx`
+### RPC `attach_quality_risk_to_ticket` (SECURITY DEFINER)
 
-1. **Extraire le HTML d'impression** dans une fonction pure `buildPrintableHtml(data, session, kind)` qui retourne la chaîne HTML actuelle (mêmes balises + même `<style>`). `handlePrint` l'utilise directement au lieu de lire le DOM via `getElementById`.
+La politique UPDATE actuelle n'autorise que déclarant/assigné/maintenance/admin. Pour permettre à la qualité d'annoter un ticket existant sans élargir l'accès à toutes les colonnes, une fonction dédiée :
 
-2. **Nouveau rendu écran** (remplace le `<div id="shift-summary-printable">`), avec les tokens sémantiques existants :
-   - **En-tête méta** : opérateur, date, créneau, équipe, début/fin affichés en grille de petites paires label/valeur (`text-muted-foreground` + valeur en `font-medium`).
-   - **Indicateurs** : grille responsive de cartes (`rounded-lg border bg-card p-3`), label en petit `uppercase text-muted-foreground`, valeur en `text-2xl font-bold`. Mise en évidence douce pour les valeurs critiques (ex. non-conformes > 0 en `text-destructive`).
-   - **Journal** : liste de lignes `rounded-md border bg-card` (au lieu d'un `<table>` brut) : heure en `tabular-nums`, `Badge` pour le type d'événement, libellé, détail en `text-sm text-muted-foreground` ; état vide géré proprement.
-   - **Observations** : bloc `whitespace-pre-wrap` dans une carte si présent.
-   - Le tout scrollable dans le `DialogContent` déjà en `max-h-[85vh] overflow-y-auto`.
+```
+attach_quality_risk_to_ticket(
+  p_ticket_id uuid, p_level text, p_note text,
+  p_decision text, p_shift_id uuid, p_check_id uuid, p_nc_id uuid)
+```
 
-3. **Bouton Imprimer** conservé dans le header du dialog ; il appelle `handlePrint` (ouvre la fenêtre, écrit `buildPrintableHtml(...)`, `print()`). La version imprimée reste volontairement simple et identique à l'actuelle.
+- Vérifie `has_role(auth.uid(), 'controleur_qualite' | 'responsable_controle_qualite' | 'directeur_qualite' | 'admin')`
+- Met à jour uniquement les colonnes `quality_*`, positionne `quality_risk = true`, `quality_risk_declared_by = auth.uid()`, `quality_risk_declared_at = now()`
+- Journalise via `audit_logs` (déclenchée aussi côté client)
 
-4. Conserver l'état `loading` (spinner) et la structure `BilanData` inchangés. S'applique aux trois `kind` (production / maintenance / quality) puisque le composant est partagé.
+La **création** d'un ticket reste un `INSERT` direct (politique existante `declarant_id = auth.uid()`), avec les champs `quality_*` renseignés.
 
-## Détails techniques
+## 2. Sélection ligne + machine
 
-- Aucun changement de props, de types, ni d'appels Supabase.
-- Retrait de la dépendance à `document.getElementById("shift-summary-printable")` (le HardCoded id n'est plus nécessaire).
-- Vérification : `tsgo --noEmit`, puis contrôle visuel du dialog dans la console responsable qualité (`/qualite/shift` → bouton « Bilan ») et test du bouton Imprimer.
+Aujourd'hui `MaintenanceRiskPanel` déduit une seule machine via `production_lines.machine_id`. On étend :
+
+- Choix de la **ligne** (par défaut celle de l'OF)
+- Choix de la **machine** parmi celles rattachées à la ligne via `machine_line_assignments` (+ `line.machine_id`) ; machine facultative — si absente, on retombe sur la machine principale de la ligne (contrainte `machine_id NOT NULL` sur tickets respectée). Si aucune machine n'existe, le ticket ne peut être créé (message clair).
+
+## 3. UI Qualité — `src/components/qualite/MaintenanceRiskPanel.tsx`
+
+Enrichir le dialogue « Déclarer un ticket » :
+
+- Sélecteurs Ligne et Machine
+- **Gravité** (mineur/majeur/critique)
+- **Décision production** : boutons segmentés `Arrêter la production` / `Maintenir la production`
+- Description (obligatoire)
+- À la création : `quality_risk = true`, `quality_shift_id` (shift qualité courant), champs `quality_*`, description préfixée `[Risque qualité]`
+
+Nouvelle action sur chaque **ticket ouvert déjà listé** : bouton « Ajouter risque qualité » ouvrant un mini-dialogue (gravité + note + décision) qui appelle `attach_quality_risk_to_ticket`. Les tickets déjà à risque affichent le badge/icône `ShieldAlert`.
+
+## 4. UI Maintenance — affichage du risque qualité
+
+### `src/pages/TicketDetail.tsx`
+- Badge `ShieldAlert` (ambre/rouge selon gravité) dans l'en-tête quand `quality_risk`
+- Nouvelle **Card « Risque qualité »** (visible si `quality_risk`) : gravité, note, décision production mise en évidence (arrêt = rouge), auteur + date, lien vers le shift qualité / contrôle d'origine
+- Étendre le `select` de chargement du ticket pour inclure les colonnes `quality_*`
+- Bouton qualité « Signaler un risque qualité » pour les rôles qualité lorsque le ticket n'est pas encore marqué (réutilise l'RPC)
+
+### `src/pages/TicketsList.tsx` et `src/pages/MaintenancierShiftView.tsx`
+- Icône `ShieldAlert` à côté du numéro pour les tickets `quality_risk` (vue cartes + tableau + file maintenancier)
+- Ajout de `quality_risk`, `quality_risk_level` au `select` des listes
+- Filtre rapide optionnel « Risque qualité » dans TicketsList
+
+## 5. Notifications & cohérence inter-modules
+
+- À la création/annotation d'un risque qualité : notification aux `resp_maintenance` (via `notifications`, `notification_type: "ticket_quality_risk"`)
+- Si `quality_production_decision = 'arret'` : notification au responsable production du shift lié (si `of_id`/`shift_id` connus) pour cohérence avec le module production
+- Réutilise le helper `logAudit` déjà en place ; pas de logique métier production modifiée (la décision est une recommandation tracée, pas un arrêt automatique)
+
+## Vérification
+
+- `tsgo --noEmit`
+- Contrôle visuel : `/qualite/shift` (création + annotation), `/tickets/:id` (Card risque qualité + icône), `/tickets` (icône + filtre), vue maintenancier
+- Test création ticket avec décision « arrêt » → présence badge, note, notification

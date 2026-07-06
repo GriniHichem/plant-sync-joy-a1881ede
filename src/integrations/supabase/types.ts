@@ -5833,6 +5833,15 @@ export type Database = {
           organe_id: string | null
           panne_type_id: string | null
           priorite: Database["public"]["Enums"]["ticket_priorite"]
+          quality_check_id: string | null
+          quality_nc_id: string | null
+          quality_production_decision: string | null
+          quality_risk: boolean
+          quality_risk_declared_at: string | null
+          quality_risk_declared_by: string | null
+          quality_risk_level: string | null
+          quality_risk_note: string | null
+          quality_shift_id: string | null
           search_vector: unknown
           shift_id: string | null
           solution: string | null
@@ -5866,6 +5875,15 @@ export type Database = {
           organe_id?: string | null
           panne_type_id?: string | null
           priorite?: Database["public"]["Enums"]["ticket_priorite"]
+          quality_check_id?: string | null
+          quality_nc_id?: string | null
+          quality_production_decision?: string | null
+          quality_risk?: boolean
+          quality_risk_declared_at?: string | null
+          quality_risk_declared_by?: string | null
+          quality_risk_level?: string | null
+          quality_risk_note?: string | null
+          quality_shift_id?: string | null
           search_vector?: unknown
           shift_id?: string | null
           solution?: string | null
@@ -5899,6 +5917,15 @@ export type Database = {
           organe_id?: string | null
           panne_type_id?: string | null
           priorite?: Database["public"]["Enums"]["ticket_priorite"]
+          quality_check_id?: string | null
+          quality_nc_id?: string | null
+          quality_production_decision?: string | null
+          quality_risk?: boolean
+          quality_risk_declared_at?: string | null
+          quality_risk_declared_by?: string | null
+          quality_risk_level?: string | null
+          quality_risk_note?: string | null
+          quality_shift_id?: string | null
           search_vector?: unknown
           shift_id?: string | null
           solution?: string | null
@@ -6320,6 +6347,65 @@ export type Database = {
     }
     Functions: {
       apply_maintenance_shift_schedules: { Args: never; Returns: string[] }
+      attach_quality_risk_to_ticket: {
+        Args: {
+          p_check_id?: string
+          p_decision?: string
+          p_level?: string
+          p_nc_id?: string
+          p_note?: string
+          p_shift_id?: string
+          p_ticket_id: string
+        }
+        Returns: {
+          assignee_id: string | null
+          assignment_status:
+            | Database["public"]["Enums"]["ticket_assignment_status"]
+            | null
+          cause_racine: string | null
+          created_at: string
+          declarant_id: string | null
+          description: string
+          equipement_id: string | null
+          heure_cloture: string | null
+          heure_declaration: string
+          heure_prise_en_charge: string | null
+          heure_resolution: string | null
+          id: string
+          is_from_gpao: boolean | null
+          ligne_id: string | null
+          machine_id: string
+          numero: string
+          of_id: string | null
+          organe_id: string | null
+          panne_type_id: string | null
+          priorite: Database["public"]["Enums"]["ticket_priorite"]
+          quality_check_id: string | null
+          quality_nc_id: string | null
+          quality_production_decision: string | null
+          quality_risk: boolean
+          quality_risk_declared_at: string | null
+          quality_risk_declared_by: string | null
+          quality_risk_level: string | null
+          quality_risk_note: string | null
+          quality_shift_id: string | null
+          search_vector: unknown
+          shift_id: string | null
+          solution: string | null
+          statut: Database["public"]["Enums"]["ticket_statut"]
+          temps_arret_minutes: number | null
+          temps_intervention_minutes: number | null
+          updated_at: string
+          validation_request_id: string | null
+          validation_status: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       auto_close_stale_shifts: {
         Args: never
         Returns: {

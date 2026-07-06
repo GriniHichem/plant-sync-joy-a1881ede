@@ -14,6 +14,7 @@ import { ClipboardCheck, Play, Square, AlertTriangle, RefreshCw, Factory, ListCh
 import { useActiveQualityShift, deriveShiftTypeFromHour } from "@/hooks/useActiveQualityShift";
 import { OfControlsPanel } from "@/components/qualite/OfControlsPanel";
 import { MaintenanceRiskPanel } from "@/components/qualite/MaintenanceRiskPanel";
+import { ShiftHistoryPanel } from "@/components/qualite/ShiftHistoryPanel";
 import { logAudit } from "@/lib/audit";
 
 interface OfItem {

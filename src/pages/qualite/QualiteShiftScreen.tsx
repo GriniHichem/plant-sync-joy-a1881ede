@@ -349,7 +349,7 @@ export default function QualiteShiftScreen() {
                     </CardContent>
                   </Card>
 
-                  <MaintenanceRiskPanel ofId={selectedOf.id} ofNumero={selectedOf.numero} lineId={selectedOf.line_id} />
+                  <MaintenanceRiskPanel ofId={selectedOf.id} ofNumero={selectedOf.numero} lineId={selectedOf.line_id} qualityShiftId={shift?.id ?? null} />
 
                 </>
               )}

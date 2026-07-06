@@ -656,6 +656,54 @@ export default function TicketDetail() {
         </CardContent>
       </Card>
 
+      {/* Quality risk card */}
+      {ticket.quality_risk && (
+        <Card className={ticket.quality_production_decision === "arret" ? "border-destructive/40" : "border-amber-400/40"}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-1.5">
+              <ShieldAlert className={`h-4 w-4 ${ticket.quality_risk_level === "critique" ? "text-destructive" : "text-amber-600"}`} />
+              Risque qualité
+              {ticket.quality_risk_level && (
+                <Badge variant="outline" className="text-[10px] capitalize">{ticket.quality_risk_level}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {ticket.quality_production_decision && (
+              <div
+                className={`flex items-center gap-2 rounded-md border p-2.5 text-sm font-medium ${
+                  ticket.quality_production_decision === "arret"
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : "border-amber-400/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                }`}
+              >
+                {ticket.quality_production_decision === "arret" ? (
+                  <><OctagonAlert className="h-4 w-4" /> Décision qualité : arrêter la production</>
+                ) : (
+                  <><PlayCircle className="h-4 w-4" /> Décision qualité : maintenir la production</>
+                )}
+              </div>
+            )}
+            {ticket.quality_risk_note && (
+              <div>
+                <p className="text-xs text-muted-foreground">Note qualité</p>
+                <p className="text-sm whitespace-pre-wrap">{ticket.quality_risk_note}</p>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+              {qualityRiskByName && (
+                <span className="flex items-center gap-1"><User className="h-3 w-3" /> Signalé par {qualityRiskByName}</span>
+              )}
+              {ticket.quality_risk_declared_at && (
+                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {fmtDate(ticket.quality_risk_declared_at)}</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
+
       {/* Actions — sticky on mobile */}
       {canTakeCharge && canEdit("tickets") && (
         <StickyActionBar>

@@ -262,56 +262,83 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : data ? (
-          <div id="shift-summary-printable">
-            <h1>{TITLES[kind]}</h1>
-            <div className="meta">
-              <span><strong>Opérateur :</strong> {operatorName}</span>
-              <span><strong>Date :</strong> {session?.date_shift}</span>
-              <span><strong>Créneau :</strong> {String(session?.shift_type ?? "").replace("_", " ")}</span>
-              <span><strong>Équipe :</strong> {session?.shift_teams?.code ?? "—"}</span>
-              <span><strong>Début :</strong> {session?.heure_debut ? new Date(session.heure_debut).toLocaleString("fr-FR") : "—"}</span>
-              <span><strong>Fin :</strong> {session?.heure_fin ? new Date(session.heure_fin).toLocaleString("fr-FR") : "En cours"}</span>
-            </div>
-
-            <h2>Indicateurs</h2>
-            <div className="totals">
-              {data.totals.map((t) => (
-                <div key={t.label} className="total-card">
-                  <div className="total-label">{t.label}</div>
-                  <div className="total-value">{t.value}</div>
+          <div className="space-y-5">
+            {/* Méta */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 rounded-lg border bg-muted/30 p-4">
+              {[
+                ["Opérateur", operatorName],
+                ["Date", session?.date_shift ?? "—"],
+                ["Créneau", String(session?.shift_type ?? "").replace("_", " ") || "—"],
+                ["Équipe", session?.shift_teams?.code ?? "—"],
+                ["Début", session?.heure_debut ? new Date(session.heure_debut).toLocaleString("fr-FR") : "—"],
+                ["Fin", session?.heure_fin ? new Date(session.heure_fin).toLocaleString("fr-FR") : "En cours"],
+              ].map(([label, value]) => (
+                <div key={label} className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+                  <div className="text-sm font-medium truncate">{value}</div>
                 </div>
               ))}
             </div>
 
-            <h2>Journal ({data.events.length})</h2>
-            {data.events.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun événement enregistré.</p>
-            ) : (
-              <table>
-                <thead>
-                  <tr><th>Heure</th><th>Type</th><th>Libellé</th><th>Détail</th></tr>
-                </thead>
-                <tbody>
-                  {data.events.map((e, i) => (
-                    <tr key={i}>
-                      <td className="tabular-nums">{new Date(e.time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</td>
-                      <td>{e.type}</td>
-                      <td>{e.label}</td>
-                      <td>{e.detail ?? ""}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            {/* Indicateurs */}
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">Indicateurs</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {data.totals.map((t) => {
+                  const critical = /non conf|rebut/i.test(t.label) && Number(t.value) > 0;
+                  return (
+                    <div key={t.label} className="rounded-lg border bg-card p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{t.label}</div>
+                      <div className={`text-2xl font-bold tabular-nums ${critical ? "text-destructive" : ""}`}>
+                        {t.value}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
 
+            {/* Journal */}
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">Journal ({data.events.length})</h3>
+              {data.events.length === 0 ? (
+                <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+                  Aucun événement enregistré.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {data.events.map((e, i) => (
+                    <li key={i} className="flex items-start gap-3 rounded-md border bg-card p-3">
+                      <span className="shrink-0 text-sm font-medium tabular-nums text-muted-foreground pt-0.5">
+                        {new Date(e.time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary" className="text-[10px]">{e.type}</Badge>
+                          <span className="text-sm font-medium">{e.label}</span>
+                        </div>
+                        {e.detail && (
+                          <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                            {e.detail}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* Observations */}
             {session?.observations && (
-              <>
-                <h2>Observations de fin de shift</h2>
-                <p className="text-sm whitespace-pre-wrap">{session.observations}</p>
-              </>
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground">Observations de fin de shift</h3>
+                <p className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">{session.observations}</p>
+              </section>
             )}
           </div>
         ) : null}
+
       </DialogContent>
     </Dialog>
   );

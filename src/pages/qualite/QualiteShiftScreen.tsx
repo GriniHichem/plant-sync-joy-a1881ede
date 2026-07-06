@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
-import { ClipboardCheck, Play, Square, AlertTriangle, RefreshCw, Factory, ListChecks } from "lucide-react";
+import { ClipboardCheck, Play, Square, AlertTriangle, RefreshCw, Factory, ListChecks, History } from "lucide-react";
 import { useActiveQualityShift, deriveShiftTypeFromHour } from "@/hooks/useActiveQualityShift";
 import { OfControlsPanel } from "@/components/qualite/OfControlsPanel";
 import { MaintenanceRiskPanel } from "@/components/qualite/MaintenanceRiskPanel";
@@ -41,6 +41,7 @@ export default function QualiteShiftScreen() {
   const [lines, setLines] = useState<any[]>([]);
   const [openStart, setOpenStart] = useState(false);
   const [openClose, setOpenClose] = useState(false);
+  const [openHistory, setOpenHistory] = useState(false);
   const [startTeamId, setStartTeamId] = useState<string>("");
   const [startLineIds, setStartLineIds] = useState<string[]>([]);
   const [observations, setObservations] = useState("");
@@ -325,11 +326,16 @@ export default function QualiteShiftScreen() {
                 <>
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <ListChecks className="h-5 w-5 text-primary" />
-                        {selectedOf.numero}
-                        <span className="text-sm font-normal text-muted-foreground">· {selectedOf.productLabel} · {selectedOf.lineLabel}</span>
-                      </CardTitle>
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <ListChecks className="h-5 w-5 text-primary" />
+                          {selectedOf.numero}
+                          <span className="text-sm font-normal text-muted-foreground">· {selectedOf.productLabel} · {selectedOf.lineLabel}</span>
+                        </CardTitle>
+                        <Button variant="outline" size="sm" onClick={() => setOpenHistory(true)}>
+                          <History className="h-4 w-4 mr-2" /> Historique
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <OfControlsPanel
@@ -345,7 +351,6 @@ export default function QualiteShiftScreen() {
 
                   <MaintenanceRiskPanel ofId={selectedOf.id} ofNumero={selectedOf.numero} lineId={selectedOf.line_id} />
 
-                  <ShiftHistoryPanel qualityShiftId={shift.id} filterOfId={selectedOf.id} />
                 </>
               )}
             </div>
@@ -406,6 +411,13 @@ export default function QualiteShiftScreen() {
           </div>
         </div>
       </ResponsiveDialog>
+
+      {/* Dialog historique de saisie */}
+      {shift && (
+        <ResponsiveDialog open={openHistory} onOpenChange={setOpenHistory} title="Historique de saisie du shift" description="Consultez toutes les valeurs saisies et filtrez rapidement par contrôle.">
+          <ShiftHistoryPanel qualityShiftId={shift.id} filterOfId={selectedOf?.id} />
+        </ResponsiveDialog>
+      )}
     </div>
   );
 }

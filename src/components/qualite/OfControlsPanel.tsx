@@ -248,6 +248,50 @@ export function OfControlsPanel({ ofId, ofNumero, productId, lineId, activeQuali
     [indicators],
   );
 
+  const renderField = (ind: ApplicableIndicator, draft: Draft, compact = false) => {
+    const h = compact ? "min-h-[40px]" : "min-h-[48px]";
+    if (ind.indicator_type === "numeric") {
+      return (
+        <Input
+          inputMode="decimal"
+          placeholder="Valeur mesurée"
+          value={draft.value_text}
+          onChange={(e) => setDraft(ind.indicator_id, { value_text: e.target.value })}
+          className={compact ? "tabular-nums h-9 w-[130px]" : "text-lg tabular-nums min-h-[48px]"}
+        />
+      );
+    }
+    if (ind.indicator_type === "text") {
+      return (
+        <Textarea rows={compact ? 1 : 2} placeholder="Observation" value={draft.value_text}
+          onChange={(e) => setDraft(ind.indicator_id, { value_text: e.target.value })}
+          className={compact ? "min-w-[160px]" : ""} />
+      );
+    }
+    if (ind.indicator_type === "boolean") {
+      return (
+        <Select value={draft.value_boolean} onValueChange={(v) => setDraft(ind.indicator_id, { value_boolean: v })}>
+          <SelectTrigger className={compact ? "h-9 w-[170px]" : h}><SelectValue placeholder="Conforme / Non conforme" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">✓ Conforme</SelectItem>
+            <SelectItem value="false">✗ Non conforme</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+    if (ind.indicator_type === "select" && Array.isArray(ind.select_options)) {
+      return (
+        <Select value={draft.selected_value} onValueChange={(v) => setDraft(ind.indicator_id, { selected_value: v })}>
+          <SelectTrigger className={compact ? "h-9 w-[150px]" : h}><SelectValue placeholder="Choisir" /></SelectTrigger>
+          <SelectContent>
+            {ind.select_options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">

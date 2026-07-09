@@ -424,6 +424,103 @@ export function OfControlsPanel({ ofId, ofNumero, productId, lineId, activeQuali
           );
         })}
       </div>
+      )}
+
+      {viewMode === "table" && sorted.length > 0 && (
+        <ScrollTable>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8"></TableHead>
+                <TableHead>Contrôle</TableHead>
+                <TableHead>Norme</TableHead>
+                <TableHead>Échéance</TableHead>
+                <TableHead>Saisie</TableHead>
+                <TableHead>Conformité</TableHead>
+                <TableHead>Commentaire</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sorted.map((ind) => {
+                const draft = drafts[ind.indicator_id] ?? emptyDraft();
+                const preview = previewFor(ind, draft);
+                const due = dueInfo(lastByIndicator[ind.indicator_id] ?? null, ind.effective_frequency_minutes);
+                const pinned = !!activeQualityShift?.id && isPinned(ofId, ind.indicator_id);
+                void tick;
+                const rowClass =
+                  preview?.is_conform === true ? "bg-green-500/5"
+                  : preview?.is_conform === false ? "bg-destructive/5"
+                  : pinned ? "bg-primary/5" : "";
+                return (
+                  <TableRow key={ind.indicator_id} className={rowClass}>
+                    <TableCell>
+                      {activeQualityShift?.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-7 w-7 ${pinned ? "text-primary" : "text-muted-foreground"}`}
+                          onClick={() => togglePin(ofId, ind.indicator_id)}
+                          title={pinned ? "Désépingler" : "Épingler comme prioritaire"}
+                        >
+                          {pinned ? <Pin className="h-4 w-4 fill-current" /> : <PinOff className="h-4 w-4" />}
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs text-muted-foreground">{ind.code}</span>
+                        <span>{ind.name}</span>
+                        {ind.unit ? <span className="text-xs text-muted-foreground">({ind.unit})</span> : null}
+                        {ind.effective_is_blocking && <Badge variant="destructive" className="text-[10px]">Bloquant</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {ind.indicator_type === "numeric" && (ind.min_value != null || ind.max_value != null)
+                        ? `${ind.min_value ?? "–"} … ${ind.max_value ?? "–"}${ind.target_value != null ? ` (cible ${ind.target_value})` : ""}`
+                        : "–"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          due.level === "overdue" ? "border-destructive text-destructive"
+                          : due.level === "todo" ? "border-amber-500 text-amber-600"
+                          : "text-muted-foreground"
+                        }
+                      >
+                        {due.level === "overdue" ? <AlertTriangle className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" />}
+                        {due.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{renderField(ind, draft, true)}</TableCell>
+                    <TableCell>
+                      {preview?.is_conform != null && (
+                        <div className={`flex items-center gap-1 text-sm font-medium ${preview.is_conform ? "text-green-600" : "text-destructive"}`}>
+                          {preview.is_conform ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                          {preview.is_conform ? "Conforme" : "Non conforme"}
+                          {preview.out_of_tolerance && <span className="text-amber-600">·hors tol.</span>}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Input placeholder="Commentaire" value={draft.comment}
+                        onChange={(e) => setDraft(ind.indicator_id, { comment: e.target.value })}
+                        className="h-9 min-w-[140px]" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" onClick={() => handleSave(ind)} disabled={savingId === ind.indicator_id}>
+                        <Save className="h-4 w-4 mr-1.5" />
+                        {savingId === ind.indicator_id ? "…" : "Enregistrer"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </ScrollTable>
+      )}
     </div>
   );
 }

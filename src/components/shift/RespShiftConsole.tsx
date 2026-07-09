@@ -439,6 +439,15 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
                           <Badge variant="secondary" className="text-xs">Clôturée</Badge>
                         )}
                         <div className="font-semibold text-sm">{operatorName}</div>
+                        {kind === "quality" && s.is_self_intervention && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400"
+                            title={s.intervention_reason || undefined}
+                          >
+                            Intervention responsable
+                          </Badge>
+                        )}
                         {s.shift_teams && (
                           <Badge variant="outline" className="text-xs">Équipe {s.shift_teams.code}</Badge>
                         )}

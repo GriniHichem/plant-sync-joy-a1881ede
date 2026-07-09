@@ -401,36 +401,8 @@ export function OfControlsPanel({ ofId, ofNumero, productId, lineId, activeQuali
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                {ind.indicator_type === "numeric" && (
-                  <Input
-                    inputMode="decimal"
-                    placeholder="Valeur mesurée"
-                    value={draft.value_text}
-                    onChange={(e) => setDraft(ind.indicator_id, { value_text: e.target.value })}
-                    className="text-lg tabular-nums min-h-[48px]"
-                  />
-                )}
-                {ind.indicator_type === "text" && (
-                  <Textarea rows={2} placeholder="Observation" value={draft.value_text}
-                    onChange={(e) => setDraft(ind.indicator_id, { value_text: e.target.value })} />
-                )}
-                {ind.indicator_type === "boolean" && (
-                  <Select value={draft.value_boolean} onValueChange={(v) => setDraft(ind.indicator_id, { value_boolean: v })}>
-                    <SelectTrigger className="min-h-[48px]"><SelectValue placeholder="Conforme / Non conforme" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">✓ Conforme</SelectItem>
-                      <SelectItem value="false">✗ Non conforme</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-                {ind.indicator_type === "select" && Array.isArray(ind.select_options) && (
-                  <Select value={draft.selected_value} onValueChange={(v) => setDraft(ind.indicator_id, { selected_value: v })}>
-                    <SelectTrigger className="min-h-[48px]"><SelectValue placeholder="Choisir" /></SelectTrigger>
-                    <SelectContent>
-                      {ind.select_options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                )}
+                {renderField(ind, draft)}
+
 
                 {preview?.is_conform != null && (
                   <div className={`flex items-center gap-1.5 text-sm font-medium ${preview.is_conform ? "text-green-600" : "text-destructive"}`}>

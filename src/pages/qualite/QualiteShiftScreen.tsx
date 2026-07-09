@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { ClipboardCheck, Play, Square, AlertTriangle, RefreshCw, Factory, ListChecks, History } from "lucide-react";
@@ -43,6 +42,7 @@ export default function QualiteShiftScreen() {
   const [openClose, setOpenClose] = useState(false);
   const [openHistory, setOpenHistory] = useState(false);
   const [startTeamId, setStartTeamId] = useState<string>("");
+  const [startTeamLocked, setStartTeamLocked] = useState(false);
   const [startLineIds, setStartLineIds] = useState<string[]>([]);
   const [observations, setObservations] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -147,17 +147,46 @@ export default function QualiteShiftScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shift?.id]);
 
-  function openStartDialog() {
+  async function loadStartContext() {
     setStartTeamId("");
+    setStartTeamLocked(false);
     setStartLineIds([]);
+
+    const [{ data: ofRows }, { data: scopeRows }] = await Promise.all([
+      supabase.from("ordres_fabrication" as any).select("line_id").eq("statut", "en_cours" as any),
+      user
+        ? supabase.rpc("get_scope_shift_context" as any, { _user_id: user.id, _scope: "quality" })
+        : Promise.resolve({ data: null } as any),
+    ]);
+
+    const activeLineIds = Array.from(
+      new Set(((ofRows as any[]) ?? []).map((o) => o.line_id).filter(Boolean)),
+    ) as string[];
+    setStartLineIds(activeLineIds);
+
+    const scope = Array.isArray(scopeRows) ? scopeRows[0] : scopeRows;
+    if (scope?.team_id) {
+      setStartTeamId(scope.team_id);
+      setStartTeamLocked(true);
+    }
+  }
+
+  function openStartDialog() {
+    void loadStartContext();
     setOpenStart(true);
   }
 
   async function handleStart() {
     if (!user) return;
-    if (startLineIds.length === 0) { toast({ title: "Sélectionnez au moins une ligne", variant: "destructive" }); return; }
     setSubmitting(true);
     try {
+      const { data: ofRows } = await supabase
+        .from("ordres_fabrication" as any)
+        .select("line_id")
+        .eq("statut", "en_cours" as any);
+      const activeLineIds = Array.from(
+        new Set(((ofRows as any[]) ?? []).map((o) => o.line_id).filter(Boolean)),
+      ) as string[];
       const today = new Date().toISOString().slice(0, 10);
       const shiftType = deriveShiftTypeFromHour(new Date().getHours());
       const { data: qsData, error } = await supabase
@@ -166,11 +195,13 @@ export default function QualiteShiftScreen() {
         .select("id").single();
       if (error) throw error;
       const newId = (qsData as any).id;
-      const { error: linesErr } = await supabase
-        .from("quality_shift_lines" as any)
-        .insert(startLineIds.map((lid) => ({ quality_shift_id: newId, production_line_id: lid })) as any);
-      if (linesErr) throw linesErr;
-      await logAudit({ action_type: "create", module: "parametres" as any, entity_type: "quality_shift", entity_id: newId, action_label: "Ouverture shift qualité", new_values: { lines: startLineIds, team_id: startTeamId || null } });
+      if (activeLineIds.length > 0) {
+        const { error: linesErr } = await supabase
+          .from("quality_shift_lines" as any)
+          .insert(activeLineIds.map((lid) => ({ quality_shift_id: newId, production_line_id: lid })) as any);
+        if (linesErr) throw linesErr;
+      }
+      await logAudit({ action_type: "create", module: "parametres" as any, entity_type: "quality_shift", entity_id: newId, action_label: "Ouverture shift qualité", new_values: { lines: activeLineIds, team_id: startTeamId || null } });
       toast({ title: "Shift qualité démarré" });
       setOpenStart(false);
       await refresh();
@@ -359,11 +390,11 @@ export default function QualiteShiftScreen() {
       )}
 
       {/* Dialog démarrage */}
-      <ResponsiveDialog open={openStart} onOpenChange={setOpenStart} title="Démarrer un shift contrôle" description="Sélectionnez votre équipe et les lignes que vous couvrez pendant ce quart.">
+      <ResponsiveDialog open={openStart} onOpenChange={setOpenStart} title="Démarrer un shift contrôle" description="Sélectionnez l'équipe si elle n'est pas déjà configurée. Les lignes viennent automatiquement des OF actifs.">
         <div className="space-y-4">
           <div>
-            <Label>Équipe</Label>
-            <Select value={startTeamId} onValueChange={setStartTeamId}>
+            <Label>Équipe {startTeamLocked && <span className="text-xs text-muted-foreground">(planning)</span>}</Label>
+            <Select value={startTeamId} onValueChange={setStartTeamId} disabled={startTeamLocked}>
               <SelectTrigger className="mt-1"><SelectValue placeholder="Choisir une équipe" /></SelectTrigger>
               <SelectContent>
                 {teams.map((t) => <SelectItem key={t.id} value={t.id}>Équipe {t.code} — {t.name}</SelectItem>)}
@@ -371,20 +402,23 @@ export default function QualiteShiftScreen() {
             </Select>
           </div>
           <div>
-            <Label>Lignes couvertes *</Label>
-            <div className="mt-2 max-h-60 overflow-y-auto border rounded-md p-3 space-y-2">
-              {lines.map((l) => (
-                <label key={l.id} className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox
-                    checked={startLineIds.includes(l.id)}
-                    onCheckedChange={(c) => setStartLineIds((prev) => c ? [...prev, l.id] : prev.filter((x) => x !== l.id))}
-                  />
-                  <span className="text-sm">{l.code} — {l.designation}</span>
-                </label>
-              ))}
-              {lines.length === 0 && <p className="text-sm text-muted-foreground">Aucune ligne active.</p>}
+            <Label>Lignes ciblées automatiquement</Label>
+            <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <p className="text-xs text-muted-foreground">Aucune sélection nécessaire : les lignes sont déduites des OF actifs au démarrage du shift.</p>
+              {startLineIds.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {lines
+                    .filter((l) => startLineIds.includes(l.id))
+                    .map((l) => (
+                      <Badge key={l.id} variant="secondary" className="rounded-md">
+                        {l.code} — {l.designation}
+                      </Badge>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-xs text-amber-600">Aucun OF actif pour le moment. Le shift peut quand même démarrer.</p>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Les shifts production en cours sur ces lignes seront automatiquement liés.</p>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setOpenStart(false)} disabled={submitting}>Annuler</Button>

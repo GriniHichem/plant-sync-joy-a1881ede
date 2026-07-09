@@ -74,7 +74,6 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
   const [lineId, setLineId] = useState("");
   const [ofId, setOfId] = useState("__none__");
   const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
-  const [selfMode, setSelfMode] = useState(false);
   const [interventionReason, setInterventionReason] = useState("");
 
   const today = new Date().toISOString().slice(0, 10);

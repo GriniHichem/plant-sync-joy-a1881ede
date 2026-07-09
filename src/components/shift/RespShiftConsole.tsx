@@ -179,12 +179,20 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
     setLineId("");
     setOfId("__none__");
     setSelectedLineIds([]);
+    setSelfMode(false);
+    setInterventionReason("");
     setShiftType(deriveShiftTypeFromHour(new Date().getHours()));
   }
 
+  const isQualitySelf = kind === "quality" && selfMode;
+
   async function handleOpenSession() {
-    if (!operatorId) {
+    if (!isQualitySelf && !operatorId) {
       toast({ title: "Sélectionnez un opérateur", variant: "destructive" });
+      return;
+    }
+    if (isQualitySelf && !interventionReason.trim()) {
+      toast({ title: "Motif obligatoire", description: "Indiquez le motif de l'intervention personnelle.", variant: "destructive" });
       return;
     }
     if (kind === "production" && !lineId) {

@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { Plus, Square, Clock, Loader2, RefreshCw, Users, FileText } from "lucide-react";
 import { logAudit } from "@/lib/audit";
@@ -72,6 +74,8 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
   const [lineId, setLineId] = useState("");
   const [ofId, setOfId] = useState("__none__");
   const [selectedLineIds, setSelectedLineIds] = useState<string[]>([]);
+  const [selfMode, setSelfMode] = useState(false);
+  const [interventionReason, setInterventionReason] = useState("");
 
   const today = new Date().toISOString().slice(0, 10);
 

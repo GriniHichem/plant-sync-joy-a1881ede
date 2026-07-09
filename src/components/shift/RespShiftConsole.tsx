@@ -378,7 +378,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
           </Button>
           <Button onClick={() => setOpenDialog(true)}>
             <Plus className="h-4 w-4 mr-1.5" />
-            Ouvrir une session
+            {kind === "quality" ? "Intervenir moi-même" : "Ouvrir une session"}
           </Button>
         </div>
       </div>

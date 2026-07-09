@@ -275,16 +275,20 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
           description: `Ouverture session shift maintenance pour maintenancier (par responsable)`,
         });
       } else {
+        const reason = interventionReason.trim();
         const { data, error } = await supabase
           .from("quality_shifts" as any)
           .insert({
             date_shift: today,
             shift_type: shiftType,
             shift_team_id: teamId || null,
-            controller_id: operatorId,
+            controller_id: isQualitySelf ? user?.id : operatorId,
             heure_debut: new Date().toISOString(),
             is_active: true,
             opened_by: user?.id,
+            is_self_intervention: isQualitySelf,
+            intervention_reason: isQualitySelf ? reason : null,
+            observations: isQualitySelf ? `[Intervention responsable] ${reason}` : null,
           })
           .select()
           .single();
@@ -301,10 +305,13 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
         await logAudit({
           action_type: "create",
           module: "system",
-          action: "quality_shift_open",
+          action: isQualitySelf ? "quality_shift_self_intervention" : "quality_shift_open",
           entity_type: "quality_shifts",
           entity_id: qsId,
-          description: `Ouverture session shift contrôle qualité (par responsable)`,
+          description: isQualitySelf
+            ? `Intervention personnelle du responsable qualité — motif: ${reason}`
+            : `Ouverture session shift contrôle qualité (par responsable)`,
+          metadata: isQualitySelf ? { reason } : undefined,
         });
       }
 

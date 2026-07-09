@@ -276,6 +276,19 @@ export function OfControlsPanel({ ofId, ofNumero, productId, lineId, activeQuali
             <SelectItem value="ok">À jour</SelectItem>
           </SelectContent>
         </Select>
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => v && setViewMode(v as "cards" | "table")}
+          className="ml-auto"
+        >
+          <ToggleGroupItem value="cards" aria-label="Vue cartes" title="Vue cartes" className="h-9">
+            <LayoutGrid className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="table" aria-label="Vue tableau" title="Vue tableau" className="h-9">
+            <Table2 className="h-4 w-4" />
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {loading && <p className="text-sm text-muted-foreground">Chargement des contrôles…</p>}

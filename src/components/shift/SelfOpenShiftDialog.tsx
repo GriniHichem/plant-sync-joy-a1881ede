@@ -186,7 +186,7 @@ export function SelfOpenShiftDialog({ kind }: Props) {
           entity_type: "maintenance_shifts", description: "Démarrage shift maintenance par l'opérateur",
         });
       } else {
-        if (selectedLineIds.length === 0) { toast({ title: "Sélectionnez au moins une ligne", variant: "destructive" }); setSubmitting(false); return; }
+        // Qualité : les lignes sont déduites automatiquement (planning ou OF actifs), pas de blocage.
         const { data: qs, error } = await supabase.from("quality_shifts" as any).insert({
           shift_type: shiftType,
           shift_team_id: teamId === "__none__" ? null : teamId,

@@ -184,7 +184,10 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
     setShiftType(deriveShiftTypeFromHour(new Date().getHours()));
   }
 
-  const isQualitySelf = kind === "quality" && selfMode;
+  // La qualité est toujours en intervention personnelle : le responsable ne peut
+  // ouvrir une session que pour lui-même. Les sessions des contrôleurs sont
+  // créées automatiquement au démarrage de leur shift.
+  const isQualitySelf = kind === "quality";
 
   async function handleOpenSession() {
     if (!isQualitySelf && !operatorId) {

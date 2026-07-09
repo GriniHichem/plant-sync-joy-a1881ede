@@ -1,31 +1,35 @@
-# Tableau shift de contrôle — vue tableau + correction épingle
+## Objectif
 
-## 1. Réparer l'épingle (cause racine)
+Pour le **Responsable Contrôle Qualité**, supprimer la création manuelle de sessions pour d'autres contrôleurs. Le responsable ne peut ouvrir une session **que pour lui-même** (intervention personnelle avec motif). Les sessions des contrôleurs sont créées automatiquement au démarrage de leur shift (déjà en place via l'auto-ouverture et l'auto-ouverture des contrôleurs).
 
-L'épingle ne fonctionne pas parce que la table `quality_shift_pins` **n'existe pas** dans la base de données. Le code (`useQualityShiftPins.ts`) tente d'insérer/supprimer dans cette table, mais l'appel échoue silencieusement (erreur ignorée).
+Production et Maintenance conservent leur fonctionnement actuel inchangé.
 
-**Action :** créer la table via migration avec :
-- colonnes : `quality_shift_id`, `of_id`, `indicator_id`, `pinned_by`, `created_at`
-- contrainte d'unicité `(quality_shift_id, of_id, indicator_id)`
-- `GRANT` pour `authenticated` + `service_role`
-- RLS activée : lecture/écriture pour les utilisateurs authentifiés (partagé entre contrôleurs de l'équipe, conformément au comportement voulu du hook)
+## Changements (uniquement `kind === "quality"`)
 
-## 2. Ajouter un mode d'affichage « Tableau »
+Fichier : `src/components/shift/RespShiftConsole.tsx`
 
-Dans `src/components/qualite/OfControlsPanel.tsx`, ajouter un sélecteur de vue (Cartes / Tableau) à côté des filtres existants.
+1. **Bouton d'ouverture** : renommer le bouton pour le contexte qualité en « Intervenir moi-même » (au lieu de « Ouvrir une session »). Pour production/maintenance il reste « Ouvrir une session ».
 
-**Vue Tableau** (nouvelle) :
-- Un tableau (`ScrollTable` + `Table`) listant les contrôles avec colonnes : Épingle, Code, Nom, Norme/Unité, Statut/échéance, Saisie (champ compact selon le type numérique/booléen/select/texte), Conformité live, Commentaire, Action Enregistrer.
-- Ligne compacte, saisie inline, même logique `handleSave`, `previewFor`, `dueInfo`, épinglage et tri prioritaire réutilisés tels quels.
-- Les lignes non conformes / hors tolérance surlignées (rouge/vert), lignes épinglées mises en avant.
+2. **Dialogue (qualité)** :
+   - Forcer le mode « self » : le toggle « Intervenir moi-même » et sa case à cocher sont supprimés — le responsable est toujours le contrôleur.
+   - Supprimer le sélecteur « Opérateur » pour la qualité (plus de création pour autrui).
+   - Conserver : le motif d'intervention (obligatoire), l'équipe, le créneau, et les lignes contrôlées.
+   - Titre/description du dialogue adaptés : « Intervention personnelle du responsable qualité ».
 
-**Vue Cartes** : comportement actuel conservé.
+3. **Logique `handleOpenSession`** :
+   - Pour la qualité, `isQualitySelf` devient toujours vrai : `controller_id = user.id`, `is_self_intervention = true`, motif obligatoire.
+   - Retirer la branche qualité qui insérait une session pour `operatorId`.
 
-Le choix de vue est un simple état local (`viewMode: "cards" | "table"`), défaut = cartes.
+4. **Nettoyage** : le mode self reste géré via un état interne toujours à `true` pour la qualité, sans UI de bascule.
 
 ## Détails techniques
 
-- Migration SQL unique pour `public.quality_shift_pins` (structure CREATE → GRANT → ENABLE RLS → POLICY).
-- Aucun changement de logique métier : la vue tableau réutilise les mêmes fonctions et le même état (`drafts`, `lastByIndicator`, `sorted`, `savingId`).
-- Réutilisation des composants `Table`/`ScrollTable` déjà présents.
-- Aucune modification des autres systèmes shift (uniquement le tableau shift de contrôle qualité).
+- `selfMode` : pour la qualité, initialiser/forcer à `true` à l'ouverture du dialogue ; masquer le switch.
+- Les validations restent : motif requis, au moins une ligne contrôlée.
+- Aucun changement de base de données requis (colonnes `is_self_intervention` / `intervention_reason` déjà présentes).
+- Production et maintenance : aucune modification.
+
+## Vérification
+
+- Typecheck (`tsgo --noEmit`).
+- Vérifier dans le preview `/qualite/shift` que le responsable ne voit plus le sélecteur d'opérateur et ne peut ouvrir qu'une session pour lui-même avec motif.

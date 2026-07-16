@@ -31,7 +31,7 @@ type AppModule = {
 
 const MODULES: AppModule[] = [
   // ===== Maintenance (dégradations de bleu) =====
-  { title: "Tableau de bord", description: "Vue synthétique de l'activité maintenance", url: "/", icon: IconDashboard, category: "Maintenance", permissionModule: "dashboard", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
+  { title: "Dashboard maintenance", description: "Vue synthétique de l'activité maintenance", url: "/", icon: IconDashboard, category: "Maintenance", permissionModule: "dashboard", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
   { title: "Machines", description: "Parc machines, criticité et historique", url: "/machines", icon: IconMachine, category: "Maintenance", permissionModule: "machines", accent: "from-blue-500/15 to-blue-500/5 text-blue-500" },
   { title: "Équipements", description: "Équipements autonomes rattachés aux lignes", url: "/equipements", icon: IconEquipment, category: "Maintenance", permissionModule: "equipements", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
   { title: "Organes", description: "Sous-ensembles techniques des machines/équipements", url: "/organes", icon: IconOrganes, category: "Maintenance", permissionModule: "organes", accent: "from-blue-400/15 to-blue-400/5 text-blue-400" },
@@ -78,7 +78,7 @@ const MODULES: AppModule[] = [
   { title: "Sécurité & Accès", description: "Hub centralisé : utilisateurs, rôles, permissions, audit, self-hosting", url: "/securite", icon: IconSecurity, category: "Configuration", permissionModule: "securite", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
   { title: "Validations", description: "Demandes d'approbation et règles", url: "/validations", icon: IconValidation, category: "Configuration", permissionModule: "validations", accent: "from-purple-500/15 to-purple-500/5 text-purple-500" },
   { title: "Paramètres", description: "Référentiels, utilisateurs et configuration", url: "/parametres", icon: IconSettings, category: "Configuration", permissionModule: "parametres", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
-  { title: "Audit & Traçabilité", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: IconAudit, category: "Configuration", permissionModule: "audit", accent: "from-violet-600/15 to-violet-600/5 text-violet-600" },
+  { title: "Dashboard audit et système", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: IconAudit, category: "Configuration", permissionModule: "audit", accent: "from-violet-600/15 to-violet-600/5 text-violet-600" },
   { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: IconBell, category: "Configuration", permissionModule: "notifications", accent: "from-purple-600/15 to-purple-600/5 text-purple-600" },
   { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/recherche", icon: IconSearch, category: "Configuration", permissionModule: "recherche", accent: "from-fuchsia-600/15 to-fuchsia-600/5 text-fuchsia-600" },
 ];
@@ -126,7 +126,7 @@ function getTheme(m: AppModule) {
   if (m.title === "Shift Maintenance") return CARD_THEME["indigo"];
   if (m.title === "Shift Production") return CARD_THEME["emerald"];
   if (m.title === "Shift contrôle") return CARD_THEME["amber"];
-  if (m.title === "Tableau de bord") return CARD_THEME["blue"];
+  if (m.title === "Dashboard maintenance") return CARD_THEME["blue"];
   if (m.title === "Dashboard Production") return CARD_THEME["emerald"];
   if (m.title === "Dashboard Qualité") return CARD_THEME["orange"];
   if (m.title === "Dashboard Inventaire") return CARD_THEME["gray"];

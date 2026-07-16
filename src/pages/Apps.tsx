@@ -75,10 +75,10 @@ const MODULES: AppModule[] = [
   { title: "Campagnes d'inventaire", description: "Double comptage A/B avec arbitrage C", url: "/inventaire/campagnes", icon: IconCampaign, category: "Inventaire", permissionModule: "inventaire_campagnes", accent: "from-gray-600/15 to-gray-600/5 text-gray-600" },
 
   // ===== Configuration (mauve) =====
+  { title: "Dashboard audit et système", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: IconAudit, category: "Configuration", permissionModule: "audit", accent: "from-violet-600/15 to-violet-600/5 text-violet-600" },
   { title: "Sécurité & Accès", description: "Hub centralisé : utilisateurs, rôles, permissions, audit, self-hosting", url: "/securite", icon: IconSecurity, category: "Configuration", permissionModule: "securite", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
   { title: "Validations", description: "Demandes d'approbation et règles", url: "/validations", icon: IconValidation, category: "Configuration", permissionModule: "validations", accent: "from-purple-500/15 to-purple-500/5 text-purple-500" },
   { title: "Paramètres", description: "Référentiels, utilisateurs et configuration", url: "/parametres", icon: IconSettings, category: "Configuration", permissionModule: "parametres", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
-  { title: "Dashboard audit et système", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: IconAudit, category: "Configuration", permissionModule: "audit", accent: "from-violet-600/15 to-violet-600/5 text-violet-600" },
   { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: IconBell, category: "Configuration", permissionModule: "notifications", accent: "from-purple-600/15 to-purple-600/5 text-purple-600" },
   { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/recherche", icon: IconSearch, category: "Configuration", permissionModule: "recherche", accent: "from-fuchsia-600/15 to-fuchsia-600/5 text-fuchsia-600" },
 ];

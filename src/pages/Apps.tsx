@@ -31,7 +31,7 @@ type AppModule = {
 
 const MODULES: AppModule[] = [
   // ===== Maintenance (dégradations de bleu) =====
-  { title: "Tableau de bord", description: "Vue synthétique de l'activité maintenance", url: "/", icon: IconDashboard, category: "Maintenance", permissionModule: "dashboard", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
+  { title: "Dashboard maintenance", description: "Vue synthétique de l'activité maintenance", url: "/", icon: IconDashboard, category: "Maintenance", permissionModule: "dashboard", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
   { title: "Machines", description: "Parc machines, criticité et historique", url: "/machines", icon: IconMachine, category: "Maintenance", permissionModule: "machines", accent: "from-blue-500/15 to-blue-500/5 text-blue-500" },
   { title: "Équipements", description: "Équipements autonomes rattachés aux lignes", url: "/equipements", icon: IconEquipment, category: "Maintenance", permissionModule: "equipements", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
   { title: "Organes", description: "Sous-ensembles techniques des machines/équipements", url: "/organes", icon: IconOrganes, category: "Maintenance", permissionModule: "organes", accent: "from-blue-400/15 to-blue-400/5 text-blue-400" },

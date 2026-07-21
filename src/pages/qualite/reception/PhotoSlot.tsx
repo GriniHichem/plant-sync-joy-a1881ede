@@ -20,6 +20,8 @@ interface Props {
 export function PhotoSlot({ ticketId, slot, disabled, storagePath, onUploaded, onDeleted }: Props) {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+
 
   useEffect(() => {
     let cancel = false;

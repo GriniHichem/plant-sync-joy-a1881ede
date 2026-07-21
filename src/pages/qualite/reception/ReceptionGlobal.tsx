@@ -189,9 +189,9 @@ export default function ReceptionGlobal() {
         <Kpi label="Pesés" value={kpis.pese} />
         <Kpi label="À peser" value={kpis.aPeser} />
         <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
-        <Kpi label="Poids brut" value={formatKg(kpis.brut)} />
-        <Kpi label="Poids net" value={formatKg(kpis.net)} />
-        <Kpi label="Abattement" value={`${kgToTonnes(kpis.abat)} t`} className="hidden sm:block" />
+        <Kpi label="Poids brut" value={formatTonnesInt(kpis.brut)} />
+        <Kpi label="Poids net" value={formatTonnesInt(kpis.net)} />
+        <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} className="hidden sm:block" />
         <Kpi label="Durée moyenne" value={formatDuration(kpis.moyDuree ? Math.round(kpis.moyDuree) : null)} className="hidden sm:block" />
       </div>
 

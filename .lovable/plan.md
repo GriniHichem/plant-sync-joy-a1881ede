@@ -1,59 +1,82 @@
-## Objectifs
+## Objectif
 
-1. Filigrane date/heure incrusté dans les photos capturées.
-2. Traçabilité "Créé par" / "Clôturé par" / "Clôturé le" enregistrée puis affichable à la demande dans la consultation globale.
-3. Consultation des 3 photos directement depuis chaque ligne du tableau global.
+Rendre le module Réception Fruits & Légumes pleinement utilisable sur **tablette** et **smartphone** (agent pont-bascule et contrôleur qualité en mobilité), et garantir que les vues restent **toujours à jour sans rafraîchissement manuel**, sans jamais bloquer la saisie.
 
-## 1. Filigrane des photos (`CameraCaptureDialog.tsx`)
+## Constat actuel
 
-Dans la fonction `snapshot()`, après `ctx.drawImage(...)` :
+- `ReceptionPage` : titre + `TabsList grid-cols-2 md:grid-cols-4` — sur mobile les 4 onglets tiennent sur 2 lignes mais la page perd le contexte au scroll.
+- `ReceptionQualitative` : grille `md:grid-cols-2` + colonne latérale "10 derniers tickets" en `xl:col-span-2` → sur mobile la table dépasse et les champs heure/abattement sont trop petits pour un usage tactile. Le bouton "Ouvrir le ticket" et "Clôturer" ne sont pas sticky.
+- `ReceptionQuantitative` : layout `lg:grid-cols-3` avec table à gauche et panneau détail à droite → sur tablette portrait et mobile le panneau détail passe sous la liste, l'utilisateur doit scroller à chaque sélection. La `Table` déborde en largeur.
+- `ReceptionGlobal` : 8 KPIs `grid-cols-2 md:grid-cols-4 lg:grid-cols-8`, filtres en grille, et grande table à 15+ colonnes → illisible en mobile, pas de scroll horizontal encadré, filtres prennent tout l'écran.
+- `ReceptionSettings` : non audité mais mêmes patterns Card + Table.
+- **Realtime** : `ReceptionGlobal` et `ReceptionQuantitative` s'abonnent aux `postgres_changes` mais n'ont **aucun filet de sécurité** (pas de refresh sur focus/visibilité, pas de polling) — si le socket tombe (mise en veille tablette, coupure Wi-Fi, onglet en arrière-plan) la liste ne se rafraîchit plus jusqu'à un reload manuel. Le hook `useShiftRealtime` fait déjà exactement ça pour les autres modules.
+- `useIsMobile` (breakpoint 768px) et `ResponsiveDialog`, `ScrollTable`, `StickyActionBar`, `FilterSheet` existent déjà et ne sont pas utilisés ici.
 
-- Calculer un bandeau bas (~6% de hauteur, min 40 px).
-- Remplir un rectangle noir semi-transparent (`rgba(0,0,0,0.55)`).
-- Écrire en blanc, police proportionnelle (`Math.round(canvas.height * 0.03)px sans-serif`), le texte `"Photo {slot} — dd/mm/yyyy HH:MM"` (format FR via `new Date().toLocaleString('fr-FR')`).
-- Padding horizontal 12 px, aligné à gauche ; à droite, afficher `N° ticket` si transmis en prop (optionnel — voir §4).
+## Plan d'action
 
-Le filigrane est appliqué avant `toDataURL` / `toBlob`, donc il est persistant côté stockage.
+### 1. Stabilité live (priorité — sans changer la logique métier)
 
-## 2. Données de traçabilité (déjà en base)
+- Remplacer les blocs `useEffect` d'abonnement de `ReceptionGlobal` et `ReceptionQuantitative` par le hook existant `useShiftRealtime` (deux appels, un par table : `reception_tickets`, `reception_weighings`).
+- Bénéfices immédiats : rafraîchissement automatique
+  - au retour de focus onglet,
+  - au retour de visibilité (tablette qui sort de veille),
+  - poll de secours 15 s si le socket est mort.
+- Ajouter aussi ce hook dans `ReceptionQualitative` sur la query `reception_tickets_recent` et sur `reception_photos` (filtre `ticket_id=eq.<id>`) pour que les photos apparaissent live si un autre appareil les ajoute.
+- Aucun changement de RPC ni de RLS.
 
-Les colonnes `created_by`, `cloture_at`, `cloture_by` existent déjà sur `reception_tickets`. Rien à migrer.
+### 2. Page shell responsive (`ReceptionPage`)
 
-Vérifications côté code :
-- `ReceptionQualitative.tsx` : à la création d'un ticket, forcer `created_by = auth.user.id` si non déjà setté.
-- Clôture d'un ticket : setter `cloture_at = now()` et `cloture_by = auth.user.id`.
-- Étendre `v_reception_global` : ajouter `created_by`, `cloture_by`, plus les libellés (`created_by_name`, `cloture_by_name`) via jointure sur `profiles`.
+- Header condensé sur mobile : masquer le sous-titre `<p>` en `sm:hidden`, garder icône + titre `text-lg md:text-2xl`.
+- `TabsList` : rendre défilable horizontalement sur mobile (`overflow-x-auto flex` avec `whitespace-nowrap` sur les triggers) plutôt qu'une grille 2×2, pour éviter les triggers écrasés. Rendre la barre **sticky top-0** sous le `AppTopBar` pour garder l'accès aux 4 onglets pendant le scroll long des formulaires.
 
-## 3. Consultation globale (`ReceptionGlobal.tsx`)
+### 3. Onglet **Qualitative** (usage tablette portrait + smartphone)
 
-### 3a. Colonnes optionnelles
+- Sur mobile/tablette portrait, réordonner : le bloc formulaire prend toute la largeur ; la carte "10 derniers tickets clôturés" passe **en bas** (déjà géré par le grid, mais lui donner un titre repliable via `<details>`/`Accordion` pour ne pas polluer).
+- Champs tactiles : passer les `Input` et `Select` critiques à `h-11` (touch target ≥ 44 px) sur mobile via classe conditionnelle.
+- Boutons "Maintenant" (heure) : sur mobile passer en icône-seule (`Clock`) pour libérer la ligne.
+- Photos : la grille des 3 slots reste `grid-cols-1 md:grid-cols-3`. Réduire `min-h` à 140 px sur mobile pour voir les 3 slots en scrollant peu.
+- **StickyActionBar** en bas pour "Ouvrir le ticket" (avant création) puis "Enregistrer et clôturer" (après création), pour que l'action principale reste toujours accessible sans scroll.
 
-- Ajouter un bouton `DropdownMenu` "Colonnes" (icône `Columns3`) à côté de "Réinit." / "Export".
-- Options avec cases à cocher, persistées dans `localStorage("reception-global-cols")` :
-  - Créé par
-  - Clôturé par
-  - Clôturé le
-  - Photos
-- Par défaut : toutes masquées sauf Photos.
-- Rendu conditionnel dans `<TableHead>` et `<TableCell>` (dates formatées `dd/MM/yyyy HH:mm`).
+### 4. Onglet **Pont-bascule** (`Quantitative`) — pattern master/détail mobile
 
-### 3b. Colonne Photos par ligne
+- Sur ≥ `lg` : conserver le layout actuel liste + panneau détail.
+- Sur `< lg` (tablette portrait + mobile) : la liste occupe 100 %, et cliquer sur une ligne ouvre un **ResponsiveDialog plein-écran** (Drawer sur mobile) avec le panneau de pesée + photos. À la validation ou annulation, retour à la liste. Empêche le scroll long, évite la perte de contexte.
+- Encadrer la `Table` dans `ScrollTable` pour scroll horizontal contrôlé, et rendre la première colonne (N° ticket) sticky via la classe `first-col-sticky` mentionnée dans `ScrollTable`.
+- Input `Poids brut` : `inputMode="decimal"` en plus de `type="number"` pour ouvrir le pavé décimal iOS/Android, `h-14 text-2xl` pour la saisie tactile.
+- Bouton "Valider la pesée" en `StickyActionBar` dans le dialog mobile.
 
-- Nouvelle cellule affichant `[nb_photos] miniatures` cliquables.
-- Bouton `Voir` (icône `Image`) ouvrant un `ResponsiveDialog` `TicketPhotosDialog` :
-  - Charge `reception_ticket_photos` pour le `ticket_id` sélectionné.
-  - Génère une URL signée via `supabase.storage.from('reception-photos').createSignedUrl(path, 300)` pour chaque photo.
-  - Affiche les 3 slots côte à côte, cliquables (lightbox natif via `<a target="_blank">`).
-- Export CSV : ajouter les colonnes `created_by_name`, `cloture_at`, `cloture_by_name`, `nb_photos` uniquement si visibles.
+### 5. Onglet **Consultation globale**
 
-## 4. Détails techniques
+- KPIs : sur mobile passer `grid-cols-2` (2 cartes par ligne) et masquer 2 KPIs secondaires ("Durée moyenne", "Abattement") derrière un bouton "Plus" ou en `hidden sm:block`, pour garder l'écran lisible. Sur tablette `md:grid-cols-4`, desktop `lg:grid-cols-8` inchangé.
+- **Filtres** : sur mobile, remplacer la grille de 8 filtres par un bouton "Filtres" ouvrant `FilterSheet` (Drawer) contenant les mêmes contrôles + boutons Réinit. / Appliquer. Un badge affiche le nombre de filtres actifs.
+- **Table** : envelopper dans `ScrollTable`, première colonne N° sticky. Les colonnes optionnelles restent gérées par le menu existant (déjà correct).
+- Sur mobile, offrir une **vue "cartes"** alternative togglée (une carte par ticket avec les infos clés : N°, date, fournisseur, produit, net, état, badge hors délai, bouton photos). L'utilisateur choisit Cartes/Tableau, choix persisté en `localStorage` comme la sélection de colonnes.
 
-Fichiers modifiés :
-- `src/pages/qualite/reception/CameraCaptureDialog.tsx` — filigrane canvas + prop optionnelle `ticketNumero`.
-- `src/pages/qualite/reception/PhotoSlot.tsx` — transmettre `ticketNumero`.
-- `src/pages/qualite/reception/ReceptionQualitative.tsx` — passer `ticketNumero`, garantir `created_by`, `cloture_at`, `cloture_by`.
-- `src/pages/qualite/reception/ReceptionGlobal.tsx` — sélecteur de colonnes, colonne Photos, ouverture du dialog.
-- Nouveau : `src/pages/qualite/reception/TicketPhotosDialog.tsx`.
-- Migration SQL : `CREATE OR REPLACE VIEW public.v_reception_global` pour exposer `created_by`, `created_by_name`, `cloture_by`, `cloture_by_name` (jointures LEFT sur `profiles`).
+### 6. `ReceptionSettings`
 
-Aucune modification de RLS nécessaire (les buckets photos et policies existent déjà). Aucun impact sur les modules maintenance/GPAO.
+- Auditer les 3 sous-sections (Produits, Fournisseurs, Campagnes) et appliquer le même traitement `ScrollTable` + `ResponsiveDialog` pour les formulaires d'édition. Vue en cartes empilées sur mobile pour les 3 listes.
+
+### 7. Détails UX
+
+- `TicketPhotosDialog` : sur mobile grille `grid-cols-1` au lieu de 3, images pleine largeur.
+- `PhotoLightbox` (déjà utilisé dans Pont-bascule) : vérifier qu'il reste tactile.
+- Ajouter `useIsMobile()` uniquement là où nécessaire (viewer conditionnel), pour éviter les re-renders.
+- Toasts existants inchangés ; les mutations `onError` déjà branchées suffisent.
+
+## Détails techniques
+
+- Hooks/composants réutilisés : `useShiftRealtime`, `useIsMobile`, `ResponsiveDialog`, `ScrollTable`, `StickyActionBar`, `FilterSheet`.
+- Aucune migration Supabase, aucune modification de RPC, RLS ou schéma.
+- Pas d'ajout de dépendance npm.
+- Persistance locale (`localStorage`) réutilisée pour le nouveau toggle Cartes/Tableau (clé `reception-global-view`).
+
+## Ce qui reste inchangé
+
+- Logique de création/clôture des tickets, calculs d'abattement/net, workflow pont-bascule, capture caméra in-app, filigrane, filtres et exports CSV.
+- Rôles et permissions.
+- Structure de la sidebar et des routes.
+
+## Points à confirmer
+
+1. Vue mobile de la **Consultation globale** : préférez-vous **Cartes** ou **Tableau scrollable** comme défaut sur mobile ? (Je peux garder les deux avec un toggle et défaut = Cartes.)
+2. Sur le **Pont-bascule** en mobile, ouvrir un **Drawer plein-écran** pour la pesée est-il OK, ou préférez-vous une **page dédiée** (`/qualite/reception/pesee/:id`) qui persiste l'URL et permet le partage ?

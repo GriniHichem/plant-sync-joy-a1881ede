@@ -256,47 +256,59 @@ export default function ReceptionQualitative() {
             </div>
           </div>
 
-          {!ticketId ? (
-            <Button className="w-full h-12" disabled={createTicket.isPending || !form.campaign_id || !form.supplier_id}
+          {!ticketId && (
+            <Button className="w-full h-12" disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
               onClick={() => createTicket.mutate()}>
               Ouvrir le ticket
             </Button>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[1, 2, 3].map((s) => {
-                  const p = photoBySlot(s);
-                  return (
-                    <PhotoSlot key={s} ticketId={ticketId} slot={s as 1 | 2 | 3}
-                      storagePath={p?.storage_path}
-                      onUploaded={(path) => addPhoto.mutate({ slot: s, path })}
-                      onDeleted={() => p && removePhoto.mutate(p.id)} />
-                  );
-                })}
-              </div>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending}>
-                    <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Clôturer le ticket ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Après clôture, aucune modification ne sera possible. Le ticket pourra être pesé par le pont-bascule.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => closeTicket.mutate()}>Confirmer</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              {nPhotos < 3 && <p className="text-xs text-muted-foreground text-center">{nPhotos}/3 photos — les 3 sont requises</p>}
-            </>
           )}
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">Photos obligatoires (3)</Label>
+              <Badge variant={nPhotos === 3 ? "default" : "outline"}>{nPhotos}/3</Badge>
+            </div>
+            {!ticketId && (
+              <p className="text-xs text-muted-foreground">
+                Renseignez le n° de ticket puis cliquez sur <b>Ouvrir le ticket</b> pour activer la prise de photos.
+              </p>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[1, 2, 3].map((s) => {
+                const p = photoBySlot(s);
+                return (
+                  <PhotoSlot key={s} ticketId={ticketId} slot={s as 1 | 2 | 3}
+                    disabled={!ticketId}
+                    storagePath={p?.storage_path}
+                    onUploaded={(path) => addPhoto.mutate({ slot: s, path })}
+                    onDeleted={() => p && removePhoto.mutate(p.id)} />
+                );
+              })}
+            </div>
+          </div>
+
+          {ticketId && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending}>
+                  <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clôturer le ticket ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Après clôture, aucune modification ne sera possible. Le ticket pourra être pesé par le pont-bascule.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => closeTicket.mutate()}>Confirmer</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
         </CardContent>
       </Card>
 

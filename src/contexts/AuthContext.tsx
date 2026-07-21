@@ -13,6 +13,7 @@ interface Profile {
   last_name: string;
   poste: string | null;
   avatar_url: string | null;
+  public_access?: boolean;
 }
 
 interface AuthContextType {
@@ -83,7 +84,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select("*")
       .eq("user_id", userId)
       .single();
-    if (data) setRealProfile(data as Profile);
+    if (data) {
+      setRealProfile(data as Profile);
+      // Astuce UX (non sécurisée): bloque l'accès Internet aux comptes sans autorisation.
+      try {
+        const { isPublicHost } = await import("@/lib/network");
+        if (isPublicHost() && (data as Profile).public_access !== true) {
+          const { toast } = await import("sonner");
+          toast.error("Connexion via Internet non autorisée", {
+            description: "Ce compte n'a pas l'autorisation d'accéder à l'application depuis l'extérieur. Contactez l'administrateur.",
+            duration: 8000,
+          });
+          await supabase.auth.signOut();
+          setUser(null);
+          setSession(null);
+          setRealProfile(null);
+          setRealRoles([]);
+          try { sessionStorage.setItem("pit:blockedPublic", "1"); } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    }
   }
 
   async function fetchRoles(userId: string) {

@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Globe, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isPublicHost } from "@/lib/network";
 import logoAsset from "@/assets/brand/prod-in-time-logo.png";
 import logoAmour from "@/assets/brand/logo-amour.jpg";
 

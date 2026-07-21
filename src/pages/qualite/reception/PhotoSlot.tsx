@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/reception";
 import { cn } from "@/lib/utils";
+import { CameraCaptureDialog } from "./CameraCaptureDialog";
+
 
 interface Props {
   ticketId?: string; // undefined tant que le ticket n'existe pas

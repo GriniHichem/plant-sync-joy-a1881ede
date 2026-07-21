@@ -9,6 +9,7 @@ export const UMBRELLAS: Record<string, string[]> = {
     "qualite_dashboard", "qualite_of", "qualite_indicateurs",
     "qualite_controles", "qualite_nc", "qualite_actions",
     "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift",
+    "reception",
   ],
   inventaire: ["inventaire_campagnes"],
 };

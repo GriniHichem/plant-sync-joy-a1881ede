@@ -75,6 +75,7 @@ const MODULE_GROUPS = [
       { key: "qualite_tracabilite", label: "Traçabilité" },
       { key: "qualite_rapports", label: "Rapports" },
       { key: "qualite_shift", label: "Shift contrôle" },
+      { key: "reception", label: "Réception Fruits & Légumes" },
     ],
   },
   {

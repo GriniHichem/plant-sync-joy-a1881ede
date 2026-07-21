@@ -6748,8 +6748,13 @@ export type Database = {
           campagne: string | null
           campaign_id: string | null
           cloture_at: string | null
+          cloture_by: string | null
+          cloture_by_name: string | null
           code_pesee: string | null
           commentaire: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
           date_ticket: string | null
           duree_minutes: number | null
           etat_pesee: string | null

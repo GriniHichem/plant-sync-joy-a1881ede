@@ -49,7 +49,7 @@ export default function ReceptionGlobal() {
   useEffect(() => {
     try { localStorage.setItem(VIEW_LS_KEY, view); } catch { /* ignore */ }
   }, [view]);
-  const [photoTicket, setPhotoTicket] = useState<{ id: string; numero: string } | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
 
   const fmtDT = (v?: string | null) =>
     v ? new Date(v).toLocaleString("fr-FR", {

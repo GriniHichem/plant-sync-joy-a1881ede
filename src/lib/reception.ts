@@ -42,18 +42,46 @@ export function formatKg(kg?: number | null): string {
   return kg.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg";
 }
 
-/** Compression canvas d'une image (retourne Blob JPEG). */
-export async function compressImage(file: File, maxSize = 1600, quality = 0.82): Promise<Blob> {
+/**
+ * Compression canvas d'une image (retourne Blob JPEG).
+ * Vise la meilleure qualité possible sans dépasser `targetMaxBytes` (défaut 5 Mo).
+ * Réduit progressivement la qualité puis la taille si nécessaire.
+ */
+export async function compressImage(
+  file: File,
+  maxSize = 2560,
+  quality = 0.92,
+  targetMaxBytes = 5 * 1024 * 1024,
+): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
-  const ratio = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * ratio);
-  const h = Math.round(bitmap.height * ratio);
   const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
   const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(bitmap, 0, 0, w, h);
-  return await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Compression échouée"))), "image/jpeg", quality),
-  );
+
+  const render = (size: number, q: number) =>
+    new Promise<Blob>((resolve, reject) => {
+      const ratio = Math.min(1, size / Math.max(bitmap.width, bitmap.height));
+      canvas.width = Math.round(bitmap.width * ratio);
+      canvas.height = Math.round(bitmap.height * ratio);
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error("Compression échouée"))),
+        "image/jpeg",
+        q,
+      );
+    });
+
+  let size = maxSize;
+  let q = quality;
+  let blob = await render(size, q);
+
+  // Réduit d'abord la qualité (min 0.6), puis la taille (min 1280) si toujours trop lourd.
+  while (blob.size > targetMaxBytes && q > 0.6) {
+    q = Math.max(0.6, q - 0.07);
+    blob = await render(size, q);
+  }
+  while (blob.size > targetMaxBytes && size > 1280) {
+    size = Math.max(1280, size - 320);
+    blob = await render(size, q);
+  }
+  return blob;
 }

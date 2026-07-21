@@ -74,7 +74,7 @@ describe("Réception F&L — logique métier", () => {
 
   describe("Formatage kg / tonnes", () => {
     it("formatKg fr-FR avec 2 décimales", () => {
-      expect(formatKg(12000)).toMatch(/12[  ]000,00 kg/);
+      expect(formatKg(12000)).toMatch(/12\s000,00 kg/);
       expect(formatKg(null)).toBe("—");
     });
     it("kgToTonnes divise par 1000", () => {

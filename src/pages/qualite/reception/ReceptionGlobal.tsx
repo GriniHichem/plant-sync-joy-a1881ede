@@ -15,12 +15,35 @@ import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, kgToTonnes, isOverdue } from "@/lib/reception";
 import { TicketPhotosDialog } from "./TicketPhotosDialog";
 
+type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";
+const COL_LS_KEY = "reception-global-cols";
+const DEFAULT_COLS: Record<ColKey, boolean> = {
+  created_by: false, cloture_by: false, cloture_at: false, photos: true,
+};
+
 export default function ReceptionGlobal() {
   const qc = useQueryClient();
   const [f, setF] = useState({
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
   });
+  const [cols, setCols] = useState<Record<ColKey, boolean>>(() => {
+    try {
+      const s = localStorage.getItem(COL_LS_KEY);
+      if (s) return { ...DEFAULT_COLS, ...JSON.parse(s) };
+    } catch { /* ignore */ }
+    return DEFAULT_COLS;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(COL_LS_KEY, JSON.stringify(cols)); } catch { /* ignore */ }
+  }, [cols]);
+  const [photoTicket, setPhotoTicket] = useState<{ id: string; numero: string } | null>(null);
+
+  const fmtDT = (v?: string | null) =>
+    v ? new Date(v).toLocaleString("fr-FR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    }) : "—";
 
   const { data: rows = [] } = useQuery({
     queryKey: ["v_reception_global"],

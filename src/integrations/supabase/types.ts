@@ -5204,6 +5204,364 @@ export type Database = {
         }
         Relationships: []
       }
+      reception_campaigns: {
+        Row: {
+          actif: boolean
+          code: string
+          created_at: string
+          created_by: string | null
+          date_debut: string
+          date_fin: string
+          id: string
+          is_default: boolean
+          kpi_targets: Json
+          libelle: string
+          objectif_kg: number | null
+          product_id: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          code: string
+          created_at?: string
+          created_by?: string | null
+          date_debut: string
+          date_fin: string
+          id?: string
+          is_default?: boolean
+          kpi_targets?: Json
+          libelle: string
+          objectif_kg?: number | null
+          product_id: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string
+          id?: string
+          is_default?: boolean
+          kpi_targets?: Json
+          libelle?: string
+          objectif_kg?: number | null
+          product_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reception_campaigns_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "reception_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_campaigns_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      reception_products: {
+        Row: {
+          actif: boolean
+          calibres: string[]
+          caracteristiques: Json
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          designation: string
+          id: string
+          normes: string[]
+          updated_at: string
+          varietes: string[]
+        }
+        Insert: {
+          actif?: boolean
+          calibres?: string[]
+          caracteristiques?: Json
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          designation: string
+          id?: string
+          normes?: string[]
+          updated_at?: string
+          varietes?: string[]
+        }
+        Update: {
+          actif?: boolean
+          calibres?: string[]
+          caracteristiques?: Json
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          designation?: string
+          id?: string
+          normes?: string[]
+          updated_at?: string
+          varietes?: string[]
+        }
+        Relationships: []
+      }
+      reception_suppliers: {
+        Row: {
+          actif: boolean
+          adresse: string | null
+          agree: boolean
+          code: string
+          contact: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          nom: string
+          notes: string | null
+          region: string | null
+          telephone: string | null
+          updated_at: string
+          wilaya: string | null
+        }
+        Insert: {
+          actif?: boolean
+          adresse?: string | null
+          agree?: boolean
+          code: string
+          contact?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nom: string
+          notes?: string | null
+          region?: string | null
+          telephone?: string | null
+          updated_at?: string
+          wilaya?: string | null
+        }
+        Update: {
+          actif?: boolean
+          adresse?: string | null
+          agree?: boolean
+          code?: string
+          contact?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nom?: string
+          notes?: string | null
+          region?: string | null
+          telephone?: string | null
+          updated_at?: string
+          wilaya?: string | null
+        }
+        Relationships: []
+      }
+      reception_ticket_photos: {
+        Row: {
+          id: string
+          slot: number
+          storage_path: string
+          ticket_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          id?: string
+          slot: number
+          storage_path: string
+          ticket_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          id?: string
+          slot?: number
+          storage_path?: string
+          ticket_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reception_ticket_photos_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "reception_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_ticket_photos_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reception_tickets: {
+        Row: {
+          campaign_id: string
+          cloture_at: string | null
+          cloture_by: string | null
+          commentaire: string | null
+          created_at: string
+          created_by: string | null
+          date_ticket: string
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string
+          numero: string
+          product_id: string
+          statut: string
+          supplier_id: string
+          taux_abattement: number
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          cloture_at?: string | null
+          cloture_by?: string | null
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_ticket?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          numero?: string
+          product_id: string
+          statut?: string
+          supplier_id: string
+          taux_abattement?: number
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          cloture_at?: string | null
+          cloture_by?: string | null
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_ticket?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          numero?: string
+          product_id?: string
+          statut?: string
+          supplier_id?: string
+          taux_abattement?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reception_tickets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "reception_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "reception_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "reception_suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["supplier_id"]
+          },
+        ]
+      }
+      reception_weighings: {
+        Row: {
+          code_pesee: string
+          created_at: string
+          id: string
+          poids_abattement_kg: number | null
+          poids_brut_kg: number
+          poids_net_kg: number | null
+          taux_abattement_snapshot: number
+          ticket_id: string
+          updated_at: string
+          weighed_at: string
+          weighed_by: string | null
+        }
+        Insert: {
+          code_pesee?: string
+          created_at?: string
+          id?: string
+          poids_abattement_kg?: number | null
+          poids_brut_kg: number
+          poids_net_kg?: number | null
+          taux_abattement_snapshot: number
+          ticket_id: string
+          updated_at?: string
+          weighed_at?: string
+          weighed_by?: string | null
+        }
+        Update: {
+          code_pesee?: string
+          created_at?: string
+          id?: string
+          poids_abattement_kg?: number | null
+          poids_brut_kg?: number
+          poids_net_kg?: number | null
+          taux_abattement_snapshot?: number
+          ticket_id?: string
+          updated_at?: string
+          weighed_at?: string
+          weighed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reception_weighings_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "reception_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_weighings_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_lines: {
         Row: {
           article_id: string
@@ -6385,6 +6743,39 @@ export type Database = {
           },
         ]
       }
+      v_reception_global: {
+        Row: {
+          campagne: string | null
+          campaign_id: string | null
+          cloture_at: string | null
+          code_pesee: string | null
+          commentaire: string | null
+          date_ticket: string | null
+          duree_minutes: number | null
+          etat_pesee: string | null
+          fournisseur: string | null
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string | null
+          nb_photos: number | null
+          numero: string | null
+          objectif_kg: number | null
+          poids_abattement_kg: number | null
+          poids_brut_kg: number | null
+          poids_net_kg: number | null
+          product_id: string | null
+          produit: string | null
+          produit_code: string | null
+          region: string | null
+          statut: string | null
+          supplier_id: string | null
+          taux_abattement: number | null
+          weighed_at: string | null
+          weighing_id: string | null
+          wilaya: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_maintenance_shift_schedules: { Args: never; Returns: string[] }
@@ -6486,6 +6877,33 @@ export type Database = {
       close_preventive_action: {
         Args: { p_session_id: string }
         Returns: undefined
+      }
+      close_reception_ticket: {
+        Args: { _ticket_id: string }
+        Returns: {
+          campaign_id: string
+          cloture_at: string | null
+          cloture_by: string | null
+          commentaire: string | null
+          created_at: string
+          created_by: string | null
+          date_ticket: string
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string
+          numero: string
+          product_id: string
+          statut: string
+          supplier_id: string
+          taux_abattement: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reception_tickets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       confirm_holding_transfer: {
         Args: { p_transfer_id: string }
@@ -6747,6 +7165,8 @@ export type Database = {
         Args: { _at?: string; _scope?: string; _user_id: string }
         Returns: boolean
       }
+      next_reception_ticket_no: { Args: never; Returns: string }
+      next_reception_weighing_no: { Args: never; Returns: string }
       open_my_work_session: { Args: never; Returns: Json }
       pdr_request_audit: {
         Args: {

@@ -87,8 +87,10 @@ export default function ReceptionQualitative() {
 
   const createTicket = useMutation({
     mutationFn: async () => {
+      if (!form.numero.trim()) throw new Error("Numéro de ticket requis");
       if (!form.campaign_id || !form.supplier_id) throw new Error("Campagne et fournisseur requis");
       const { data, error } = await supabase.from("reception_tickets" as any).insert({
+        numero: form.numero.trim(),
         campaign_id: form.campaign_id,
         product_id: selectedCampaign?.product_id,
         supplier_id: form.supplier_id,
@@ -103,7 +105,7 @@ export default function ReceptionQualitative() {
       setTicketId(t.id);
       toast.success(`Ticket ${t.numero} ouvert — ajoutez les 3 photos`);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message?.includes("duplicate") ? "Ce numéro de ticket existe déjà" : e.message),
   });
 
   const updateTicket = useMutation({

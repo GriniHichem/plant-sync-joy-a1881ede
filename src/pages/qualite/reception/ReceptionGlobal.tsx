@@ -9,20 +9,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, kgToTonnes, isOverdue } from "@/lib/reception";
 import { TicketPhotosDialog } from "./TicketPhotosDialog";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { FilterSheet } from "@/components/responsive/FilterSheet";
+import { ScrollTable } from "@/components/responsive/ScrollTable";
 
 type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";
 const COL_LS_KEY = "reception-global-cols";
+const VIEW_LS_KEY = "reception-global-view";
 const DEFAULT_COLS: Record<ColKey, boolean> = {
   created_by: false, cloture_by: false, cloture_at: false, photos: true,
 };
 
 export default function ReceptionGlobal() {
   const qc = useQueryClient();
+  const isMobile = useIsMobile();
   const [f, setF] = useState({
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
@@ -34,9 +40,15 @@ export default function ReceptionGlobal() {
     } catch { /* ignore */ }
     return DEFAULT_COLS;
   });
+  const [view, setView] = useState<"cards" | "table">(() => {
+    try { return (localStorage.getItem(VIEW_LS_KEY) as any) ?? "cards"; } catch { return "cards"; }
+  });
   useEffect(() => {
     try { localStorage.setItem(COL_LS_KEY, JSON.stringify(cols)); } catch { /* ignore */ }
   }, [cols]);
+  useEffect(() => {
+    try { localStorage.setItem(VIEW_LS_KEY, view); } catch { /* ignore */ }
+  }, [view]);
   const [photoTicket, setPhotoTicket] = useState<{ id: string; numero: string } | null>(null);
 
   const fmtDT = (v?: string | null) =>
@@ -55,6 +67,10 @@ export default function ReceptionGlobal() {
     },
   });
 
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["v_reception_global"] });
+  useShiftRealtime("reception-global-tickets", "reception_tickets", invalidate);
+  useShiftRealtime("reception-global-weighings", "reception_weighings", invalidate);
+
   const { data: campaigns = [] } = useQuery({
     queryKey: ["reception_campaigns", "all"],
     queryFn: async () => {
@@ -62,16 +78,6 @@ export default function ReceptionGlobal() {
       return (data ?? []) as any[];
     },
   });
-
-  useEffect(() => {
-    const ch = supabase.channel("reception-global")
-      .on("postgres_changes", { event: "*", schema: "public", table: "reception_weighings" },
-        () => qc.invalidateQueries({ queryKey: ["v_reception_global"] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "reception_tickets" },
-        () => qc.invalidateQueries({ queryKey: ["v_reception_global"] }))
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [qc]);
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
@@ -115,17 +121,78 @@ export default function ReceptionGlobal() {
   const resetFilters = () =>
     setF({ from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
 
+  const activeFilterCount =
+    (f.from ? 1 : 0) + (f.to ? 1 : 0) +
+    (f.campaign !== "__all__" ? 1 : 0) + (f.supplier !== "__all__" ? 1 : 0) +
+    (f.product !== "__all__" ? 1 : 0) + (f.etat !== "__all__" ? 1 : 0) +
+    (f.conformite !== "__all__" ? 1 : 0) + (f.q ? 1 : 0);
+
+  const filtersForm = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+      <div><Label>Du</Label><Input type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} /></div>
+      <div><Label>Au</Label><Input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} /></div>
+      <div><Label>Campagne</Label>
+        <Select value={f.campaign} onValueChange={(v) => setF({ ...f, campaign: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Toutes</SelectItem>
+            {distinct("campaign_id", "campagne").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div><Label>Fournisseur</Label>
+        <Select value={f.supplier} onValueChange={(v) => setF({ ...f, supplier: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous</SelectItem>
+            {distinct("supplier_id", "fournisseur").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div><Label>Produit</Label>
+        <Select value={f.product} onValueChange={(v) => setF({ ...f, product: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous</SelectItem>
+            {distinct("product_id", "produit").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div><Label>État</Label>
+        <Select value={f.etat} onValueChange={(v) => setF({ ...f, etat: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous</SelectItem>
+            <SelectItem value="pese">Pesé</SelectItem>
+            <SelectItem value="a_peser">À peser</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div><Label>Conformité durée</Label>
+        <Select value={f.conformite} onValueChange={(v) => setF({ ...f, conformite: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Toutes</SelectItem>
+            <SelectItem value="conforme">Conforme (≤ 20 min)</SelectItem>
+            <SelectItem value="hors_delai">Hors délai (&gt; 20 min)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div><Label>Recherche</Label><Input placeholder="N°, fournisseur, wilaya…" value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} /></div>
+    </div>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 md:gap-3">
         <Kpi label="Tickets" value={kpis.total} />
         <Kpi label="Pesés" value={kpis.pese} />
         <Kpi label="À peser" value={kpis.aPeser} />
+        <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
         <Kpi label="Poids brut" value={formatKg(kpis.brut)} />
         <Kpi label="Poids net" value={formatKg(kpis.net)} />
-        <Kpi label="Abattement" value={`${kgToTonnes(kpis.abat)} t`} />
-        <Kpi label="Durée moyenne" value={formatDuration(kpis.moyDuree ? Math.round(kpis.moyDuree) : null)} />
-        <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
+        <Kpi label="Abattement" value={`${kgToTonnes(kpis.abat)} t`} className="hidden sm:block" />
+        <Kpi label="Durée moyenne" value={formatDuration(kpis.moyDuree ? Math.round(kpis.moyDuree) : null)} className="hidden sm:block" />
       </div>
 
       {progression != null && (
@@ -141,11 +208,35 @@ export default function ReceptionGlobal() {
       )}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <CardTitle>Consultation globale</CardTitle>
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinit.</Button>
+            <CardTitle className="text-base md:text-lg">Consultation globale</CardTitle>
+            <div className="ml-auto flex items-center gap-2 flex-wrap">
+              <div className="md:hidden">
+                <FilterSheet
+                  activeCount={activeFilterCount}
+                  onReset={resetFilters}
+                >
+                  {filtersForm}
+                </FilterSheet>
+              </div>
+              <div className="hidden md:flex items-center gap-1 rounded-md border p-0.5">
+                <Button
+                  size="sm"
+                  variant={view === "cards" ? "secondary" : "ghost"}
+                  className="h-8 px-2"
+                  onClick={() => setView("cards")}
+                  title="Vue cartes"
+                ><LayoutGrid className="h-4 w-4" /></Button>
+                <Button
+                  size="sm"
+                  variant={view === "table" ? "secondary" : "ghost"}
+                  className="h-8 px-2"
+                  onClick={() => setView("table")}
+                  title="Vue tableau"
+                ><TableIcon className="h-4 w-4" /></Button>
+              </div>
+              <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinit.</Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm"><Columns3 className="h-4 w-4 mr-1" />Colonnes</Button>
@@ -191,117 +282,123 @@ export default function ReceptionGlobal() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div><Label>Du</Label><Input type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} /></div>
-            <div><Label>Au</Label><Input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} /></div>
-            <div><Label>Campagne</Label>
-              <Select value={f.campaign} onValueChange={(v) => setF({ ...f, campaign: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Toutes</SelectItem>
-                  {distinct("campaign_id", "campagne").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Fournisseur</Label>
-              <Select value={f.supplier} onValueChange={(v) => setF({ ...f, supplier: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  {distinct("supplier_id", "fournisseur").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Produit</Label>
-              <Select value={f.product} onValueChange={(v) => setF({ ...f, product: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  {distinct("product_id", "produit").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>État</Label>
-              <Select value={f.etat} onValueChange={(v) => setF({ ...f, etat: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Tous</SelectItem>
-                  <SelectItem value="pese">Pesé</SelectItem>
-                  <SelectItem value="a_peser">À peser</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Conformité durée</Label>
-              <Select value={f.conformite} onValueChange={(v) => setF({ ...f, conformite: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Toutes</SelectItem>
-                  <SelectItem value="conforme">Conforme (≤ 20 min)</SelectItem>
-                  <SelectItem value="hors_delai">Hors délai (&gt; 20 min)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Recherche</Label><Input placeholder="N°, fournisseur, wilaya…" value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} /></div>
-          </div>
+          <div className="hidden md:block">{filtersForm}</div>
 
-          <div className="overflow-auto">
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>N°</TableHead><TableHead>Date</TableHead><TableHead>Fournisseur</TableHead>
-                <TableHead>Produit</TableHead><TableHead>Début/Fin</TableHead><TableHead>Durée</TableHead>
-                <TableHead>Abat.</TableHead><TableHead className="text-right">Brut</TableHead>
-                <TableHead className="text-right">Abat. kg</TableHead><TableHead className="text-right">Net</TableHead>
-                <TableHead>État</TableHead>
-                {cols.photos && <TableHead>Photos</TableHead>}
-                {cols.created_by && <TableHead>Créé par</TableHead>}
-                {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
-                {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {filtered.map((r: any) => (
-                  <TableRow key={r.id} className={isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}>
-                    <TableCell className="font-mono text-xs">{r.numero}</TableCell>
-                    <TableCell>{r.date_ticket}</TableCell>
-                    <TableCell>{r.fournisseur}</TableCell>
-                    <TableCell>{r.produit}</TableCell>
-                    <TableCell className="text-xs">{r.heure_debut ?? "—"} / {r.heure_fin ?? "—"}</TableCell>
-                    <TableCell>
-                      {formatDuration(r.duree_minutes)}
-                      {isOverdue(r.duree_minutes) && (
-                        <Badge variant="destructive" className="ml-1"><AlertTriangle className="h-3 w-3 mr-1" />Hors délai</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{Number(r.taux_abattement).toFixed(2)} %</TableCell>
-                    <TableCell className="text-right">{r.poids_brut_kg ? formatKg(r.poids_brut_kg) : "—"}</TableCell>
-                    <TableCell className="text-right">{r.poids_abattement_kg ? formatKg(r.poids_abattement_kg) : "—"}</TableCell>
-                    <TableCell className="text-right font-medium">{r.poids_net_kg ? formatKg(r.poids_net_kg) : "—"}</TableCell>
-                    <TableCell>
-                      {r.etat_pesee === "pese"
-                        ? <Badge variant="secondary">Pesé</Badge>
-                        : <Badge>En attente</Badge>}
-                    </TableCell>
-                    {cols.photos && (
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={!Number(r.nb_photos)}
-                          onClick={() => setPhotoTicket({ id: r.id, numero: r.numero })}
-                        >
-                          <ImageIcon className="h-4 w-4 mr-1" />
-                          {Number(r.nb_photos ?? 0)}/3
-                        </Button>
-                      </TableCell>
+          {(isMobile || view === "cards") ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {filtered.map((r: any) => (
+                <div
+                  key={r.id}
+                  className={`rounded-lg border p-3 space-y-1.5 ${isOverdue(r.duree_minutes) ? "border-destructive/40 bg-destructive/5" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs text-muted-foreground">{r.numero}</div>
+                      <div className="font-medium truncate">{r.produit}</div>
+                    </div>
+                    {r.etat_pesee === "pese"
+                      ? <Badge variant="secondary" className="shrink-0">Pesé</Badge>
+                      : <Badge className="shrink-0">En attente</Badge>}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">{r.fournisseur}</div>
+                  <div className="flex items-center gap-2 text-xs flex-wrap">
+                    <span>{r.date_ticket}</span>
+                    <span>·</span>
+                    <span>{r.heure_debut ?? "—"} → {r.heure_fin ?? "—"}</span>
+                    <span>·</span>
+                    <span>{formatDuration(r.duree_minutes)}</span>
+                    {isOverdue(r.duree_minutes) && (
+                      <Badge variant="destructive" className="h-5"><AlertTriangle className="h-3 w-3 mr-1" />Hors délai</Badge>
                     )}
-                    {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
-                    {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
-                    {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
-                  </TableRow>
-                ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={11 + Object.values(cols).filter(Boolean).length} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
-              </TableBody>
-            </Table>
-          </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t">
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Net </span>
+                      <span className="font-semibold">{r.poids_net_kg ? formatKg(r.poids_net_kg) : "—"}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!Number(r.nb_photos)}
+                      onClick={() => setPhotoTicket({ id: r.id, numero: r.numero })}
+                    >
+                      <ImageIcon className="h-4 w-4 mr-1" />
+                      {Number(r.nb_photos ?? 0)}/3
+                    </Button>
+                  </div>
+                  {(cols.created_by || cols.cloture_by || cols.cloture_at) && (
+                    <div className="text-[11px] text-muted-foreground space-y-0.5 pt-1 border-t">
+                      {cols.created_by && <div>Créé par : {r.created_by_name ?? "—"}</div>}
+                      {cols.cloture_by && <div>Clôturé par : {r.cloture_by_name ?? "—"}</div>}
+                      {cols.cloture_at && <div>Clôturé le : {fmtDT(r.cloture_at)}</div>}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {filtered.length === 0 && (
+                <div className="col-span-full text-center text-muted-foreground py-8">Aucun ticket</div>
+              )}
+            </div>
+          ) : (
+            <ScrollTable>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>N°</TableHead><TableHead>Date</TableHead><TableHead>Fournisseur</TableHead>
+                  <TableHead>Produit</TableHead><TableHead>Début/Fin</TableHead><TableHead>Durée</TableHead>
+                  <TableHead>Abat.</TableHead><TableHead className="text-right">Brut</TableHead>
+                  <TableHead className="text-right">Abat. kg</TableHead><TableHead className="text-right">Net</TableHead>
+                  <TableHead>État</TableHead>
+                  {cols.photos && <TableHead>Photos</TableHead>}
+                  {cols.created_by && <TableHead>Créé par</TableHead>}
+                  {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
+                  {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
+                </TableRow></TableHeader>
+                <TableBody>
+                  {filtered.map((r: any) => (
+                    <TableRow key={r.id} className={isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}>
+                      <TableCell className="font-mono text-xs">{r.numero}</TableCell>
+                      <TableCell>{r.date_ticket}</TableCell>
+                      <TableCell>{r.fournisseur}</TableCell>
+                      <TableCell>{r.produit}</TableCell>
+                      <TableCell className="text-xs">{r.heure_debut ?? "—"} / {r.heure_fin ?? "—"}</TableCell>
+                      <TableCell>
+                        {formatDuration(r.duree_minutes)}
+                        {isOverdue(r.duree_minutes) && (
+                          <Badge variant="destructive" className="ml-1"><AlertTriangle className="h-3 w-3 mr-1" />Hors délai</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{Number(r.taux_abattement).toFixed(2)} %</TableCell>
+                      <TableCell className="text-right">{r.poids_brut_kg ? formatKg(r.poids_brut_kg) : "—"}</TableCell>
+                      <TableCell className="text-right">{r.poids_abattement_kg ? formatKg(r.poids_abattement_kg) : "—"}</TableCell>
+                      <TableCell className="text-right font-medium">{r.poids_net_kg ? formatKg(r.poids_net_kg) : "—"}</TableCell>
+                      <TableCell>
+                        {r.etat_pesee === "pese"
+                          ? <Badge variant="secondary">Pesé</Badge>
+                          : <Badge>En attente</Badge>}
+                      </TableCell>
+                      {cols.photos && (
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!Number(r.nb_photos)}
+                            onClick={() => setPhotoTicket({ id: r.id, numero: r.numero })}
+                          >
+                            <ImageIcon className="h-4 w-4 mr-1" />
+                            {Number(r.nb_photos ?? 0)}/3
+                          </Button>
+                        </TableCell>
+                      )}
+                      {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
+                      {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
+                      {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
+                    </TableRow>
+                  ))}
+                  {filtered.length === 0 && <TableRow><TableCell colSpan={11 + Object.values(cols).filter(Boolean).length} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+            </ScrollTable>
+          )}
         </CardContent>
       </Card>
 
@@ -316,12 +413,12 @@ export default function ReceptionGlobal() {
 }
 
 
-function Kpi({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
+function Kpi({ label, value, accent, className }: { label: string; value: React.ReactNode; accent?: boolean; className?: string }) {
   return (
-    <Card className={accent ? "border-destructive/40" : ""}>
-      <CardContent className="p-3">
-        <div className="text-xs text-muted-foreground">{label}</div>
-        <div className={"text-xl font-semibold " + (accent ? "text-destructive" : "")}>{value}</div>
+    <Card className={`${accent ? "border-destructive/40" : ""} ${className ?? ""}`}>
+      <CardContent className="p-2.5 md:p-3">
+        <div className="text-[11px] md:text-xs text-muted-foreground">{label}</div>
+        <div className={"text-base md:text-xl font-semibold " + (accent ? "text-destructive" : "")}>{value}</div>
       </CardContent>
     </Card>
   );

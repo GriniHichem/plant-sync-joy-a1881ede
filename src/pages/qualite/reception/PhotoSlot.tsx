@@ -101,43 +101,29 @@ export function PhotoSlot({ ticketId, slot, disabled, storagePath, onUploaded, o
         <div className={cn("flex flex-col items-center gap-2", disabled && "opacity-50 pointer-events-none")}>
           {busy ? <Loader2 className="h-8 w-8 animate-spin" /> : <Camera className="h-8 w-8 text-muted-foreground" />}
           <span className="text-sm text-muted-foreground">Prendre la photo</span>
-          <div className="flex flex-col gap-1.5 w-full">
-            <label className="w-full">
-              <span className={cn("flex items-center justify-center gap-1.5 text-xs rounded-md border px-2 py-1.5 cursor-pointer bg-primary/5 hover:bg-primary/10", (disabled || busy) && "pointer-events-none opacity-60")}>
-                <Camera className="h-3.5 w-3.5" /> Caméra arrière
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                disabled={disabled || busy}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (f) handleFile(f);
-                }}
-              />
-            </label>
-            <label className="w-full">
-              <span className={cn("flex items-center justify-center gap-1.5 text-xs rounded-md border px-2 py-1.5 cursor-pointer hover:bg-muted", (disabled || busy) && "pointer-events-none opacity-60")}>
-                Caméra frontale / Fichier
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                disabled={disabled || busy}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (f) handleFile(f);
-                }}
-              />
-            </label>
-          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              if (!ticketId) {
+                toast.error("Enregistrez le ticket avant d'ajouter des photos");
+                return;
+              }
+              setCameraOpen(true);
+            }}
+            disabled={disabled || busy}
+          >
+            <Camera className="h-4 w-4 mr-1.5" /> Ouvrir la caméra
+          </Button>
         </div>
       )}
+      <CameraCaptureDialog
+        open={cameraOpen}
+        onOpenChange={setCameraOpen}
+        slot={slot}
+        onCapture={(file) => handleFile(file)}
+      />
     </div>
   );
+
 }

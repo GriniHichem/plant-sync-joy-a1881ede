@@ -11,7 +11,7 @@ interface Props {
   ticketNumero?: string;
 }
 
-export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot }: Props) {
+export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticketNumero }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

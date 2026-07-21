@@ -89,6 +89,7 @@ export default function ReceptionQualitative() {
     mutationFn: async () => {
       if (!form.numero.trim()) throw new Error("Numéro de ticket requis");
       if (!form.campaign_id || !form.supplier_id) throw new Error("Campagne et fournisseur requis");
+      const { data: auth } = await supabase.auth.getUser();
       const { data, error } = await supabase.from("reception_tickets" as any).insert({
         numero: form.numero.trim(),
         campaign_id: form.campaign_id,
@@ -97,6 +98,7 @@ export default function ReceptionQualitative() {
         heure_debut: form.heure_debut || null,
         taux_abattement: form.taux_abattement ? Number(form.taux_abattement) : 0,
         commentaire: form.commentaire || null,
+        created_by: auth.user?.id ?? null,
       }).select("*").single();
       if (error) throw error;
       return data as any;
@@ -277,7 +279,7 @@ export default function ReceptionQualitative() {
               {[1, 2, 3].map((s) => {
                 const p = photoBySlot(s);
                 return (
-                  <PhotoSlot key={s} ticketId={ticketId} slot={s as 1 | 2 | 3}
+                  <PhotoSlot key={s} ticketId={ticketId} ticketNumero={form.numero} slot={s as 1 | 2 | 3}
                     disabled={!ticketId}
                     storagePath={p?.storage_path}
                     onUploaded={(path) => addPhoto.mutate({ slot: s, path })}

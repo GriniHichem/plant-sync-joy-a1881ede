@@ -9,9 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon } from "lucide-react";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, kgToTonnes, isOverdue } from "@/lib/reception";
+import { TicketPhotosDialog } from "./TicketPhotosDialog";
+
+type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";
+const COL_LS_KEY = "reception-global-cols";
+const DEFAULT_COLS: Record<ColKey, boolean> = {
+  created_by: false, cloture_by: false, cloture_at: false, photos: true,
+};
 
 export default function ReceptionGlobal() {
   const qc = useQueryClient();
@@ -19,6 +27,23 @@ export default function ReceptionGlobal() {
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
   });
+  const [cols, setCols] = useState<Record<ColKey, boolean>>(() => {
+    try {
+      const s = localStorage.getItem(COL_LS_KEY);
+      if (s) return { ...DEFAULT_COLS, ...JSON.parse(s) };
+    } catch { /* ignore */ }
+    return DEFAULT_COLS;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(COL_LS_KEY, JSON.stringify(cols)); } catch { /* ignore */ }
+  }, [cols]);
+  const [photoTicket, setPhotoTicket] = useState<{ id: string; numero: string } | null>(null);
+
+  const fmtDT = (v?: string | null) =>
+    v ? new Date(v).toLocaleString("fr-FR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    }) : "—";
 
   const { data: rows = [] } = useQuery({
     queryKey: ["v_reception_global"],
@@ -117,32 +142,52 @@ export default function ReceptionGlobal() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <CardTitle>Consultation globale</CardTitle>
-            <Button variant="ghost" size="sm" className="ml-auto" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinit.</Button>
-            <ExportCsvButton
-              filename="reception-global"
-              data={filtered.map((r) => ({
-                ...r,
-                duree: formatDuration(r.duree_minutes),
-              }))}
-              columns={[
-                { key: "numero", label: "N° ticket" },
-                { key: "date_ticket", label: "Date" },
-                { key: "campagne", label: "Campagne" },
-                { key: "produit", label: "Produit" },
-                { key: "fournisseur", label: "Fournisseur" },
-                { key: "wilaya", label: "Wilaya" },
-                { key: "heure_debut", label: "Début" },
-                { key: "heure_fin", label: "Fin" },
-                { key: "duree", label: "Durée" },
-                { key: "taux_abattement", label: "Abat. %" },
-                { key: "poids_brut_kg", label: "Brut (kg)" },
-                { key: "poids_abattement_kg", label: "Abat. (kg)" },
-                { key: "poids_net_kg", label: "Net (kg)" },
-                { key: "etat_pesee", label: "État pesée" },
-              ]}
-            />
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinit.</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm"><Columns3 className="h-4 w-4 mr-1" />Colonnes</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Colonnes optionnelles</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem checked={cols.photos} onCheckedChange={(v) => setCols({ ...cols, photos: !!v })}>Photos</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={cols.created_by} onCheckedChange={(v) => setCols({ ...cols, created_by: !!v })}>Créé par</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={cols.cloture_by} onCheckedChange={(v) => setCols({ ...cols, cloture_by: !!v })}>Clôturé par</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={cols.cloture_at} onCheckedChange={(v) => setCols({ ...cols, cloture_at: !!v })}>Clôturé le</DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <ExportCsvButton
+                filename="reception-global"
+                data={filtered.map((r) => ({
+                  ...r,
+                  duree: formatDuration(r.duree_minutes),
+                  cloture_at_fmt: fmtDT(r.cloture_at),
+                }))}
+                columns={[
+                  { key: "numero", label: "N° ticket" },
+                  { key: "date_ticket", label: "Date" },
+                  { key: "campagne", label: "Campagne" },
+                  { key: "produit", label: "Produit" },
+                  { key: "fournisseur", label: "Fournisseur" },
+                  { key: "wilaya", label: "Wilaya" },
+                  { key: "heure_debut", label: "Début" },
+                  { key: "heure_fin", label: "Fin" },
+                  { key: "duree", label: "Durée" },
+                  { key: "taux_abattement", label: "Abat. %" },
+                  { key: "poids_brut_kg", label: "Brut (kg)" },
+                  { key: "poids_abattement_kg", label: "Abat. (kg)" },
+                  { key: "poids_net_kg", label: "Net (kg)" },
+                  { key: "etat_pesee", label: "État pesée" },
+                  { key: "created_by_name", label: "Créé par" },
+                  { key: "cloture_by_name", label: "Clôturé par" },
+                  { key: "cloture_at_fmt", label: "Clôturé le" },
+                  { key: "nb_photos", label: "Photos" },
+                ]}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -207,6 +252,10 @@ export default function ReceptionGlobal() {
                 <TableHead>Abat.</TableHead><TableHead className="text-right">Brut</TableHead>
                 <TableHead className="text-right">Abat. kg</TableHead><TableHead className="text-right">Net</TableHead>
                 <TableHead>État</TableHead>
+                {cols.photos && <TableHead>Photos</TableHead>}
+                {cols.created_by && <TableHead>Créé par</TableHead>}
+                {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
+                {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
               </TableRow></TableHeader>
               <TableBody>
                 {filtered.map((r: any) => (
@@ -231,17 +280,41 @@ export default function ReceptionGlobal() {
                         ? <Badge variant="secondary">Pesé</Badge>
                         : <Badge>En attente</Badge>}
                     </TableCell>
+                    {cols.photos && (
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!Number(r.nb_photos)}
+                          onClick={() => setPhotoTicket({ id: r.id, numero: r.numero })}
+                        >
+                          <ImageIcon className="h-4 w-4 mr-1" />
+                          {Number(r.nb_photos ?? 0)}/3
+                        </Button>
+                      </TableCell>
+                    )}
+                    {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
+                    {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
+                    {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
                   </TableRow>
                 ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={11 + Object.values(cols).filter(Boolean).length} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
+
+      <TicketPhotosDialog
+        open={!!photoTicket}
+        onOpenChange={(o) => !o && setPhotoTicket(null)}
+        ticketId={photoTicket?.id ?? null}
+        ticketNumero={photoTicket?.numero}
+      />
     </div>
   );
 }
+
 
 function Kpi({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
   return (

@@ -1,41 +1,59 @@
-## Objectif
+## Objectifs
 
-Interdire strictement la sélection d'une photo depuis la galerie/fichiers. La prise de vue se fait **uniquement depuis l'application** via un capteur intégré qui utilise la caméra arrière par défaut, avec bascule automatique sur la caméra frontale (ou toute caméra disponible) si l'arrière est absente.
+1. Filigrane date/heure incrusté dans les photos capturées.
+2. Traçabilité "Créé par" / "Clôturé par" / "Clôturé le" enregistrée puis affichable à la demande dans la consultation globale.
+3. Consultation des 3 photos directement depuis chaque ligne du tableau global.
 
-## Comportement attendu
+## 1. Filigrane des photos (`CameraCaptureDialog.tsx`)
 
-1. Clic sur « Prendre la photo » → ouverture d'une **fenêtre caméra plein écran** intégrée à l'app.
-2. Démarrage automatique du flux vidéo :
-   - Tentative 1 : `facingMode: { exact: "environment" }` (caméra arrière tablette).
-   - Tentative 2 (fallback) : `facingMode: "user"` (caméra frontale).
-   - Tentative 3 (fallback ultime) : première caméra retournée par `enumerateDevices()`.
-3. Bouton **capture** (déclencheur) → snapshot dans un `<canvas>` → compression JPEG (`compressImage` déjà en place) → upload vers `reception-photos`.
-4. Boutons secondaires : **Reprendre** (nouveau snapshot) et **Basculer caméra** (si plusieurs caméras détectées).
-5. Arrêt propre du `MediaStream` à la fermeture (tracks stoppés) pour libérer la caméra.
-6. Aucune possibilité d'importer un fichier existant : les `<input type="file">` sont supprimés.
+Dans la fonction `snapshot()`, après `ctx.drawImage(...)` :
 
-## Gestion des erreurs
+- Calculer un bandeau bas (~6% de hauteur, min 40 px).
+- Remplir un rectangle noir semi-transparent (`rgba(0,0,0,0.55)`).
+- Écrire en blanc, police proportionnelle (`Math.round(canvas.height * 0.03)px sans-serif`), le texte `"Photo {slot} — dd/mm/yyyy HH:MM"` (format FR via `new Date().toLocaleString('fr-FR')`).
+- Padding horizontal 12 px, aligné à gauche ; à droite, afficher `N° ticket` si transmis en prop (optionnel — voir §4).
 
-- Permission refusée → message clair « Autorisez l'accès à la caméra dans les réglages du navigateur ».
-- Aucune caméra détectée → message « Aucune caméra disponible sur cet appareil ».
-- HTTPS requis rappelé si `getUserMedia` indisponible (contexte non sécurisé).
+Le filigrane est appliqué avant `toDataURL` / `toBlob`, donc il est persistant côté stockage.
 
-## Détails techniques
+## 2. Données de traçabilité (déjà en base)
 
-- Nouveau composant `CameraCaptureDialog.tsx` sous `src/pages/qualite/reception/` :
-  - `Dialog` shadcn plein écran mobile-first.
-  - Refs : `videoRef`, `streamRef`, `canvasRef`.
-  - État : `devices`, `activeDeviceId`, `error`, `busy`.
-  - `useEffect` d'initialisation qui tente `environment` puis `user` puis `enumerateDevices()`.
-  - `capture()` : dessin `videoRef → canvas` à la résolution native, `canvas.toBlob('image/jpeg', 0.92)`, puis `new File([blob], 'photo.jpg')` passé au parent.
-  - Cleanup : `stream.getTracks().forEach(t => t.stop())` au démontage et avant chaque nouveau `getUserMedia`.
-- Refonte de `PhotoSlot.tsx` :
-  - Suppression des deux `<input type="file" capture>`.
-  - Un seul bouton « Prendre la photo » qui ouvre `CameraCaptureDialog`.
-  - Reçoit le `File` capturé et passe par `handleFile` (compression + upload) déjà présent.
-- Aucun changement de schéma DB ni de storage bucket.
+Les colonnes `created_by`, `cloture_at`, `cloture_by` existent déjà sur `reception_tickets`. Rien à migrer.
 
-## Fichiers touchés
+Vérifications côté code :
+- `ReceptionQualitative.tsx` : à la création d'un ticket, forcer `created_by = auth.user.id` si non déjà setté.
+- Clôture d'un ticket : setter `cloture_at = now()` et `cloture_by = auth.user.id`.
+- Étendre `v_reception_global` : ajouter `created_by`, `cloture_by`, plus les libellés (`created_by_name`, `cloture_by_name`) via jointure sur `profiles`.
 
-- `src/pages/qualite/reception/CameraCaptureDialog.tsx` (nouveau).
-- `src/pages/qualite/reception/PhotoSlot.tsx` (refonte de la zone de capture).
+## 3. Consultation globale (`ReceptionGlobal.tsx`)
+
+### 3a. Colonnes optionnelles
+
+- Ajouter un bouton `DropdownMenu` "Colonnes" (icône `Columns3`) à côté de "Réinit." / "Export".
+- Options avec cases à cocher, persistées dans `localStorage("reception-global-cols")` :
+  - Créé par
+  - Clôturé par
+  - Clôturé le
+  - Photos
+- Par défaut : toutes masquées sauf Photos.
+- Rendu conditionnel dans `<TableHead>` et `<TableCell>` (dates formatées `dd/MM/yyyy HH:mm`).
+
+### 3b. Colonne Photos par ligne
+
+- Nouvelle cellule affichant `[nb_photos] miniatures` cliquables.
+- Bouton `Voir` (icône `Image`) ouvrant un `ResponsiveDialog` `TicketPhotosDialog` :
+  - Charge `reception_ticket_photos` pour le `ticket_id` sélectionné.
+  - Génère une URL signée via `supabase.storage.from('reception-photos').createSignedUrl(path, 300)` pour chaque photo.
+  - Affiche les 3 slots côte à côte, cliquables (lightbox natif via `<a target="_blank">`).
+- Export CSV : ajouter les colonnes `created_by_name`, `cloture_at`, `cloture_by_name`, `nb_photos` uniquement si visibles.
+
+## 4. Détails techniques
+
+Fichiers modifiés :
+- `src/pages/qualite/reception/CameraCaptureDialog.tsx` — filigrane canvas + prop optionnelle `ticketNumero`.
+- `src/pages/qualite/reception/PhotoSlot.tsx` — transmettre `ticketNumero`.
+- `src/pages/qualite/reception/ReceptionQualitative.tsx` — passer `ticketNumero`, garantir `created_by`, `cloture_at`, `cloture_by`.
+- `src/pages/qualite/reception/ReceptionGlobal.tsx` — sélecteur de colonnes, colonne Photos, ouverture du dialog.
+- Nouveau : `src/pages/qualite/reception/TicketPhotosDialog.tsx`.
+- Migration SQL : `CREATE OR REPLACE VIEW public.v_reception_global` pour exposer `created_by`, `created_by_name`, `cloture_by`, `cloture_by_name` (jointures LEFT sur `profiles`).
+
+Aucune modification de RLS nécessaire (les buckets photos et policies existent déjà). Aucun impact sur les modules maintenance/GPAO.

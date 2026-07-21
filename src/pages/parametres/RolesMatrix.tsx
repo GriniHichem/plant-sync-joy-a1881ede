@@ -135,6 +135,7 @@ const ROLES = [
   { key: "directeur_qualite", label: "Directeur Qualité", color: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300", group: "Qualité" },
   { key: "responsable_controle_qualite", label: "Resp. Contrôle Qualité", color: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300", group: "Qualité" },
   { key: "controleur_qualite", label: "Contrôleur Qualité", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300", group: "Qualité" },
+  { key: "agent_pont_bascule", label: "Agent Pont Bascule", color: "bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-300", group: "Qualité" },
 
   { key: "gestionnaire_magasin", label: "Gest. Magasin", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300", group: "Logistique" },
   { key: "responsable_magasin", label: "Resp. Magasin", color: "bg-purple-200 text-purple-900 dark:bg-purple-900/40 dark:text-purple-200", group: "Logistique" },
@@ -180,7 +181,7 @@ function ap(modules: string[], preset: Preset, base: Record<string, Preset> = {}
 const MAINT_MODS = ["dashboard", "machines", "equipements", "organes", "lignes", "pdr", "tickets", "preventif", "shift_maintenance", "journal", "historique", "analytiques"];
 const LOG_MODS = ["pdr_demandes", "shift_magasin", "journal_stock"];
 const PROD_MODS = ["gpao_dashboard", "of", "produits", "articles", "recettes", "shift_production", "consommations", "arrets"];
-const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift"];
+const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift", "reception"];
 const INV_MODS = ["inventaire", "inventaire_campagnes"];
 const GOV_MODS = ["audit", "validations", "validations_rules", "notifications", "notifications_rules", "securite"];
 const CFG_MODS = ["parametres", "utilisateurs", "referentiels", "documents", "pdr_stock_config", "qualite_parametres", "smtp", "general", "images", "recherche", "apps"];
@@ -202,6 +203,7 @@ const ROLE_DEFAULTS: Record<string, Record<string, Preset>> = {
   directeur_qualite: { ...ap(QUALITY_MODS, FULL), ...ap(PROD_MODS, RO), ...ap(MAINT_MODS, RO), qualite_parametres: RW, analytiques: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO },
   responsable_controle_qualite: { ...ap(QUALITY_MODS, FULL), of: RO, produits: RO, articles: RO, recettes: RO, dashboard: RO, machines: RO, lignes: RO, analytiques: RO, qualite_parametres: RW, notifications: RW, apps: RO, recherche: RO },
   controleur_qualite: { qualite: RW, qualite_dashboard: RO, qualite_of: RO, qualite_indicateurs: RO, qualite_controles: RW, qualite_nc: RW, qualite_actions: RO, qualite_recettes: RO, qualite_tracabilite: RO, qualite_rapports: RO, qualite_shift: RW, of: RO, produits: RO, lignes: RO, machines: RO, notifications: RO, apps: RO, recherche: RO },
+  agent_pont_bascule: { reception: RO, qualite: RO, qualite_dashboard: RO, notifications: RO, apps: RO, recherche: RO },
 
   gestionnaire_magasin: { pdr: FULL, pdr_demandes: RW, shift_magasin: RW, journal_stock: RO, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RO, apps: RO, recherche: RO },
   responsable_magasin: { pdr: FULL, pdr_demandes: FULL, shift_magasin: FULL, journal_stock: FULL, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, pdr_stock_config: FULL, journal: RO, historique: RO, analytiques: RO, documents: RO, audit: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RW, apps: RO, recherche: RO },
@@ -375,12 +377,23 @@ export default function RolesMatrix() {
   async function handleSave() {
     setSaving(true);
     try {
-      const rows = perms.map(({ id, ...rest }) => rest);
+      const rows = perms.map((p) => ({
+        role: p.role,
+        module: p.module,
+        can_view: Boolean(p.can_view),
+        can_create: Boolean(p.can_create),
+        can_edit: Boolean(p.can_edit),
+        can_delete: Boolean(p.can_delete),
+      }));
       const { error } = await supabase
         .from("role_permissions")
         .upsert(rows as any, { onConflict: "role,module" });
       if (error) {
-        toast({ title: "Erreur", description: error.message, variant: "destructive" });
+        toast({
+          title: "Erreur de sauvegarde des accès",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
         toast({ title: "✅ Sauvegardé", description: "Matrice des permissions mise à jour." });
         await load();

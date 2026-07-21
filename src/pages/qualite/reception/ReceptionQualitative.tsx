@@ -20,6 +20,7 @@ export default function ReceptionQualitative() {
 
   const [ticketId, setTicketId] = useState<string | undefined>();
   const [form, setForm] = useState({
+    numero: "",
     campaign_id: "",
     supplier_id: "",
     heure_debut: "",

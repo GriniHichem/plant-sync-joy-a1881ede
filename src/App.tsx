@@ -100,6 +100,7 @@ import QualiteRecettesNomenclatures from "@/pages/qualite/QualiteRecettesNomencl
 import QualiteTracabilite from "@/pages/qualite/QualiteTracabilite";
 import QualiteRapports from "@/pages/qualite/QualiteRapports";
 import QualiteShiftScreen from "@/pages/qualite/QualiteShiftScreen";
+import ReceptionPage from "@/pages/qualite/reception/ReceptionPage";
 import InventoryDashboard from "@/pages/inventaire/InventoryDashboard";
 import InventoryCampaignsList from "@/pages/inventaire/InventoryCampaignsList";
 import InventoryCampaignNew from "@/pages/inventaire/InventoryCampaignNew";

@@ -69,6 +69,7 @@ const MODULES: AppModule[] = [
   { title: "Traçabilité", description: "Fiche traçabilité complète par OF", url: "/qualite/tracabilite", icon: IconTrace, category: "Qualité", permissionModule: "qualite_tracabilite", accent: "from-orange-700/15 to-orange-700/5 text-orange-700" },
   { title: "Shift contrôle", description: "Saisie temps réel par contrôleur qualité", url: "/qualite/shift", icon: IconTimer, category: "Qualité", permissionModule: "qualite_shift", badge: "Live", accent: "from-amber-700/15 to-amber-700/5 text-amber-700" },
   { title: "Rapports qualité", description: "Conformité, NC, actions, théorique vs réel", url: "/qualite/rapports", icon: IconReport, category: "Qualité", permissionModule: "qualite_rapports", accent: "from-orange-300/15 to-orange-300/5 text-orange-300" },
+  { title: "Réception F&L", description: "Tickets qualitatifs, pont-bascule et consultation globale", url: "/qualite/reception", icon: IconTrace, category: "Qualité", permissionModule: "reception", accent: "from-lime-500/15 to-lime-500/5 text-lime-600" },
 
   // ===== Inventaire (gris) =====
   { title: "Dashboard Inventaire", description: "Vue d'ensemble des campagnes d'inventaire", url: "/inventaire", icon: IconInventory, category: "Inventaire", permissionModule: "inventaire", accent: "from-gray-500/15 to-gray-500/5 text-gray-500" },

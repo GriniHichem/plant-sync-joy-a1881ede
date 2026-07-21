@@ -10,10 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, Lock, CheckCircle2 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Clock, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { format } from "date-fns";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
+import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();
@@ -172,16 +175,30 @@ export default function ReceptionQualitative() {
     },
   });
 
+  // Rafraîchissement live des photos & derniers tickets même si le socket saute.
+  useShiftRealtime(
+    `reception-photos-${ticketId ?? "none"}`,
+    "reception_ticket_photos",
+    () => qc.invalidateQueries({ queryKey: ["reception_photos", ticketId] }),
+    !!ticketId,
+    ticketId ? `ticket_id=eq.${ticketId}` : undefined,
+  );
+  useShiftRealtime(
+    "reception-qualitative-recent",
+    "reception_tickets",
+    () => qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] }),
+  );
+
   const photoBySlot = (slot: number) => photos.find((p) => p.slot === slot);
   const nPhotos = photos.length;
   const canClose = !!ticketId && !!form.supplier_id && !!form.heure_debut && !!form.heure_fin && nPhotos === 3;
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-24 md:pb-4">
       <Card className="xl:col-span-2">
-        <CardHeader>
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle>Réception qualitative</CardTitle>
+            <CardTitle className="text-base md:text-lg">Réception qualitative</CardTitle>
             {ticketId && <Badge variant="outline">Ticket en cours</Badge>}
           </div>
         </CardHeader>
@@ -190,6 +207,7 @@ export default function ReceptionQualitative() {
             <div>
               <Label>N° ticket externe *</Label>
               <Input
+                className="h-11"
                 value={form.numero}
                 disabled={!!ticketId}
                 maxLength={50}
@@ -201,7 +219,7 @@ export default function ReceptionQualitative() {
               <Label>Campagne</Label>
               <Select value={form.campaign_id} disabled={!!ticketId}
                 onValueChange={(v) => setForm({ ...form, campaign_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                 <SelectContent>
                   {campaigns.map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>
@@ -213,16 +231,16 @@ export default function ReceptionQualitative() {
             </div>
             <div>
               <Label>Produit (auto)</Label>
-              <Input readOnly value={selectedCampaign?.reception_products?.designation ?? ""} />
+              <Input className="h-11" readOnly value={selectedCampaign?.reception_products?.designation ?? ""} />
             </div>
             <div>
               <Label>Date</Label>
-              <Input readOnly value={format(new Date(), "yyyy-MM-dd")} />
+              <Input className="h-11" readOnly value={format(new Date(), "yyyy-MM-dd")} />
             </div>
             <div>
               <Label>Fournisseur agréé *</Label>
               <Select value={form.supplier_id} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                 <SelectContent>
                   {suppliers.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nom}</SelectItem>)}
                 </SelectContent>
@@ -231,24 +249,24 @@ export default function ReceptionQualitative() {
             <div>
               <Label>Heure début *</Label>
               <div className="flex gap-2">
-                <Input type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
-                <Button type="button" variant="outline" onClick={() => setForm({ ...form, heure_debut: new Date().toTimeString().slice(0, 5) })}>
-                  <Clock className="h-4 w-4 mr-1" />Maintenant
+                <Input className="h-11" type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
+                <Button type="button" variant="outline" className="h-11 px-3 shrink-0" onClick={() => setForm({ ...form, heure_debut: new Date().toTimeString().slice(0, 5) })}>
+                  <Clock className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Maintenant</span>
                 </Button>
               </div>
             </div>
             <div>
               <Label>Heure fin *</Label>
               <div className="flex gap-2">
-                <Input type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
-                <Button type="button" variant="outline" onClick={() => setForm({ ...form, heure_fin: new Date().toTimeString().slice(0, 5) })}>
-                  <Clock className="h-4 w-4 mr-1" />Maintenant
+                <Input className="h-11" type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
+                <Button type="button" variant="outline" className="h-11 px-3 shrink-0" onClick={() => setForm({ ...form, heure_fin: new Date().toTimeString().slice(0, 5) })}>
+                  <Clock className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Maintenant</span>
                 </Button>
               </div>
             </div>
             <div>
               <Label>Taux d'abattement (%) *</Label>
-              <Input type="number" step="0.01" min="0" max="100"
+              <Input className="h-11" type="number" inputMode="decimal" step="0.01" min="0" max="100"
                 value={form.taux_abattement}
                 onChange={(e) => setForm({ ...form, taux_abattement: e.target.value })} />
             </div>
@@ -257,13 +275,6 @@ export default function ReceptionQualitative() {
               <Textarea value={form.commentaire} onChange={(e) => setForm({ ...form, commentaire: e.target.value })} />
             </div>
           </div>
-
-          {!ticketId && (
-            <Button className="w-full h-12" disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
-              onClick={() => createTicket.mutate()}>
-              Ouvrir le ticket
-            </Button>
-          )}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -288,8 +299,54 @@ export default function ReceptionQualitative() {
               })}
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          {ticketId && (
+      <Card className="xl:col-span-1">
+        <CardHeader className="pb-2">
+          <Accordion type="single" collapsible defaultValue="recent" className="xl:pointer-events-none">
+            <AccordionItem value="recent" className="border-b-0">
+              <AccordionTrigger className="py-0 hover:no-underline xl:[&>svg]:hidden">
+                <CardTitle className="text-base">10 derniers tickets clôturés</CardTitle>
+              </AccordionTrigger>
+              <AccordionContent className="pt-3 pb-0">
+                <div className="overflow-x-auto -mx-2 px-2">
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead>N°</TableHead><TableHead>Fournisseur</TableHead><TableHead>Abat.</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {recent.map((t: any) => (
+                        <TableRow key={t.id}>
+                          <TableCell className="font-mono text-xs">{t.numero}</TableCell>
+                          <TableCell className="truncate max-w-[140px]">{t.reception_suppliers?.nom}</TableCell>
+                          <TableCell>{Number(t.taux_abattement).toFixed(2)} %</TableCell>
+                        </TableRow>
+                      ))}
+                      {recent.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-4">—</TableCell></TableRow>}
+                    </TableBody>
+                  </Table>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardHeader>
+      </Card>
+
+      {/* Action principale toujours accessible */}
+      <div className="xl:col-span-3">
+        {!ticketId ? (
+          <StickyActionBar>
+            <Button
+              className="w-full h-12"
+              disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
+              onClick={() => createTicket.mutate()}
+            >
+              Ouvrir le ticket
+            </Button>
+          </StickyActionBar>
+        ) : (
+          <StickyActionBar>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending}>
@@ -309,31 +366,9 @@ export default function ReceptionQualitative() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          )}
-
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>10 derniers tickets clôturés</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead>N°</TableHead><TableHead>Fournisseur</TableHead><TableHead>Abat.</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {recent.map((t: any) => (
-                <TableRow key={t.id}>
-                  <TableCell className="font-mono text-xs">{t.numero}</TableCell>
-                  <TableCell>{t.reception_suppliers?.nom}</TableCell>
-                  <TableCell>{Number(t.taux_abattement).toFixed(2)} %</TableCell>
-                </TableRow>
-              ))}
-              {recent.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-4">—</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          </StickyActionBar>
+        )}
+      </div>
     </div>
   );
 }

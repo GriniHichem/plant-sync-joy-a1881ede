@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,9 +12,15 @@ import { toast } from "sonner";
 import { Scale, Search, ChevronRight } from "lucide-react";
 import { computeAbattementKg, computeNetKg, formatKg, kgToTonnes } from "@/lib/reception";
 import { PhotoLightbox } from "./PhotoLightbox";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
+import { ScrollTable } from "@/components/responsive/ScrollTable";
+import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 
 export default function ReceptionQuantitative() {
   const qc = useQueryClient();
+  const isMobile = useIsMobile();
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any>(null);
@@ -25,7 +31,7 @@ export default function ReceptionQuantitative() {
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
         .select("*").eq("statut", "cloture")
-        .order("etat_pesee", { ascending: true }) // a_peser d'abord
+        .order("etat_pesee", { ascending: true })
         .order("cloture_at", { ascending: false })
         .limit(limit);
       if (error) throw error;
@@ -33,17 +39,9 @@ export default function ReceptionQuantitative() {
     },
   });
 
-  // Realtime
-  useEffect(() => {
-    const ch = supabase
-      .channel("reception-pesee")
-      .on("postgres_changes", { event: "*", schema: "public", table: "reception_weighings" },
-        () => qc.invalidateQueries({ queryKey: ["reception_pesee_list"] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "reception_tickets" },
-        () => qc.invalidateQueries({ queryKey: ["reception_pesee_list"] }))
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [qc]);
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["reception_pesee_list"] });
+  useShiftRealtime("reception-pesee-tickets", "reception_tickets", invalidate);
+  useShiftRealtime("reception-pesee-weighings", "reception_weighings", invalidate);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -78,120 +76,181 @@ export default function ReceptionQuantitative() {
   const abat = computeAbattementKg(brut, taux);
   const net = computeNetKg(brut, taux);
 
+  const detailPanel = selected && (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div><span className="text-muted-foreground">N° </span><span className="font-mono">{selected.numero}</span></div>
+        <div><span className="text-muted-foreground">Date </span>{selected.date_ticket}</div>
+        <div className="col-span-2"><span className="text-muted-foreground">Produit </span>{selected.produit}</div>
+        <div className="col-span-2"><span className="text-muted-foreground">Fournisseur </span>{selected.fournisseur}</div>
+        <div><span className="text-muted-foreground">Début </span>{selected.heure_debut ?? "—"}</div>
+        <div><span className="text-muted-foreground">Fin </span>{selected.heure_fin ?? "—"}</div>
+        <div className="col-span-2"><span className="text-muted-foreground">Abattement </span>{Number(selected.taux_abattement).toFixed(2)} %</div>
+      </div>
+
+      <PhotoLightbox ticketId={selected.id} />
+
+      {selected.etat_pesee === "pese" ? (
+        <div className="rounded-md border p-3 space-y-1 text-sm">
+          <div className="font-semibold">{selected.code_pesee}</div>
+          <div>Brut : {formatKg(selected.poids_brut_kg)}</div>
+          <div>Abattement : {formatKg(selected.poids_abattement_kg)}</div>
+          <div className="font-semibold">Net : {formatKg(selected.poids_net_kg)} ({kgToTonnes(selected.poids_net_kg)} t)</div>
+        </div>
+      ) : (
+        <>
+          <div>
+            <Label>Poids brut (kg) *</Label>
+            <Input
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              value={poidsBrut}
+              onChange={(e) => setPoidsBrut(e.target.value)}
+              className="h-14 text-2xl font-semibold"
+              autoFocus
+            />
+          </div>
+          <div className="rounded-md border p-3 space-y-1 text-sm bg-muted/30">
+            <div>Abattement : <span className="font-semibold">{formatKg(abat)}</span></div>
+            <div>Poids net : <span className="font-semibold">{formatKg(net)}</span> ({kgToTonnes(net)} t)</div>
+          </div>
+          <StickyActionBar>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="w-full h-12" disabled={!brut || savePesee.isPending}>
+                  <Scale className="h-4 w-4 mr-2" />Valider la pesée
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmer la pesée ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Brut {formatKg(brut)} — abattement {formatKg(abat)} — <b>net {formatKg(net)}</b>. Après validation, la pesée est verrouillée.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => savePesee.mutate()}>Confirmer</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </StickyActionBar>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <Card className="lg:col-span-2">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <CardTitle>Tickets à peser</CardTitle>
-            <div className="relative ml-auto w-64">
+          <div className="flex items-center gap-2 flex-wrap">
+            <CardTitle className="text-base md:text-lg">Tickets à peser</CardTitle>
+            <div className="relative ml-auto w-full sm:w-64">
               <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-8" placeholder="N°, fournisseur, produit…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input className="pl-8 h-10" placeholder="N°, fournisseur, produit…" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead>N°</TableHead><TableHead>Produit</TableHead>
-              <TableHead>Fournisseur</TableHead><TableHead>Abat.</TableHead>
-              <TableHead>État</TableHead><TableHead></TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {filtered.map((t: any) => (
-                <TableRow key={t.id} className={selected?.id === t.id ? "bg-muted" : ""}>
-                  <TableCell className="font-mono text-xs">{t.numero}</TableCell>
-                  <TableCell>{t.produit}</TableCell>
-                  <TableCell>{t.fournisseur}</TableCell>
-                  <TableCell>{Number(t.taux_abattement).toFixed(2)} %</TableCell>
-                  <TableCell>
+          {/* Mobile / tablette portrait : liste condensée */}
+          <div className="lg:hidden space-y-2">
+            {filtered.map((t: any) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => { setSelected(t); setPoidsBrut(""); }}
+                className="w-full text-left rounded-lg border p-3 flex items-center gap-3 active:bg-muted/60"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-muted-foreground truncate">{t.numero}</span>
                     {t.etat_pesee === "pese"
-                      ? <Badge variant="secondary">{formatKg(t.poids_net_kg)} net</Badge>
-                      : <Badge>À peser</Badge>}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); }}>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  {isFetching ? "Chargement…" : "Aucun ticket"}
-                </TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
+                      ? <Badge variant="secondary" className="h-5">{formatKg(t.poids_net_kg)} net</Badge>
+                      : <Badge className="h-5">À peser</Badge>}
+                  </div>
+                  <div className="font-medium truncate">{t.produit}</div>
+                  <div className="text-xs text-muted-foreground truncate">{t.fournisseur} · Abat. {Number(t.taux_abattement).toFixed(2)} %</div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center text-muted-foreground py-8">
+                {isFetching ? "Chargement…" : "Aucun ticket"}
+              </div>
+            )}
+          </div>
+
+          {/* Desktop : table classique */}
+          <div className="hidden lg:block">
+            <ScrollTable>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>N°</TableHead><TableHead>Produit</TableHead>
+                  <TableHead>Fournisseur</TableHead><TableHead>Abat.</TableHead>
+                  <TableHead>État</TableHead><TableHead></TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {filtered.map((t: any) => (
+                    <TableRow key={t.id} className={selected?.id === t.id ? "bg-muted" : ""}>
+                      <TableCell className="font-mono text-xs">{t.numero}</TableCell>
+                      <TableCell>{t.produit}</TableCell>
+                      <TableCell>{t.fournisseur}</TableCell>
+                      <TableCell>{Number(t.taux_abattement).toFixed(2)} %</TableCell>
+                      <TableCell>
+                        {t.etat_pesee === "pese"
+                          ? <Badge variant="secondary">{formatKg(t.poids_net_kg)} net</Badge>
+                          : <Badge>À peser</Badge>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); }}>
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filtered.length === 0 && (
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      {isFetching ? "Chargement…" : "Aucun ticket"}
+                    </TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </ScrollTable>
+          </div>
+
           <div className="flex justify-center pt-3">
             <Button variant="outline" onClick={() => setLimit((l) => l + 20)}>Charger 20 de plus</Button>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle>Détail & pesée</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
+      {/* Desktop side panel */}
+      <Card className="hidden lg:block">
+        <CardHeader><CardTitle>Détail &amp; pesée</CardTitle></CardHeader>
+        <CardContent>
           {!selected ? (
             <p className="text-sm text-muted-foreground">Sélectionnez un ticket pour saisir la pesée.</p>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-muted-foreground">N° </span><span className="font-mono">{selected.numero}</span></div>
-                <div><span className="text-muted-foreground">Date </span>{selected.date_ticket}</div>
-                <div className="col-span-2"><span className="text-muted-foreground">Produit </span>{selected.produit}</div>
-                <div className="col-span-2"><span className="text-muted-foreground">Fournisseur </span>{selected.fournisseur}</div>
-                <div><span className="text-muted-foreground">Début </span>{selected.heure_debut ?? "—"}</div>
-                <div><span className="text-muted-foreground">Fin </span>{selected.heure_fin ?? "—"}</div>
-                <div className="col-span-2"><span className="text-muted-foreground">Abattement </span>{Number(selected.taux_abattement).toFixed(2)} %</div>
-              </div>
-
-              <PhotoLightbox ticketId={selected.id} />
-
-              {selected.etat_pesee === "pese" ? (
-                <div className="rounded-md border p-3 space-y-1 text-sm">
-                  <div className="font-semibold">{selected.code_pesee}</div>
-                  <div>Brut : {formatKg(selected.poids_brut_kg)}</div>
-                  <div>Abattement : {formatKg(selected.poids_abattement_kg)}</div>
-                  <div className="font-semibold">Net : {formatKg(selected.poids_net_kg)} ({kgToTonnes(selected.poids_net_kg)} t)</div>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <Label>Poids brut (kg) *</Label>
-                    <Input type="number" step="0.01" min="0" value={poidsBrut}
-                      onChange={(e) => setPoidsBrut(e.target.value)}
-                      className="h-12 text-lg" />
-                  </div>
-                  <div className="rounded-md border p-3 space-y-1 text-sm bg-muted/30">
-                    <div>Abattement : <span className="font-semibold">{formatKg(abat)}</span></div>
-                    <div>Poids net : <span className="font-semibold">{formatKg(net)}</span> ({kgToTonnes(net)} t)</div>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button className="w-full h-12" disabled={!brut || savePesee.isPending}>
-                        <Scale className="h-4 w-4 mr-2" />Valider la pesée
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmer la pesée ?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Brut {formatKg(brut)} — abattement {formatKg(abat)} — <b>net {formatKg(net)}</b>. Après validation, la pesée est verrouillée.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => savePesee.mutate()}>Confirmer</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
-            </>
-          )}
+          ) : detailPanel}
         </CardContent>
       </Card>
+
+      {/* Mobile/tablet : drawer plein-écran */}
+      {isMobile !== undefined && (
+        <ResponsiveDialog
+          open={!!selected && (typeof window === "undefined" || window.innerWidth < 1024)}
+          onOpenChange={(o) => { if (!o) { setSelected(null); setPoidsBrut(""); } }}
+          title={selected ? `Ticket ${selected.numero}` : ""}
+          description={selected?.produit}
+          className="max-w-lg"
+          bodyClassName="space-y-3"
+        >
+          {detailPanel}
+        </ResponsiveDialog>
+      )}
     </div>
   );
 }

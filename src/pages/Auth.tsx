@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Globe, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isPublicHost } from "@/lib/network";
 import logoAsset from "@/assets/brand/prod-in-time-logo.png";
 import logoAmour from "@/assets/brand/logo-amour.jpg";
 
@@ -16,8 +20,18 @@ export default function Auth() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [publicHost] = useState<boolean>(() => isPublicHost());
+  const [blockedPublic, setBlockedPublic] = useState<boolean>(() => {
+    try { return sessionStorage.getItem("pit:blockedPublic") === "1"; } catch { return false; }
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (blockedPublic) {
+      try { sessionStorage.removeItem("pit:blockedPublic"); } catch { /* ignore */ }
+    }
+  }, [blockedPublic]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,8 +82,25 @@ export default function Auth() {
           <CardDescription>
             {isLogin ? "Connectez-vous à votre espace" : "Créer un nouveau compte"}
           </CardDescription>
+          {publicHost && (
+            <div className="flex items-center justify-center pt-1">
+              <Badge variant="outline" className="gap-1.5 border-amber-500/50 text-amber-700 dark:text-amber-400">
+                <Globe className="h-3 w-3" />
+                Accès via Internet — autorisation requise
+              </Badge>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
+          {blockedPublic && (
+            <Alert variant="destructive" className="mb-4">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Connexion via Internet non autorisée</AlertTitle>
+              <AlertDescription>
+                Ce compte n'a pas l'autorisation d'accéder à l'application depuis l'extérieur du réseau de l'usine. Contactez votre administrateur pour activer l'accès public sur votre profil.
+              </AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="grid grid-cols-2 gap-3">

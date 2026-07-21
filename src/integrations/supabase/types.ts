@@ -4069,6 +4069,7 @@ export type Database = {
           is_active: boolean
           last_name: string
           poste: string | null
+          public_access: boolean
           updated_at: string
           user_id: string
         }
@@ -4080,6 +4081,7 @@ export type Database = {
           is_active?: boolean
           last_name?: string
           poste?: string | null
+          public_access?: boolean
           updated_at?: string
           user_id: string
         }
@@ -4091,6 +4093,7 @@ export type Database = {
           is_active?: boolean
           last_name?: string
           poste?: string | null
+          public_access?: boolean
           updated_at?: string
           user_id?: string
         }

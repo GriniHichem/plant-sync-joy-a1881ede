@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS public_access boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.profiles.public_access IS 'Astuce UX (non securisee): si false, l app bloque la session lorsque le hostname n est pas dans le LAN. Securite reelle assuree par Cloudflare Access / reseau.';

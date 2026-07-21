@@ -363,6 +363,7 @@ const App = () => (
               <Route path="/qualite/recettes-nomenclatures" element={<QualiteRecettesNomenclatures />} />
               <Route path="/qualite/tracabilite" element={<QualiteTracabilite />} />
               <Route path="/qualite/rapports" element={<QualiteRapports />} />
+              <Route path="/qualite/reception" element={<ReceptionPage />} />
               {/* Inventaire */}
               <Route path="/inventaire" element={<InventoryDashboard />} />
               <Route path="/inventaire/campagnes" element={<InventoryCampaignsList />} />

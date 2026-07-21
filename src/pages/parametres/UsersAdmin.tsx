@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Shield, Trash2, Users, Camera, Pencil, UserPlus, KeyRound } from "lucide-react";
+import { ArrowLeft, Plus, Shield, Trash2, Users, Camera, Pencil, UserPlus, KeyRound, Globe, GlobeLock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Constants } from "@/integrations/supabase/types";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
@@ -371,12 +371,13 @@ export default function UsersAdmin() {
                 <TableHead>Email</TableHead>
                 <TableHead>Poste</TableHead>
                 <TableHead>Rôles</TableHead>
+                <TableHead className="w-24 text-center">Internet</TableHead>
                 <TableHead className="w-28">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground"><Users className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun utilisateur</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground"><Users className="h-8 w-8 mx-auto mb-2 opacity-30" />Aucun utilisateur</TableCell></TableRow>
               ) : filtered.map((p) => {
                 const userRoles = getUserRoles(p.user_id);
                 const img = entityImages.find((i: any) => i.entity_id === p.user_id);
@@ -405,6 +406,17 @@ export default function UsersAdmin() {
                           </Badge>
                         ))}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => togglePublicAccess(p)}
+                        title={p.public_access ? "Autorisé via Internet — cliquer pour révoquer" : "Bloqué via Internet — cliquer pour autoriser"}
+                        className={p.public_access ? "text-emerald-600 hover:text-emerald-700" : "text-muted-foreground hover:text-foreground"}
+                      >
+                        {p.public_access ? <Globe className="h-4 w-4" /> : <GlobeLock className="h-4 w-4" />}
+                      </Button>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

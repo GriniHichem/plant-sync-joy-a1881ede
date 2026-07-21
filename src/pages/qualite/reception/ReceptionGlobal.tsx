@@ -154,7 +154,7 @@ export default function ReceptionGlobal() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Toutes</SelectItem>
-                  {distinct("campaign_id" as any).map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+                  {distinct("campaign_id", "campagne").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -163,7 +163,7 @@ export default function ReceptionGlobal() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Tous</SelectItem>
-                  {distinct("supplier_id" as any).map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+                  {distinct("supplier_id", "fournisseur").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -172,7 +172,7 @@ export default function ReceptionGlobal() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Tous</SelectItem>
-                  {distinct("product_id" as any).map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+                  {distinct("product_id", "produit").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

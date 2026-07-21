@@ -160,17 +160,25 @@ FNGRANTS
   # Elle est indispensable au fonctionnement des menus/acces : sans elle, des modules
   # comme shift_maintenance sont invisibles sur un deploiement auto-heberge.
   # On rejoue la matrice complete depuis la base de reference au moment de la generation.
-  echo "INSERT INTO public.role_permissions (role, module, can_view, can_create, can_edit, can_delete)"
+  echo "ALTER TABLE public.role_permissions"
+  echo "  ALTER COLUMN created_at SET DEFAULT now(),"
+  echo "  ALTER COLUMN updated_at SET DEFAULT now();"
+  echo ""
+  echo "GRANT SELECT, INSERT, UPDATE, DELETE ON public.role_permissions TO authenticated;"
+  echo "GRANT ALL ON public.role_permissions TO service_role;"
+  echo ""
+  echo "INSERT INTO public.role_permissions (role, module, can_view, can_create, can_edit, can_delete, created_at, updated_at)"
   echo "VALUES"
   psql "$SUPABASE_DB_URL" -t -A -F$'\t' \
     -c "SELECT role, module, can_view, can_create, can_edit, can_delete FROM public.role_permissions ORDER BY role, module;" \
-    | awk -F'\t' 'NR>1{printf ",\n"} {printf "  ('\''%s'\'','\''%s'\'',%s,%s,%s,%s)", $1,$2, ($3=="t"?"true":"false"), ($4=="t"?"true":"false"), ($5=="t"?"true":"false"), ($6=="t"?"true":"false")}'
+    | awk -F'\t' 'NR>1{printf ",\n"} {printf "  ('\''%s'\'','\''%s'\'',%s,%s,%s,%s,now(),now())", $1,$2, ($3=="t"?"true":"false"), ($4=="t"?"true":"false"), ($5=="t"?"true":"false"), ($6=="t"?"true":"false")}'
   echo ""
   echo "ON CONFLICT (role, module) DO UPDATE"
   echo "  SET can_view = EXCLUDED.can_view,"
   echo "      can_create = EXCLUDED.can_create,"
   echo "      can_edit = EXCLUDED.can_edit,"
-  echo "      can_delete = EXCLUDED.can_delete;"
+  echo "      can_delete = EXCLUDED.can_delete,"
+  echo "      updated_at = now();"
   echo ""
 
 

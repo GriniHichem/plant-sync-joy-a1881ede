@@ -1,45 +1,68 @@
-## Objectif
-Corriger le blocage affiché : `null value in column "created_at" of relation "role_permissions" violates not-null constraint`, et rendre la gestion des accès fiable côté Lovable Cloud et serveur auto-hébergé.
 
-## Diagnostic confirmé
-- La table `role_permissions` exige `created_at` et `updated_at` non nuls, avec valeurs par défaut côté base actuelle.
-- L’écran Matrice des rôles sauvegarde via `upsert(rows, { onConflict: "role,module" })` après suppression de `id`, mais conserve potentiellement des champs `created_at` / `updated_at` reçus à `null` depuis une base migrée ou un ancien seed.
-- Le script auto-hébergé Réception insère `role_permissions` sans colonnes de timestamps, ce qui échoue sur un serveur où les defaults ne sont pas présents ou mal migrés.
-- Le module `reception` est dans l’affichage, mais pas encore inclus dans les listes de presets (`QUALITY_MODS` / `ALL_KEYS`) : donc l’admin n’est pas garanti full access via preset global.
+# Client Supabase à URL dynamique (self-hosting)
 
-## Plan de correction
-1. **Sécuriser la sauvegarde frontend de la matrice**
-   - Nettoyer explicitement les lignes avant sauvegarde : envoyer uniquement `role`, `module`, `can_view`, `can_create`, `can_edit`, `can_delete`.
-   - Ne jamais renvoyer `created_at` / `updated_at` depuis l’UI, afin que la base applique ses defaults/triggers.
-   - Gérer le toast d’erreur avec message plus clair pour éviter un blocage silencieux.
+Objectif : rendre l’URL de l’API Supabase et la clé anon résolubles **au runtime** côté navigateur, pour que la même image applicative fonctionne :
+- en LAN via `http://192.168.9.222:8081` (Nginx local),
+- en public via `https://prodintime.conserverieamour.com` (tunnel Cloudflare),
+- et en dev/preview Lovable Cloud (comportement inchangé).
 
-2. **Garantir l’accès admin au module Réception**
-   - Ajouter `reception` dans `QUALITY_MODS` pour que les presets Qualité l’incluent.
-   - Vérifier que `admin` et `responsable_si` reçoivent full access via `ALL_KEYS`.
-   - Ajouter `agent_pont_bascule` dans la liste des rôles visibles si nécessaire pour administrer ses droits depuis la matrice.
+Aucun changement de logique métier, aucun changement de schéma. Frontend et fichiers d’infra uniquement.
 
-3. **Créer une migration corrective robuste**
-   - Forcer/assurer les defaults `created_at = now()` et `updated_at = now()` sur `public.role_permissions`.
-   - Corriger les lignes existantes avec timestamps nuls si elles existent.
-   - Ajouter ou remplacer un trigger `updated_at` sur `role_permissions`.
-   - Ajouter les permissions `reception` minimales par rôle avec timestamps explicites :
-     - `admin`, `responsable_si` : accès complet.
-     - rôles qualité pertinents : accès selon workflow Réception.
-     - `agent_pont_bascule` : accès opérationnel Réception.
-   - Ne pas élargir inutilement les droits des autres modules.
+## Ordre de résolution de l’URL/clé (priorité décroissante)
 
-4. **Mettre à jour le script auto-hébergé Réception**
-   - Modifier les insertions `role_permissions` pour inclure explicitement `created_at` et `updated_at`.
-   - Ajouter un bloc préventif qui assure les defaults timestamp sur `role_permissions` avant l’insert.
-   - Rendre le script rejouable sans casser une base déjà migrée.
+1. `window.__RUNTIME_CONFIG__.SUPABASE_URL` / `SUPABASE_ANON_KEY` — injecté par un fichier `/config.js` servi par Nginx (modifiable sans rebuild).
+2. `import.meta.env.VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` — build-time (utilisé par le preview Lovable).
+3. Fallback : `window.location.origin` pour l’URL (Nginx proxifie `/rest/v1`, `/auth/v1`, `/storage/v1`, `/realtime/v1`). Si aucune clé anon n’est trouvée, on log une erreur claire au boot au lieu d’un `Failed to fetch` opaque.
 
-5. **Vérification**
-   - Relire les fichiers modifiés.
-   - Interroger la base pour confirmer que `role_permissions.created_at/updated_at` ont des defaults non nuls.
-   - Vérifier que les lignes `reception` existent pour admin et les rôles nécessaires.
-   - Lancer un test ciblé de sauvegarde logique si possible côté UI ou au minimum vérifier la forme finale du payload sans timestamps.
+Le Realtime (WebSocket) utilise la même base : `supabase-js` dérive automatiquement `ws(s)://` depuis l’URL fournie, donc pas de config séparée à faire — on évite ainsi tout Mixed Content.
 
-## Résultat attendu
-- Plus aucun blocage `created_at null` lors de la sauvegarde de la matrice des rôles.
-- Le module Réception reste visible et accessible après migration serveur.
-- L’administrateur garde tous les accès, y compris Réception, sans dépendre d’une réparation manuelle en base.
+## Changements fichiers
+
+1. **`src/integrations/supabase/client.ts`** (exception faite à la règle « auto-généré » car self-hosting explicitement demandé) :
+   - Résolveur `resolveSupabaseConfig()` appliquant l’ordre ci-dessus.
+   - `createClient(url, key, { auth: { storage: localStorage, persistSession: true, autoRefreshToken: true, storageKey: 'sb-prodintime-auth' }, global: { headers: { 'X-Client-Info': 'prodintime-web' } }, realtime: { params: { eventsPerSecond: 10 } } })`.
+   - Export additionnel `SUPABASE_BASE_URL` (utile pour storage.getPublicUrl côté proxy).
+   - Guard : si `url` finit par se résoudre à `window.location.origin` mais qu’on est en dev Vite (`import.meta.env.DEV`), on garde le comportement env pour ne pas casser le preview.
+
+2. **`index.html`** :
+   - Ajout d’un `<script src="/config.js"></script>` **avant** le bundle app, non-bloquant sur 404 (Lovable Cloud n’a pas ce fichier, l’absence retombe sur l’env var).
+
+3. **`public/config.example.js`** (nouveau, documentation) :
+   ```js
+   window.__RUNTIME_CONFIG__ = {
+     SUPABASE_URL: "", // vide => même origine (proxy Nginx)
+     SUPABASE_ANON_KEY: "<anon key du serveur self-host>"
+   };
+   ```
+   Le fichier réel `/config.js` est déposé côté serveur (hors repo) et servi par Nginx.
+
+4. **`docs/self-hosting-nginx.md`** (nouveau) : extrait Nginx type avec `location /rest/`, `/auth/`, `/storage/`, `/realtime/` (upgrade WebSocket) proxifiés vers le Supabase local, plus la note Cloudflare (WebSocket activé, `no-cache` sur `/config.js`).
+
+## Sécurité & garde-fous
+
+- Aucune clé service_role dans le client (inchangé).
+- Headers `Authorization` gérés par `supabase-js` uniquement — on ne les surcharge pas.
+- Si `SUPABASE_ANON_KEY` est manquante au boot, on affiche un toast bloquant + `console.error` explicite ("Configuration Supabase absente — vérifier /config.js").
+- Le `storageKey` est fixé (`sb-prodintime-auth`) pour que le fallback dynamique ne change pas la clé localStorage entre déploiements et évite les déconnexions silencieuses.
+
+## Impact
+
+- Preview Lovable : identique (les env vars gagnent avant le fallback origin).
+- LAN et public self-host : plus besoin de rebuilder pour changer d’URL, un `/config.js` suffit.
+- Bascule Cloudflare ⇄ LAN : plus de Mixed Content car tout est relatif à l’origine visitée.
+
+## Détails techniques
+
+```ts
+// resolveSupabaseConfig (extrait)
+const runtime = (globalThis as any).__RUNTIME_CONFIG__ ?? {};
+const url =
+  runtime.SUPABASE_URL?.trim() ||
+  import.meta.env.VITE_SUPABASE_URL ||
+  (typeof window !== 'undefined' ? window.location.origin : '');
+const anon =
+  runtime.SUPABASE_ANON_KEY?.trim() ||
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+```
+
+Est-ce que je pars sur ce plan tel quel, ou tu veux aussi que j’ajoute un petit écran de diagnostic `/parametres/diagnostic-reseau` qui affiche l’URL résolue + ping `/rest/v1/` pour t’aider à déboguer les bascules réseau ?

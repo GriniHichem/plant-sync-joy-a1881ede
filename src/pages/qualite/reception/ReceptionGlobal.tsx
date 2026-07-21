@@ -12,8 +12,8 @@ import { Progress } from "@/components/ui/progress";
 import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
-import { formatDuration, formatKg, kgToTonnes, isOverdue } from "@/lib/reception";
-import { TicketPhotosDialog } from "./TicketPhotosDialog";
+import { formatDuration, formatKg, formatKgInt, formatTonnesInt, formatHm, kgToTonnes, isOverdue } from "@/lib/reception";
+import { TicketDetailDialog } from "./TicketDetailDialog";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FilterSheet } from "@/components/responsive/FilterSheet";
@@ -49,7 +49,7 @@ export default function ReceptionGlobal() {
   useEffect(() => {
     try { localStorage.setItem(VIEW_LS_KEY, view); } catch { /* ignore */ }
   }, [view]);
-  const [photoTicket, setPhotoTicket] = useState<{ id: string; numero: string } | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
 
   const fmtDT = (v?: string | null) =>
     v ? new Date(v).toLocaleString("fr-FR", {
@@ -189,9 +189,9 @@ export default function ReceptionGlobal() {
         <Kpi label="Pesés" value={kpis.pese} />
         <Kpi label="À peser" value={kpis.aPeser} />
         <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
-        <Kpi label="Poids brut" value={formatKg(kpis.brut)} />
-        <Kpi label="Poids net" value={formatKg(kpis.net)} />
-        <Kpi label="Abattement" value={`${kgToTonnes(kpis.abat)} t`} className="hidden sm:block" />
+        <Kpi label="Poids brut" value={formatTonnesInt(kpis.brut)} />
+        <Kpi label="Poids net" value={formatTonnesInt(kpis.net)} />
+        <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} className="hidden sm:block" />
         <Kpi label="Durée moyenne" value={formatDuration(kpis.moyDuree ? Math.round(kpis.moyDuree) : null)} className="hidden sm:block" />
       </div>
 
@@ -285,56 +285,57 @@ export default function ReceptionGlobal() {
           <div className="hidden md:block">{filtersForm}</div>
 
           {(isMobile || view === "cards") ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {filtered.map((r: any) => (
-                <div
-                  key={r.id}
-                  className={`rounded-lg border p-3 space-y-1.5 ${isOverdue(r.duree_minutes) ? "border-destructive/40 bg-destructive/5" : ""}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="font-mono text-xs text-muted-foreground">{r.numero}</div>
-                      <div className="font-medium truncate">{r.produit}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {filtered.map((r: any) => {
+                const overdue = isOverdue(r.duree_minutes);
+                const pese = r.etat_pesee === "pese";
+                const borderColor = overdue
+                  ? "border-l-destructive"
+                  : pese
+                  ? "border-l-success"
+                  : "border-l-warning";
+                return (
+                  <button
+                    type="button"
+                    key={r.id}
+                    onClick={() => setSelected(r)}
+                    className={`text-left rounded-lg border border-l-[3px] ${borderColor} p-3 space-y-2 bg-card hover:bg-accent/40 transition-colors focus:outline-none focus:ring-2 focus:ring-ring`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-mono text-[11px] text-muted-foreground">#{r.numero}</div>
+                        <div className="font-semibold truncate">{r.produit ?? "—"}</div>
+                        <div className="text-xs text-muted-foreground truncate">{r.fournisseur ?? "—"}</div>
+                      </div>
+                      {pese
+                        ? <Badge variant="secondary" className="shrink-0">Pesé</Badge>
+                        : <Badge className="shrink-0">En attente</Badge>}
                     </div>
-                    {r.etat_pesee === "pese"
-                      ? <Badge variant="secondary" className="shrink-0">Pesé</Badge>
-                      : <Badge className="shrink-0">En attente</Badge>}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate">{r.fournisseur}</div>
-                  <div className="flex items-center gap-2 text-xs flex-wrap">
-                    <span>{r.date_ticket}</span>
-                    <span>·</span>
-                    <span>{r.heure_debut ?? "—"} → {r.heure_fin ?? "—"}</span>
-                    <span>·</span>
-                    <span>{formatDuration(r.duree_minutes)}</span>
-                    {isOverdue(r.duree_minutes) && (
-                      <Badge variant="destructive" className="h-5"><AlertTriangle className="h-3 w-3 mr-1" />Hors délai</Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t">
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Net </span>
-                      <span className="font-semibold">{r.poids_net_kg ? formatKg(r.poids_net_kg) : "—"}</span>
+
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                      <span className="tabular-nums">{r.date_ticket}</span>
+                      <span>·</span>
+                      <span className="tabular-nums">{formatHm(r.heure_debut)} → {formatHm(r.heure_fin)}</span>
+                      <span>·</span>
+                      <span className="tabular-nums">{formatDuration(r.duree_minutes)}</span>
+                      {overdue && (
+                        <Badge variant="destructive" className="h-5"><AlertTriangle className="h-3 w-3 mr-1" />Hors délai</Badge>
+                      )}
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!Number(r.nb_photos)}
-                      onClick={() => setPhotoTicket({ id: r.id, numero: r.numero })}
-                    >
-                      <ImageIcon className="h-4 w-4 mr-1" />
-                      {Number(r.nb_photos ?? 0)}/3
-                    </Button>
-                  </div>
-                  {(cols.created_by || cols.cloture_by || cols.cloture_at) && (
-                    <div className="text-[11px] text-muted-foreground space-y-0.5 pt-1 border-t">
-                      {cols.created_by && <div>Créé par : {r.created_by_name ?? "—"}</div>}
-                      {cols.cloture_by && <div>Clôturé par : {r.cloture_by_name ?? "—"}</div>}
-                      {cols.cloture_at && <div>Clôturé le : {fmtDT(r.cloture_at)}</div>}
+
+                    <div className="grid grid-cols-3 gap-1 pt-2 border-t">
+                      <WeightCell label="Brut" kg={r.poids_brut_kg} />
+                      <WeightCell label="Abat." kg={r.poids_abattement_kg} />
+                      <WeightCell label="Net" kg={r.poids_net_kg} emphasize />
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      <span>{Number(r.nb_photos ?? 0)}/3 photos</span>
+                    </div>
+                  </button>
+                );
+              })}
               {filtered.length === 0 && (
                 <div className="col-span-full text-center text-muted-foreground py-8">Aucun ticket</div>
               )}
@@ -355,12 +356,16 @@ export default function ReceptionGlobal() {
                 </TableRow></TableHeader>
                 <TableBody>
                   {filtered.map((r: any) => (
-                    <TableRow key={r.id} className={isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}>
+                    <TableRow
+                      key={r.id}
+                      className={`cursor-pointer ${isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}`}
+                      onClick={() => setSelected(r)}
+                    >
                       <TableCell className="font-mono text-xs">{r.numero}</TableCell>
                       <TableCell>{r.date_ticket}</TableCell>
                       <TableCell>{r.fournisseur}</TableCell>
                       <TableCell>{r.produit}</TableCell>
-                      <TableCell className="text-xs">{r.heure_debut ?? "—"} / {r.heure_fin ?? "—"}</TableCell>
+                      <TableCell className="text-xs tabular-nums">{formatHm(r.heure_debut)} / {formatHm(r.heure_fin)}</TableCell>
                       <TableCell>
                         {formatDuration(r.duree_minutes)}
                         {isOverdue(r.duree_minutes) && (
@@ -368,9 +373,9 @@ export default function ReceptionGlobal() {
                         )}
                       </TableCell>
                       <TableCell>{Number(r.taux_abattement).toFixed(2)} %</TableCell>
-                      <TableCell className="text-right">{r.poids_brut_kg ? formatKg(r.poids_brut_kg) : "—"}</TableCell>
-                      <TableCell className="text-right">{r.poids_abattement_kg ? formatKg(r.poids_abattement_kg) : "—"}</TableCell>
-                      <TableCell className="text-right font-medium">{r.poids_net_kg ? formatKg(r.poids_net_kg) : "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatKgInt(r.poids_brut_kg)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatKgInt(r.poids_abattement_kg)}</TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">{formatKgInt(r.poids_net_kg)}</TableCell>
                       <TableCell>
                         {r.etat_pesee === "pese"
                           ? <Badge variant="secondary">Pesé</Badge>
@@ -378,15 +383,10 @@ export default function ReceptionGlobal() {
                       </TableCell>
                       {cols.photos && (
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!Number(r.nb_photos)}
-                            onClick={() => setPhotoTicket({ id: r.id, numero: r.numero })}
-                          >
-                            <ImageIcon className="h-4 w-4 mr-1" />
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <ImageIcon className="h-3.5 w-3.5" />
                             {Number(r.nb_photos ?? 0)}/3
-                          </Button>
+                          </span>
                         </TableCell>
                       )}
                       {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
@@ -402,12 +402,20 @@ export default function ReceptionGlobal() {
         </CardContent>
       </Card>
 
-      <TicketPhotosDialog
-        open={!!photoTicket}
-        onOpenChange={(o) => !o && setPhotoTicket(null)}
-        ticketId={photoTicket?.id ?? null}
-        ticketNumero={photoTicket?.numero}
+      <TicketDetailDialog
+        open={!!selected}
+        onOpenChange={(o) => !o && setSelected(null)}
+        row={selected}
       />
+    </div>
+  );
+}
+
+function WeightCell({ label, kg, emphasize }: { label: string; kg?: number | null; emphasize?: boolean }) {
+  return (
+    <div className="text-center">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`text-sm font-semibold tabular-nums ${emphasize ? "text-primary" : ""}`}>{formatTonnesInt(kg)}</div>
     </div>
   );
 }

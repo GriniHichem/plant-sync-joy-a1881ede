@@ -42,6 +42,24 @@ export function formatKg(kg?: number | null): string {
   return kg.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg";
 }
 
+/** Poids en kg entier avec séparateur de milliers FR. */
+export function formatKgInt(kg?: number | null): string {
+  if (kg == null) return "—";
+  return Math.round(Number(kg)).toLocaleString("fr-FR") + " kg";
+}
+
+/** Poids en tonnes entières. */
+export function formatTonnesInt(kg?: number | null): string {
+  if (kg == null) return "—";
+  return Math.round(Number(kg) / 1000).toLocaleString("fr-FR") + " t";
+}
+
+/** Tronque une heure "HH:mm[:ss[.ms]]" en "HH:mm". */
+export function formatHm(t?: string | null): string {
+  if (!t) return "—";
+  return String(t).slice(0, 5);
+}
+
 /**
  * Compression canvas d'une image (retourne Blob JPEG).
  * Vise la meilleure qualité possible sans dépasser `targetMaxBytes` (défaut 5 Mo).

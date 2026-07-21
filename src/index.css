@@ -217,3 +217,8 @@
     @apply rounded border border-border my-3 max-w-full;
   }
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}

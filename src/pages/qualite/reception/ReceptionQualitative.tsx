@@ -186,6 +186,16 @@ export default function ReceptionQualitative() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
+              <Label>N° ticket externe *</Label>
+              <Input
+                value={form.numero}
+                disabled={!!ticketId}
+                maxLength={50}
+                placeholder="Ex: BL-2026-000123"
+                onChange={(e) => setForm({ ...form, numero: e.target.value })}
+              />
+            </div>
+            <div>
               <Label>Campagne</Label>
               <Select value={form.campaign_id} disabled={!!ticketId}
                 onValueChange={(v) => setForm({ ...form, campaign_id: v })}>

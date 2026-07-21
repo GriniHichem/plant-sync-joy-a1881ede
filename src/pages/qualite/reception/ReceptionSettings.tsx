@@ -148,11 +148,6 @@ function ProductDialog({ open, onOpenChange, editing, onSave, saving }: any) {
   );
 }
 
-// helper: run effect on dependency change
-function useKey(dep: any, fn: () => void) {
-  const [prev, setPrev] = useState<any>();
-  if (prev !== dep) { setPrev(dep); fn(); }
-}
 
 /* ------------------- Suppliers ------------------- */
 function SuppliersTab() {

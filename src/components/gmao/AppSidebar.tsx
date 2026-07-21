@@ -10,7 +10,7 @@ import {
   IconConsumption, IconStop, IconSettings, IconLogout,
   IconMaintenance, IconProduction, IconJournal,
 } from "@/components/icons/IndustrialIcons";
-import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList } from "lucide-react";
+import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList, Truck } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -68,6 +68,7 @@ const qualiteItems: NavItem[] = [
   { title: "Recettes & nomenclatures", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, module: "qualite_recettes" },
   { title: "Traçabilité", url: "/qualite/tracabilite", icon: IconChart, module: "qualite_tracabilite" },
   { title: "Rapports", url: "/qualite/rapports", icon: FileText, module: "qualite_rapports" },
+  { title: "Réception F&L", url: "/qualite/reception", icon: Truck, module: "reception" },
 ];
 
 const inventaireItems: NavItem[] = [

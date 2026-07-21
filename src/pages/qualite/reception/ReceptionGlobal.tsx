@@ -1,0 +1,255 @@
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import { AlertTriangle, RotateCcw } from "lucide-react";
+import { ExportCsvButton } from "@/components/common/ExportCsvButton";
+import { formatDuration, formatKg, kgToTonnes, isOverdue } from "@/lib/reception";
+
+export default function ReceptionGlobal() {
+  const qc = useQueryClient();
+  const [f, setF] = useState({
+    from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
+    etat: "__all__", conformite: "__all__", q: "",
+  });
+
+  const { data: rows = [] } = useQuery({
+    queryKey: ["v_reception_global"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("v_reception_global")
+        .select("*").order("date_ticket", { ascending: false }).limit(1000);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ["reception_campaigns", "all"],
+    queryFn: async () => {
+      const { data } = await supabase.from("reception_campaigns" as any).select("id, libelle, objectif_kg");
+      return (data ?? []) as any[];
+    },
+  });
+
+  useEffect(() => {
+    const ch = supabase.channel("reception-global")
+      .on("postgres_changes", { event: "*", schema: "public", table: "reception_weighings" },
+        () => qc.invalidateQueries({ queryKey: ["v_reception_global"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "reception_tickets" },
+        () => qc.invalidateQueries({ queryKey: ["v_reception_global"] }))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
+  const filtered = useMemo(() => {
+    return rows.filter((r) => {
+      if (f.from && r.date_ticket < f.from) return false;
+      if (f.to && r.date_ticket > f.to) return false;
+      if (f.campaign !== "__all__" && r.campaign_id !== f.campaign) return false;
+      if (f.supplier !== "__all__" && r.supplier_id !== f.supplier) return false;
+      if (f.product !== "__all__" && r.product_id !== f.product) return false;
+      if (f.etat !== "__all__" && r.etat_pesee !== f.etat) return false;
+      if (f.conformite === "conforme" && isOverdue(r.duree_minutes)) return false;
+      if (f.conformite === "hors_delai" && !isOverdue(r.duree_minutes)) return false;
+      if (f.q) {
+        const q = f.q.toLowerCase();
+        if (![r.numero, r.fournisseur, r.produit, r.wilaya, r.region].some((v) => (v ?? "").toString().toLowerCase().includes(q))) return false;
+      }
+      return true;
+    });
+  }, [rows, f]);
+
+  const kpis = useMemo(() => {
+    const total = filtered.length;
+    const brut = filtered.reduce((s, r) => s + Number(r.poids_brut_kg ?? 0), 0);
+    const net = filtered.reduce((s, r) => s + Number(r.poids_net_kg ?? 0), 0);
+    const abat = filtered.reduce((s, r) => s + Number(r.poids_abattement_kg ?? 0), 0);
+    const durees = filtered.map((r) => r.duree_minutes).filter((v) => v != null);
+    const moyDuree = durees.length ? durees.reduce((s, v) => s + v, 0) / durees.length : null;
+    const hd = filtered.filter((r) => isOverdue(r.duree_minutes)).length;
+    const pese = filtered.filter((r) => r.etat_pesee === "pese").length;
+    return { total, brut, net, abat, moyDuree, hd, pese, aPeser: total - pese };
+  }, [filtered]);
+
+  const activeCampaign = campaigns.find((c) => c.id === f.campaign);
+  const progression = activeCampaign?.objectif_kg
+    ? Math.min(100, (kpis.net / Number(activeCampaign.objectif_kg)) * 100)
+    : null;
+
+  const distinct = <K extends string>(key: K) =>
+    Array.from(new Map(rows.map((r) => [r[key], { id: r[key], label: r[key.replace("_id", "")] ?? r[key] }])).values())
+      .filter((x) => x.id);
+
+  const resetFilters = () =>
+    setF({ from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        <Kpi label="Tickets" value={kpis.total} />
+        <Kpi label="Pesés" value={kpis.pese} />
+        <Kpi label="À peser" value={kpis.aPeser} />
+        <Kpi label="Poids brut" value={formatKg(kpis.brut)} />
+        <Kpi label="Poids net" value={formatKg(kpis.net)} />
+        <Kpi label="Abattement" value={`${kgToTonnes(kpis.abat)} t`} />
+        <Kpi label="Durée moyenne" value={formatDuration(kpis.moyDuree ? Math.round(kpis.moyDuree) : null)} />
+        <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
+      </div>
+
+      {progression != null && (
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Progression campagne — {activeCampaign?.libelle}</span>
+              <span className="font-medium">{kgToTonnes(kpis.net)} t / {kgToTonnes(activeCampaign.objectif_kg)} t</span>
+            </div>
+            <Progress value={progression} />
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <CardTitle>Consultation globale</CardTitle>
+            <Button variant="ghost" size="sm" className="ml-auto" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinit.</Button>
+            <ExportCsvButton
+              filename="reception-global"
+              data={filtered.map((r) => ({
+                ...r,
+                duree: formatDuration(r.duree_minutes),
+              }))}
+              columns={[
+                { key: "numero", label: "N° ticket" },
+                { key: "date_ticket", label: "Date" },
+                { key: "campagne", label: "Campagne" },
+                { key: "produit", label: "Produit" },
+                { key: "fournisseur", label: "Fournisseur" },
+                { key: "wilaya", label: "Wilaya" },
+                { key: "heure_debut", label: "Début" },
+                { key: "heure_fin", label: "Fin" },
+                { key: "duree", label: "Durée" },
+                { key: "taux_abattement", label: "Abat. %" },
+                { key: "poids_brut_kg", label: "Brut (kg)" },
+                { key: "poids_abattement_kg", label: "Abat. (kg)" },
+                { key: "poids_net_kg", label: "Net (kg)" },
+                { key: "etat_pesee", label: "État pesée" },
+              ]}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div><Label>Du</Label><Input type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} /></div>
+            <div><Label>Au</Label><Input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} /></div>
+            <div><Label>Campagne</Label>
+              <Select value={f.campaign} onValueChange={(v) => setF({ ...f, campaign: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Toutes</SelectItem>
+                  {distinct("campaign_id" as any).map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Fournisseur</Label>
+              <Select value={f.supplier} onValueChange={(v) => setF({ ...f, supplier: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tous</SelectItem>
+                  {distinct("supplier_id" as any).map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Produit</Label>
+              <Select value={f.product} onValueChange={(v) => setF({ ...f, product: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tous</SelectItem>
+                  {distinct("product_id" as any).map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>État</Label>
+              <Select value={f.etat} onValueChange={(v) => setF({ ...f, etat: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Tous</SelectItem>
+                  <SelectItem value="pese">Pesé</SelectItem>
+                  <SelectItem value="a_peser">À peser</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Conformité durée</Label>
+              <Select value={f.conformite} onValueChange={(v) => setF({ ...f, conformite: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Toutes</SelectItem>
+                  <SelectItem value="conforme">Conforme (≤ 20 min)</SelectItem>
+                  <SelectItem value="hors_delai">Hors délai (&gt; 20 min)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Recherche</Label><Input placeholder="N°, fournisseur, wilaya…" value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} /></div>
+          </div>
+
+          <div className="overflow-auto">
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>N°</TableHead><TableHead>Date</TableHead><TableHead>Fournisseur</TableHead>
+                <TableHead>Produit</TableHead><TableHead>Début/Fin</TableHead><TableHead>Durée</TableHead>
+                <TableHead>Abat.</TableHead><TableHead className="text-right">Brut</TableHead>
+                <TableHead className="text-right">Abat. kg</TableHead><TableHead className="text-right">Net</TableHead>
+                <TableHead>État</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {filtered.map((r: any) => (
+                  <TableRow key={r.id} className={isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}>
+                    <TableCell className="font-mono text-xs">{r.numero}</TableCell>
+                    <TableCell>{r.date_ticket}</TableCell>
+                    <TableCell>{r.fournisseur}</TableCell>
+                    <TableCell>{r.produit}</TableCell>
+                    <TableCell className="text-xs">{r.heure_debut ?? "—"} / {r.heure_fin ?? "—"}</TableCell>
+                    <TableCell>
+                      {formatDuration(r.duree_minutes)}
+                      {isOverdue(r.duree_minutes) && (
+                        <Badge variant="destructive" className="ml-1"><AlertTriangle className="h-3 w-3 mr-1" />Hors délai</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>{Number(r.taux_abattement).toFixed(2)} %</TableCell>
+                    <TableCell className="text-right">{r.poids_brut_kg ? formatKg(r.poids_brut_kg) : "—"}</TableCell>
+                    <TableCell className="text-right">{r.poids_abattement_kg ? formatKg(r.poids_abattement_kg) : "—"}</TableCell>
+                    <TableCell className="text-right font-medium">{r.poids_net_kg ? formatKg(r.poids_net_kg) : "—"}</TableCell>
+                    <TableCell>
+                      {r.etat_pesee === "pese"
+                        ? <Badge variant="secondary">Pesé</Badge>
+                        : <Badge>En attente</Badge>}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function Kpi({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
+  return (
+    <Card className={accent ? "border-destructive/40" : ""}>
+      <CardContent className="p-3">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <div className={"text-xl font-semibold " + (accent ? "text-destructive" : "")}>{value}</div>
+      </CardContent>
+    </Card>
+  );
+}

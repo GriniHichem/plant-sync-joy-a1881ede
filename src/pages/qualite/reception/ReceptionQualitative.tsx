@@ -175,6 +175,20 @@ export default function ReceptionQualitative() {
     },
   });
 
+  // Rafraîchissement live des photos & derniers tickets même si le socket saute.
+  useShiftRealtime(
+    `reception-photos-${ticketId ?? "none"}`,
+    "reception_ticket_photos",
+    () => qc.invalidateQueries({ queryKey: ["reception_photos", ticketId] }),
+    !!ticketId,
+    ticketId ? `ticket_id=eq.${ticketId}` : undefined,
+  );
+  useShiftRealtime(
+    "reception-qualitative-recent",
+    "reception_tickets",
+    () => qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] }),
+  );
+
   const photoBySlot = (slot: number) => photos.find((p) => p.slot === slot);
   const nPhotos = photos.length;
   const canClose = !!ticketId && !!form.supplier_id && !!form.heure_debut && !!form.heure_fin && nPhotos === 3;

@@ -356,12 +356,16 @@ export default function ReceptionGlobal() {
                 </TableRow></TableHeader>
                 <TableBody>
                   {filtered.map((r: any) => (
-                    <TableRow key={r.id} className={isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}>
+                    <TableRow
+                      key={r.id}
+                      className={`cursor-pointer ${isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}`}
+                      onClick={() => setSelected(r)}
+                    >
                       <TableCell className="font-mono text-xs">{r.numero}</TableCell>
                       <TableCell>{r.date_ticket}</TableCell>
                       <TableCell>{r.fournisseur}</TableCell>
                       <TableCell>{r.produit}</TableCell>
-                      <TableCell className="text-xs">{r.heure_debut ?? "—"} / {r.heure_fin ?? "—"}</TableCell>
+                      <TableCell className="text-xs tabular-nums">{formatHm(r.heure_debut)} / {formatHm(r.heure_fin)}</TableCell>
                       <TableCell>
                         {formatDuration(r.duree_minutes)}
                         {isOverdue(r.duree_minutes) && (
@@ -369,9 +373,9 @@ export default function ReceptionGlobal() {
                         )}
                       </TableCell>
                       <TableCell>{Number(r.taux_abattement).toFixed(2)} %</TableCell>
-                      <TableCell className="text-right">{r.poids_brut_kg ? formatKg(r.poids_brut_kg) : "—"}</TableCell>
-                      <TableCell className="text-right">{r.poids_abattement_kg ? formatKg(r.poids_abattement_kg) : "—"}</TableCell>
-                      <TableCell className="text-right font-medium">{r.poids_net_kg ? formatKg(r.poids_net_kg) : "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatKgInt(r.poids_brut_kg)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatKgInt(r.poids_abattement_kg)}</TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">{formatKgInt(r.poids_net_kg)}</TableCell>
                       <TableCell>
                         {r.etat_pesee === "pese"
                           ? <Badge variant="secondary">Pesé</Badge>
@@ -379,15 +383,10 @@ export default function ReceptionGlobal() {
                       </TableCell>
                       {cols.photos && (
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!Number(r.nb_photos)}
-                            onClick={() => setPhotoTicket({ id: r.id, numero: r.numero })}
-                          >
-                            <ImageIcon className="h-4 w-4 mr-1" />
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <ImageIcon className="h-3.5 w-3.5" />
                             {Number(r.nb_photos ?? 0)}/3
-                          </Button>
+                          </span>
                         </TableCell>
                       )}
                       {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
@@ -403,12 +402,20 @@ export default function ReceptionGlobal() {
         </CardContent>
       </Card>
 
-      <TicketPhotosDialog
-        open={!!photoTicket}
-        onOpenChange={(o) => !o && setPhotoTicket(null)}
-        ticketId={photoTicket?.id ?? null}
-        ticketNumero={photoTicket?.numero}
+      <TicketDetailDialog
+        open={!!selected}
+        onOpenChange={(o) => !o && setSelected(null)}
+        row={selected}
       />
+    </div>
+  );
+}
+
+function WeightCell({ label, kg, emphasize }: { label: string; kg?: number | null; emphasize?: boolean }) {
+  return (
+    <div className="text-center">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`text-sm font-semibold tabular-nums ${emphasize ? "text-primary" : ""}`}>{formatTonnesInt(kg)}</div>
     </div>
   );
 }

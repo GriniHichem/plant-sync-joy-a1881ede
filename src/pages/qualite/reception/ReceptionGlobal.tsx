@@ -252,6 +252,10 @@ export default function ReceptionGlobal() {
                 <TableHead>Abat.</TableHead><TableHead className="text-right">Brut</TableHead>
                 <TableHead className="text-right">Abat. kg</TableHead><TableHead className="text-right">Net</TableHead>
                 <TableHead>État</TableHead>
+                {cols.photos && <TableHead>Photos</TableHead>}
+                {cols.created_by && <TableHead>Créé par</TableHead>}
+                {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
+                {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
               </TableRow></TableHeader>
               <TableBody>
                 {filtered.map((r: any) => (
@@ -276,17 +280,41 @@ export default function ReceptionGlobal() {
                         ? <Badge variant="secondary">Pesé</Badge>
                         : <Badge>En attente</Badge>}
                     </TableCell>
+                    {cols.photos && (
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!Number(r.nb_photos)}
+                          onClick={() => setPhotoTicket({ id: r.id, numero: r.numero })}
+                        >
+                          <ImageIcon className="h-4 w-4 mr-1" />
+                          {Number(r.nb_photos ?? 0)}/3
+                        </Button>
+                      </TableCell>
+                    )}
+                    {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
+                    {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
+                    {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
                   </TableRow>
                 ))}
-                {filtered.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
+                {filtered.length === 0 && <TableRow><TableCell colSpan={11 + Object.values(cols).filter(Boolean).length} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
+
+      <TicketPhotosDialog
+        open={!!photoTicket}
+        onOpenChange={(o) => !o && setPhotoTicket(null)}
+        ticketId={photoTicket?.id ?? null}
+        ticketNumero={photoTicket?.numero}
+      />
     </div>
   );
 }
+
 
 function Kpi({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
   return (

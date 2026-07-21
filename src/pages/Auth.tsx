@@ -21,6 +21,7 @@ export default function Auth() {
   const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
   const [publicHost] = useState<boolean>(() => isPublicHost());
+  const [gateEnabled, setGateEnabled] = useState<boolean>(false);
   const [blockedPublic, setBlockedPublic] = useState<boolean>(() => {
     try { return sessionStorage.getItem("pit:blockedPublic") === "1"; } catch { return false; }
   });
@@ -32,6 +33,12 @@ export default function Auth() {
       try { sessionStorage.removeItem("pit:blockedPublic"); } catch { /* ignore */ }
     }
   }, [blockedPublic]);
+
+  useEffect(() => {
+    if (!publicHost) return;
+    supabase.from("app_settings").select("value").eq("key", "control.enforce_public_access_gate").maybeSingle()
+      .then(({ data }) => setGateEnabled(data?.value === "true"));
+  }, [publicHost]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +89,7 @@ export default function Auth() {
           <CardDescription>
             {isLogin ? "Connectez-vous à votre espace" : "Créer un nouveau compte"}
           </CardDescription>
-          {publicHost && (
+          {publicHost && gateEnabled && (
             <div className="flex items-center justify-center pt-1">
               <Badge variant="outline" className="gap-1.5 border-amber-500/50 text-amber-700 dark:text-amber-400">
                 <Globe className="h-3 w-3" />

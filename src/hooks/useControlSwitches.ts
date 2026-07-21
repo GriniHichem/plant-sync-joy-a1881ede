@@ -8,6 +8,7 @@ export const CONTROL_KEYS = [
   "control.enforce_rls_strict",
   "control.allow_custom_roles",
   "control.maintenance_mode",
+  "control.enforce_public_access_gate",
 ] as const;
 
 export type ControlKey = typeof CONTROL_KEYS[number];

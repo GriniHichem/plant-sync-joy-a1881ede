@@ -109,12 +109,8 @@ function ProductsTab() {
 
 function ProductDialog({ open, onOpenChange, editing, onSave, saving }: any) {
   const [form, setForm] = useState<any>({ code: "", designation: "", description: "", normes: "", calibres: "", varietes: "", actif: true });
-  const key = editing?.id ?? "new";
-  const initialized = (useState<string>(""))[0];
-  // reset when opened
-  useState(() => setForm({ code: "", designation: "", description: "", normes: "", calibres: "", varietes: "", actif: true }));
-  // simple sync
-  useKey(open + key, () => {
+  useEffect(() => {
+    if (!open) return;
     setForm({
       code: editing?.code ?? "",
       designation: editing?.designation ?? "",
@@ -124,7 +120,7 @@ function ProductDialog({ open, onOpenChange, editing, onSave, saving }: any) {
       varietes: (editing?.varietes ?? []).join(", "),
       actif: editing?.actif ?? true,
     });
-  });
+  }, [open, editing?.id]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

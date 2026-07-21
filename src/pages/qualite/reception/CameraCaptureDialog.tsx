@@ -8,6 +8,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   onCapture: (file: File) => void;
   slot: 1 | 2 | 3;
+  ticketNumero?: string;
 }
 
 export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot }: Props) {

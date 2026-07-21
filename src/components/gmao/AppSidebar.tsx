@@ -68,6 +68,7 @@ const qualiteItems: NavItem[] = [
   { title: "Recettes & nomenclatures", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, module: "qualite_recettes" },
   { title: "Traçabilité", url: "/qualite/tracabilite", icon: IconChart, module: "qualite_tracabilite" },
   { title: "Rapports", url: "/qualite/rapports", icon: FileText, module: "qualite_rapports" },
+  { title: "Réception F&L", url: "/qualite/reception", icon: Truck, module: "reception" },
 ];
 
 const inventaireItems: NavItem[] = [

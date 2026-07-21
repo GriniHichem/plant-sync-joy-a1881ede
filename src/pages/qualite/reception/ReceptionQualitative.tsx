@@ -20,6 +20,7 @@ export default function ReceptionQualitative() {
 
   const [ticketId, setTicketId] = useState<string | undefined>();
   const [form, setForm] = useState({
+    numero: "",
     campaign_id: "",
     supplier_id: "",
     heure_debut: "",
@@ -86,8 +87,10 @@ export default function ReceptionQualitative() {
 
   const createTicket = useMutation({
     mutationFn: async () => {
+      if (!form.numero.trim()) throw new Error("Numéro de ticket requis");
       if (!form.campaign_id || !form.supplier_id) throw new Error("Campagne et fournisseur requis");
       const { data, error } = await supabase.from("reception_tickets" as any).insert({
+        numero: form.numero.trim(),
         campaign_id: form.campaign_id,
         product_id: selectedCampaign?.product_id,
         supplier_id: form.supplier_id,
@@ -102,7 +105,7 @@ export default function ReceptionQualitative() {
       setTicketId(t.id);
       toast.success(`Ticket ${t.numero} ouvert — ajoutez les 3 photos`);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message?.includes("duplicate") ? "Ce numéro de ticket existe déjà" : e.message),
   });
 
   const updateTicket = useMutation({
@@ -150,7 +153,7 @@ export default function ReceptionQualitative() {
     onSuccess: () => {
       toast.success("Ticket clôturé");
       setTicketId(undefined);
-      setForm({ campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
+      setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
       qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -182,6 +185,16 @@ export default function ReceptionQualitative() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label>N° ticket externe *</Label>
+              <Input
+                value={form.numero}
+                disabled={!!ticketId}
+                maxLength={50}
+                placeholder="Ex: BL-2026-000123"
+                onChange={(e) => setForm({ ...form, numero: e.target.value })}
+              />
+            </div>
             <div>
               <Label>Campagne</Label>
               <Select value={form.campaign_id} disabled={!!ticketId}
@@ -243,47 +256,59 @@ export default function ReceptionQualitative() {
             </div>
           </div>
 
-          {!ticketId ? (
-            <Button className="w-full h-12" disabled={createTicket.isPending || !form.campaign_id || !form.supplier_id}
+          {!ticketId && (
+            <Button className="w-full h-12" disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
               onClick={() => createTicket.mutate()}>
               Ouvrir le ticket
             </Button>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[1, 2, 3].map((s) => {
-                  const p = photoBySlot(s);
-                  return (
-                    <PhotoSlot key={s} ticketId={ticketId} slot={s as 1 | 2 | 3}
-                      storagePath={p?.storage_path}
-                      onUploaded={(path) => addPhoto.mutate({ slot: s, path })}
-                      onDeleted={() => p && removePhoto.mutate(p.id)} />
-                  );
-                })}
-              </div>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending}>
-                    <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Clôturer le ticket ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Après clôture, aucune modification ne sera possible. Le ticket pourra être pesé par le pont-bascule.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => closeTicket.mutate()}>Confirmer</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              {nPhotos < 3 && <p className="text-xs text-muted-foreground text-center">{nPhotos}/3 photos — les 3 sont requises</p>}
-            </>
           )}
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">Photos obligatoires (3)</Label>
+              <Badge variant={nPhotos === 3 ? "default" : "outline"}>{nPhotos}/3</Badge>
+            </div>
+            {!ticketId && (
+              <p className="text-xs text-muted-foreground">
+                Renseignez le n° de ticket puis cliquez sur <b>Ouvrir le ticket</b> pour activer la prise de photos.
+              </p>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[1, 2, 3].map((s) => {
+                const p = photoBySlot(s);
+                return (
+                  <PhotoSlot key={s} ticketId={ticketId} slot={s as 1 | 2 | 3}
+                    disabled={!ticketId}
+                    storagePath={p?.storage_path}
+                    onUploaded={(path) => addPhoto.mutate({ slot: s, path })}
+                    onDeleted={() => p && removePhoto.mutate(p.id)} />
+                );
+              })}
+            </div>
+          </div>
+
+          {ticketId && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending}>
+                  <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clôturer le ticket ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Après clôture, aucune modification ne sera possible. Le ticket pourra être pesé par le pont-bascule.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => closeTicket.mutate()}>Confirmer</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
         </CardContent>
       </Card>
 

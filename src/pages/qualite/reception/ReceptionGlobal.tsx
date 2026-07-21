@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon } from "lucide-react";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, kgToTonnes, isOverdue } from "@/lib/reception";
+import { TicketPhotosDialog } from "./TicketPhotosDialog";
 
 export default function ReceptionGlobal() {
   const qc = useQueryClient();

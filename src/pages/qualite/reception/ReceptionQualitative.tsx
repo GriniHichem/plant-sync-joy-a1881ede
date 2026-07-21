@@ -10,10 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, Lock, CheckCircle2 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Clock, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { format } from "date-fns";
+import { useShiftRealtime } from "@/hooks/useShiftRealtime";
+import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();

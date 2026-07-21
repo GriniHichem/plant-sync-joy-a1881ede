@@ -138,6 +138,28 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticke
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Filigrane date/heure (+ n° ticket) incrusté en bas
+    const bandH = Math.max(40, Math.round(canvas.height * 0.06));
+    const fontPx = Math.max(14, Math.round(canvas.height * 0.03));
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(0, canvas.height - bandH, canvas.width, bandH);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `600 ${fontPx}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    ctx.textBaseline = "middle";
+    const y = canvas.height - bandH / 2;
+    const pad = Math.round(fontPx * 0.6);
+    const stamp = new Date().toLocaleString("fr-FR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+    ctx.textAlign = "left";
+    ctx.fillText(`Photo ${slot} — ${stamp}`, pad, y);
+    if (ticketNumero) {
+      ctx.textAlign = "right";
+      ctx.fillText(`N° ${ticketNumero}`, canvas.width - pad, y);
+    }
+
     const url = canvas.toDataURL("image/jpeg", 0.92);
     setPreview(url);
   }

@@ -404,19 +404,27 @@ WITH CHECK (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'responsable_si'
 
 -- 10) Permissions de menus (role_permissions) ---------------------------------
 -- Rend le module Réception visible dans la sidebar pour les rôles concernés.
-INSERT INTO public.role_permissions (role, module, can_view, can_create, can_edit, can_delete) VALUES
-  ('admin',                        'reception', true,  true,  true,  true),
-  ('responsable_si',               'reception', true,  true,  true,  true),
-  ('directeur_qualite',            'reception', true,  true,  true,  true),
-  ('responsable_controle_qualite', 'reception', true,  true,  true,  false),
-  ('controleur_qualite',           'reception', true,  true,  true,  false),
-  ('agent_pont_bascule',           'reception', true,  false, false, false),
-  ('auditeur',                     'reception', true,  false, false, false)
+ALTER TABLE public.role_permissions
+  ALTER COLUMN created_at SET DEFAULT now(),
+  ALTER COLUMN updated_at SET DEFAULT now();
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.role_permissions TO authenticated;
+GRANT ALL ON public.role_permissions TO service_role;
+
+INSERT INTO public.role_permissions (role, module, can_view, can_create, can_edit, can_delete, created_at, updated_at) VALUES
+  ('admin',                        'reception', true,  true,  true,  true,  now(), now()),
+  ('responsable_si',               'reception', true,  true,  true,  true,  now(), now()),
+  ('directeur_qualite',            'reception', true,  true,  true,  true,  now(), now()),
+  ('responsable_controle_qualite', 'reception', true,  true,  true,  false, now(), now()),
+  ('controleur_qualite',           'reception', true,  true,  true,  false, now(), now()),
+  ('agent_pont_bascule',           'reception', true,  false, false, false, now(), now()),
+  ('auditeur',                     'reception', true,  false, false, false, now(), now())
 ON CONFLICT (role, module) DO UPDATE
   SET can_view   = EXCLUDED.can_view,
       can_create = EXCLUDED.can_create,
       can_edit   = EXCLUDED.can_edit,
-      can_delete = EXCLUDED.can_delete;
+      can_delete = EXCLUDED.can_delete,
+      updated_at = now();
 
 -- =============================================================================
 -- FIN — Module RÉCEPTION prêt à l'emploi sur votre serveur auto-hébergé.

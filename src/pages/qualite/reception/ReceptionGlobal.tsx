@@ -142,32 +142,52 @@ export default function ReceptionGlobal() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <CardTitle>Consultation globale</CardTitle>
-            <Button variant="ghost" size="sm" className="ml-auto" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinit.</Button>
-            <ExportCsvButton
-              filename="reception-global"
-              data={filtered.map((r) => ({
-                ...r,
-                duree: formatDuration(r.duree_minutes),
-              }))}
-              columns={[
-                { key: "numero", label: "N° ticket" },
-                { key: "date_ticket", label: "Date" },
-                { key: "campagne", label: "Campagne" },
-                { key: "produit", label: "Produit" },
-                { key: "fournisseur", label: "Fournisseur" },
-                { key: "wilaya", label: "Wilaya" },
-                { key: "heure_debut", label: "Début" },
-                { key: "heure_fin", label: "Fin" },
-                { key: "duree", label: "Durée" },
-                { key: "taux_abattement", label: "Abat. %" },
-                { key: "poids_brut_kg", label: "Brut (kg)" },
-                { key: "poids_abattement_kg", label: "Abat. (kg)" },
-                { key: "poids_net_kg", label: "Net (kg)" },
-                { key: "etat_pesee", label: "État pesée" },
-              ]}
-            />
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinit.</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm"><Columns3 className="h-4 w-4 mr-1" />Colonnes</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Colonnes optionnelles</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem checked={cols.photos} onCheckedChange={(v) => setCols({ ...cols, photos: !!v })}>Photos</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={cols.created_by} onCheckedChange={(v) => setCols({ ...cols, created_by: !!v })}>Créé par</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={cols.cloture_by} onCheckedChange={(v) => setCols({ ...cols, cloture_by: !!v })}>Clôturé par</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={cols.cloture_at} onCheckedChange={(v) => setCols({ ...cols, cloture_at: !!v })}>Clôturé le</DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <ExportCsvButton
+                filename="reception-global"
+                data={filtered.map((r) => ({
+                  ...r,
+                  duree: formatDuration(r.duree_minutes),
+                  cloture_at_fmt: fmtDT(r.cloture_at),
+                }))}
+                columns={[
+                  { key: "numero", label: "N° ticket" },
+                  { key: "date_ticket", label: "Date" },
+                  { key: "campagne", label: "Campagne" },
+                  { key: "produit", label: "Produit" },
+                  { key: "fournisseur", label: "Fournisseur" },
+                  { key: "wilaya", label: "Wilaya" },
+                  { key: "heure_debut", label: "Début" },
+                  { key: "heure_fin", label: "Fin" },
+                  { key: "duree", label: "Durée" },
+                  { key: "taux_abattement", label: "Abat. %" },
+                  { key: "poids_brut_kg", label: "Brut (kg)" },
+                  { key: "poids_abattement_kg", label: "Abat. (kg)" },
+                  { key: "poids_net_kg", label: "Net (kg)" },
+                  { key: "etat_pesee", label: "État pesée" },
+                  { key: "created_by_name", label: "Créé par" },
+                  { key: "cloture_by_name", label: "Clôturé par" },
+                  { key: "cloture_at_fmt", label: "Clôturé le" },
+                  { key: "nb_photos", label: "Photos" },
+                ]}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">

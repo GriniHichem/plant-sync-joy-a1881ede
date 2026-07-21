@@ -185,6 +185,17 @@ export default function UsersAdmin() {
     }
   };
 
+  const togglePublicAccess = async (profile: any) => {
+    const next = !profile.public_access;
+    const { error } = await supabase.from("profiles").update({ public_access: next }).eq("user_id", profile.user_id);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: next ? "Accès Internet autorisé" : "Accès Internet bloqué", description: `${profile.first_name} ${profile.last_name}` });
+    load();
+  };
+
   const handleCreateUser = async () => {
     if (!newEmail || !newPassword || !newFirstName || !newLastName) {
       toast({ title: "Veuillez remplir tous les champs obligatoires", variant: "destructive" });

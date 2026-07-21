@@ -83,8 +83,8 @@ export default function ReceptionGlobal() {
     ? Math.min(100, (kpis.net / Number(activeCampaign.objectif_kg)) * 100)
     : null;
 
-  const distinct = <K extends string>(key: K) =>
-    Array.from(new Map(rows.map((r) => [r[key], { id: r[key], label: r[key.replace("_id", "")] ?? r[key] }])).values())
+  const distinct = (idKey: "campaign_id" | "supplier_id" | "product_id", labelKey: "campagne" | "fournisseur" | "produit") =>
+    Array.from(new Map(rows.map((r: any) => [r[idKey], { id: r[idKey], label: r[labelKey] ?? r[idKey] }])).values())
       .filter((x) => x.id);
 
   const resetFilters = () =>

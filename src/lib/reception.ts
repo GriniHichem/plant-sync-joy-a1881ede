@@ -1,0 +1,59 @@
+// Helpers du module Réception Fruits & Légumes frais
+
+export function computeDurationMinutes(start?: string | null, end?: string | null): number | null {
+  if (!start || !end) return null;
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  if ([sh, sm, eh, em].some((v) => Number.isNaN(v))) return null;
+  let mins = eh * 60 + em - (sh * 60 + sm);
+  if (mins < 0) mins += 24 * 60; // gère le passage minuit
+  return mins;
+}
+
+export function formatDuration(min?: number | null): string {
+  if (min == null) return "—";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, "0")} min`;
+}
+
+/** > 20 minutes = hors délai. 20 min inclus reste conforme. */
+export function isOverdue(min?: number | null): boolean {
+  return typeof min === "number" && min > 20;
+}
+
+export function computeAbattementKg(brut: number, tauxPct: number): number {
+  if (!brut || !tauxPct) return 0;
+  return (brut * tauxPct) / 100;
+}
+
+export function computeNetKg(brut: number, tauxPct: number): number {
+  return brut - computeAbattementKg(brut, tauxPct);
+}
+
+export function kgToTonnes(kg?: number | null, digits = 3): string {
+  if (kg == null) return "—";
+  return (kg / 1000).toLocaleString("fr-FR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+export function formatKg(kg?: number | null): string {
+  if (kg == null) return "—";
+  return kg.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kg";
+}
+
+/** Compression canvas d'une image (retourne Blob JPEG). */
+export async function compressImage(file: File, maxSize = 1600, quality = 0.82): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const ratio = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * ratio);
+  const h = Math.round(bitmap.height * ratio);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  return await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Compression échouée"))), "image/jpeg", quality),
+  );
+}

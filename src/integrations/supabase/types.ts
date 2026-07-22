@@ -5415,6 +5415,13 @@ export type Database = {
             referencedRelation: "v_reception_global"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reception_ticket_orientations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_ticket_orientations_summary"
+            referencedColumns: ["ticket_id"]
+          },
         ]
       }
       reception_ticket_photos: {
@@ -5456,6 +5463,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_reception_global"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_ticket_photos_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_ticket_orientations_summary"
+            referencedColumns: ["ticket_id"]
           },
         ]
       }
@@ -5625,6 +5639,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "v_reception_global"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_weighings_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "v_reception_ticket_orientations_summary"
+            referencedColumns: ["ticket_id"]
           },
         ]
       }
@@ -6883,6 +6904,61 @@ export type Database = {
             referencedRelation: "v_reception_global"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reception_ticket_orientations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_ticket_orientations_summary"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "reception_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "reception_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
+      v_reception_ticket_orientations_summary: {
+        Row: {
+          campagne_nom: string | null
+          campaign_id: string | null
+          heure_debut: string | null
+          last_orientation_at: string | null
+          orientations: Json | null
+          orientations_count: number | null
+          poids_net_kg: number | null
+          product_id: string | null
+          produit_nom: string | null
+          taux_applique: number | null
+          taux_moyen: number | null
+          ticket_date: string | null
+          ticket_id: string | null
+          ticket_numero: string | null
+        }
+        Relationships: [
           {
             foreignKeyName: "reception_tickets_campaign_id_fkey"
             columns: ["campaign_id"]

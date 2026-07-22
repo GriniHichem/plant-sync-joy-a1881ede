@@ -485,7 +485,7 @@ export default function ReceptionQualitative() {
             )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending}>
+                <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending || !canCloseTicket}>
                   <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
                 </Button>
               </AlertDialogTrigger>

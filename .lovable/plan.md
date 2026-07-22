@@ -1,56 +1,66 @@
 ## Objectif
 
-Permettre aux utilisateurs autorisés (Consultation : Voir/Modifier) d'émettre des **orientations** (taux d'abattement recommandé + explication) sur un ticket. L'agréeur peut consulter ces avis lors de la saisie sans que cela n'altère le ticket.
+Transformer le dialogue **Orientations récentes** (bouton ampoule à côté du taux) d'une liste plate d'avis vers une vue **par ticket** : chaque carte = un ticket du même contexte (campagne/produit), avec ses photos et tous les avis affichés comme **tags cliquables**. On liste les **30 derniers tickets ayant au moins une orientation**.
 
-## 1. Backend (migration)
+## Nouveau concept UX
 
-Nouvelle table `public.reception_ticket_orientations` :
-- `ticket_id` (FK → reception_tickets, cascade)
-- `user_id` (FK → auth.users)
-- `taux_recommande` numeric(5,2) — entre 0 et 100
-- `explication` text nullable
-- `created_at`, `updated_at`
-- Unicité `(ticket_id, user_id)` → un seul avis par utilisateur/ticket (upsert écrase)
+Vue **carte par ticket** dans `OrientationsAdvisorDialog.tsx` :
 
-GRANTs : `authenticated` (SELECT/INSERT/UPDATE de son avis), `service_role` full. Admin peut DELETE.
+```text
+┌─────────────────────────────────────────────────────────┐
+│ #10023 · Tomate · 22/07 08:15   [Moy. 6.5%] [3 avis]    │
+│ ┌────┐ ┌────┐ ┌────┐                                    │
+│ │img1│ │img2│ │img3│  ← miniatures cliquables (lightbox)│
+│ └────┘ └────┘ └────┘                                    │
+│ Taux appliqué : 7 %                                     │
+│ Orientations : [5% — Karim]  [7% — Sara]  [8% — Ali]    │
+│   ↳ clic tag → popover (explication + date)             │
+└─────────────────────────────────────────────────────────┘
+```
 
-RLS :
-- SELECT : tout utilisateur ayant `can_view` sur `reception_global` (via `reception_permissions`).
-- INSERT/UPDATE : `can_view` OU `can_edit` sur `reception_global`, et `user_id = auth.uid()`.
-- DELETE : `admin` uniquement.
+- **En-tête** : n° ticket, produit, date/heure, moyenne des taux recommandés, nombre d'avis, taux d'abattement réellement appliqué (si dispo) pour comparaison rapide.
+- **Photos** : 3 miniatures via URLs signées (bucket `reception-photos`), clic → lightbox plein écran (réutilise le pattern existant de `TicketDetailDialog`).
+- **Tags orientations** : `Badge` compact avec `taux % — auteur`. Clic → `Popover` avec explication complète + horodatage.
+- Tri : plus récent d'abord. Toggle d'inversion conservé.
+- Filtrage contextuel : même campagne (et même produit si défini sur le ticket courant), inchangé.
 
-Vue helper `v_reception_orientations` joignant profil (nom) + ticket (produit, campagne, date).
+## Implémentation technique
 
-## 2. UI — Consultation ticket (`TicketDetailDialog.tsx`)
+### 1. Backend — nouvelle vue agrégée
 
-Nouvelle section **« Orientations »** sous les photos :
-- Liste sous forme de **badges cliquables** affichant le taux (`5 %`). Popover au clic montrant : explication, nom utilisateur, date/heure. Tri chronologique décroissant (plus récent d'abord), toggle inversion.
-- Formulaire compact en ligne (si droit Voir/Modifier sur Consultation) :
-  - Input numérique `Taux recommandé (%)` (0–100, pas 0.1)
-  - Textarea `Explication (facultatif)`
-  - Bouton `Ajouter / Mettre à jour mon orientation` — upsert; si existante, préremplit le formulaire.
-- Bouton corbeille sur chaque badge visible **uniquement pour admin**.
+Migration : créer `v_reception_ticket_orientations_summary` (une ligne par ticket) :
+- `ticket_id`, `ticket_numero`, `ticket_date`, `heure_debut`
+- `product_id`, `produit_nom`, `campaign_id`, `campagne_nom`
+- `taux_abattement` (appliqué), `poids_net_kg`
+- `orientations_count`, `taux_moyen`
+- `orientations` : agrégat `jsonb` `[{id, taux_recommande, explication, author_name, created_at}, ...]`
+- `last_orientation_at` (pour tri)
 
-## 3. UI — Réception qualitative (`ReceptionQualitative.tsx`)
+Filtres RLS hérités via la vue existante `v_reception_orientations` (jointure). GRANT SELECT à `authenticated`.
 
-À côté du champ **Taux d'abattement (%)**, bouton `Voir les orientations` (icône Lightbulb) :
-- Ouvre un `ResponsiveDialog` secondaire listant les **30 dernières orientations** filtrées par `campagne_id` du ticket courant ET `produit_id` (si défini), triées par `created_at desc`.
-- Chaque ligne : badge taux, produit, ticket n°, auteur, date, explication (repliable).
-- Purement informatif ; ne modifie pas la saisie.
+### 2. Frontend — refonte du dialogue
 
-## 4. Règles de gestion
+Fichier : `src/components/reception/OrientationsAdvisorDialog.tsx` (réécriture)
+- Query sur la nouvelle vue, limit 30, tri `last_orientation_at desc`.
+- Hook local pour récupérer les 3 photos par ticket à la demande (batch : 1 requête `reception_ticket_photos` groupée par `ticket_id IN (...)` + `createSignedUrls` en batch).
+- Composant carte `TicketOrientationCard` avec :
+  - Section photos (grille 3 col, aspect 4/3, clic → état `lightbox`)
+  - Section tags (`Badge` + `Popover` de shadcn)
+- Lightbox interne (Dialog imbriqué) identique au pattern de `TicketDetailDialog`.
 
-- Ajout autorisé même sur ticket **clôturé** ou **annulé**.
-- Aucun impact sur `taux_abattement`, `poids_*`, statut du ticket.
-- Traçabilité complète (horodatage + user_id).
-- Contrôle doublon en base via contrainte unique (upsert clair côté UI).
+### 3. Aucun changement fonctionnel ailleurs
+
+- `TicketOrientations.tsx` (saisie côté détail ticket) : inchangé.
+- Table `reception_ticket_orientations` : inchangée.
+- Bouton "Voir les orientations" dans `ReceptionQualitative.tsx` : inchangé (mêmes props).
 
 ## Fichiers touchés
 
-- **Migration** : nouvelle table + policies + vue.
-- **Nouveau** : `src/components/reception/TicketOrientations.tsx` (section badges + formulaire).
-- **Nouveau** : `src/components/reception/OrientationsAdvisorDialog.tsx` (30 dernières, contextuel).
-- **Modifié** : `src/pages/qualite/reception/TicketDetailDialog.tsx` — intégrer `TicketOrientations`.
-- **Modifié** : `src/pages/qualite/reception/ReceptionQualitative.tsx` — bouton "Voir les orientations" à côté du champ taux.
+- **Migration** : nouvelle vue `v_reception_ticket_orientations_summary` + GRANT.
+- **Modifié** : `src/components/reception/OrientationsAdvisorDialog.tsx` (refonte complète : cartes ticket + photos + tags popover + lightbox).
 
-Aucun changement sur la logique de pesée, statuts, ou permissions existantes.
+## Règles conservées
+
+- Purement informatif, aucun impact sur le ticket courant.
+- Filtrage par campagne + produit du ticket ouvert.
+- Limite 30 tickets, tri récent → ancien.

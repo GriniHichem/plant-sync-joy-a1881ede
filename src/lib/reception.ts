@@ -23,19 +23,20 @@ export function isOverdue(min?: number | null): boolean {
   return typeof min === "number" && min > 20;
 }
 
-/** Légende affichée à l'ouverture d'une photo de réception selon son emplacement. */
-export function photoSlotCaption(slot: number | null | undefined): string {
+/** Consigne affichée à l'agent avant la prise de vue (pas un texte imprimé sur l'image). */
+export function photoSlotGuidance(slot: number | null | undefined): { title: string; hint: string } {
   switch (Number(slot)) {
     case 1:
-      return "Photo 1 — État du chargement à l'arrivée : reste 100 %.";
+      return { title: "Photo 1 — Arrivée du camion", hint: "Prenez la photo à l'ouverture, chargement intact (≈ 100 % restant)." };
     case 2:
-      return "Photo 2 — État du chargement en cours de déchargement : reste environ 60 %.";
+      return { title: "Photo 2 — En cours de déchargement", hint: "Prenez la photo lorsqu'il reste environ 60 % du chargement dans le camion." };
     case 3:
-      return "Photo 3 — État du chargement en fin de déchargement : reste environ 30 %.";
+      return { title: "Photo 3 — Fin de déchargement", hint: "Prenez la photo lorsqu'il reste environ 30 % du chargement dans le camion." };
     default:
-      return "";
+      return { title: "", hint: "" };
   }
 }
+
 
 export function computeAbattementKg(brut: number, tauxPct: number): number {
   if (!brut || !tauxPct) return 0;

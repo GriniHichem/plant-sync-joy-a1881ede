@@ -46,30 +46,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { impersonation } = useImpersonation();
 
   useEffect(() => {
+    let lastUserId: string | null = null;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-          fetchRoles(session.user.id);
-          if (event === "SIGNED_IN") {
-            logAuthEvent("login", { email: session.user.email ?? undefined });
-          } else if (event === "PASSWORD_RECOVERY") {
-            logAuthEvent("password_reset", { email: session.user.email ?? undefined });
-          }
-        }, 0);
-      } else {
+      const uid = session?.user?.id ?? null;
+
+      if (!uid) {
+        lastUserId = null;
         setRealProfile(null);
         setRealRoles([]);
+        return;
       }
+
+      // Only run public-access gate at real sign-in, never on background TOKEN_REFRESHED /
+      // USER_UPDATED events — those must not sign the user out mid-session on self-hosting.
+      const runGate = event === "SIGNED_IN" || event === "INITIAL_SESSION";
+      const userChanged = uid !== lastUserId;
+      lastUserId = uid;
+
+      setTimeout(() => {
+        // Always refresh profile/roles for a new user; on token refresh, skip to avoid
+        // transient network hiccups blanking state on self-hosted deployments.
+        if (userChanged) {
+          fetchProfile(uid, runGate);
+          fetchRoles(uid);
+        }
+        if (event === "SIGNED_IN") {
+          logAuthEvent("login", { email: session!.user.email ?? undefined });
+        } else if (event === "PASSWORD_RECOVERY") {
+          logAuthEvent("password_reset", { email: session!.user.email ?? undefined });
+        }
+      }, 0);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        lastUserId = session.user.id;
+        fetchProfile(session.user.id, true);
         fetchRoles(session.user.id);
       }
       setLoading(false);
@@ -78,48 +94,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function fetchProfile(userId: string) {
-    const { data } = await supabase
+  async function fetchProfile(userId: string, runGate: boolean = false) {
+    // maybeSingle() so a missing profile row does NOT throw and leave the UI stuck
+    // showing just "utilisateur". This is common right after signup on self-hosting
+    // if the auto-create trigger did not run.
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
+
+    if (error) {
+      // Do not clear roles/profile on transient errors — keep the previous state.
+      // eslint-disable-next-line no-console
+      console.warn("[Auth] fetchProfile failed:", error.message);
+      return;
+    }
+
     if (data) {
       setRealProfile(data as Profile);
-      // Astuce UX (non sécurisée): bloque l'accès Internet aux comptes sans autorisation.
-      // Gouverné par l'interrupteur global "control.enforce_public_access_gate" (désactivé par défaut).
-      try {
-        const { isPublicHost } = await import("@/lib/network");
-        if (isPublicHost() && (data as Profile).public_access !== true) {
-          const { data: gate } = await supabase
-            .from("app_settings")
-            .select("value")
-            .eq("key", "control.enforce_public_access_gate")
-            .maybeSingle();
-          if (gate?.value === "true") {
-            const { toast } = await import("sonner");
-            toast.error("Connexion via Internet non autorisée", {
-              description: "Ce compte n'a pas l'autorisation d'accéder à l'application depuis l'extérieur. Contactez l'administrateur.",
-              duration: 8000,
-            });
-            await supabase.auth.signOut();
-            setUser(null);
-            setSession(null);
-            setRealProfile(null);
-            setRealRoles([]);
-            try { sessionStorage.setItem("pit:blockedPublic", "1"); } catch { /* ignore */ }
-          }
-        }
-      } catch { /* ignore */ }
+    } else {
+      // Fallback: keep a minimal profile so the app can render menus/roles.
+      setRealProfile((prev) => prev ?? ({
+        id: userId,
+        user_id: userId,
+        first_name: "",
+        last_name: "",
+        poste: null,
+        avatar_url: null,
+      } as Profile));
     }
+
+    if (!runGate || !data) return;
+    // Astuce UX (non sécurisée): bloque l'accès Internet aux comptes sans autorisation.
+    // Gouverné par l'interrupteur global "control.enforce_public_access_gate" (désactivé par défaut).
+    try {
+      const { isPublicHost } = await import("@/lib/network");
+      if (isPublicHost() && (data as Profile).public_access !== true) {
+        const { data: gate } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "control.enforce_public_access_gate")
+          .maybeSingle();
+        if (gate?.value === "true") {
+          const { toast } = await import("sonner");
+          toast.error("Connexion via Internet non autorisée", {
+            description: "Ce compte n'a pas l'autorisation d'accéder à l'application depuis l'extérieur. Contactez l'administrateur.",
+            duration: 8000,
+          });
+          await supabase.auth.signOut({ scope: "local" });
+          setUser(null);
+          setSession(null);
+          setRealProfile(null);
+          setRealRoles([]);
+          try { sessionStorage.setItem("pit:blockedPublic", "1"); } catch { /* ignore */ }
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   async function fetchRoles(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    if (data) setRealRoles(data.map((r) => r.role as AppRole));
+    if (error) {
+      // Never wipe roles on a transient error — the user would lose module access.
+      // eslint-disable-next-line no-console
+      console.warn("[Auth] fetchRoles failed:", error.message);
+      return;
+    }
+    setRealRoles((data ?? []).map((r) => r.role as AppRole));
   }
 
   // Effective values: when impersonating, override roles & profile

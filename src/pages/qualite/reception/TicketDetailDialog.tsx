@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, Calendar, Clock, Download, ImageOff, Loader2, MapPin, User, Package, Truck, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import { formatDuration, formatHm, formatKgInt, formatTonnesInt, isOverdue } from "@/lib/reception";
+import { TicketOrientations } from "@/components/reception/TicketOrientations";
 
 interface Props {
   open: boolean;

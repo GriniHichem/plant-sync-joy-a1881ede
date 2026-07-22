@@ -181,6 +181,80 @@ export default function ReceptionQualitative() {
 
   const [detailRow, setDetailRow] = useState<any | null>(null);
 
+  // ---------- Brouillon local (persistance 24h) ----------
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as { ts: number; ticketId?: string; form: typeof form };
+      if (!draft?.ts || Date.now() - draft.ts > DRAFT_MAX_AGE_MS) {
+        localStorage.removeItem(DRAFT_KEY);
+        return;
+      }
+      if (draft.form) setForm((f) => ({ ...f, ...draft.form }));
+      if (draft.ticketId) {
+        // Vérifier que le ticket existe encore et n'est pas clôturé
+        supabase.from("reception_tickets" as any)
+          .select("id, statut").eq("id", draft.ticketId).maybeSingle()
+          .then(({ data }: any) => {
+            if (data && data.statut !== "cloture") {
+              setTicketId(draft.ticketId);
+              toast.info("Ticket en cours restauré");
+            } else {
+              localStorage.removeItem(DRAFT_KEY);
+            }
+          });
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  // Sauvegarde debounced
+  useEffect(() => {
+    if (!restoredRef.current) return;
+    const hasContent = !!ticketId || !!form.numero || !!form.supplier_id || !!form.commentaire;
+    if (!hasContent) return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ ts: Date.now(), ticketId, form }));
+      } catch { /* ignore */ }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [ticketId, form]);
+
+  // Signale au parent (ReceptionPage) qu'un ticket est en cours
+  useEffect(() => {
+    receptionDraftStore.set(!!ticketId);
+    return () => { receptionDraftStore.set(false); };
+  }, [ticketId]);
+
+  // Keep-alive: rafraîchit la session Supabase et ping léger toutes les 4 min tant qu'un ticket est ouvert
+  useEffect(() => {
+    if (!ticketId) return;
+    const iv = setInterval(async () => {
+      try {
+        await supabase.auth.getSession();
+        await supabase.from("reception_tickets" as any)
+          .select("id", { head: true, count: "exact" }).eq("id", ticketId).limit(1);
+      } catch { /* ignore */ }
+    }, 4 * 60 * 1000);
+    return () => clearInterval(iv);
+  }, [ticketId]);
+
+  // Resync immédiat au retour de visibilité
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      qc.invalidateQueries({ queryKey: ["reception_photos", ticketId] });
+      qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [qc, ticketId]);
+
+
   // Rafraîchissement live des photos & derniers tickets même si le socket saute.
   useShiftRealtime(
     `reception-photos-${ticketId ?? "none"}`,

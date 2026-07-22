@@ -43,6 +43,9 @@ export default function ReceptionSettings() {
 /* ------------------- Products ------------------- */
 function ProductsTab() {
   const qc = useQueryClient();
+  const { canCreate, canEdit } = usePermissions();
+  const canCreateRow = canCreate("reception_settings");
+  const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
 

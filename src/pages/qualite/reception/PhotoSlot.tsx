@@ -24,6 +24,7 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
 
   useEffect(() => {

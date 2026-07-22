@@ -430,22 +430,28 @@ export default function ReceptionQualitative() {
                   <Table>
                     <TableHeader><TableRow className="text-xs">
                       <TableHead className="h-8 px-2">N°</TableHead>
+                      <TableHead className="h-8 px-2">Date</TableHead>
                       <TableHead className="h-8 px-2">Fournisseur</TableHead>
                       <TableHead className="h-8 px-2 text-right">Abat.</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
-                      {recent.map((t: any) => (
-                        <TableRow
-                          key={t.id}
-                          className="cursor-pointer hover:bg-muted/60"
-                          onClick={() => setDetailRow(t)}
-                        >
-                          <TableCell className="font-mono text-xs py-1.5 px-2 whitespace-nowrap">{t.numero}</TableCell>
-                          <TableCell className="text-xs py-1.5 px-2 truncate max-w-[140px]">{t.fournisseur}</TableCell>
-                          <TableCell className="text-xs py-1.5 px-2 text-right whitespace-nowrap">{Number(t.taux_abattement).toFixed(2)} %</TableCell>
-                        </TableRow>
-                      ))}
-                      {recent.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-4 text-xs">—</TableCell></TableRow>}
+                      {recent.map((t: any) => {
+                        const d = t.cloture_at ? new Date(t.cloture_at) : (t.date_ticket ? new Date(t.date_ticket) : null);
+                        const dateStr = d ? d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—";
+                        return (
+                          <TableRow
+                            key={t.id}
+                            className="cursor-pointer hover:bg-muted/60"
+                            onClick={() => setDetailRow(t)}
+                          >
+                            <TableCell className="font-mono text-xs py-1.5 px-2 whitespace-nowrap">{t.numero}</TableCell>
+                            <TableCell className="text-xs py-1.5 px-2 whitespace-nowrap tabular-nums">{dateStr}</TableCell>
+                            <TableCell className="text-xs py-1.5 px-2 truncate max-w-[140px]">{t.fournisseur ?? "—"}</TableCell>
+                            <TableCell className="text-xs py-1.5 px-2 text-right whitespace-nowrap">{Number(t.taux_abattement ?? 0).toFixed(2)} %</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {recent.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-xs">Aucun ticket clôturé</TableCell></TableRow>}
                     </TableBody>
                   </Table>
                 </div>

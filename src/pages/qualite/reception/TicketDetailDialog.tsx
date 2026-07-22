@@ -51,6 +51,24 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
       hour: "2-digit", minute: "2-digit",
     }) : "—";
 
+  async function downloadPhoto(url: string, filename: string) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(String(r.status));
+      const blob = await r.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (e: any) {
+      toast.error("Téléchargement impossible");
+    }
+  }
+
   if (!row) return null;
   const overdue = isOverdue(row.duree_minutes);
 

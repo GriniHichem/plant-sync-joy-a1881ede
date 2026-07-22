@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ImageOff, ZoomIn } from "lucide-react";
+import { photoSlotCaption } from "@/lib/reception";
 
 interface Props {
   open: boolean;

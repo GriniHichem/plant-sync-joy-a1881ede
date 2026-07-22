@@ -34,6 +34,10 @@ const DEFAULT_COLS: Record<ColKey, boolean> = {
 export default function ReceptionGlobal() {
   const qc = useQueryClient();
   const isMobile = useIsMobile();
+  const { canEdit, canDelete } = usePermissions();
+  const canImport = canEdit("reception_global") || canDelete("reception_global");
+  const [importOpen, setImportOpen] = useState(false);
+  const [importMode, setImportMode] = useState<"ignore" | "replace">("ignore");
   const [f, setF] = useState({
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",

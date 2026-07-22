@@ -191,6 +191,8 @@ function SuppliersTab() {
   const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [importAgree, setImportAgree] = useState<"true" | "false">("true");
+  const [importActif, setImportActif] = useState<"true" | "false">("true");
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [form, setForm] = useState<any>({ code: "", nom: "", region: "", wilaya: "", contact: "", telephone: "", adresse: "", notes: "", agree: true, actif: true });
 
@@ -256,8 +258,36 @@ function SuppliersTab() {
             { key: "telephone", label: "Téléphone", aliases: ["tel", "phone"] },
             { key: "adresse", label: "Adresse" },
           ]}
+          options={
+            <div className="rounded-md border p-3 bg-muted/30 space-y-3">
+              <div className="text-xs font-medium">Valeurs appliquées à toutes les lignes importées</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Agréé</Label>
+                  <Select value={importAgree} onValueChange={(v) => setImportAgree(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Agréé</SelectItem>
+                      <SelectItem value="false">Non agréé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Actif</Label>
+                  <Select value={importActif} onValueChange={(v) => setImportActif(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Actif</SelectItem>
+                      <SelectItem value="false">Inactif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          }
           onImport={async (rows): Promise<ImportReport> => {
-            const { data, error } = await supabase.rpc("import_reception_suppliers" as any, { rows: rows as any });
+            const enriched = rows.map((r) => ({ ...r, agree: importAgree === "true", actif: importActif === "true" }));
+            const { data, error } = await supabase.rpc("import_reception_suppliers" as any, { rows: enriched as any });
             if (error) throw error;
             const r = (data ?? {}) as any;
             return { total: r.total ?? rows.length, success: r.success ?? 0, failed: r.failed ?? 0, extra: { créés: r.created ?? 0, mis_a_jour: r.updated ?? 0 }, errors: r.errors ?? [] };

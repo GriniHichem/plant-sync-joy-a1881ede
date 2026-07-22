@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,10 @@ import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDra
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();
+  const { canCreate, canEdit } = usePermissions();
+  const canCreateTicket = canCreate("reception_qualitative");
+  const canCloseTicket = canCreate("reception_qualitative") || canEdit("reception_qualitative");
+
 
   const [ticketId, setTicketId] = useState<string | undefined>();
   const [form, setForm] = useState({
@@ -380,7 +385,7 @@ export default function ReceptionQualitative() {
             </div>
           </div>
 
-          {!ticketId && (
+          {!ticketId && canCreateTicket && (
             <Button
               className="w-full h-12"
               disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
@@ -388,6 +393,11 @@ export default function ReceptionQualitative() {
             >
               Ouvrir le ticket
             </Button>
+          )}
+          {!ticketId && !canCreateTicket && (
+            <div className="text-xs text-muted-foreground text-center py-2">
+              Vous n'avez pas le droit de créer un ticket de réception.
+            </div>
           )}
 
           <div className="space-y-2">
@@ -475,7 +485,7 @@ export default function ReceptionQualitative() {
             )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending}>
+                <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending || !canCloseTicket}>
                   <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
                 </Button>
               </AlertDialogTrigger>

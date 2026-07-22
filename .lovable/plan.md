@@ -1,43 +1,71 @@
 ## Objectif
+Ajouter une matrice de permissions dédiée au module Réception, gérée depuis une modale accessible via une icône engrenage dans l'en-tête du module. Aucun changement de logique métier — uniquement du masquage/désactivation d'UI.
 
-Sécuriser la saisie longue (20-30 min) d'un ticket de **Réception qualitative** : empêcher la sortie accidentelle du sous-module tant qu'un ticket est en cours, restaurer la saisie si la page est fermée, et garder la connexion base de données active pendant toute la durée.
+## Approche
+Réutiliser l'infrastructure `role_permissions` existante (déjà exploitée par `usePermissions`) plutôt que créer une table dédiée. Les 4 sous-modules deviennent des enfants du parapluie `reception` déjà déclaré dans `UMBRELLAS`.
 
-## 1. Sauvegarde automatique du brouillon (localStorage)
+Sous-modules ajoutés :
+- `reception_qualitative`
+- `reception_quantitative`
+- `reception_global`
+- `reception_settings`
 
-Fichier : `src/pages/qualite/reception/ReceptionQualitative.tsx`
+## 1. Backend (migration)
 
-- Clé de stockage : `reception.qualitative.draft.v1` (localStorage, plus fiable que les cookies pour ~2 Ko de JSON).
-- Persister automatiquement (debounce ~500 ms) : `ticketId`, `form` complet (numéro, campagne, fournisseur, heures, abattement, commentaire) et l'ouverture du champ commentaire.
-- Au montage, si un brouillon existe :
-  - Si `ticketId` présent → vérifier côté base qu'il existe et n'est pas encore clôturé, puis restaurer form + ticketId + photos (rechargées via la query existante).
-  - Sinon (pas encore ouvert) → restaurer uniquement les champs du formulaire pour ne pas perdre la saisie.
-- Purger le brouillon à la clôture réussie ou si le ticket est introuvable/clôturé côté serveur.
+- Ajouter les 4 sous-modules à `UMBRELLAS.reception` dans `src/hooks/usePermissions.ts` pour l'héritage automatique.
+- Migration d'amorçage : insérer les valeurs par défaut demandées pour les rôles pertinents (admin, controleur_qualite, responsable_qualite, agent_pont_bascule) avec `ON CONFLICT DO NOTHING` pour ne pas écraser un paramétrage existant.
+- Valeurs par défaut proposées :
 
-## 2. Garde de navigation « ticket en cours »
+| Rôle | qualitative (V/C/M/S) | quantitative | global | settings |
+|---|---|---|---|---|
+| admin | ✅✅✅✅ | ✅✅✅✅ | ✅✅✅✅ | ✅✅✅✅ |
+| controleur_qualite | ✅✅❌❌ | ❌❌❌❌ | ✅❌❌❌ | ❌❌❌❌ |
+| agent_pont_bascule | ❌❌❌❌ | ✅❌✅❌ | ✅❌❌❌ | ❌❌❌❌ |
+| responsable_qualite | ✅✅❌❌ | ✅❌✅❌ | ✅❌✅✅ | ✅✅✅✅ |
 
-Éviter de quitter le sous-module par mégarde tant qu'un ticket est ouvert (ticketId défini et non clôturé).
+L'admin peut ensuite tout ajuster via la modale.
 
-- **Onglets internes** (`Qualitative` / `Quantitative` / `Global` / `Consultation`) : intercepter le changement d'onglet, afficher une confirmation « Un ticket est en cours, quitter ? ». Confirmation → changement autorisé (brouillon conservé, non purgé).
-- **Navigation React Router** vers une autre route : utiliser `useBlocker` (React Router v6) pour afficher la même confirmation.
-- **Fermeture d'onglet / rechargement** : handler `beforeunload` pour afficher l'avertissement natif du navigateur.
-- Aucun blocage tant qu'aucun ticket n'est ouvert.
+## 2. Modale de paramétrage (nouveau composant)
 
-## 3. Keep-alive base de données (session 20-30 min active)
+`src/pages/qualite/reception/ReceptionAccessMatrixDialog.tsx` :
+- Sélecteur de rôle en haut (liste des rôles système + rôles custom actifs).
+- Grille 4 lignes (sous-modules) × 4 colonnes (Voir / Créer / Modifier / Supprimer) avec checkboxes.
+- Boutons Enregistrer / Annuler. Upsert dans `role_permissions` (une ligne par module).
+- Accès restreint : bouton visible uniquement pour les utilisateurs ayant `can_edit` sur `parametres` (même règle que la matrice globale existante).
+- Note explicative rappelant les règles métier (ex : « Modifier/Supprimer Qualitative désactivés par convention — passer par Consultation pour les corrections admin »).
 
-- Un `setInterval` léger toutes les **4 minutes** tant qu'un ticket est ouvert : appel `supabase.auth.getSession()` (rafraîchit le token silencieusement) + un ping léger `select 1` via une table déjà accessible (`reception_tickets` count `head:true` sur le ticketId) pour maintenir le socket HTTP chaud.
-- Realtime déjà présent (`useShiftRealtime`) : ajouter un `visibilitychange` listener qui, quand la page redevient visible, invalide les queries photos + ticket pour resynchroniser immédiatement.
-- Aucune modification backend nécessaire — tout est côté client.
+## 3. Bouton engrenage
+
+Dans `ReceptionPage.tsx`, ajouter un bouton icône `Settings2` à droite du titre, visible seulement si `canEdit('parametres')`, ouvrant la modale.
+
+## 4. Application des droits dans l'UI
+
+- `ReceptionPage.tsx` : masquer chaque `TabsTrigger` + `TabsContent` si `canView('reception_<sub>')` est faux. Redirection auto vers le premier onglet autorisé si l'onglet courant n'est pas visible.
+- `ReceptionQualitative.tsx` : bouton "Ouvrir le ticket" gardé par `canCreate('reception_qualitative')`. Boutons éventuels de modification/suppression respectent `canEdit`/`canDelete`.
+- `ReceptionQuantitative.tsx` : champs de saisie de poids restent (c'est un `edit`), pas de bouton "nouveau ticket" à créer. Vérifier qu'aucun bouton de suppression n'est exposé.
+- `ReceptionGlobal.tsx` / `TicketDetailDialog.tsx` : boutons Modifier et Supprimer conditionnés par `canEdit`/`canDelete` sur `reception_global`. Ces boutons existent-ils déjà ? Sinon, cette étape se limite à la garde — l'ajout effectif d'actions admin peut être planifié ensuite si demandé.
+- `ReceptionSettings.tsx` : boutons Créer / Modifier / Supprimer produits, fournisseurs, campagnes conditionnés par les droits sur `reception_settings`.
+
+## 5. Points hors périmètre (à confirmer)
+
+- **Aucune modification** des RPC, triggers, calculs ou politiques RLS backend. Les permissions restent purement UI comme demandé.
+- Si tu veux également durcir côté base (empêcher un utilisateur de contourner l'UI par appel direct), c'est un chantier séparé qui nécessite d'étendre les politiques RLS de `reception_tickets`, `reception_weighings`, etc.
 
 ## Détails techniques
 
-- Debounce natif via `useEffect` + `setTimeout` (pas de dépendance ajoutée).
-- Restauration : au premier rendu uniquement (`useRef` d'initialisation) pour ne pas boucler.
-- Le brouillon stocke un timestamp ; si > 24 h → ignoré et purgé.
-- `useBlocker` disponible dans la version de `react-router-dom` déjà utilisée dans le projet ; à défaut, fallback sur `beforeunload` seul + confirmation manuelle sur les onglets.
-- Aucun changement de schéma ni de RLS.
+**Fichiers modifiés :**
+- `src/hooks/usePermissions.ts` — ajout des 4 enfants à `UMBRELLAS.reception`.
+- `src/pages/qualite/reception/ReceptionPage.tsx` — bouton engrenage + garde des onglets.
+- `src/pages/qualite/reception/ReceptionQualitative.tsx` — gardes create/edit/delete.
+- `src/pages/qualite/reception/ReceptionQuantitative.tsx` — gardes edit.
+- `src/pages/qualite/reception/ReceptionGlobal.tsx` + `TicketDetailDialog.tsx` — gardes edit/delete.
+- `src/pages/qualite/reception/ReceptionSettings.tsx` — gardes create/edit/delete.
 
-## Hors périmètre
+**Fichier créé :**
+- `src/pages/qualite/reception/ReceptionAccessMatrixDialog.tsx`.
 
-- Pas de synchronisation multi-onglet (un seul ticket à la fois par poste).
-- Pas de brouillon partagé entre utilisateurs.
-- Pas de modification des sous-modules Quantitative / Global.
+**Migration :**
+- INSERT idempotent des lignes par défaut dans `role_permissions`.
+
+## Question ouverte
+Confirmes-tu que la matrice est **par rôle** (l'admin choisit un rôle dans la modale puis coche/décoche) ? Ta description énumère des rôles-cibles (« un agent… un super-admin… ») mais le tableau lui-même n'a pas de colonne rôle. Je pars sur « par rôle » car c'est le seul modèle cohérent avec le système d'accès existant.

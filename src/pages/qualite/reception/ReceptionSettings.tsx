@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Star, StarOff } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type Product = { id: string; code: string; designation: string; description: string | null; normes: string[]; calibres: string[]; varietes: string[]; code_prefix: string | null; code_digits: number | null; actif: boolean };
 type Supplier = { id: string; code: string; nom: string; region: string | null; wilaya: string | null; contact: string | null; telephone: string | null; adresse: string | null; agree: boolean; actif: boolean };
@@ -42,6 +43,9 @@ export default function ReceptionSettings() {
 /* ------------------- Products ------------------- */
 function ProductsTab() {
   const qc = useQueryClient();
+  const { canCreate, canEdit } = usePermissions();
+  const canCreateRow = canCreate("reception_settings");
+  const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
 
@@ -77,7 +81,9 @@ function ProductsTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Produits frais</CardTitle>
-        <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Nouveau produit</Button>
+        {canCreateRow && (
+          <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Nouveau produit</Button>
+        )}
       </CardHeader>
       <CardContent>
         <Table>
@@ -94,7 +100,7 @@ function ProductsTab() {
                 <TableCell>{p.varietes?.join(", ")}</TableCell>
                 <TableCell>{p.calibres?.join(", ")}</TableCell>
                 <TableCell>{p.actif ? <Badge>Actif</Badge> : <Badge variant="secondary">Inactif</Badge>}</TableCell>
-                <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button></TableCell>
+                <TableCell className="text-right">{canEditRow && (<Button size="sm" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>)}</TableCell>
               </TableRow>
             ))}
             {data.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucun produit configuré</TableCell></TableRow>}
@@ -178,6 +184,9 @@ function ProductDialog({ open, onOpenChange, editing, onSave, saving }: any) {
 /* ------------------- Suppliers ------------------- */
 function SuppliersTab() {
   const qc = useQueryClient();
+  const { canCreate, canEdit } = usePermissions();
+  const canCreateRow = canCreate("reception_settings");
+  const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [form, setForm] = useState<any>({ code: "", nom: "", region: "", wilaya: "", contact: "", telephone: "", adresse: "", notes: "", agree: true, actif: true });
@@ -224,7 +233,7 @@ function SuppliersTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Fournisseurs</CardTitle>
-        <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nouveau fournisseur</Button>
+        {canCreateRow && (<Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nouveau fournisseur</Button>)}
       </CardHeader>
       <CardContent>
         <Table>
@@ -241,7 +250,7 @@ function SuppliersTab() {
                 <TableCell>{s.contact ?? "—"} {s.telephone ? `· ${s.telephone}` : ""}</TableCell>
                 <TableCell>{s.agree ? <Badge>Agréé</Badge> : <Badge variant="secondary">Non</Badge>}</TableCell>
                 <TableCell>{s.actif ? <Badge>Actif</Badge> : <Badge variant="secondary">Inactif</Badge>}</TableCell>
-                <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button></TableCell>
+                <TableCell className="text-right">{canEditRow && (<Button size="sm" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>)}</TableCell>
               </TableRow>
             ))}
             {data.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucun fournisseur</TableCell></TableRow>}
@@ -286,6 +295,9 @@ function SuppliersTab() {
 /* ------------------- Campaigns ------------------- */
 function CampaignsTab() {
   const qc = useQueryClient();
+  const { canCreate, canEdit } = usePermissions();
+  const canCreateRow = canCreate("reception_settings");
+  const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Campaign | null>(null);
   const [form, setForm] = useState<any>({ code: "", libelle: "", product_id: "", date_debut: format(new Date(), "yyyy-MM-dd"), date_fin: format(new Date(), "yyyy-MM-dd"), objectif_kg: "", actif: true, is_default: false });
@@ -357,7 +369,7 @@ function CampaignsTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Campagnes</CardTitle>
-        <Button onClick={openNew} disabled={products.length === 0}><Plus className="h-4 w-4 mr-2" />Nouvelle campagne</Button>
+        {canCreateRow && (<Button onClick={openNew} disabled={products.length === 0}><Plus className="h-4 w-4 mr-2" />Nouvelle campagne</Button>)}
       </CardHeader>
       <CardContent>
         {products.length === 0 && <p className="text-sm text-muted-foreground mb-3">Créez d'abord un produit pour lancer une campagne.</p>}
@@ -378,9 +390,9 @@ function CampaignsTab() {
                 <TableCell>
                   {c.is_default
                     ? <Badge className="gap-1"><Star className="h-3 w-3" />Défaut</Badge>
-                    : <Button size="sm" variant="ghost" onClick={() => setDefault.mutate(c.id)}><StarOff className="h-4 w-4 mr-1" />Définir</Button>}
+                    : canEditRow ? <Button size="sm" variant="ghost" onClick={() => setDefault.mutate(c.id)}><StarOff className="h-4 w-4 mr-1" />Définir</Button> : <span className="text-muted-foreground text-xs">—</span>}
                 </TableCell>
-                <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button></TableCell>
+                <TableCell className="text-right">{canEditRow && (<Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>)}</TableCell>
               </TableRow>
             ))}
             {data.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucune campagne</TableCell></TableRow>}

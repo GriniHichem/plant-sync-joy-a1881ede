@@ -19,6 +19,7 @@ import { TicketDetailDialog } from "./TicketDetailDialog";
 import { format } from "date-fns";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
+import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDraftStore";
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();

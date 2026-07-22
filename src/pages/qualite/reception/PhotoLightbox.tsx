@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Camera } from "lucide-react";
-import { photoSlotCaption } from "@/lib/reception";
+
 
 export function PhotoLightbox({ ticketId }: { ticketId: string }) {
   const [items, setItems] = useState<Array<{ url: string; slot: number }>>([]);

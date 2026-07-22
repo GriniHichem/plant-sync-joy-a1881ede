@@ -385,7 +385,7 @@ export default function ReceptionQualitative() {
             </div>
           </div>
 
-          {!ticketId && (
+          {!ticketId && canCreateTicket && (
             <Button
               className="w-full h-12"
               disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
@@ -393,6 +393,11 @@ export default function ReceptionQualitative() {
             >
               Ouvrir le ticket
             </Button>
+          )}
+          {!ticketId && !canCreateTicket && (
+            <div className="text-xs text-muted-foreground text-center py-2">
+              Vous n'avez pas le droit de créer un ticket de réception.
+            </div>
           )}
 
           <div className="space-y-2">

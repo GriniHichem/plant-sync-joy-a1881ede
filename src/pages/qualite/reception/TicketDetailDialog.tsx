@@ -137,14 +137,24 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
                   {photos.map((p) => (
                     <div key={p.slot} className="border rounded-lg overflow-hidden bg-muted/20">
                       {p.url ? (
-                        <button
-                          type="button"
-                          onClick={() => setLightbox(p.url)}
-                          className="relative block group w-full"
-                        >
-                          <img src={p.url} alt={`Photo ${p.slot}`} className="w-full aspect-[4/3] object-cover" />
-                          <ZoomIn className="absolute top-2 right-2 h-4 w-4 text-white drop-shadow opacity-80 group-hover:opacity-100" />
-                        </button>
+                        <div className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => setLightbox(p.url)}
+                            className="block w-full"
+                          >
+                            <img src={p.url} alt={`Photo ${p.slot}`} className="w-full aspect-[4/3] object-cover" />
+                            <ZoomIn className="absolute top-2 right-2 h-4 w-4 text-white drop-shadow opacity-80 group-hover:opacity-100" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); downloadPhoto(p.url!, `ticket-${row.numero}-photo-${p.slot}.jpg`); }}
+                            className="absolute top-2 left-2 h-7 w-7 rounded-md bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition"
+                            title="Télécharger"
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
+                        </div>
                       ) : (
                         <div className="aspect-[4/3] flex items-center justify-center text-muted-foreground">
                           <ImageOff className="h-6 w-6" />

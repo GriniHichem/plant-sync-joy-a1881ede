@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSearchParams, useBlocker } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Truck } from "lucide-react";
 import ReceptionSettings from "./ReceptionSettings";

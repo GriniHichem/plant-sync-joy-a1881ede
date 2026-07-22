@@ -81,7 +81,7 @@ export default function QualityPermissionsTab() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.role} className="border-b hover:bg-muted/30">
-                <td className="p-2 sticky left-0 bg-background font-medium">{r.role.replace(/_/g, " ")}</td>
+                <td className="p-2 sticky left-0 bg-background font-medium">{allRoles.find((x) => x.code === r.role)?.label ?? r.role.replace(/_/g, " ")}{allRoles.find((x) => x.code === r.role)?.isCustom && <span className="ml-1 text-[10px] text-primary">•custom</span>}</td>
                 {ACTIONS.map((a) => (
                   <td key={a.key} className="p-2 text-center">
                     <Checkbox checked={Boolean(r[a.key])} onCheckedChange={(v) => toggle(r.role, a.key, Boolean(v))} />

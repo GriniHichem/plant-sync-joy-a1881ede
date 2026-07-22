@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Clock, Lock, Truck, XCircle, Search } from "lucide-react";
+import { Clock, Lock, Truck, XCircle, Search, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { TicketDetailDialog } from "./TicketDetailDialog";
@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDraftStore";
+import { OrientationsAdvisorDialog } from "@/components/reception/OrientationsAdvisorDialog";
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();
@@ -31,6 +32,7 @@ export default function ReceptionQualitative() {
 
   const [ticketId, setTicketId] = useState<string | undefined>();
   const [supplierSearch, setSupplierSearch] = useState("");
+  const [advisorOpen, setAdvisorOpen] = useState(false);
   const [form, setForm] = useState({
     numero: "",
     campaign_id: "",
@@ -404,7 +406,19 @@ export default function ReceptionQualitative() {
               </Select>
             </div>
             <div className="md:col-span-2">
-              <Label>Taux d'abattement (%) *</Label>
+              <div className="flex items-center justify-between">
+                <Label>Taux d'abattement (%) *</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-amber-600 hover:text-amber-700"
+                  onClick={() => setAdvisorOpen(true)}
+                  title="Voir les orientations récentes"
+                >
+                  <Lightbulb className="h-3.5 w-3.5 mr-1" /> Orientations
+                </Button>
+              </div>
               <Input className="h-11" type="number" inputMode="decimal" step="0.01" min="0" max="100"
                 value={form.taux_abattement}
                 onChange={(e) => setForm({ ...form, taux_abattement: e.target.value })} />
@@ -585,6 +599,12 @@ export default function ReceptionQualitative() {
       )}
 
       <TicketDetailDialog open={!!detailRow} onOpenChange={(o) => !o && setDetailRow(null)} row={detailRow} />
+      <OrientationsAdvisorDialog
+        open={advisorOpen}
+        onOpenChange={setAdvisorOpen}
+        campaignId={form.campaign_id || null}
+        productId={(selectedCampaign as any)?.product_id ?? null}
+      />
     </div>
   );
 }

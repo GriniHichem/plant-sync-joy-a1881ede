@@ -1,59 +1,56 @@
 ## Objectif
-Fiabiliser l'import CSV des tickets de pesée (module Réception → Consultation) pour absorber le format réel du fichier ERP fourni, corriger l'affichage des champs et l'analyse des dates/heures/poids.
 
-## Constats sur le CSV fourni
-19 colonnes ERP, exemple :
-```
-n_tick=1 ; Raison_cli=CLIENT DC-A ; Produit=DC-A
-date_pesée_1=07/01/2026 ; heure_pesée_1=08:m47:12 ; Pesée_1=3 720 ; etat_pesée_1=M
-date_pesée_2=09/07/2026 ; heure_pesée_2=10:m30:39 ; pesée_2=5 780 ; etat_pesée_2=A
-net=1 340 ; Taux_abattement=0 ; abattement=0.000000
-```
-Particularités : dates `JJ/MM/AAAA`, heures avec `m` parasite (`08:m47:12`), poids avec espaces (`3 720`), pas de colonne "Date ticket" unique, poids brut = `Pesée_2` (camion chargé) ou `net` selon usage.
+Permettre aux utilisateurs autorisés (Consultation : Voir/Modifier) d'émettre des **orientations** (taux d'abattement recommandé + explication) sur un ticket. L'agréeur peut consulter ces avis lors de la saisie sans que cela n'altère le ticket.
 
-## Problèmes identifiés
-1. UI import : les 9 champs affichés en `grid-cols-2` scrollent sous les mires ; utilisateur ne voit pas Date, Produit, Poids brut, Heure fin.
-2. Bug mapping : l'UI envoie clés `date_ticket` et `poids_brut_kg`, la RPC lit `date` et `poids_brut` → obligatoires jamais reconnus.
-3. Parsing SQL rigide : `::date` casse sur `07/01/2026`, `::time` casse sur `08:m47:12`, `::numeric` casse sur `3 720`.
-4. Aliases automatiques absents pour les intitulés ERP (`n_tick`, `Raison_cli`, `Produit`, `Pesée_1/2`, `net`, `date_pesée_1/2`, `heure_pesée_1/2`, `Taux_abattement`).
+## 1. Backend (migration)
 
-## Plan de correction
+Nouvelle table `public.reception_ticket_orientations` :
+- `ticket_id` (FK → reception_tickets, cascade)
+- `user_id` (FK → auth.users)
+- `taux_recommande` numeric(5,2) — entre 0 et 100
+- `explication` text nullable
+- `created_at`, `updated_at`
+- Unicité `(ticket_id, user_id)` → un seul avis par utilisateur/ticket (upsert écrase)
 
-### 1. Robustifier la RPC `import_reception_tickets` (migration SQL)
-- Accepter les clés `date`/`date_ticket`, `poids_brut`/`poids_brut_kg` (alias serveur).
-- Parsing date : tenter `to_date('DD/MM/YYYY')`, `to_date('YYYY-MM-DD')`, `::date` — le premier qui marche.
-- Parsing heure : `regexp_replace(val, '[^0-9:]', '', 'g')` puis `::time`, tolérer `HH:MM` ou `HH:MM:SS`.
-- Parsing numérique : `replace(replace(val,' ',''),',','.')` avant `::numeric` (poids et taux).
-- Ajouter alias colonne `poids_net` optionnel : si `poids_brut` absent, utiliser `net` (déjà net) et forcer `taux_abattement=0` en interne (pesée déjà nette).
-- Journaliser motif clair par ligne rejetée.
+GRANTs : `authenticated` (SELECT/INSERT/UPDATE de son avis), `service_role` full. Admin peut DELETE.
 
-### 2. Corriger le mapping côté UI (`ReceptionGlobal.tsx`)
-- Ré-uniformiser les clés envoyées : `numero`, `date`, `fournisseur`, `produit`, `taux_abattement`, `poids_brut`, `heure_debut`, `heure_fin`, `commentaire` (aligner sur la RPC).
-- Étendre `aliases` :
-  - `numero` : `n_tick`, `n_ticket`, `num_ticket`
-  - `date` : `date_pesée_1`, `date_pesee_1`, `date_pesee`, `date_ticket`
-  - `fournisseur` : `raison_cli`, `raison_sociale`, `client`
-  - `produit` : `produit`, `code_produit`, `designation_produit`
-  - `taux_abattement` : `taux_abattement`, `%abat`
-  - `poids_brut` : `pesée_2`, `pesee_2`, `pesee2`, `poids_brut`, `brut`
-  - `heure_debut` : `heure_pesée_1`, `heure_pesee_1`
-  - `heure_fin` : `heure_pesée_2`, `heure_pesee_2`
-- Ajouter champ optionnel `poids_net` (alias `net`, `pesée_net`) pour couvrir le cas ERP.
+RLS :
+- SELECT : tout utilisateur ayant `can_view` sur `reception_global` (via `reception_permissions`).
+- INSERT/UPDATE : `can_view` OU `can_edit` sur `reception_global`, et `user_id = auth.uid()`.
+- DELETE : `admin` uniquement.
 
-### 3. Améliorer la lisibilité de la modale (`CsvImportDialog.tsx`)
-- Passer la grille de mapping en `grid-cols-1 md:grid-cols-3` compact (chip label + select étroit) pour rendre les 9 champs visibles sans scroll excessif.
-- Ajouter un bandeau récap "X/Y champs obligatoires mappés" en haut avec liste rouge des manquants.
-- Aperçu : conserver les 5 premières lignes, ajouter une colonne "état parsing" (✓ / motif) prévisualisant si les valeurs date/heure/poids seront acceptées (validation côté client sur les 5 lignes uniquement, pour éviter mauvaises surprises).
+Vue helper `v_reception_orientations` joignant profil (nom) + ticket (produit, campagne, date).
 
-### 4. Auto-mapping renforcé (`receptionImport.ts`)
-- `normalize()` : déjà retire accents/espaces — ajouter suppression du `°` et `.` en fin.
-- Score de similarité : préférer match exact avant inclusion pour éviter que `date_pesée_2` batte `date_pesée_1` quand on cherche `date`.
+## 2. UI — Consultation ticket (`TicketDetailDialog.tsx`)
 
-## Non-objectifs
-- Pas de refonte du modèle `reception_tickets`.
-- Pas de gestion des lignes "Pesée_1 seule" (camion à vide sans sortie).
-- Pas de rattachement automatique aux campagnes autre que la logique existante.
+Nouvelle section **« Orientations »** sous les photos :
+- Liste sous forme de **badges cliquables** affichant le taux (`5 %`). Popover au clic montrant : explication, nom utilisateur, date/heure. Tri chronologique décroissant (plus récent d'abord), toggle inversion.
+- Formulaire compact en ligne (si droit Voir/Modifier sur Consultation) :
+  - Input numérique `Taux recommandé (%)` (0–100, pas 0.1)
+  - Textarea `Explication (facultatif)`
+  - Bouton `Ajouter / Mettre à jour mon orientation` — upsert; si existante, préremplit le formulaire.
+- Bouton corbeille sur chaque badge visible **uniquement pour admin**.
 
-## Validation
-- Test manuel sur les 5 premières lignes du fichier fourni : import doit passer avec `poids_brut = 5 780`, `date = 2026-01-07`, `heure_debut = 08:47:12`, `heure_fin = 10:30:39`.
-- Rapport final doit distinguer : créés, remplacés, ignorés, rejetés (avec motif).
+## 3. UI — Réception qualitative (`ReceptionQualitative.tsx`)
+
+À côté du champ **Taux d'abattement (%)**, bouton `Voir les orientations` (icône Lightbulb) :
+- Ouvre un `ResponsiveDialog` secondaire listant les **30 dernières orientations** filtrées par `campagne_id` du ticket courant ET `produit_id` (si défini), triées par `created_at desc`.
+- Chaque ligne : badge taux, produit, ticket n°, auteur, date, explication (repliable).
+- Purement informatif ; ne modifie pas la saisie.
+
+## 4. Règles de gestion
+
+- Ajout autorisé même sur ticket **clôturé** ou **annulé**.
+- Aucun impact sur `taux_abattement`, `poids_*`, statut du ticket.
+- Traçabilité complète (horodatage + user_id).
+- Contrôle doublon en base via contrainte unique (upsert clair côté UI).
+
+## Fichiers touchés
+
+- **Migration** : nouvelle table + policies + vue.
+- **Nouveau** : `src/components/reception/TicketOrientations.tsx` (section badges + formulaire).
+- **Nouveau** : `src/components/reception/OrientationsAdvisorDialog.tsx` (30 dernières, contextuel).
+- **Modifié** : `src/pages/qualite/reception/TicketDetailDialog.tsx` — intégrer `TicketOrientations`.
+- **Modifié** : `src/pages/qualite/reception/ReceptionQualitative.tsx` — bouton "Voir les orientations" à côté du champ taux.
+
+Aucun changement sur la logique de pesée, statuts, ou permissions existantes.

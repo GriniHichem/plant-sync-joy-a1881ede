@@ -321,7 +321,7 @@ export default function ReceptionQualitative() {
                 value={form.numero}
                 disabled={!!ticketId}
                 maxLength={50}
-                placeholder="BL-2026-000123"
+                placeholder="10001"
                 onChange={(e) => setForm({ ...form, numero: e.target.value })}
               />
             </div>

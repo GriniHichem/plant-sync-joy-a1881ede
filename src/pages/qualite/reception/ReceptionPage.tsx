@@ -67,21 +67,6 @@ export default function ReceptionPage() {
         <TabsContent value="settings" className="mt-4"><ReceptionSettings /></TabsContent>
       </Tabs>
 
-      <AlertDialog open={blocker.state === "blocked"} onOpenChange={(o) => { if (!o) blocker.reset?.(); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ticket de réception en cours</AlertDialogTitle>
-            <AlertDialogDescription>
-              Un ticket qualitative est ouvert et non clôturé. Votre saisie est sauvegardée localement,
-              mais quitter la page peut retarder la clôture. Continuer&nbsp;?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => blocker.reset?.()}>Rester sur la page</AlertDialogCancel>
-            <AlertDialogAction onClick={() => blocker.proceed?.()}>Quitter quand même</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

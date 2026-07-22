@@ -321,9 +321,12 @@ export default function ReceptionGlobal() {
                         <div className="font-semibold truncate">{r.produit ?? "—"}</div>
                         <div className="text-xs text-muted-foreground truncate">{r.fournisseur ?? "—"}</div>
                       </div>
-                      {pese
-                        ? <Badge variant="secondary" className="shrink-0">Pesé</Badge>
-                        : <Badge className="shrink-0">En attente</Badge>}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {pese
+                          ? <Badge variant="secondary">Pesé</Badge>
+                          : <Badge>En attente</Badge>}
+                        {r.statut === "pese_importe" && <Badge variant="outline" className="text-[10px]">Importé</Badge>}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">

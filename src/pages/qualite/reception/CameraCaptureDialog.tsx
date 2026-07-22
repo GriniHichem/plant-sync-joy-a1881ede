@@ -130,6 +130,20 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticke
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Réattacher le flux au <video> lorsqu'on revient depuis l'aperçu (Reprendre)
+  useEffect(() => {
+    if (!open || preview) return;
+    const stream = streamRef.current;
+    const video = videoRef.current;
+    if (stream && video && video.srcObject !== stream) {
+      video.srcObject = stream;
+      video.play().catch(() => {});
+    } else if (!stream && !starting) {
+      start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, open]);
+
   function snapshot() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
@@ -229,11 +243,11 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticke
           {!preview && !error && (() => {
             const g = photoSlotGuidance(slot);
             return (
-              <div className="flex items-start gap-2 px-3 py-2 bg-amber-500/15 text-amber-100 border-b border-amber-500/30 text-sm">
+              <div className="flex items-start gap-2 px-3 py-2 bg-amber-400 text-black border-b border-amber-600 text-sm">
                 <Info className="h-4 w-4 mt-0.5 shrink-0" />
                 <div>
                   <div className="font-semibold">{g.title}</div>
-                  <div className="text-amber-50/90">{g.hint}</div>
+                  <div className="text-black/80">{g.hint}</div>
                 </div>
               </div>
             );

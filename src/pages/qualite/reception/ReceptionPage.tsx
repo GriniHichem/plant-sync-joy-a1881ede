@@ -124,8 +124,6 @@ export default function ReceptionPage() {
           )}
         </Tabs>
       )}
-
-      <ReceptionAccessMatrixDialog open={matrixOpen} onOpenChange={setMatrixOpen} />
     </div>
   );
 }

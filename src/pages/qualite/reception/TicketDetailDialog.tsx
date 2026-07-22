@@ -188,6 +188,9 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
                 </div>
               )}
             </section>
+
+            {/* Orientations */}
+            <TicketOrientations ticketId={row.id} />
           </div>
         </DialogContent>
       </Dialog>

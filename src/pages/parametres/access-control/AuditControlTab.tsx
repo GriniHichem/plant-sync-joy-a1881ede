@@ -42,9 +42,9 @@ export default function AuditControlTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ROLES.map((role) => (
+                  {ALL_ROLES.map(({ code: role, label, isCustom }) => (
                     <tr key={role} className="border-b hover:bg-muted/30">
-                      <td className="p-2 sticky left-0 bg-background font-medium">{role.replace(/_/g, " ")}</td>
+                      <td className="p-2 sticky left-0 bg-background font-medium">{label}{isCustom && <span className="ml-1 text-[10px] text-primary">•custom</span>}</td>
                       {modulesByGroup[g].map((m) => (
                         <td key={m.value} className="p-2 text-center">
                           <Switch checked={isEnabled(role, m.value)} onCheckedChange={(v) => upsert(role, m.value, v)} />

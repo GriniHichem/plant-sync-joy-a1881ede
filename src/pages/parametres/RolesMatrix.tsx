@@ -688,7 +688,7 @@ export default function RolesMatrix() {
                                 <SelectValue placeholder="Copier d'un rôle..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {ROLES.filter((r) => r.key !== role.key).map((r) => (
+                                {allRoles.filter((r) => r.key !== role.key).map((r) => (
                                   <SelectItem key={r.key} value={r.key}>{r.label}</SelectItem>
                                 ))}
                               </SelectContent>

@@ -5372,6 +5372,51 @@ export type Database = {
         }
         Relationships: []
       }
+      reception_ticket_orientations: {
+        Row: {
+          created_at: string
+          explication: string | null
+          id: string
+          taux_recommande: number
+          ticket_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          explication?: string | null
+          id?: string
+          taux_recommande: number
+          ticket_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          explication?: string | null
+          id?: string
+          taux_recommande?: number
+          ticket_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reception_ticket_orientations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "reception_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_ticket_orientations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reception_ticket_photos: {
         Row: {
           id: string
@@ -6806,6 +6851,68 @@ export type Database = {
         }
         Relationships: []
       }
+      v_reception_orientations: {
+        Row: {
+          author_name: string | null
+          campagne_nom: string | null
+          campaign_id: string | null
+          created_at: string | null
+          explication: string | null
+          id: string | null
+          product_id: string | null
+          produit_nom: string | null
+          taux_recommande: number | null
+          ticket_date: string | null
+          ticket_id: string | null
+          ticket_numero: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reception_ticket_orientations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "reception_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_ticket_orientations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "reception_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "reception_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reception_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "v_reception_global"
+            referencedColumns: ["product_id"]
+          },
+        ]
+      }
     }
     Functions: {
       apply_maintenance_shift_schedules: { Args: never; Returns: string[] }
@@ -7109,6 +7216,10 @@ export type Database = {
       }
       has_quality_permission: {
         Args: { _action: string; _user_id: string }
+        Returns: boolean
+      }
+      has_reception_consult_access: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       has_role: {

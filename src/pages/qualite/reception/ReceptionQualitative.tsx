@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Clock, Lock, Truck } from "lucide-react";
+import { Clock, Lock, Truck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { TicketDetailDialog } from "./TicketDetailDialog";
@@ -172,6 +172,25 @@ export default function ReceptionQualitative() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const [cancelMotif, setCancelMotif] = useState("");
+  const cancelTicket = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("cancel_reception_ticket" as any, { _ticket_id: ticketId!, _motif: cancelMotif });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Ticket annulé — page réinitialisée");
+      setTicketId(undefined);
+      setCancelMotif("");
+      setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+      qc.invalidateQueries({ queryKey: ["reception_photos", ticketId] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
 
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent"],
@@ -483,25 +502,58 @@ export default function ReceptionQualitative() {
                 <span className="truncate font-medium text-foreground">{selectedSupplier.nom}</span>
               </div>
             )}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending || !canCloseTicket}>
-                  <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Clôturer le ticket ?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Après clôture, aucune modification ne sera possible. Le ticket pourra être pesé par le pont-bascule.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => closeTicket.mutate()}>Confirmer</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="h-12 shrink-0" disabled={cancelTicket.isPending} title="Annuler le ticket (camion refusé…)">
+                    <XCircle className="h-4 w-4 mr-2" />Annuler
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Annuler le ticket ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Les photos seront supprimées et la page réinitialisée. Un motif est requis (camion refusé, erreur de saisie, etc.).
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <Textarea
+                    placeholder="Motif d'annulation (obligatoire)"
+                    value={cancelMotif}
+                    onChange={(e) => setCancelMotif(e.target.value)}
+                    className="min-h-[80px]"
+                  />
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setCancelMotif("")}>Retour</AlertDialogCancel>
+                    <AlertDialogAction
+                      disabled={cancelMotif.trim().length < 3 || cancelTicket.isPending}
+                      onClick={(e) => { e.preventDefault(); cancelTicket.mutate(); }}
+                    >
+                      Confirmer l'annulation
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending || !canCloseTicket}>
+                    <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clôturer le ticket ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Après clôture, aucune modification ne sera possible. Le ticket pourra être pesé par le pont-bascule.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => closeTicket.mutate()}>Confirmer</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
           </StickyActionBar>
         </div>
       )}

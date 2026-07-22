@@ -42,6 +42,7 @@ const SECTIONS: SectionDef[] = [
   { key: "documents", label: "Documents", description: "Droits d'accès aux documents", icon: FileText, group: "Permissions", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
   { key: "pdr", label: "PDR & Stock", description: "Mouvements, inventaires, fournisseurs", icon: Package, group: "Permissions", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
   { key: "quality", label: "Qualité", description: "15 droits granulaires qualité", icon: ClipboardCheck, group: "Permissions", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
+  { key: "reception", label: "Réception", description: "Qualitative, quantitative, global, settings", icon: Truck, group: "Permissions", accent: "from-lime-500/15 to-lime-500/5 text-lime-500" },
   { key: "validations", label: "Workflows", description: "Validations & notifications", icon: CheckSquare, group: "Gouvernance", accent: "from-teal-500/15 to-teal-500/5 text-teal-500" },
   { key: "audit", label: "Audit & Contrôle", description: "Audit par rôle / module", icon: Activity, group: "Gouvernance", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
   { key: "control", label: "Système", description: "Interrupteurs globaux", icon: ToggleLeft, group: "Système", accent: "from-orange-500/15 to-orange-500/5 text-orange-500" },

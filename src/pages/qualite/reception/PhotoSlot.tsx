@@ -84,10 +84,10 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
       </div>
       {preview ? (
         <>
-          <a href={preview} target="_blank" rel="noreferrer" className="block group">
+          <button type="button" onClick={() => setZoomOpen(true)} className="block group relative">
             <img src={preview} alt={`Photo ${slot}`} className="max-h-40 rounded object-contain" />
             <ZoomIn className="absolute top-2 right-2 h-4 w-4 opacity-70 group-hover:opacity-100" />
-          </a>
+          </button>
           {!disabled && (
             <Button
               type="button"

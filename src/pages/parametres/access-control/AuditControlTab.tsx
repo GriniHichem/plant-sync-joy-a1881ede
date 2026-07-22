@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useAuditRoleSettings } from "@/hooks/useAuditRoleSettings";
 import { ROLES, MODULES } from "@/lib/ruleCatalog";
+import { useAllRoles } from "@/hooks/useAllRoles";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 

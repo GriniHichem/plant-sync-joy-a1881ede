@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Truck, Settings2 } from "lucide-react";
+import { Truck, ShieldCheck } from "lucide-react";
 import ReceptionSettings from "./ReceptionSettings";
 import ReceptionQualitative from "./ReceptionQualitative";
 import ReceptionQuantitative from "./ReceptionQuantitative";
 import ReceptionGlobal from "./ReceptionGlobal";
-import ReceptionAccessMatrixDialog from "./ReceptionAccessMatrixDialog";
 import { useHasActiveReceptionTicket } from "./receptionDraftStore";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -22,9 +21,9 @@ const TAB_MODULES: Record<TabKey, string> = {
 
 export default function ReceptionPage() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const hasActive = useHasActiveReceptionTicket();
   const { canView, canEdit, loading: permsLoading } = usePermissions();
-  const [matrixOpen, setMatrixOpen] = useState(false);
 
   const visibleTabs = useMemo<TabKey[]>(() => {
     const all: TabKey[] = ["qualitative", "quantitative", "global", "settings"];
@@ -77,11 +76,11 @@ export default function ReceptionPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setMatrixOpen(true)}
-            title="Paramètres avancés — matrice des accès"
+            onClick={() => navigate("/parametres/access-control?tab=reception")}
+            title="Gérer les accès dans Sécurité & Accès"
           >
-            <Settings2 className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Paramètres avancés</span>
+            <ShieldCheck className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Gérer les accès</span>
           </Button>
         )}
       </div>
@@ -125,8 +124,6 @@ export default function ReceptionPage() {
           )}
         </Tabs>
       )}
-
-      <ReceptionAccessMatrixDialog open={matrixOpen} onOpenChange={setMatrixOpen} />
     </div>
   );
 }

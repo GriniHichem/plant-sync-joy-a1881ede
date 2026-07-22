@@ -1,16 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ShieldCheck, Info } from "lucide-react";
+import { Loader2, Info, Save, Truck } from "lucide-react";
 import { toast } from "sonner";
-
-interface Props {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-}
 
 const SUBMODULES: { key: string; label: string; hint?: string }[] = [
   { key: "reception_qualitative", label: "Réception qualitative", hint: "Saisie du ticket, photos et clôture" },
@@ -54,14 +49,13 @@ const EMPTY_MATRIX: Matrix = Object.fromEntries(
   SUBMODULES.map((s) => [s.key, { can_view: false, can_create: false, can_edit: false, can_delete: false }]),
 ) as Matrix;
 
-export default function ReceptionAccessMatrixDialog({ open, onOpenChange }: Props) {
+export default function ReceptionPermissionsTab() {
   const [role, setRole] = useState<string>("controleur_qualite");
   const [matrix, setMatrix] = useState<Matrix>(EMPTY_MATRIX);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
     let cancel = false;
     (async () => {
       setLoading(true);
@@ -86,7 +80,7 @@ export default function ReceptionAccessMatrixDialog({ open, onOpenChange }: Prop
       setLoading(false);
     })();
     return () => { cancel = true; };
-  }, [open, role]);
+  }, [role]);
 
   function toggle(module: string, action: ActionKey) {
     setMatrix((m) => ({
@@ -95,9 +89,20 @@ export default function ReceptionAccessMatrixDialog({ open, onOpenChange }: Prop
     }));
   }
 
+  function toggleColumn(action: ActionKey) {
+    const allSet = SUBMODULES.every((s) => matrix[s.key][action]);
+    const v = !allSet;
+    setMatrix((m) => {
+      const next = { ...m };
+      for (const s of SUBMODULES) next[s.key] = { ...next[s.key], [action]: v };
+      return next;
+    });
+  }
+
   async function save() {
     setSaving(true);
     try {
+      // 1) Upsert the 4 submodule rows.
       const rows = SUBMODULES.map((s) => ({
         role: role as any,
         module: s.key,
@@ -106,12 +111,22 @@ export default function ReceptionAccessMatrixDialog({ open, onOpenChange }: Prop
         can_edit: matrix[s.key].can_edit,
         can_delete: matrix[s.key].can_delete,
       }));
+
+      // 2) Umbrella row `reception` = AND of all submodules for each action.
+      const umbrella = {
+        role: role as any,
+        module: "reception",
+        can_view: SUBMODULES.every((s) => matrix[s.key].can_view),
+        can_create: SUBMODULES.every((s) => matrix[s.key].can_create),
+        can_edit: SUBMODULES.every((s) => matrix[s.key].can_edit),
+        can_delete: SUBMODULES.every((s) => matrix[s.key].can_delete),
+      };
+
       const { error } = await supabase
         .from("role_permissions")
-        .upsert(rows, { onConflict: "role,module" });
+        .upsert([...rows, umbrella], { onConflict: "role,module" });
       if (error) throw error;
-      toast.success("Matrice enregistrée");
-      onOpenChange(false);
+      toast.success("Matrice Réception enregistrée");
     } catch (e: any) {
       toast.error(e.message ?? "Erreur d'enregistrement");
     } finally {
@@ -120,80 +135,80 @@ export default function ReceptionAccessMatrixDialog({ open, onOpenChange }: Prop
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            Matrice des accès — Module Réception
-          </DialogTitle>
-          <DialogDescription>
-            Définissez, par rôle, les actions autorisées sur chaque sous-module. Les changements agissent uniquement sur l'affichage (masquage / désactivation des boutons et onglets).
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center gap-2">
-            <label className="text-sm font-medium min-w-[100px]">Rôle</label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger className="md:max-w-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((r) => (
-                  <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="rounded-md border">
-            <div className="grid grid-cols-[minmax(0,1fr)_repeat(4,72px)] items-center bg-muted/50 text-xs font-semibold px-3 py-2">
-              <div>Sous-module</div>
-              {ACTIONS.map((a) => (
-                <div key={a.key} className="text-center">{a.label}</div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Truck className="h-5 w-5 text-primary" />
+          Matrice des accès — Module Réception
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-2">
+          <label className="text-sm font-medium min-w-[80px]">Rôle</label>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger className="md:max-w-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((r) => (
+                <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>
               ))}
-            </div>
-            {loading ? (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Chargement…
-              </div>
-            ) : (
-              SUBMODULES.map((s) => (
-                <div key={s.key} className="grid grid-cols-[minmax(0,1fr)_repeat(4,72px)] items-center px-3 py-2 border-t">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{s.label}</div>
-                    {s.hint && <div className="text-[11px] text-muted-foreground truncate">{s.hint}</div>}
-                  </div>
-                  {ACTIONS.map((a) => (
-                    <div key={a.key} className="flex justify-center">
-                      <Checkbox
-                        checked={matrix[s.key][a.key]}
-                        onCheckedChange={() => toggle(s.key, a.key)}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ))
-            )}
-          </div>
+            </SelectContent>
+          </Select>
+        </div>
 
-          <div className="flex items-start gap-2 rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
-            <Info className="h-4 w-4 mt-0.5 shrink-0" />
-            <div>
-              Convention métier : la Réception qualitative n'expose ni Modifier ni Supprimer (aucun retour sur ticket clôturé) ; le Pont-bascule n'ouvre pas de nouveau ticket ; les corrections a posteriori se font uniquement depuis la Consultation par un profil administrateur.
+        <div className="rounded-md border overflow-x-auto">
+          <div className="grid grid-cols-[minmax(240px,1fr)_repeat(4,84px)] items-center bg-muted/50 text-xs font-semibold px-3 py-2">
+            <div>Sous-module</div>
+            {ACTIONS.map((a) => (
+              <button
+                key={a.key}
+                onClick={() => toggleColumn(a.key)}
+                className="text-center hover:text-primary transition-colors"
+                title={`Basculer « ${a.label} » sur les 4 sous-modules`}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Chargement…
             </div>
+          ) : (
+            SUBMODULES.map((s) => (
+              <div key={s.key} className="grid grid-cols-[minmax(240px,1fr)_repeat(4,84px)] items-center px-3 py-2 border-t">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{s.label}</div>
+                  {s.hint && <div className="text-[11px] text-muted-foreground truncate">{s.hint}</div>}
+                </div>
+                {ACTIONS.map((a) => (
+                  <div key={a.key} className="flex justify-center">
+                    <Checkbox
+                      checked={matrix[s.key][a.key]}
+                      onCheckedChange={() => toggle(s.key, a.key)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="flex items-start gap-2 rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
+          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+          <div>
+            La case correspondante dans <strong>Matrice modules → Réception</strong> ne sera cochée que si les <strong>4 sous-modules</strong> partagent la même action. Décocher un seul sous-module ici décoche automatiquement l'accès global correspondant.
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Annuler</Button>
+        <div className="flex justify-end">
           <Button onClick={save} disabled={saving || loading}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Enregistrer
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

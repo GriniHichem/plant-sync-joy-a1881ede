@@ -16,7 +16,7 @@ import { Plus, Pencil, Star, StarOff } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-type Product = { id: string; code: string; designation: string; description: string | null; normes: string[]; calibres: string[]; varietes: string[]; actif: boolean };
+type Product = { id: string; code: string; designation: string; description: string | null; normes: string[]; calibres: string[]; varietes: string[]; code_prefix: string | null; code_digits: number | null; actif: boolean };
 type Supplier = { id: string; code: string; nom: string; region: string | null; wilaya: string | null; contact: string | null; telephone: string | null; adresse: string | null; agree: boolean; actif: boolean };
 type Campaign = { id: string; code: string; libelle: string; product_id: string; date_debut: string; date_fin: string; objectif_kg: number | null; actif: boolean; is_default: boolean };
 

@@ -5276,6 +5276,8 @@ export type Database = {
           calibres: string[]
           caracteristiques: Json
           code: string
+          code_digits: number | null
+          code_prefix: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -5290,6 +5292,8 @@ export type Database = {
           calibres?: string[]
           caracteristiques?: Json
           code: string
+          code_digits?: number | null
+          code_prefix?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -5304,6 +5308,8 @@ export type Database = {
           calibres?: string[]
           caracteristiques?: Json
           code?: string
+          code_digits?: number | null
+          code_prefix?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -5511,6 +5517,7 @@ export type Database = {
       reception_weighings: {
         Row: {
           code_pesee: string
+          code_saisi: string | null
           created_at: string
           id: string
           poids_abattement_kg: number | null
@@ -5524,6 +5531,7 @@ export type Database = {
         }
         Insert: {
           code_pesee?: string
+          code_saisi?: string | null
           created_at?: string
           id?: string
           poids_abattement_kg?: number | null
@@ -5537,6 +5545,7 @@ export type Database = {
         }
         Update: {
           code_pesee?: string
+          code_saisi?: string | null
           created_at?: string
           id?: string
           poids_abattement_kg?: number | null
@@ -6754,6 +6763,7 @@ export type Database = {
           cloture_by: string | null
           cloture_by_name: string | null
           code_pesee: string | null
+          code_saisi: string | null
           commentaire: string | null
           created_at: string | null
           created_by: string | null
@@ -6762,6 +6772,7 @@ export type Database = {
           duree_minutes: number | null
           etat_pesee: string | null
           fournisseur: string | null
+          fournisseur_code: string | null
           heure_debut: string | null
           heure_fin: string | null
           id: string | null
@@ -6774,6 +6785,8 @@ export type Database = {
           product_id: string | null
           produit: string | null
           produit_code: string | null
+          produit_code_digits: number | null
+          produit_code_prefix: string | null
           region: string | null
           statut: string | null
           supplier_id: string | null

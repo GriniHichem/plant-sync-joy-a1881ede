@@ -369,11 +369,28 @@ export default function ReceptionQualitative() {
               <Select value={form.supplier_id} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
                 <SelectTrigger className="h-11"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                 <SelectContent>
-                  {suppliers.map((s: any) => (
+                  <div className="sticky top-0 z-10 bg-popover p-2 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        autoFocus
+                        placeholder="Rechercher par nom ou code…"
+                        className="h-9 pl-8"
+                        value={supplierSearch}
+                        onChange={(e) => setSupplierSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+                  {filteredSuppliers.map((s: any) => (
                     <SelectItem key={s.id} value={s.id}>
                       <span className="font-mono text-xs mr-2">{s.code}</span>{s.nom}
                     </SelectItem>
                   ))}
+                  {filteredSuppliers.length === 0 && (
+                    <div className="px-3 py-4 text-center text-xs text-muted-foreground">Aucun fournisseur</div>
+                  )}
                 </SelectContent>
               </Select>
             </div>

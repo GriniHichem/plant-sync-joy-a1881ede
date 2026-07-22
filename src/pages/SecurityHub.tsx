@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   ShieldCheck, Users, FileText, Package, ClipboardCheck, CheckSquare,
-  Activity, ToggleLeft, Download, LayoutGrid, Search, ChevronRight, Lock,
+  Activity, ToggleLeft, Download, LayoutGrid, Search, ChevronRight, Lock, Truck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 import RolesTab from "./parametres/access-control/RolesTab";
 import QualityPermissionsTab from "./parametres/access-control/QualityPermissionsTab";
+import ReceptionPermissionsTab from "./parametres/access-control/ReceptionPermissionsTab";
 import AuditControlTab from "./parametres/access-control/AuditControlTab";
 import ControlSwitchesTab from "./parametres/access-control/ControlSwitchesTab";
 import PortabilityTab from "./parametres/access-control/PortabilityTab";
@@ -22,7 +23,7 @@ import PdrStockPermissionsAdmin from "./parametres/PdrStockPermissionsAdmin";
 
 type SectionKey =
   | "overview" | "users" | "roles" | "matrix" | "documents" | "pdr"
-  | "quality" | "validations" | "audit" | "control" | "portability";
+  | "quality" | "reception" | "validations" | "audit" | "control" | "portability";
 
 interface SectionDef {
   key: SectionKey;
@@ -41,6 +42,7 @@ const SECTIONS: SectionDef[] = [
   { key: "documents", label: "Documents", description: "Droits d'accès aux documents", icon: FileText, group: "Permissions", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
   { key: "pdr", label: "PDR & Stock", description: "Mouvements, inventaires, fournisseurs", icon: Package, group: "Permissions", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
   { key: "quality", label: "Qualité", description: "15 droits granulaires qualité", icon: ClipboardCheck, group: "Permissions", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
+  { key: "reception", label: "Réception", description: "Qualitative, quantitative, global, settings", icon: Truck, group: "Permissions", accent: "from-lime-500/15 to-lime-500/5 text-lime-500" },
   { key: "validations", label: "Workflows", description: "Validations & notifications", icon: CheckSquare, group: "Gouvernance", accent: "from-teal-500/15 to-teal-500/5 text-teal-500" },
   { key: "audit", label: "Audit & Contrôle", description: "Audit par rôle / module", icon: Activity, group: "Gouvernance", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
   { key: "control", label: "Système", description: "Interrupteurs globaux", icon: ToggleLeft, group: "Système", accent: "from-orange-500/15 to-orange-500/5 text-orange-500" },
@@ -196,6 +198,7 @@ export default function SecurityHub() {
               {active === "documents" && <DocumentPermissionsAdmin />}
               {active === "pdr" && <PdrStockPermissionsAdmin />}
               {active === "quality" && <QualityPermissionsTab />}
+              {active === "reception" && <ReceptionPermissionsTab />}
               {active === "validations" && (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">Configuration des règles de validation et de notification.</p>

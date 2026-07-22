@@ -62,8 +62,6 @@ export default function ReceptionPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [hasActive]);
 
-  const canManageAccess = canEdit("parametres") || canEdit("reception");
-
   return (
     <div className="space-y-3 md:space-y-4">
       <div className="flex items-center gap-2 md:gap-3">
@@ -72,17 +70,6 @@ export default function ReceptionPage() {
           <h1 className="text-lg md:text-2xl font-bold leading-tight truncate">Réception Fruits &amp; Légumes</h1>
           <p className="hidden md:block text-sm text-muted-foreground">Réception qualitative, pesée pont-bascule et consultation globale</p>
         </div>
-        {canManageAccess && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/parametres/access-control?tab=reception")}
-            title="Gérer les accès dans Sécurité & Accès"
-          >
-            <ShieldCheck className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Gérer les accès</span>
-          </Button>
-        )}
       </div>
 
       {visibleTabs.length === 0 ? (

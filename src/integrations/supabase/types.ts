@@ -7181,6 +7181,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["shift_type"]
       }
+      ensure_app_role_value: { Args: { _code: string }; Returns: undefined }
       ensure_my_production_shift_session: { Args: never; Returns: string }
       ensure_my_production_shifts: { Args: never; Returns: string[] }
       ensure_my_quality_shifts: { Args: never; Returns: string[] }
@@ -7497,6 +7498,7 @@ export type Database = {
         | "responsable_magasin"
         | "agent_pont_bascule"
         | "agreeur"
+        | "test"
       approvisionnement_type: "local" | "importation" | "mixte"
       arret_type:
         | "panne"
@@ -7861,6 +7863,7 @@ export const Constants = {
         "responsable_magasin",
         "agent_pont_bascule",
         "agreeur",
+        "test",
       ],
       approvisionnement_type: ["local", "importation", "mixte"],
       arret_type: [

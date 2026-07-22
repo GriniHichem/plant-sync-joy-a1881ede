@@ -599,6 +599,12 @@ export default function ReceptionQualitative() {
       )}
 
       <TicketDetailDialog open={!!detailRow} onOpenChange={(o) => !o && setDetailRow(null)} row={detailRow} />
+      <OrientationsAdvisorDialog
+        open={advisorOpen}
+        onOpenChange={setAdvisorOpen}
+        campaignId={form.campaign_id || null}
+        productId={(selectedCampaign as any)?.product_id ?? null}
+      />
     </div>
   );
 }

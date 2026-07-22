@@ -306,8 +306,15 @@ export default function ReceptionQualitative() {
 
   const photoBySlot = (slot: number) => photos.find((p) => p.slot === slot);
   const nPhotos = photos.length;
-  const canClose = !!ticketId && !!form.supplier_id && !!form.heure_debut && !!form.heure_fin && nPhotos === 3;
+  const missingSlots = [1, 2, 3].filter((s) => !photoBySlot(s));
+  const missingReasons: string[] = [];
+  if (!form.supplier_id) missingReasons.push("Fournisseur");
+  if (!form.heure_debut) missingReasons.push("Heure de début");
+  if (!form.heure_fin) missingReasons.push("Heure de fin");
+  if (missingSlots.length > 0) missingReasons.push(`Photo${missingSlots.length > 1 ? "s" : ""} ${missingSlots.join(", ")}`);
+  const canClose = !!ticketId && missingReasons.length === 0;
   const selectedSupplier = suppliers.find((s: any) => s.id === form.supplier_id);
+
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-28 md:pb-4">
@@ -459,16 +466,23 @@ export default function ReceptionQualitative() {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className={`space-y-2 rounded-lg p-3 border-2 ${missingSlots.length > 0 && ticketId ? "border-destructive/60 bg-destructive/5" : "border-transparent"}`}>
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold">Photos obligatoires (3)</Label>
-              <Badge variant={nPhotos === 3 ? "default" : "outline"}>{nPhotos}/3</Badge>
+              <Label className="text-sm font-semibold">
+                Photos obligatoires (3)
+                <span className="text-destructive ml-1">*</span>
+              </Label>
+              <Badge variant={nPhotos === 3 ? "default" : "destructive"}>{nPhotos}/3</Badge>
             </div>
-            {!ticketId && (
+            {!ticketId ? (
               <p className="text-xs text-muted-foreground">
                 Les 3 photos sont obligatoires avant clôture. Ouvrez d'abord le ticket pour activer la prise de photos.
               </p>
-            )}
+            ) : missingSlots.length > 0 ? (
+              <p className="text-xs font-medium text-destructive">
+                ⚠ Photo{missingSlots.length > 1 ? "s" : ""} manquante{missingSlots.length > 1 ? "s" : ""} : {missingSlots.join(", ")} — clôture impossible tant que les 3 photos ne sont pas prises.
+              </p>
+            ) : null}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {[1, 2, 3].map((s) => {
                 const p = photoBySlot(s);
@@ -490,6 +504,7 @@ export default function ReceptionQualitative() {
       <Card className="xl:col-span-1">
         <CardHeader className="pb-2">
           <Accordion type="single" collapsible defaultValue="recent" className="xl:pointer-events-none">
+
             <AccordionItem value="recent" className="border-b-0">
               <AccordionTrigger className="py-0 hover:no-underline xl:[&>svg]:hidden">
                 <CardTitle className="text-base">10 derniers tickets clôturés</CardTitle>
@@ -575,10 +590,18 @@ export default function ReceptionQualitative() {
               </AlertDialog>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending || !canCloseTicket}>
-                    <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
+                  <Button
+                    className="w-full h-12"
+                    disabled={!canClose || closeTicket.isPending || !canCloseTicket}
+                    title={missingReasons.length > 0 ? `Manquant : ${missingReasons.join(", ")}` : undefined}
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    {missingReasons.length > 0
+                      ? `Manquant : ${missingReasons.join(", ")}`
+                      : "Enregistrer et clôturer"}
                   </Button>
                 </AlertDialogTrigger>
+
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clôturer le ticket ?</AlertDialogTitle>

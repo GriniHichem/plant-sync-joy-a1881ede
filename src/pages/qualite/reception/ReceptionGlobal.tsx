@@ -259,6 +259,11 @@ export default function ReceptionGlobal() {
                   <DropdownMenuCheckboxItem checked={cols.cloture_at} onCheckedChange={(v) => setCols({ ...cols, cloture_at: !!v })}>Clôturé le</DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              {canImport && (
+                <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                  <Upload className="h-4 w-4 mr-1" />Importer
+                </Button>
+              )}
               <ExportCsvButton
                 filename="reception-global"
                 data={filtered.map((r) => ({

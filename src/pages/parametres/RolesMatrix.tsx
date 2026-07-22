@@ -252,12 +252,33 @@ export default function RolesMatrix() {
 
   const hasChanges = useMemo(() => JSON.stringify(perms) !== JSON.stringify(original), [perms, original]);
 
+  const RECEPTION_SUB = ["reception_qualitative", "reception_quantitative", "reception_global", "reception_settings"] as const;
+
   const getPerm = useCallback((role: string, module: string): PermRow => {
-    return (
-      perms.find((p) => p.role === role && p.module === module) || {
-        role, module, can_view: false, can_create: false, can_edit: false, can_delete: false,
+    const direct = perms.find((p) => p.role === role && p.module === module) || {
+      role, module, can_view: false, can_create: false, can_edit: false, can_delete: false,
+    };
+    // Umbrella `reception` reflects AND of its 4 sub-modules when any of them exists in perms.
+    if (module === "reception") {
+      const subs = RECEPTION_SUB
+        .map((k) => perms.find((p) => p.role === role && p.module === k))
+        .filter(Boolean) as PermRow[];
+      if (subs.length > 0) {
+        const allOf = (a: ActionKey) => RECEPTION_SUB.every((k) => {
+          const row = perms.find((p) => p.role === role && p.module === k);
+          return row ? row[a] : false;
+        });
+        return {
+          ...direct,
+          can_view: allOf("can_view"),
+          can_create: allOf("can_create"),
+          can_edit: allOf("can_edit"),
+          can_delete: allOf("can_delete"),
+        };
       }
-    );
+    }
+    return direct;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perms]);
 
   function toggleRole(roleKey: string) {
@@ -268,8 +289,34 @@ export default function RolesMatrix() {
     });
   }
 
+  function upsertRow(list: PermRow[], role: string, module: string, patch: Partial<PermRow>): PermRow[] {
+    const idx = list.findIndex((p) => p.role === role && p.module === module);
+    if (idx >= 0) {
+      const updated = [...list];
+      updated[idx] = { ...updated[idx], ...patch };
+      return updated;
+    }
+    return [...list, { role, module, can_view: false, can_create: false, can_edit: false, can_delete: false, ...patch }];
+  }
+
   function toggle(role: string, module: string, action: ActionKey) {
     setPerms((prev) => {
+      // Reception umbrella toggle → propagate to all 4 sub-modules and mirror on umbrella row.
+      if (module === "reception") {
+        const current = getPerm(role, "reception")[action];
+        const newVal = !current;
+        let next = prev;
+        for (const sub of RECEPTION_SUB) {
+          const patch: Partial<PermRow> = { [action]: newVal };
+          if (newVal && action !== "can_view") patch.can_view = true;
+          next = upsertRow(next, role, sub, patch);
+        }
+        const umbrellaPatch: Partial<PermRow> = { [action]: newVal };
+        if (newVal && action !== "can_view") umbrellaPatch.can_view = true;
+        next = upsertRow(next, role, "reception", umbrellaPatch);
+        return next;
+      }
+
       const idx = prev.findIndex((p) => p.role === role && p.module === module);
       if (idx >= 0) {
         const updated = [...prev];

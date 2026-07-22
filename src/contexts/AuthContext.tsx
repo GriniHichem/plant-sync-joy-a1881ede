@@ -154,11 +154,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function fetchRoles(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    if (data) setRealRoles(data.map((r) => r.role as AppRole));
+    if (error) {
+      // Never wipe roles on a transient error — the user would lose module access.
+      // eslint-disable-next-line no-console
+      console.warn("[Auth] fetchRoles failed:", error.message);
+      return;
+    }
+    setRealRoles((data ?? []).map((r) => r.role as AppRole));
   }
 
   // Effective values: when impersonating, override roles & profile

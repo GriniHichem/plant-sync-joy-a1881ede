@@ -20,9 +20,8 @@ const TAB_MODULES: Record<TabKey, string> = {
 
 export default function ReceptionPage() {
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
   const hasActive = useHasActiveReceptionTicket();
-  const { canView, canEdit, loading: permsLoading } = usePermissions();
+  const { canView, loading: permsLoading } = usePermissions();
 
   const visibleTabs = useMemo<TabKey[]>(() => {
     const all: TabKey[] = ["qualitative", "quantitative", "global", "settings"];

@@ -1,21 +1,47 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Truck, Settings2 } from "lucide-react";
 import ReceptionSettings from "./ReceptionSettings";
 import ReceptionQualitative from "./ReceptionQualitative";
 import ReceptionQuantitative from "./ReceptionQuantitative";
 import ReceptionGlobal from "./ReceptionGlobal";
+import ReceptionAccessMatrixDialog from "./ReceptionAccessMatrixDialog";
 import { useHasActiveReceptionTicket } from "./receptionDraftStore";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { usePermissions } from "@/hooks/usePermissions";
+
+type TabKey = "qualitative" | "quantitative" | "global" | "settings";
+
+const TAB_MODULES: Record<TabKey, string> = {
+  qualitative: "reception_qualitative",
+  quantitative: "reception_quantitative",
+  global: "reception_global",
+  settings: "reception_settings",
+};
 
 export default function ReceptionPage() {
   const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") ?? "qualitative";
   const hasActive = useHasActiveReceptionTicket();
+  const { canView, canEdit, loading: permsLoading } = usePermissions();
+  const [matrixOpen, setMatrixOpen] = useState(false);
+
+  const visibleTabs = useMemo<TabKey[]>(() => {
+    const all: TabKey[] = ["qualitative", "quantitative", "global", "settings"];
+    return all.filter((t) => canView(TAB_MODULES[t]));
+  }, [canView, permsLoading]);
+
+  const requestedTab = (params.get("tab") ?? "qualitative") as TabKey;
+  const tab: TabKey = visibleTabs.includes(requestedTab)
+    ? requestedTab
+    : (visibleTabs[0] ?? "qualitative");
+
+  useEffect(() => {
+    if (!permsLoading && visibleTabs.length > 0 && tab !== requestedTab) {
+      setParams({ tab }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, requestedTab, permsLoading, visibleTabs.length]);
 
   const setTab = (v: string) => {
     if (hasActive && tab === "qualitative" && v !== "qualitative") {
@@ -27,11 +53,6 @@ export default function ReceptionPage() {
     setParams({ tab: v }, { replace: true });
   };
 
-  // Note: navigation blocking via useBlocker requires a data router.
-  // On s'appuie sur la confirmation onglet + beforeunload pour éviter les pertes.
-
-
-  // Avertissement natif du navigateur à la fermeture / rechargement.
   useEffect(() => {
     if (!hasActive) return;
     const handler = (e: BeforeUnloadEvent) => {
@@ -42,31 +63,70 @@ export default function ReceptionPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [hasActive]);
 
+  const canManageAccess = canEdit("parametres") || canEdit("reception");
+
   return (
     <div className="space-y-3 md:space-y-4">
       <div className="flex items-center gap-2 md:gap-3">
         <Truck className="h-5 w-5 md:h-6 md:w-6 text-primary shrink-0" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="text-lg md:text-2xl font-bold leading-tight truncate">Réception Fruits &amp; Légumes</h1>
           <p className="hidden md:block text-sm text-muted-foreground">Réception qualitative, pesée pont-bascule et consultation globale</p>
         </div>
+        {canManageAccess && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setMatrixOpen(true)}
+            title="Paramètres avancés — matrice des accès"
+          >
+            <Settings2 className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Paramètres avancés</span>
+          </Button>
+        )}
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <div className="sticky top-0 z-20 -mx-3 md:-mx-5 lg:-mx-6 px-3 md:px-5 lg:px-6 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
-          <TabsList className="w-full md:w-auto flex md:grid md:grid-cols-4 overflow-x-auto no-scrollbar">
-            <TabsTrigger value="qualitative" className="whitespace-nowrap flex-1 md:flex-none">Qualitative</TabsTrigger>
-            <TabsTrigger value="quantitative" className="whitespace-nowrap flex-1 md:flex-none">Pont-bascule</TabsTrigger>
-            <TabsTrigger value="global" className="whitespace-nowrap flex-1 md:flex-none">Consultation</TabsTrigger>
-            <TabsTrigger value="settings" className="whitespace-nowrap flex-1 md:flex-none">Paramétrage</TabsTrigger>
-          </TabsList>
+      {visibleTabs.length === 0 ? (
+        <div className="rounded-md border p-8 text-center text-muted-foreground text-sm">
+          Aucun sous-module accessible avec votre rôle.
         </div>
-        <TabsContent value="qualitative" className="mt-4"><ReceptionQualitative /></TabsContent>
-        <TabsContent value="quantitative" className="mt-4"><ReceptionQuantitative /></TabsContent>
-        <TabsContent value="global" className="mt-4"><ReceptionGlobal /></TabsContent>
-        <TabsContent value="settings" className="mt-4"><ReceptionSettings /></TabsContent>
-      </Tabs>
+      ) : (
+        <Tabs value={tab} onValueChange={setTab}>
+          <div className="sticky top-0 z-20 -mx-3 md:-mx-5 lg:-mx-6 px-3 md:px-5 lg:px-6 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+            <TabsList
+              className="w-full md:w-auto flex md:grid overflow-x-auto no-scrollbar"
+              style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0,1fr))` }}
+            >
+              {visibleTabs.includes("qualitative") && (
+                <TabsTrigger value="qualitative" className="whitespace-nowrap flex-1 md:flex-none">Qualitative</TabsTrigger>
+              )}
+              {visibleTabs.includes("quantitative") && (
+                <TabsTrigger value="quantitative" className="whitespace-nowrap flex-1 md:flex-none">Pont-bascule</TabsTrigger>
+              )}
+              {visibleTabs.includes("global") && (
+                <TabsTrigger value="global" className="whitespace-nowrap flex-1 md:flex-none">Consultation</TabsTrigger>
+              )}
+              {visibleTabs.includes("settings") && (
+                <TabsTrigger value="settings" className="whitespace-nowrap flex-1 md:flex-none">Paramétrage</TabsTrigger>
+              )}
+            </TabsList>
+          </div>
+          {visibleTabs.includes("qualitative") && (
+            <TabsContent value="qualitative" className="mt-4"><ReceptionQualitative /></TabsContent>
+          )}
+          {visibleTabs.includes("quantitative") && (
+            <TabsContent value="quantitative" className="mt-4"><ReceptionQuantitative /></TabsContent>
+          )}
+          {visibleTabs.includes("global") && (
+            <TabsContent value="global" className="mt-4"><ReceptionGlobal /></TabsContent>
+          )}
+          {visibleTabs.includes("settings") && (
+            <TabsContent value="settings" className="mt-4"><ReceptionSettings /></TabsContent>
+          )}
+        </Tabs>
+      )}
 
+      <ReceptionAccessMatrixDialog open={matrixOpen} onOpenChange={setMatrixOpen} />
     </div>
   );
 }

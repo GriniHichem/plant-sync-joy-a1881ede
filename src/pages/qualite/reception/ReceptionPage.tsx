@@ -1,8 +1,7 @@
 import { useEffect, useMemo } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Truck, ShieldCheck } from "lucide-react";
+import { Truck } from "lucide-react";
 import ReceptionSettings from "./ReceptionSettings";
 import ReceptionQualitative from "./ReceptionQualitative";
 import ReceptionQuantitative from "./ReceptionQuantitative";
@@ -21,9 +20,8 @@ const TAB_MODULES: Record<TabKey, string> = {
 
 export default function ReceptionPage() {
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
   const hasActive = useHasActiveReceptionTicket();
-  const { canView, canEdit, loading: permsLoading } = usePermissions();
+  const { canView, loading: permsLoading } = usePermissions();
 
   const visibleTabs = useMemo<TabKey[]>(() => {
     const all: TabKey[] = ["qualitative", "quantitative", "global", "settings"];
@@ -62,8 +60,6 @@ export default function ReceptionPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [hasActive]);
 
-  const canManageAccess = canEdit("parametres") || canEdit("reception");
-
   return (
     <div className="space-y-3 md:space-y-4">
       <div className="flex items-center gap-2 md:gap-3">
@@ -72,17 +68,6 @@ export default function ReceptionPage() {
           <h1 className="text-lg md:text-2xl font-bold leading-tight truncate">Réception Fruits &amp; Légumes</h1>
           <p className="hidden md:block text-sm text-muted-foreground">Réception qualitative, pesée pont-bascule et consultation globale</p>
         </div>
-        {canManageAccess && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/parametres/access-control?tab=reception")}
-            title="Gérer les accès dans Sécurité & Accès"
-          >
-            <ShieldCheck className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Gérer les accès</span>
-          </Button>
-        )}
       </div>
 
       {visibleTabs.length === 0 ? (

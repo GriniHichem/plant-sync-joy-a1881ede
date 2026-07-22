@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Camera, Loader2, Trash2, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { compressImage } from "@/lib/reception";
+import { compressImage, photoSlotCaption } from "@/lib/reception";
 import { cn } from "@/lib/utils";
 import { CameraCaptureDialog } from "./CameraCaptureDialog";
 
@@ -23,6 +24,7 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
 
   useEffect(() => {
@@ -82,10 +84,10 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
       </div>
       {preview ? (
         <>
-          <a href={preview} target="_blank" rel="noreferrer" className="block group">
+          <button type="button" onClick={() => setZoomOpen(true)} className="block group relative">
             <img src={preview} alt={`Photo ${slot}`} className="max-h-40 rounded object-contain" />
             <ZoomIn className="absolute top-2 right-2 h-4 w-4 opacity-70 group-hover:opacity-100" />
-          </a>
+          </button>
           {!disabled && (
             <Button
               type="button"
@@ -127,6 +129,18 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
         supplierName={supplierName}
         onCapture={(file) => handleFile(file)}
       />
+      <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+        <DialogContent className="max-w-4xl p-2 bg-black/95">
+          {preview && (
+            <>
+              <img src={preview} alt={`Photo ${slot}`} className="w-full h-auto max-h-[80vh] object-contain rounded" />
+              <div className="mt-2 rounded-md bg-white/10 text-white text-sm px-3 py-2 text-center">
+                {photoSlotCaption(slot)}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 

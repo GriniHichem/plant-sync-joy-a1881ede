@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ImageOff, ZoomIn } from "lucide-react";
+import { photoSlotCaption } from "@/lib/reception";
 
 interface Props {
   open: boolean;
@@ -80,6 +81,9 @@ export function TicketPhotosDialog({ open, onOpenChange, ticketId, ticketNumero 
                     <ImageOff className="h-6 w-6" />
                   </div>
                 )}
+                <div className="px-2 py-1 text-[11px] text-muted-foreground bg-muted/30 border-t">
+                  {photoSlotCaption(p.slot)}
+                </div>
               </div>
             ))}
           </div>

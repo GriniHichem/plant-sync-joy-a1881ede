@@ -81,7 +81,9 @@ function ProductsTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Produits frais</CardTitle>
-        <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Nouveau produit</Button>
+        {canCreateRow && (
+          <Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-2" />Nouveau produit</Button>
+        )}
       </CardHeader>
       <CardContent>
         <Table>

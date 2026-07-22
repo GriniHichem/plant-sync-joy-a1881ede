@@ -421,6 +421,40 @@ export default function ReceptionGlobal() {
         onOpenChange={(o) => !o && setSelected(null)}
         row={selected}
       />
+
+      <CsvImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="Importer des tickets de pesée"
+        description="Statut appliqué : pesé importé. Ces tickets ne pourront pas être modifiés via le formulaire qualitatif."
+        fields={[
+          { key: "numero", label: "N° ticket", required: true, aliases: ["n", "num", "numero_ticket"] },
+          { key: "date_ticket", label: "Date", required: true, aliases: ["date", "date_pesee"] },
+          { key: "fournisseur", label: "Fournisseur", required: true, aliases: ["supplier", "code_fournisseur"] },
+          { key: "produit", label: "Produit", required: true, aliases: ["product", "code_produit"] },
+          { key: "taux_abattement", label: "Abattement %", required: true, aliases: ["abat", "abattement"] },
+          { key: "poids_brut_kg", label: "Poids brut (kg)", required: true, aliases: ["brut", "poids_brut"] },
+          { key: "heure_debut", label: "Heure début", aliases: ["debut", "hdebut"] },
+          { key: "heure_fin", label: "Heure fin", aliases: ["fin", "hfin"] },
+          { key: "commentaire", label: "Commentaire", aliases: ["notes", "remarque"] },
+        ]}
+        options={
+          <div className="space-y-1">
+            <div className="text-xs font-medium">Gestion des doublons (même N°)</div>
+            <RadioGroup value={importMode} onValueChange={(v: any) => setImportMode(v)} className="flex gap-4">
+              <div className="flex items-center gap-2"><RadioGroupItem id="im-ignore" value="ignore" /><label htmlFor="im-ignore" className="text-xs">Ignorer</label></div>
+              <div className="flex items-center gap-2"><RadioGroupItem id="im-replace" value="replace" /><label htmlFor="im-replace" className="text-xs">Remplacer</label></div>
+            </RadioGroup>
+          </div>
+        }
+        onImport={async (rows): Promise<ImportReport> => {
+          const { data, error } = await supabase.rpc("import_reception_tickets" as any, { p_rows: rows as any, p_on_duplicate: importMode });
+          if (error) throw error;
+          const r = (data ?? {}) as any;
+          return { total: r.total ?? rows.length, success: r.success ?? 0, failed: r.failed ?? 0, extra: { créés: r.created ?? 0, remplacés: r.replaced ?? 0, ignorés: r.skipped ?? 0 }, errors: r.errors ?? [] };
+        }}
+        onSuccess={invalidate}
+      />
     </div>
   );
 }

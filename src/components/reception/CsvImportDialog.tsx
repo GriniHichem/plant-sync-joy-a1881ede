@@ -35,7 +35,13 @@ export function CsvImportDialog({ open, onOpenChange, title, description, fields
   }
 
   async function handleFile(file: File) {
-    const text = await file.text();
+    const buf = await file.arrayBuffer();
+    // Décodage tolérant : UTF-8 strict d'abord ; si caractère de remplacement détecté,
+    // repli sur Windows-1252 (encodage Excel FR par défaut).
+    let text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
+    if (text.includes("\uFFFD")) {
+      try { text = new TextDecoder("windows-1252").decode(buf); } catch { /* keep utf-8 */ }
+    }
     const { headers: h, rows: r } = parseCsv(text);
     if (!h.length) { toast.error("Fichier CSV vide ou illisible"); return; }
     setHeaders(h); setRows(r); setReport(null);

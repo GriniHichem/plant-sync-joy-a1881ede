@@ -257,7 +257,7 @@ function SuppliersTab() {
             { key: "adresse", label: "Adresse" },
           ]}
           onImport={async (rows): Promise<ImportReport> => {
-            const { data, error } = await supabase.rpc("import_reception_suppliers" as any, { p_rows: rows as any });
+            const { data, error } = await supabase.rpc("import_reception_suppliers" as any, { rows: rows as any });
             if (error) throw error;
             const r = (data ?? {}) as any;
             return { total: r.total ?? rows.length, success: r.success ?? 0, failed: r.failed ?? 0, extra: { créés: r.created ?? 0, mis_a_jour: r.updated ?? 0 }, errors: r.errors ?? [] };

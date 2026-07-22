@@ -451,7 +451,7 @@ export default function ReceptionGlobal() {
           </div>
         }
         onImport={async (rows): Promise<ImportReport> => {
-          const { data, error } = await supabase.rpc("import_reception_tickets" as any, { p_rows: rows as any, p_on_duplicate: importMode });
+          const { data, error } = await supabase.rpc("import_reception_tickets" as any, { rows: rows as any, on_conflict: importMode });
           if (error) throw error;
           const r = (data ?? {}) as any;
           return { total: r.total ?? rows.length, success: r.success ?? 0, failed: r.failed ?? 0, extra: { créés: r.created ?? 0, remplacés: r.replaced ?? 0, ignorés: r.skipped ?? 0 }, errors: r.errors ?? [] };

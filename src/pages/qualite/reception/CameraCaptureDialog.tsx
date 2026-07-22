@@ -140,43 +140,31 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticke
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Filigrane date/heure (+ n° ticket + fournisseur) incrusté en bas
-    const hasSupplier = !!supplierName && supplierName.trim().length > 0;
-    const lines = hasSupplier ? 2 : 1;
+    // Filigrane une seule ligne : N° ticket - date heure - fournisseur (photo N)
     const fontPx = Math.max(14, Math.round(canvas.height * 0.03));
-    const lineH = Math.round(fontPx * 1.35);
-    const bandH = Math.max(40, lineH * lines + Math.round(fontPx * 0.8));
+    const bandH = Math.max(40, Math.round(fontPx * 1.9));
     ctx.fillStyle = "rgba(0,0,0,0.6)";
     ctx.fillRect(0, canvas.height - bandH, canvas.width, bandH);
     ctx.fillStyle = "#ffffff";
     ctx.font = `600 ${fontPx}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
     const pad = Math.round(fontPx * 0.6);
+    const y = canvas.height - bandH / 2;
     const stamp = new Date().toLocaleString("fr-FR", {
       day: "2-digit", month: "2-digit", year: "numeric",
       hour: "2-digit", minute: "2-digit",
     });
-    const y1 = canvas.height - bandH + lineH / 2 + Math.round(fontPx * 0.15);
-    ctx.textAlign = "left";
-    ctx.fillText(`Photo ${slot} — ${stamp}`, pad, y1);
-    if (ticketNumero) {
-      ctx.textAlign = "right";
-      ctx.fillText(`N° ${ticketNumero}`, canvas.width - pad, y1);
+    const parts: string[] = [];
+    if (ticketNumero) parts.push(`N° ${ticketNumero}`);
+    parts.push(stamp);
+    if (supplierName && supplierName.trim()) parts.push(supplierName.trim());
+    let label = `${parts.join(" - ")} (photo ${slot})`;
+    const maxW = canvas.width - pad * 2;
+    while (ctx.measureText(label).width > maxW && label.length > 8) {
+      label = label.slice(0, -2);
     }
-    if (hasSupplier) {
-      const y2 = y1 + lineH;
-      ctx.textAlign = "left";
-      const maxW = canvas.width - pad * 2;
-      let label = `Fournisseur : ${supplierName}`;
-      // Tronquer si trop long
-      while (ctx.measureText(label).width > maxW && label.length > 4) {
-        label = label.slice(0, -2);
-      }
-      if (label.endsWith("…") === false && label.length < `Fournisseur : ${supplierName}`.length) {
-        label = label.slice(0, -1) + "…";
-      }
-      ctx.fillText(label, pad, y2);
-    }
+    ctx.fillText(label, pad, y);
 
     const url = canvas.toDataURL("image/jpeg", 0.92);
     setPreview(url);

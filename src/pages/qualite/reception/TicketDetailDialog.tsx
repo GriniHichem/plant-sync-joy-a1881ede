@@ -15,7 +15,7 @@ interface Props {
 export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<Array<{ slot: number; url: string | null; uploaded_at: string }>>([]);
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ url: string; slot: number } | null>(null);
 
   useEffect(() => {
     if (!open || !row?.id) { setPhotos([]); return; }

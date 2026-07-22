@@ -590,10 +590,18 @@ export default function ReceptionQualitative() {
               </AlertDialog>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending || !canCloseTicket}>
-                    <Lock className="h-4 w-4 mr-2" />Enregistrer et clôturer
+                  <Button
+                    className="w-full h-12"
+                    disabled={!canClose || closeTicket.isPending || !canCloseTicket}
+                    title={missingReasons.length > 0 ? `Manquant : ${missingReasons.join(", ")}` : undefined}
+                  >
+                    <Lock className="h-4 w-4 mr-2" />
+                    {missingReasons.length > 0
+                      ? `Manquant : ${missingReasons.join(", ")}`
+                      : "Enregistrer et clôturer"}
                   </Button>
                 </AlertDialogTrigger>
+
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clôturer le ticket ?</AlertDialogTitle>

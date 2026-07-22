@@ -76,11 +76,15 @@ CREATE TABLE IF NOT EXISTS public.reception_products (
   calibres text[] NOT NULL DEFAULT '{}',
   varietes text[] NOT NULL DEFAULT '{}',
   caracteristiques jsonb NOT NULL DEFAULT '{}'::jsonb,
+  code_prefix text,
+  code_digits smallint CHECK (code_digits IS NULL OR (code_digits BETWEEN 1 AND 10)),
   actif boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   created_by uuid REFERENCES auth.users(id)
 );
+ALTER TABLE public.reception_products ADD COLUMN IF NOT EXISTS code_prefix text;
+ALTER TABLE public.reception_products ADD COLUMN IF NOT EXISTS code_digits smallint;
 
 CREATE TABLE IF NOT EXISTS public.reception_suppliers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

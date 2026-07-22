@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import RolesTab from "./parametres/access-control/RolesTab";
 import QualityPermissionsTab from "./parametres/access-control/QualityPermissionsTab";
+import ReceptionPermissionsTab from "./parametres/access-control/ReceptionPermissionsTab";
 import AuditControlTab from "./parametres/access-control/AuditControlTab";
 import ControlSwitchesTab from "./parametres/access-control/ControlSwitchesTab";
 import PortabilityTab from "./parametres/access-control/PortabilityTab";
@@ -22,7 +23,7 @@ import PdrStockPermissionsAdmin from "./parametres/PdrStockPermissionsAdmin";
 
 type SectionKey =
   | "overview" | "users" | "roles" | "matrix" | "documents" | "pdr"
-  | "quality" | "validations" | "audit" | "control" | "portability";
+  | "quality" | "reception" | "validations" | "audit" | "control" | "portability";
 
 interface SectionDef {
   key: SectionKey;

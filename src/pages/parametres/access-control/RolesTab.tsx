@@ -27,6 +27,9 @@ const SYSTEM_ROLE_LABELS: Record<string, string> = {
   controleur_qualite: "Contrôleur Qualité",
   responsable_controle_qualite: "Responsable Contrôle Qualité",
   directeur_qualite: "Directeur Qualité",
+  agreeur: "Agréeur",
+  responsable_inventaire: "Responsable Inventaire",
+  agent_inventaire: "Agent Inventaire",
 };
 
 export default function RolesTab() {

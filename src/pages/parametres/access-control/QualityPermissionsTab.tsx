@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { ROLES } from "@/lib/ruleCatalog";
+import { useAllRoles } from "@/hooks/useAllRoles";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
 
@@ -28,6 +28,7 @@ const ACTIONS = [
 type Row = Record<string, unknown> & { role: string };
 
 export default function QualityPermissionsTab() {
+  const { roles: allRoles, loading: rolesLoading } = useAllRoles();
   const [rows, setRows] = useState<Row[]>([]);
   const [dirty, setDirty] = useState<Record<string, Row>>({});
   const [loading, setLoading] = useState(true);
@@ -36,11 +37,11 @@ export default function QualityPermissionsTab() {
     setLoading(true);
     const { data } = await supabase.from("quality_permissions" as any).select("*");
     const map = new Map<string, Row>((((data ?? []) as unknown) as Row[]).map((r) => [r.role, r]));
-    const all: Row[] = ROLES.map((r) => map.get(r) ?? Object.assign({ role: r }, ...ACTIONS.map((a) => ({ [a.key]: false }))));
+    const all: Row[] = allRoles.map((r) => map.get(r.code) ?? Object.assign({ role: r.code }, ...ACTIONS.map((a) => ({ [a.key]: false }))));
     setRows(all);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (!rolesLoading) load(); }, [rolesLoading, allRoles.length]);
 
   function toggle(role: string, key: string, value: boolean) {
     setRows((rs) => rs.map((r) => r.role === role ? { ...r, [key]: value } : r));
@@ -80,7 +81,7 @@ export default function QualityPermissionsTab() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.role} className="border-b hover:bg-muted/30">
-                <td className="p-2 sticky left-0 bg-background font-medium">{r.role.replace(/_/g, " ")}</td>
+                <td className="p-2 sticky left-0 bg-background font-medium">{allRoles.find((x) => x.code === r.role)?.label ?? r.role.replace(/_/g, " ")}{allRoles.find((x) => x.code === r.role)?.isCustom && <span className="ml-1 text-[10px] text-primary">•custom</span>}</td>
                 {ACTIONS.map((a) => (
                   <td key={a.key} className="p-2 text-center">
                     <Checkbox checked={Boolean(r[a.key])} onCheckedChange={(v) => toggle(r.role, a.key, Boolean(v))} />

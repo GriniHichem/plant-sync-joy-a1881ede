@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCustomRoles } from "@/hooks/useCustomRoles";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -144,7 +145,7 @@ const ROLES = [
   { key: "agent_inventaire", label: "Agent Inventaire", color: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300", group: "Logistique" },
 ];
 
-const ROLE_GROUPS = ["Direction", "Maintenance", "Production", "Qualité", "Logistique"];
+const ROLE_GROUPS = ["Direction", "Maintenance", "Production", "Qualité", "Logistique", "Personnalisés"];
 
 const ACTIONS = [
   { key: "can_view" as const, label: "Voir", short: "V", icon: Eye, activeClass: "bg-blue-500/15 text-blue-700 border-blue-300 dark:text-blue-300 dark:border-blue-700" },
@@ -458,14 +459,25 @@ export default function RolesMatrix() {
     toast({ title: "Réinitialisé", description: "Modifications annulées." });
   }
 
+  const { roles: customRoles } = useCustomRoles();
+  const allRoles = useMemo(() => {
+    const custom = customRoles.filter((r) => r.is_active).map((r) => ({
+      key: r.code,
+      label: r.label,
+      color: "bg-primary/10 text-primary border-primary/30",
+      group: "Personnalisés" as const,
+    }));
+    return [...ROLES, ...custom];
+  }, [customRoles]);
+
   const filteredRoles = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return ROLES.filter((r) => {
+    return allRoles.filter((r) => {
       if (groupFilter !== "__all__" && r.group !== groupFilter) return false;
       if (!q) return true;
       return r.label.toLowerCase().includes(q) || r.key.includes(q);
     });
-  }, [search, groupFilter]);
+  }, [search, groupFilter, allRoles]);
 
   function expandAll() { setExpandedRoles(new Set(filteredRoles.map((r) => r.key))); }
   function collapseAll() { setExpandedRoles(new Set()); }
@@ -676,7 +688,7 @@ export default function RolesMatrix() {
                                 <SelectValue placeholder="Copier d'un rôle..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {ROLES.filter((r) => r.key !== role.key).map((r) => (
+                                {allRoles.filter((r) => r.key !== role.key).map((r) => (
                                   <SelectItem key={r.key} value={r.key}>{r.label}</SelectItem>
                                 ))}
                               </SelectContent>

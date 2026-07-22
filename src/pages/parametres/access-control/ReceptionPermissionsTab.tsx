@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Info, Save, Truck } from "lucide-react";
 import { toast } from "sonner";
+import { useAllRoles } from "@/hooks/useAllRoles";
 
 const SUBMODULES: { key: string; label: string; hint?: string }[] = [
   { key: "reception_qualitative", label: "Réception qualitative", hint: "Saisie du ticket, photos et clôture" },
@@ -23,26 +24,8 @@ const ACTIONS = [
 
 type ActionKey = typeof ACTIONS[number]["key"];
 
-const ROLES: { code: string; label: string }[] = [
-  { code: "admin", label: "Administrateur" },
-  { code: "controleur_qualite", label: "Contrôleur qualité" },
-  { code: "responsable_controle_qualite", label: "Responsable contrôle qualité" },
-  { code: "directeur_qualite", label: "Directeur qualité" },
-  { code: "agreeur", label: "Agréeur" },
-  { code: "agent_pont_bascule", label: "Agent pont-bascule" },
-  { code: "responsable_magasin", label: "Responsable magasin" },
-  { code: "resp_production", label: "Responsable production" },
-  { code: "chef_ligne", label: "Chef de ligne" },
-  { code: "operateur", label: "Opérateur" },
-  { code: "resp_maintenance", label: "Responsable maintenance" },
-  { code: "maintenancier", label: "Maintenancier" },
-  { code: "bureau_methode", label: "Bureau des méthodes" },
-  { code: "responsable_si", label: "Responsable SI" },
-  { code: "auditeur", label: "Auditeur" },
-  { code: "gestionnaire_magasin", label: "Gestionnaire magasin" },
-  { code: "responsable_inventaire", label: "Responsable inventaire" },
-  { code: "agent_inventaire", label: "Agent inventaire" },
-];
+// System roles kept for defaults; custom roles are merged at render.
+
 
 type Matrix = Record<string, Record<ActionKey, boolean>>;
 
@@ -51,6 +34,7 @@ const EMPTY_MATRIX: Matrix = Object.fromEntries(
 ) as Matrix;
 
 export default function ReceptionPermissionsTab() {
+  const { roles: ROLES } = useAllRoles();
   const [role, setRole] = useState<string>("controleur_qualite");
   const [matrix, setMatrix] = useState<Matrix>(EMPTY_MATRIX);
   const [loading, setLoading] = useState(false);
@@ -152,7 +136,7 @@ export default function ReceptionPermissionsTab() {
             </SelectTrigger>
             <SelectContent>
               {ROLES.map((r) => (
-                <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>
+                <SelectItem key={r.code} value={r.code}>{r.label}{r.isCustom && " •"}</SelectItem>
               ))}
             </SelectContent>
           </Select>

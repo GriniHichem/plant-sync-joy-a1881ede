@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, RefreshCw, SwitchCamera, X, Loader2, AlertTriangle } from "lucide-react";
+import { Camera, RefreshCw, SwitchCamera, X, Loader2, AlertTriangle, Info } from "lucide-react";
+import { photoSlotGuidance } from "@/lib/reception";
 
 interface Props {
   open: boolean;

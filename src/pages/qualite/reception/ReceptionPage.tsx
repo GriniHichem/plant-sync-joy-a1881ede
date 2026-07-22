@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Truck, Settings2 } from "lucide-react";
+import { Truck, ShieldCheck } from "lucide-react";
 import ReceptionSettings from "./ReceptionSettings";
 import ReceptionQualitative from "./ReceptionQualitative";
 import ReceptionQuantitative from "./ReceptionQuantitative";
 import ReceptionGlobal from "./ReceptionGlobal";
-import ReceptionAccessMatrixDialog from "./ReceptionAccessMatrixDialog";
 import { useHasActiveReceptionTicket } from "./receptionDraftStore";
 import { usePermissions } from "@/hooks/usePermissions";
 

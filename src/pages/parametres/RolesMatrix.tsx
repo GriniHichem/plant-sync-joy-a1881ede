@@ -459,14 +459,25 @@ export default function RolesMatrix() {
     toast({ title: "Réinitialisé", description: "Modifications annulées." });
   }
 
+  const { roles: customRoles } = useCustomRoles();
+  const allRoles = useMemo(() => {
+    const custom = customRoles.filter((r) => r.is_active).map((r) => ({
+      key: r.code,
+      label: r.label,
+      color: "bg-primary/10 text-primary border-primary/30",
+      group: "Personnalisés" as const,
+    }));
+    return [...ROLES, ...custom];
+  }, [customRoles]);
+
   const filteredRoles = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return ROLES.filter((r) => {
+    return allRoles.filter((r) => {
       if (groupFilter !== "__all__" && r.group !== groupFilter) return false;
       if (!q) return true;
       return r.label.toLowerCase().includes(q) || r.key.includes(q);
     });
-  }, [search, groupFilter]);
+  }, [search, groupFilter, allRoles]);
 
   function expandAll() { setExpandedRoles(new Set(filteredRoles.map((r) => r.key))); }
   function collapseAll() { setExpandedRoles(new Set()); }

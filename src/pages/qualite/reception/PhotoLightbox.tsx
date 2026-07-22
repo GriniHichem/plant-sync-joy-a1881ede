@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Camera } from "lucide-react";
-import { photoSlotCaption } from "@/lib/reception";
+
 
 export function PhotoLightbox({ ticketId }: { ticketId: string }) {
   const [items, setItems] = useState<Array<{ url: string; slot: number }>>([]);
@@ -54,12 +54,7 @@ export function PhotoLightbox({ ticketId }: { ticketId: string }) {
       <Dialog open={!!open} onOpenChange={(v) => !v && setOpen(null)}>
         <DialogContent className="max-w-3xl p-2 bg-black/95">
           {open && (
-            <>
-              <img src={open.url} alt={`Photo ${open.slot}`} className="w-full h-auto max-h-[80vh] object-contain rounded" />
-              <div className="mt-2 rounded-md bg-white/10 text-white text-sm px-3 py-2 text-center">
-                {photoSlotCaption(open.slot)}
-              </div>
-            </>
+            <img src={open.url} alt={`Photo ${open.slot}`} className="w-full h-auto max-h-[80vh] object-contain rounded" />
           )}
         </DialogContent>
       </Dialog>

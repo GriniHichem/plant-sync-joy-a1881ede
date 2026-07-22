@@ -4,7 +4,7 @@ import { Camera, Loader2, Trash2, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { compressImage, photoSlotCaption } from "@/lib/reception";
+import { compressImage } from "@/lib/reception";
 import { cn } from "@/lib/utils";
 import { CameraCaptureDialog } from "./CameraCaptureDialog";
 
@@ -132,12 +132,7 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
       <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
         <DialogContent className="max-w-4xl p-2 bg-black/95">
           {preview && (
-            <>
-              <img src={preview} alt={`Photo ${slot}`} className="w-full h-auto max-h-[80vh] object-contain rounded" />
-              <div className="mt-2 rounded-md bg-white/10 text-white text-sm px-3 py-2 text-center">
-                {photoSlotCaption(slot)}
-              </div>
-            </>
+            <img src={preview} alt={`Photo ${slot}`} className="w-full h-auto max-h-[80vh] object-contain rounded" />
           )}
         </DialogContent>
       </Dialog>

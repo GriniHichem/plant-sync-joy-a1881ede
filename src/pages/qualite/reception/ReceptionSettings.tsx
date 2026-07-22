@@ -369,7 +369,7 @@ function CampaignsTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Campagnes</CardTitle>
-        <Button onClick={openNew} disabled={products.length === 0}><Plus className="h-4 w-4 mr-2" />Nouvelle campagne</Button>
+        {canCreateRow && (<Button onClick={openNew} disabled={products.length === 0}><Plus className="h-4 w-4 mr-2" />Nouvelle campagne</Button>)}
       </CardHeader>
       <CardContent>
         {products.length === 0 && <p className="text-sm text-muted-foreground mb-3">Créez d'abord un produit pour lancer une campagne.</p>}

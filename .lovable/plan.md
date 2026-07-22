@@ -1,104 +1,59 @@
-# Import CSV — Module Réception
+## Objectif
+Fiabiliser l'import CSV des tickets de pesée (module Réception → Consultation) pour absorber le format réel du fichier ERP fourni, corriger l'affichage des champs et l'analyse des dates/heures/poids.
 
-Objectif : ajouter deux flux d'import CSV avec mapping intelligent :
-1. **Fournisseurs** (upsert par `code`) — dans Paramétrage.
-2. **Tickets pesée historiques** (statut spécial `pese_importe`) — dans Consultation (admin).
-
-## 1. Backend (une seule migration)
-
-### Enum statut ticket
-Ajouter `'pese_importe'` à la contrainte `reception_tickets_statut_check`.
-
-### RPC `import_reception_suppliers(rows jsonb) → jsonb`
-- `SECURITY DEFINER`, réservé aux rôles ayant l'écriture fournisseurs (admin, responsable_si, directeur_qualite, responsable_controle_qualite).
-- Pour chaque ligne : upsert sur `code` (met à jour `nom`, `region`, `wilaya`, plus `contact/telephone/adresse` si fournis).
-- Retourne `{ total, created, updated, errors: [{row, code, motif}] }`.
-
-### RPC `import_reception_tickets(rows jsonb, on_conflict text) → jsonb`
-- `SECURITY DEFINER`, réservé admin + responsable_si.
-- `on_conflict` ∈ `ignore` | `replace`.
-- Pour chaque ligne :
-  1. Résout `supplier_id` par `code` puis `nom` (insensible casse). Rejet si introuvable.
-  2. Résout `product_id` par `code` puis `désignation`. Rejet si introuvable.
-  3. Résout `campaign_id` : campagne active (`actif=true`) pour ce produit couvrant `date_ticket`, sinon campagne par défaut du produit, sinon rejet ("Aucune campagne active").
-  4. Doublon `numero` :
-     - `ignore` → skip avec motif.
-     - `replace` → supprime pesée + photos + ticket existant, puis réinsère.
-  5. Insère ticket avec `statut='pese_importe'`, `numero` = valeur CSV, `date_ticket`, `heure_debut/fin`, `commentaire`, `taux_abattement`. Contourne le trigger de verrouillage via variable de session (`SET LOCAL prodintime.bypass_lock='on'` + adaptation du trigger `reception_tickets_lock` pour laisser passer si flag).
-  6. Insère `reception_weighings` avec `poids_brut_kg` (net/abattement calculés par colonnes générées). `weighed_at` = date_ticket + heure_fin (ou now()).
-- Retourne `{ total, imported, replaced, skipped, errors: [{row, numero, motif}] }`.
-
-### Ajustement trigger `reception_tickets_lock`
-Autoriser UPDATE/DELETE quand la variable de session `prodintime.bypass_lock = 'on'` (utilisée uniquement par les RPC d'import). Les tickets `pese_importe` restent en lecture seule via l'UI (voir §3).
-
-## 2. Frontend — composants partagés
-
-### `src/components/reception/CsvImportDialog.tsx` (nouveau, générique)
-Modale réutilisable :
-- Sélection fichier + parsing client (papaparse déjà installé ? sinon parser léger maison, séparateurs `;` / `,` auto, BOM UTF-8 géré).
-- Aperçu 5 premières lignes.
-- Mapping intelligent : pour chaque champ système (obligatoires marqués `*`), dropdown des colonnes CSV. Auto-mapping par similarité (normalisation : minuscule, sans accents, sans espaces/`_`/`-`). Alias par champ (ex : `code fournisseur` ↔ `codef`, `code`, `code_fournisseur`).
-- Blocage du bouton "Lancer l'import" tant que tous les champs obligatoires ne sont pas mappés.
-- Options spécifiques tickets : radio "Ignorer doublons" / "Remplacer".
-- Après import : rapport `{ total, réussis, échoués }` + tableau des erreurs (ligne, valeur clé, motif) + export CSV du rapport.
-
-Props :
-```ts
-{
-  title: string;
-  fields: { key: string; label: string; required?: boolean; aliases?: string[] }[];
-  options?: React.ReactNode; // ex: radio doublons
-  onImport: (rows: Record<string,string>[]) => Promise<ImportReport>;
-}
+## Constats sur le CSV fourni
+19 colonnes ERP, exemple :
 ```
+n_tick=1 ; Raison_cli=CLIENT DC-A ; Produit=DC-A
+date_pesée_1=07/01/2026 ; heure_pesée_1=08:m47:12 ; Pesée_1=3 720 ; etat_pesée_1=M
+date_pesée_2=09/07/2026 ; heure_pesée_2=10:m30:39 ; pesée_2=5 780 ; etat_pesée_2=A
+net=1 340 ; Taux_abattement=0 ; abattement=0.000000
+```
+Particularités : dates `JJ/MM/AAAA`, heures avec `m` parasite (`08:m47:12`), poids avec espaces (`3 720`), pas de colonne "Date ticket" unique, poids brut = `Pesée_2` (camion chargé) ou `net` selon usage.
 
-## 3. Intégrations UI
+## Problèmes identifiés
+1. UI import : les 9 champs affichés en `grid-cols-2` scrollent sous les mires ; utilisateur ne voit pas Date, Produit, Poids brut, Heure fin.
+2. Bug mapping : l'UI envoie clés `date_ticket` et `poids_brut_kg`, la RPC lit `date` et `poids_brut` → obligatoires jamais reconnus.
+3. Parsing SQL rigide : `::date` casse sur `07/01/2026`, `::time` casse sur `08:m47:12`, `::numeric` casse sur `3 720`.
+4. Aliases automatiques absents pour les intitulés ERP (`n_tick`, `Raison_cli`, `Produit`, `Pesée_1/2`, `net`, `date_pesée_1/2`, `heure_pesée_1/2`, `Taux_abattement`).
 
-### `ReceptionSettings.tsx` (onglet Fournisseurs)
-- Bouton **"Importer CSV"** à côté de "Ajouter fournisseur".
-- Visible seulement si l'utilisateur a le droit d'écriture fournisseurs.
-- Champs mappés : `code*`, `nom*`, `region*`, `wilaya*`, `contact`, `telephone`, `adresse`.
-- Appelle `import_reception_suppliers` puis invalide la query.
+## Plan de correction
 
-### `ReceptionGlobal.tsx` (Consultation)
-- Bouton **"Importer tickets CSV"** visible uniquement pour `admin` / `responsable_si`.
-- Champs mappés : `numero*`, `date*`, `fournisseur*`, `produit*`, `taux_abattement*`, `poids_brut*`, `heure_debut`, `heure_fin`, `commentaire`.
-- Option doublons (ignore/replace).
-- Appelle `import_reception_tickets` puis invalide la liste + rafraîchit.
+### 1. Robustifier la RPC `import_reception_tickets` (migration SQL)
+- Accepter les clés `date`/`date_ticket`, `poids_brut`/`poids_brut_kg` (alias serveur).
+- Parsing date : tenter `to_date('DD/MM/YYYY')`, `to_date('YYYY-MM-DD')`, `::date` — le premier qui marche.
+- Parsing heure : `regexp_replace(val, '[^0-9:]', '', 'g')` puis `::time`, tolérer `HH:MM` ou `HH:MM:SS`.
+- Parsing numérique : `replace(replace(val,' ',''),',','.')` avant `::numeric` (poids et taux).
+- Ajouter alias colonne `poids_net` optionnel : si `poids_brut` absent, utiliser `net` (déjà net) et forcer `taux_abattement=0` en interne (pesée déjà nette).
+- Journaliser motif clair par ligne rejetée.
 
-### Verrouillage UI des tickets `pese_importe`
-- `ReceptionQualitative.tsx` : si un ticket sélectionné a `statut='pese_importe'`, désactive le formulaire qualitatif (bannière "Ticket importé — édition désactivée").
-- `TicketDetailDialog.tsx` : badge dédié "Pesé importé" (couleur distincte).
-- Listes (`ReceptionGlobal`, `ReceptionQuantitative`) : afficher le badge dans la colonne statut.
+### 2. Corriger le mapping côté UI (`ReceptionGlobal.tsx`)
+- Ré-uniformiser les clés envoyées : `numero`, `date`, `fournisseur`, `produit`, `taux_abattement`, `poids_brut`, `heure_debut`, `heure_fin`, `commentaire` (aligner sur la RPC).
+- Étendre `aliases` :
+  - `numero` : `n_tick`, `n_ticket`, `num_ticket`
+  - `date` : `date_pesée_1`, `date_pesee_1`, `date_pesee`, `date_ticket`
+  - `fournisseur` : `raison_cli`, `raison_sociale`, `client`
+  - `produit` : `produit`, `code_produit`, `designation_produit`
+  - `taux_abattement` : `taux_abattement`, `%abat`
+  - `poids_brut` : `pesée_2`, `pesee_2`, `pesee2`, `poids_brut`, `brut`
+  - `heure_debut` : `heure_pesée_1`, `heure_pesee_1`
+  - `heure_fin` : `heure_pesée_2`, `heure_pesee_2`
+- Ajouter champ optionnel `poids_net` (alias `net`, `pesée_net`) pour couvrir le cas ERP.
 
-## 4. Rapport de règles d'import tickets (résumé backend)
+### 3. Améliorer la lisibilité de la modale (`CsvImportDialog.tsx`)
+- Passer la grille de mapping en `grid-cols-1 md:grid-cols-3` compact (chip label + select étroit) pour rendre les 9 champs visibles sans scroll excessif.
+- Ajouter un bandeau récap "X/Y champs obligatoires mappés" en haut avec liste rouge des manquants.
+- Aperçu : conserver les 5 premières lignes, ajouter une colonne "état parsing" (✓ / motif) prévisualisant si les valeurs date/heure/poids seront acceptées (validation côté client sur les 5 lignes uniquement, pour éviter mauvaises surprises).
 
-| Cas | Action |
-|---|---|
-| Fournisseur introuvable | rejet ligne, motif "Fournisseur X introuvable" |
-| Produit introuvable | rejet ligne, motif "Produit Y introuvable" |
-| Aucune campagne active pour le produit à la date | rejet ligne |
-| Doublon numéro + `ignore` | skip, comptabilisé |
-| Doublon numéro + `replace` | remplace ticket + pesée |
-| Brut ≤ 0 ou abattement hors [0,100] | rejet ligne |
-| OK | insert ticket (`pese_importe`) + pesée (net calculé automatiquement) |
+### 4. Auto-mapping renforcé (`receptionImport.ts`)
+- `normalize()` : déjà retire accents/espaces — ajouter suppression du `°` et `.` en fin.
+- Score de similarité : préférer match exact avant inclusion pour éviter que `date_pesée_2` batte `date_pesée_1` quand on cherche `date`.
 
-## 5. Fichiers touchés
+## Non-objectifs
+- Pas de refonte du modèle `reception_tickets`.
+- Pas de gestion des lignes "Pesée_1 seule" (camion à vide sans sortie).
+- Pas de rattachement automatique aux campagnes autre que la logique existante.
 
-**Nouveaux :**
-- `supabase/migrations/<timestamp>_reception_csv_import.sql`
-- `src/components/reception/CsvImportDialog.tsx`
-- `src/lib/receptionImport.ts` (parser CSV + normalisation + auto-mapping)
-- `src/test/qualite/reception-import.test.ts` (auto-mapping + validation)
-
-**Modifiés :**
-- `src/pages/qualite/reception/ReceptionSettings.tsx` (bouton import fournisseurs)
-- `src/pages/qualite/reception/ReceptionGlobal.tsx` (bouton import tickets)
-- `src/pages/qualite/reception/ReceptionQualitative.tsx` (blocage édition si `pese_importe`)
-- `src/pages/qualite/reception/TicketDetailDialog.tsx` (badge)
-
-## Notes techniques
-
-- Parser CSV : implémentation légère maison (séparateurs `;`/`,`, guillemets, BOM) pour éviter d'ajouter une dépendance ; ~40 lignes.
-- Aucun changement de RLS sur les tables existantes ; toute la logique d'import passe par les RPC `SECURITY DEFINER`.
-- Le trigger `reception_tickets_derive_product` reste en place (le `product_id` est validé/aligné à la campagne).
+## Validation
+- Test manuel sur les 5 premières lignes du fichier fourni : import doit passer avec `poids_brut = 5 780`, `date = 2026-01-07`, `heure_debut = 08:47:12`, `heure_fin = 10:30:39`.
+- Rapport final doit distinguer : créés, remplacés, ignorés, rejetés (avec motif).

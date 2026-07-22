@@ -9,9 +9,10 @@ interface Props {
   onCapture: (file: File) => void;
   slot: 1 | 2 | 3;
   ticketNumero?: string;
+  supplierName?: string;
 }
 
-export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticketNumero }: Props) {
+export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticketNumero, supplierName }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

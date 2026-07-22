@@ -115,6 +115,26 @@ export default function ReceptionQuantitative() {
         </div>
       ) : (
         <>
+          {codeConfigured && (
+            <div>
+              <Label>Numéro système *</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={codeSaisi}
+                  onChange={(e) => setCodeSaisi(e.target.value.replace(/\D/g, "").slice(0, digits!))}
+                  placeholder={`Ex: ${"16".slice(0, digits!)}`}
+                  className="h-12 text-lg font-mono"
+                  maxLength={digits!}
+                />
+                <Badge variant={codeFormatted ? "default" : "outline"} className="font-mono text-sm">
+                  {codeFormatted || `${prefix}${"".padStart(digits!, "_")}`}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Préfixe <b>{prefix}</b> + {digits} chiffres.</p>
+            </div>
+          )}
           <div>
             <Label>Poids brut (kg) *</Label>
             <Input
@@ -125,7 +145,7 @@ export default function ReceptionQuantitative() {
               value={poidsBrut}
               onChange={(e) => setPoidsBrut(e.target.value)}
               className="h-14 text-2xl font-semibold"
-              autoFocus
+              autoFocus={!codeConfigured}
             />
           </div>
           <div className="rounded-md border p-3 space-y-1 text-sm bg-muted/30">
@@ -135,7 +155,7 @@ export default function ReceptionQuantitative() {
           <StickyActionBar>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="w-full h-12" disabled={!brut || savePesee.isPending}>
+                <Button className="w-full h-12" disabled={!brut || savePesee.isPending || (codeConfigured && !saisiClean)}>
                   <Scale className="h-4 w-4 mr-2" />Valider la pesée
                 </Button>
               </AlertDialogTrigger>

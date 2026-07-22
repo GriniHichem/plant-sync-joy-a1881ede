@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, Calendar, Clock, ImageOff, Loader2, MapPin, User, Package, Truck, ZoomIn } from "lucide-react";
+import { AlertTriangle, Calendar, Clock, Download, ImageOff, Loader2, MapPin, User, Package, Truck, ZoomIn } from "lucide-react";
+import { toast } from "sonner";
 import { formatDuration, formatHm, formatKgInt, formatTonnesInt, isOverdue } from "@/lib/reception";
 
 interface Props {
@@ -49,6 +50,24 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
       day: "2-digit", month: "2-digit", year: "numeric",
       hour: "2-digit", minute: "2-digit",
     }) : "—";
+
+  async function downloadPhoto(url: string, filename: string) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(String(r.status));
+      const blob = await r.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (e: any) {
+      toast.error("Téléchargement impossible");
+    }
+  }
 
   if (!row) return null;
   const overdue = isOverdue(row.duree_minutes);
@@ -136,14 +155,24 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
                   {photos.map((p) => (
                     <div key={p.slot} className="border rounded-lg overflow-hidden bg-muted/20">
                       {p.url ? (
-                        <button
-                          type="button"
-                          onClick={() => setLightbox(p.url)}
-                          className="relative block group w-full"
-                        >
-                          <img src={p.url} alt={`Photo ${p.slot}`} className="w-full aspect-[4/3] object-cover" />
-                          <ZoomIn className="absolute top-2 right-2 h-4 w-4 text-white drop-shadow opacity-80 group-hover:opacity-100" />
-                        </button>
+                        <div className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => setLightbox(p.url)}
+                            className="block w-full"
+                          >
+                            <img src={p.url} alt={`Photo ${p.slot}`} className="w-full aspect-[4/3] object-cover" />
+                            <ZoomIn className="absolute top-2 right-2 h-4 w-4 text-white drop-shadow opacity-80 group-hover:opacity-100" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); downloadPhoto(p.url!, `ticket-${row.numero}-photo-${p.slot}.jpg`); }}
+                            className="absolute top-2 left-2 h-7 w-7 rounded-md bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition"
+                            title="Télécharger"
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
+                        </div>
                       ) : (
                         <div className="aspect-[4/3] flex items-center justify-center text-muted-foreground">
                           <ImageOff className="h-6 w-6" />

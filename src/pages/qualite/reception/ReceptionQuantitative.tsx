@@ -25,6 +25,7 @@ export default function ReceptionQuantitative() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any>(null);
   const [poidsBrut, setPoidsBrut] = useState("");
+  const [codeSaisi, setCodeSaisi] = useState("");
 
   const { data: tickets = [], isFetching } = useQuery({
     queryKey: ["reception_pesee_list", limit],
@@ -51,21 +52,36 @@ export default function ReceptionQuantitative() {
     );
   }, [tickets, search]);
 
+  // Formatage du code système : préfixe + zéros + numéro saisi
+  const digits = selected?.code_digits ? Math.max(1, Math.min(10, Number(selected.code_digits))) : null;
+  const prefix = selected?.code_prefix ?? "";
+  const saisiClean = codeSaisi.replace(/\D/g, "");
+  const codeFormatted = digits && saisiClean
+    ? `${prefix}${saisiClean.padStart(digits, "0").slice(-digits)}`
+    : "";
+  const codeConfigured = !!(digits && prefix);
+
   const savePesee = useMutation({
     mutationFn: async () => {
       if (!selected) return;
       const brut = Number(poidsBrut);
       if (!brut || brut <= 0) throw new Error("Poids brut invalide");
-      const { error } = await supabase.from("reception_weighings" as any).insert({
+      if (codeConfigured && !saisiClean) throw new Error("Numéro système requis");
+      const payload: any = {
         ticket_id: selected.id,
         poids_brut_kg: brut,
         taux_abattement_snapshot: Number(selected.taux_abattement),
-      });
+      };
+      if (codeConfigured) {
+        payload.code_saisi = codeFormatted;
+        payload.code_pesee = codeFormatted;
+      }
+      const { error } = await supabase.from("reception_weighings" as any).insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Pesée enregistrée");
-      setSelected(null); setPoidsBrut("");
+      setSelected(null); setPoidsBrut(""); setCodeSaisi("");
       qc.invalidateQueries({ queryKey: ["reception_pesee_list"] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -99,6 +115,26 @@ export default function ReceptionQuantitative() {
         </div>
       ) : (
         <>
+          {codeConfigured && (
+            <div>
+              <Label>Numéro système *</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={codeSaisi}
+                  onChange={(e) => setCodeSaisi(e.target.value.replace(/\D/g, "").slice(0, digits!))}
+                  placeholder={`Ex: ${"16".slice(0, digits!)}`}
+                  className="h-12 text-lg font-mono"
+                  maxLength={digits!}
+                />
+                <Badge variant={codeFormatted ? "default" : "outline"} className="font-mono text-sm">
+                  {codeFormatted || `${prefix}${"".padStart(digits!, "_")}`}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Préfixe <b>{prefix}</b> + {digits} chiffres.</p>
+            </div>
+          )}
           <div>
             <Label>Poids brut (kg) *</Label>
             <Input
@@ -109,7 +145,7 @@ export default function ReceptionQuantitative() {
               value={poidsBrut}
               onChange={(e) => setPoidsBrut(e.target.value)}
               className="h-14 text-2xl font-semibold"
-              autoFocus
+              autoFocus={!codeConfigured}
             />
           </div>
           <div className="rounded-md border p-3 space-y-1 text-sm bg-muted/30">
@@ -119,7 +155,7 @@ export default function ReceptionQuantitative() {
           <StickyActionBar>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button className="w-full h-12" disabled={!brut || savePesee.isPending}>
+                <Button className="w-full h-12" disabled={!brut || savePesee.isPending || (codeConfigured && !saisiClean)}>
                   <Scale className="h-4 w-4 mr-2" />Valider la pesée
                 </Button>
               </AlertDialogTrigger>
@@ -161,7 +197,7 @@ export default function ReceptionQuantitative() {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => { setSelected(t); setPoidsBrut(""); }}
+                onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}
                 className="w-full text-left rounded-lg border p-3 flex items-center gap-3 active:bg-muted/60"
               >
                 <div className="min-w-0 flex-1">
@@ -206,7 +242,7 @@ export default function ReceptionQuantitative() {
                           : <Badge>À peser</Badge>}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); }}>
+                        <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}>
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -242,7 +278,7 @@ export default function ReceptionQuantitative() {
       {isMobile !== undefined && (
         <ResponsiveDialog
           open={!!selected && (typeof window === "undefined" || window.innerWidth < 1024)}
-          onOpenChange={(o) => { if (!o) { setSelected(null); setPoidsBrut(""); } }}
+          onOpenChange={(o) => { if (!o) { setSelected(null); setPoidsBrut(""); setCodeSaisi(""); } }}
           title={selected ? `Ticket ${selected.numero}` : ""}
           description={selected?.produit}
           className="max-w-lg"

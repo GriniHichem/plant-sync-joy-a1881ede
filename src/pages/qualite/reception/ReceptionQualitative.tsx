@@ -11,9 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Clock, Lock } from "lucide-react";
+import { Clock, Lock, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
+import { TicketDetailDialog } from "./TicketDetailDialog";
 import { format } from "date-fns";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
@@ -167,13 +168,15 @@ export default function ReceptionQualitative() {
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("reception_tickets" as any)
-        .select("id, numero, date_ticket, statut, taux_abattement, reception_suppliers(nom), reception_products(designation)")
+      const { data, error } = await supabase.from("v_reception_global")
+        .select("*")
         .eq("statut", "cloture").order("cloture_at", { ascending: false }).limit(10);
       if (error) throw error;
       return (data ?? []) as any[];
     },
   });
+
+  const [detailRow, setDetailRow] = useState<any | null>(null);
 
   // Rafraîchissement live des photos & derniers tickets même si le socket saute.
   useShiftRealtime(
@@ -192,9 +195,10 @@ export default function ReceptionQualitative() {
   const photoBySlot = (slot: number) => photos.find((p) => p.slot === slot);
   const nPhotos = photos.length;
   const canClose = !!ticketId && !!form.supplier_id && !!form.heure_debut && !!form.heure_fin && nPhotos === 3;
+  const selectedSupplier = suppliers.find((s: any) => s.id === form.supplier_id);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-24 md:pb-4">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-28 md:pb-4">
       <Card className="xl:col-span-2">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -203,18 +207,44 @@ export default function ReceptionQualitative() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Ligne compacte : Date / N° / Heure début / Heure fin */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div>
-              <Label>N° ticket externe *</Label>
+              <Label className="text-xs">Date</Label>
+              <Input className="h-11" readOnly value={format(new Date(), "yyyy-MM-dd")} />
+            </div>
+            <div>
+              <Label className="text-xs">N° ticket *</Label>
               <Input
                 className="h-11"
                 value={form.numero}
                 disabled={!!ticketId}
                 maxLength={50}
-                placeholder="Ex: BL-2026-000123"
+                placeholder="BL-2026-000123"
                 onChange={(e) => setForm({ ...form, numero: e.target.value })}
               />
             </div>
+            <div>
+              <Label className="text-xs">Heure début *</Label>
+              <div className="flex gap-1">
+                <Input className="h-11" type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
+                <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0" onClick={() => setForm({ ...form, heure_debut: new Date().toTimeString().slice(0, 5) })} title="Maintenant">
+                  <Clock className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Heure fin *</Label>
+              <div className="flex gap-1">
+                <Input className="h-11" type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
+                <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0" onClick={() => setForm({ ...form, heure_fin: new Date().toTimeString().slice(0, 5) })} title="Maintenant">
+                  <Clock className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <Label>Campagne</Label>
               <Select value={form.campaign_id} disabled={!!ticketId}
@@ -233,38 +263,20 @@ export default function ReceptionQualitative() {
               <Label>Produit (auto)</Label>
               <Input className="h-11" readOnly value={selectedCampaign?.reception_products?.designation ?? ""} />
             </div>
-            <div>
-              <Label>Date</Label>
-              <Input className="h-11" readOnly value={format(new Date(), "yyyy-MM-dd")} />
-            </div>
-            <div>
+            <div className="md:col-span-2">
               <Label>Fournisseur agréé *</Label>
               <Select value={form.supplier_id} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
                 <SelectTrigger className="h-11"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                 <SelectContent>
-                  {suppliers.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.nom}</SelectItem>)}
+                  {suppliers.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      <span className="font-mono text-xs mr-2">{s.code}</span>{s.nom}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Heure début *</Label>
-              <div className="flex gap-2">
-                <Input className="h-11" type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
-                <Button type="button" variant="outline" className="h-11 px-3 shrink-0" onClick={() => setForm({ ...form, heure_debut: new Date().toTimeString().slice(0, 5) })}>
-                  <Clock className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Maintenant</span>
-                </Button>
-              </div>
-            </div>
-            <div>
-              <Label>Heure fin *</Label>
-              <div className="flex gap-2">
-                <Input className="h-11" type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
-                <Button type="button" variant="outline" className="h-11 px-3 shrink-0" onClick={() => setForm({ ...form, heure_fin: new Date().toTimeString().slice(0, 5) })}>
-                  <Clock className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Maintenant</span>
-                </Button>
-              </div>
-            </div>
-            <div>
+            <div className="md:col-span-2">
               <Label>Taux d'abattement (%) *</Label>
               <Input className="h-11" type="number" inputMode="decimal" step="0.01" min="0" max="100"
                 value={form.taux_abattement}
@@ -312,18 +324,24 @@ export default function ReceptionQualitative() {
               <AccordionContent className="pt-3 pb-0">
                 <div className="overflow-x-auto -mx-2 px-2">
                   <Table>
-                    <TableHeader><TableRow>
-                      <TableHead>N°</TableHead><TableHead>Fournisseur</TableHead><TableHead>Abat.</TableHead>
+                    <TableHeader><TableRow className="text-xs">
+                      <TableHead className="h-8 px-2">N°</TableHead>
+                      <TableHead className="h-8 px-2">Fournisseur</TableHead>
+                      <TableHead className="h-8 px-2 text-right">Abat.</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
                       {recent.map((t: any) => (
-                        <TableRow key={t.id}>
-                          <TableCell className="font-mono text-xs">{t.numero}</TableCell>
-                          <TableCell className="truncate max-w-[140px]">{t.reception_suppliers?.nom}</TableCell>
-                          <TableCell>{Number(t.taux_abattement).toFixed(2)} %</TableCell>
+                        <TableRow
+                          key={t.id}
+                          className="cursor-pointer hover:bg-muted/60"
+                          onClick={() => setDetailRow(t)}
+                        >
+                          <TableCell className="font-mono text-xs py-1.5 px-2 whitespace-nowrap">{t.numero}</TableCell>
+                          <TableCell className="text-xs py-1.5 px-2 truncate max-w-[140px]">{t.fournisseur}</TableCell>
+                          <TableCell className="text-xs py-1.5 px-2 text-right whitespace-nowrap">{Number(t.taux_abattement).toFixed(2)} %</TableCell>
                         </TableRow>
                       ))}
-                      {recent.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-4">—</TableCell></TableRow>}
+                      {recent.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-4 text-xs">—</TableCell></TableRow>}
                     </TableBody>
                   </Table>
                 </div>
@@ -347,6 +365,14 @@ export default function ReceptionQualitative() {
           </StickyActionBar>
         ) : (
           <StickyActionBar>
+            {selectedSupplier && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 px-1">
+                <Truck className="h-3.5 w-3.5 shrink-0" />
+                <span className="font-mono">{selectedSupplier.code}</span>
+                <span>·</span>
+                <span className="truncate font-medium text-foreground">{selectedSupplier.nom}</span>
+              </div>
+            )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button className="w-full h-12" disabled={!canClose || closeTicket.isPending}>
@@ -369,6 +395,8 @@ export default function ReceptionQualitative() {
           </StickyActionBar>
         )}
       </div>
+
+      <TicketDetailDialog open={!!detailRow} onOpenChange={(o) => !o && setDetailRow(null)} row={detailRow} />
     </div>
   );
 }

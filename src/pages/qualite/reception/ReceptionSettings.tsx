@@ -16,7 +16,7 @@ import { Plus, Pencil, Star, StarOff } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-type Product = { id: string; code: string; designation: string; description: string | null; normes: string[]; calibres: string[]; varietes: string[]; actif: boolean };
+type Product = { id: string; code: string; designation: string; description: string | null; normes: string[]; calibres: string[]; varietes: string[]; code_prefix: string | null; code_digits: number | null; actif: boolean };
 type Supplier = { id: string; code: string; nom: string; region: string | null; wilaya: string | null; contact: string | null; telephone: string | null; adresse: string | null; agree: boolean; actif: boolean };
 type Campaign = { id: string; code: string; libelle: string; product_id: string; date_debut: string; date_fin: string; objectif_kg: number | null; actif: boolean; is_default: boolean };
 
@@ -108,7 +108,7 @@ function ProductsTab() {
 }
 
 function ProductDialog({ open, onOpenChange, editing, onSave, saving }: any) {
-  const [form, setForm] = useState<any>({ code: "", designation: "", description: "", normes: "", calibres: "", varietes: "", actif: true });
+  const [form, setForm] = useState<any>({ code: "", designation: "", description: "", normes: "", calibres: "", varietes: "", code_prefix: "", code_digits: "5", actif: true });
   useEffect(() => {
     if (!open) return;
     setForm({
@@ -118,9 +118,14 @@ function ProductDialog({ open, onOpenChange, editing, onSave, saving }: any) {
       normes: (editing?.normes ?? []).join(", "),
       calibres: (editing?.calibres ?? []).join(", "),
       varietes: (editing?.varietes ?? []).join(", "),
+      code_prefix: editing?.code_prefix ?? "",
+      code_digits: editing?.code_digits != null ? String(editing.code_digits) : "5",
       actif: editing?.actif ?? true,
     });
   }, [open, editing?.id]);
+
+  const digitsNum = Math.max(1, Math.min(10, Number(form.code_digits) || 5));
+  const previewSample = `${form.code_prefix || ""}${"1".padStart(digitsNum, "0")}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,11 +142,32 @@ function ProductDialog({ open, onOpenChange, editing, onSave, saving }: any) {
             <div><Label>Variétés</Label><Input value={form.varietes} onChange={(e) => setForm({ ...form, varietes: e.target.value })} /></div>
             <div><Label>Calibres</Label><Input value={form.calibres} onChange={(e) => setForm({ ...form, calibres: e.target.value })} /></div>
           </div>
+          <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Code système pont-bascule</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Préfixe</Label>
+                <Input value={form.code_prefix} maxLength={8} placeholder="Ex: T" onChange={(e) => setForm({ ...form, code_prefix: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-xs">Nombre de chiffres</Label>
+                <Input type="number" min="1" max="10" value={form.code_digits} onChange={(e) => setForm({ ...form, code_digits: e.target.value })} />
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground">Exemple pour saisie "1" : <span className="font-mono font-semibold text-foreground">{previewSample}</span></div>
+          </div>
           <div className="flex items-center gap-2"><Switch checked={form.actif} onCheckedChange={(v) => setForm({ ...form, actif: v })} /><Label>Actif</Label></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button disabled={saving || !form.code || !form.designation} onClick={() => onSave({ id: editing?.id, code: form.code, designation: form.designation, description: form.description || null, normes: toArray(form.normes), calibres: toArray(form.calibres), varietes: toArray(form.varietes), actif: form.actif })}>Enregistrer</Button>
+          <Button disabled={saving || !form.code || !form.designation} onClick={() => onSave({
+            id: editing?.id, code: form.code, designation: form.designation,
+            description: form.description || null,
+            normes: toArray(form.normes), calibres: toArray(form.calibres), varietes: toArray(form.varietes),
+            code_prefix: form.code_prefix?.trim() || null,
+            code_digits: form.code_digits ? digitsNum : null,
+            actif: form.actif,
+          })}>Enregistrer</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -76,11 +76,15 @@ CREATE TABLE IF NOT EXISTS public.reception_products (
   calibres text[] NOT NULL DEFAULT '{}',
   varietes text[] NOT NULL DEFAULT '{}',
   caracteristiques jsonb NOT NULL DEFAULT '{}'::jsonb,
+  code_prefix text,
+  code_digits smallint CHECK (code_digits IS NULL OR (code_digits BETWEEN 1 AND 10)),
   actif boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   created_by uuid REFERENCES auth.users(id)
 );
+ALTER TABLE public.reception_products ADD COLUMN IF NOT EXISTS code_prefix text;
+ALTER TABLE public.reception_products ADD COLUMN IF NOT EXISTS code_digits smallint;
 
 CREATE TABLE IF NOT EXISTS public.reception_suppliers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -145,6 +149,7 @@ CREATE TABLE IF NOT EXISTS public.reception_weighings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id uuid NOT NULL UNIQUE REFERENCES public.reception_tickets(id) ON DELETE RESTRICT,
   code_pesee text NOT NULL UNIQUE DEFAULT public.next_reception_weighing_no(),
+  code_saisi text,
   poids_brut_kg numeric(12,2) NOT NULL CHECK (poids_brut_kg > 0),
   taux_abattement_snapshot numeric(5,2) NOT NULL,
   poids_abattement_kg numeric(14,4) GENERATED ALWAYS AS (poids_brut_kg * taux_abattement_snapshot / 100) STORED,
@@ -154,6 +159,7 @@ CREATE TABLE IF NOT EXISTS public.reception_weighings (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE public.reception_weighings ADD COLUMN IF NOT EXISTS code_saisi text;
 
 -- 5) GRANT Data API ------------------------------------------------------------
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.reception_products       TO authenticated;
@@ -293,8 +299,9 @@ SELECT t.id, t.numero, t.date_ticket, t.heure_debut, t.heure_fin,
        (kp.first_name || ' ' || kp.last_name) AS cloture_by_name,
        c.id AS campaign_id, c.libelle AS campagne, c.objectif_kg,
        p.id AS product_id, p.designation AS produit, p.code AS produit_code,
-       s.id AS supplier_id, s.nom AS fournisseur, s.region, s.wilaya,
-       w.id AS weighing_id, w.code_pesee, w.poids_brut_kg, w.poids_abattement_kg, w.poids_net_kg, w.weighed_at,
+       p.code_prefix, p.code_digits,
+       s.id AS supplier_id, s.nom AS fournisseur, s.code AS supplier_code, s.region, s.wilaya,
+       w.id AS weighing_id, w.code_pesee, w.code_saisi, w.poids_brut_kg, w.poids_abattement_kg, w.poids_net_kg, w.weighed_at,
        (CASE
          WHEN t.heure_debut IS NULL OR t.heure_fin IS NULL THEN NULL
          WHEN t.heure_fin >= t.heure_debut THEN EXTRACT(EPOCH FROM (t.heure_fin - t.heure_debut))/60

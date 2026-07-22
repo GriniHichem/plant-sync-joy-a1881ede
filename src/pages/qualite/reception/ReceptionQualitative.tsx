@@ -209,14 +209,14 @@ export default function ReceptionQualitative() {
         <CardContent className="space-y-4">
           {/* Ligne compacte : Date / N° / Heure début / Heure fin */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div>
+            <div className="min-w-0">
               <Label className="text-xs">Date</Label>
-              <Input className="h-11" readOnly value={format(new Date(), "yyyy-MM-dd")} />
+              <Input className="h-11 w-full" readOnly value={format(new Date(), "yyyy-MM-dd")} />
             </div>
-            <div>
+            <div className="min-w-0">
               <Label className="text-xs">N° ticket *</Label>
               <Input
-                className="h-11"
+                className="h-11 w-full"
                 value={form.numero}
                 disabled={!!ticketId}
                 maxLength={50}
@@ -224,19 +224,19 @@ export default function ReceptionQualitative() {
                 onChange={(e) => setForm({ ...form, numero: e.target.value })}
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <Label className="text-xs">Heure début *</Label>
-              <div className="flex gap-1">
-                <Input className="h-11" type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
+              <div className="flex gap-1 min-w-0">
+                <Input className="h-11 flex-1 min-w-0" type="time" value={form.heure_debut} onChange={(e) => setForm({ ...form, heure_debut: e.target.value })} />
                 <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0" onClick={() => setForm({ ...form, heure_debut: new Date().toTimeString().slice(0, 5) })} title="Maintenant">
                   <Clock className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <Label className="text-xs">Heure fin *</Label>
-              <div className="flex gap-1">
-                <Input className="h-11" type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
+              <div className="flex gap-1 min-w-0">
+                <Input className="h-11 flex-1 min-w-0" type="time" value={form.heure_fin} onChange={(e) => setForm({ ...form, heure_fin: e.target.value })} />
                 <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0" onClick={() => setForm({ ...form, heure_fin: new Date().toTimeString().slice(0, 5) })} title="Maintenant">
                   <Clock className="h-4 w-4" />
                 </Button>

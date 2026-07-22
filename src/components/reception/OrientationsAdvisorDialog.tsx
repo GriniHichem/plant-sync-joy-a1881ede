@@ -57,7 +57,7 @@ export function OrientationsAdvisorDialog({ open, onOpenChange, campaignId, prod
       if (productId) q = q.eq("product_id", productId);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as TicketRow[];
+      return ((data ?? []) as unknown) as TicketRow[];
     },
   });
 

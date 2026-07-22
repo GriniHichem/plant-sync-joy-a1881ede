@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Camera, Loader2, Trash2, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { compressImage } from "@/lib/reception";
+import { compressImage, photoSlotCaption } from "@/lib/reception";
 import { cn } from "@/lib/utils";
 import { CameraCaptureDialog } from "./CameraCaptureDialog";
 

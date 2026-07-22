@@ -136,6 +136,7 @@ const ROLES = [
   { key: "responsable_controle_qualite", label: "Resp. Contrôle Qualité", color: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300", group: "Qualité" },
   { key: "controleur_qualite", label: "Contrôleur Qualité", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300", group: "Qualité" },
   { key: "agent_pont_bascule", label: "Agent Pont Bascule", color: "bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-300", group: "Qualité" },
+  { key: "agreeur", label: "Agréeur", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300", group: "Qualité" },
 
   { key: "gestionnaire_magasin", label: "Gest. Magasin", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300", group: "Logistique" },
   { key: "responsable_magasin", label: "Resp. Magasin", color: "bg-purple-200 text-purple-900 dark:bg-purple-900/40 dark:text-purple-200", group: "Logistique" },
@@ -204,6 +205,7 @@ const ROLE_DEFAULTS: Record<string, Record<string, Preset>> = {
   responsable_controle_qualite: { ...ap(QUALITY_MODS, FULL), of: RO, produits: RO, articles: RO, recettes: RO, dashboard: RO, machines: RO, lignes: RO, analytiques: RO, qualite_parametres: RW, notifications: RW, apps: RO, recherche: RO },
   controleur_qualite: { qualite: RW, qualite_dashboard: RO, qualite_of: RO, qualite_indicateurs: RO, qualite_controles: RW, qualite_nc: RW, qualite_actions: RO, qualite_recettes: RO, qualite_tracabilite: RO, qualite_rapports: RO, qualite_shift: RW, of: RO, produits: RO, lignes: RO, machines: RO, notifications: RO, apps: RO, recherche: RO },
   agent_pont_bascule: { reception: RO, qualite: RO, qualite_dashboard: RO, notifications: RO, apps: RO, recherche: RO },
+  agreeur: { reception: RW, qualite: RO, notifications: RO, apps: RO, recherche: RO },
 
   gestionnaire_magasin: { pdr: FULL, pdr_demandes: RW, shift_magasin: RW, journal_stock: RO, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RO, apps: RO, recherche: RO },
   responsable_magasin: { pdr: FULL, pdr_demandes: FULL, shift_magasin: FULL, journal_stock: FULL, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, pdr_stock_config: FULL, journal: RO, historique: RO, analytiques: RO, documents: RO, audit: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RW, apps: RO, recherche: RO },

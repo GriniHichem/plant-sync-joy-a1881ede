@@ -28,6 +28,7 @@ const ROLES: { code: string; label: string }[] = [
   { code: "controleur_qualite", label: "Contrôleur qualité" },
   { code: "responsable_controle_qualite", label: "Responsable contrôle qualité" },
   { code: "directeur_qualite", label: "Directeur qualité" },
+  { code: "agreeur", label: "Agréeur" },
   { code: "agent_pont_bascule", label: "Agent pont-bascule" },
   { code: "responsable_magasin", label: "Responsable magasin" },
   { code: "resp_production", label: "Responsable production" },

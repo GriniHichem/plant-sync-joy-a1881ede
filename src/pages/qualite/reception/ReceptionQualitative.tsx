@@ -471,11 +471,23 @@ export default function ReceptionQualitative() {
               <Label className="text-sm font-semibold">Photos obligatoires (3)</Label>
               <Badge variant={nPhotos === 3 ? "default" : "outline"}>{nPhotos}/3</Badge>
             </div>
-            {!ticketId && (
+          <div className={`space-y-2 rounded-lg p-3 border-2 ${missingSlots.length > 0 && ticketId ? "border-destructive/60 bg-destructive/5" : "border-transparent"}`}>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold">
+                Photos obligatoires (3)
+                <span className="text-destructive ml-1">*</span>
+              </Label>
+              <Badge variant={nPhotos === 3 ? "default" : "destructive"}>{nPhotos}/3</Badge>
+            </div>
+            {!ticketId ? (
               <p className="text-xs text-muted-foreground">
                 Les 3 photos sont obligatoires avant clôture. Ouvrez d'abord le ticket pour activer la prise de photos.
               </p>
-            )}
+            ) : missingSlots.length > 0 ? (
+              <p className="text-xs font-medium text-destructive">
+                ⚠ Photo{missingSlots.length > 1 ? "s" : ""} manquante{missingSlots.length > 1 ? "s" : ""} : {missingSlots.join(", ")} — clôture impossible tant que les 3 photos ne sont pas prises.
+              </p>
+            ) : null}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {[1, 2, 3].map((s) => {
                 const p = photoBySlot(s);
@@ -491,8 +503,7 @@ export default function ReceptionQualitative() {
               })}
             </div>
           </div>
-        </CardContent>
-      </Card>
+
 
       <Card className="xl:col-span-1">
         <CardHeader className="pb-2">

@@ -130,6 +130,20 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticke
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Réattacher le flux au <video> lorsqu'on revient depuis l'aperçu (Reprendre)
+  useEffect(() => {
+    if (!open || preview) return;
+    const stream = streamRef.current;
+    const video = videoRef.current;
+    if (stream && video && video.srcObject !== stream) {
+      video.srcObject = stream;
+      video.play().catch(() => {});
+    } else if (!stream && !starting) {
+      start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, open]);
+
   function snapshot() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;

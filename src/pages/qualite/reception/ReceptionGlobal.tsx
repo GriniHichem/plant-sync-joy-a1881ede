@@ -89,7 +89,7 @@ export default function ReceptionGlobal() {
   });
 
   const filtered = useMemo(() => {
-    return rows.filter((r) => {
+    const list = rows.filter((r) => {
       if (f.from && r.date_ticket < f.from) return false;
       if (f.to && r.date_ticket > f.to) return false;
       if (f.campaign !== "__all__" && r.campaign_id !== f.campaign) return false;
@@ -103,6 +103,16 @@ export default function ReceptionGlobal() {
         if (![r.numero, r.fournisseur, r.produit, r.wilaya, r.region].some((v) => (v ?? "").toString().toLowerCase().includes(q))) return false;
       }
       return true;
+    });
+    // Tri : date la plus récente d'abord, puis dernier ticket (created_at desc, N° desc)
+    return list.sort((a, b) => {
+      const d = String(b.date_ticket ?? "").localeCompare(String(a.date_ticket ?? ""));
+      if (d !== 0) return d;
+      const t = String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""));
+      if (t !== 0) return t;
+      const na = Number(String(a.numero ?? "").replace(/\D/g, "")) || 0;
+      const nb = Number(String(b.numero ?? "").replace(/\D/g, "")) || 0;
+      return nb - na;
     });
   }, [rows, f]);
 

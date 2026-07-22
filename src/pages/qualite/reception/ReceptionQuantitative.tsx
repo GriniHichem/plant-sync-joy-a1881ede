@@ -52,21 +52,36 @@ export default function ReceptionQuantitative() {
     );
   }, [tickets, search]);
 
+  // Formatage du code système : préfixe + zéros + numéro saisi
+  const digits = selected?.code_digits ? Math.max(1, Math.min(10, Number(selected.code_digits))) : null;
+  const prefix = selected?.code_prefix ?? "";
+  const saisiClean = codeSaisi.replace(/\D/g, "");
+  const codeFormatted = digits && saisiClean
+    ? `${prefix}${saisiClean.padStart(digits, "0").slice(-digits)}`
+    : "";
+  const codeConfigured = !!(digits && prefix);
+
   const savePesee = useMutation({
     mutationFn: async () => {
       if (!selected) return;
       const brut = Number(poidsBrut);
       if (!brut || brut <= 0) throw new Error("Poids brut invalide");
-      const { error } = await supabase.from("reception_weighings" as any).insert({
+      if (codeConfigured && !saisiClean) throw new Error("Numéro système requis");
+      const payload: any = {
         ticket_id: selected.id,
         poids_brut_kg: brut,
         taux_abattement_snapshot: Number(selected.taux_abattement),
-      });
+      };
+      if (codeConfigured) {
+        payload.code_saisi = codeFormatted;
+        payload.code_pesee = codeFormatted;
+      }
+      const { error } = await supabase.from("reception_weighings" as any).insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Pesée enregistrée");
-      setSelected(null); setPoidsBrut("");
+      setSelected(null); setPoidsBrut(""); setCodeSaisi("");
       qc.invalidateQueries({ queryKey: ["reception_pesee_list"] });
     },
     onError: (e: any) => toast.error(e.message),

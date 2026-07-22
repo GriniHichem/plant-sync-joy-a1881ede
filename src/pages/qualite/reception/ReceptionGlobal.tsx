@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, formatKgInt, formatTonnesInt, formatHm, kgToTonnes, isOverdue } from "@/lib/reception";
@@ -18,6 +18,11 @@ import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FilterSheet } from "@/components/responsive/FilterSheet";
 import { ScrollTable } from "@/components/responsive/ScrollTable";
+import { CsvImportDialog } from "@/components/reception/CsvImportDialog";
+import type { ImportReport } from "@/lib/receptionImport";
+import { usePermissions } from "@/hooks/usePermissions";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 
 type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";
 const COL_LS_KEY = "reception-global-cols";
@@ -29,6 +34,10 @@ const DEFAULT_COLS: Record<ColKey, boolean> = {
 export default function ReceptionGlobal() {
   const qc = useQueryClient();
   const isMobile = useIsMobile();
+  const { canEdit, canDelete } = usePermissions();
+  const canImport = canEdit("reception_global") || canDelete("reception_global");
+  const [importOpen, setImportOpen] = useState(false);
+  const [importMode, setImportMode] = useState<"ignore" | "replace">("ignore");
   const [f, setF] = useState({
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
@@ -250,6 +259,11 @@ export default function ReceptionGlobal() {
                   <DropdownMenuCheckboxItem checked={cols.cloture_at} onCheckedChange={(v) => setCols({ ...cols, cloture_at: !!v })}>Clôturé le</DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              {canImport && (
+                <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                  <Upload className="h-4 w-4 mr-1" />Importer
+                </Button>
+              )}
               <ExportCsvButton
                 filename="reception-global"
                 data={filtered.map((r) => ({
@@ -307,9 +321,12 @@ export default function ReceptionGlobal() {
                         <div className="font-semibold truncate">{r.produit ?? "—"}</div>
                         <div className="text-xs text-muted-foreground truncate">{r.fournisseur ?? "—"}</div>
                       </div>
-                      {pese
-                        ? <Badge variant="secondary" className="shrink-0">Pesé</Badge>
-                        : <Badge className="shrink-0">En attente</Badge>}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {pese
+                          ? <Badge variant="secondary">Pesé</Badge>
+                          : <Badge>En attente</Badge>}
+                        {r.statut === "pese_importe" && <Badge variant="outline" className="text-[10px]">Importé</Badge>}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
@@ -406,6 +423,40 @@ export default function ReceptionGlobal() {
         open={!!selected}
         onOpenChange={(o) => !o && setSelected(null)}
         row={selected}
+      />
+
+      <CsvImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="Importer des tickets de pesée"
+        description="Statut appliqué : pesé importé. Ces tickets ne pourront pas être modifiés via le formulaire qualitatif."
+        fields={[
+          { key: "numero", label: "N° ticket", required: true, aliases: ["n", "num", "numero_ticket"] },
+          { key: "date_ticket", label: "Date", required: true, aliases: ["date", "date_pesee"] },
+          { key: "fournisseur", label: "Fournisseur", required: true, aliases: ["supplier", "code_fournisseur"] },
+          { key: "produit", label: "Produit", required: true, aliases: ["product", "code_produit"] },
+          { key: "taux_abattement", label: "Abattement %", required: true, aliases: ["abat", "abattement"] },
+          { key: "poids_brut_kg", label: "Poids brut (kg)", required: true, aliases: ["brut", "poids_brut"] },
+          { key: "heure_debut", label: "Heure début", aliases: ["debut", "hdebut"] },
+          { key: "heure_fin", label: "Heure fin", aliases: ["fin", "hfin"] },
+          { key: "commentaire", label: "Commentaire", aliases: ["notes", "remarque"] },
+        ]}
+        options={
+          <div className="space-y-1">
+            <div className="text-xs font-medium">Gestion des doublons (même N°)</div>
+            <RadioGroup value={importMode} onValueChange={(v: any) => setImportMode(v)} className="flex gap-4">
+              <div className="flex items-center gap-2"><RadioGroupItem id="im-ignore" value="ignore" /><label htmlFor="im-ignore" className="text-xs">Ignorer</label></div>
+              <div className="flex items-center gap-2"><RadioGroupItem id="im-replace" value="replace" /><label htmlFor="im-replace" className="text-xs">Remplacer</label></div>
+            </RadioGroup>
+          </div>
+        }
+        onImport={async (rows): Promise<ImportReport> => {
+          const { data, error } = await supabase.rpc("import_reception_tickets" as any, { p_rows: rows as any, p_on_duplicate: importMode });
+          if (error) throw error;
+          const r = (data ?? {}) as any;
+          return { total: r.total ?? rows.length, success: r.success ?? 0, failed: r.failed ?? 0, extra: { créés: r.created ?? 0, remplacés: r.replaced ?? 0, ignorés: r.skipped ?? 0 }, errors: r.errors ?? [] };
+        }}
+        onSuccess={invalidate}
       />
     </div>
   );

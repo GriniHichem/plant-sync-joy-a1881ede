@@ -12,7 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Pencil, Star, StarOff } from "lucide-react";
+import { Plus, Pencil, Star, StarOff, Upload } from "lucide-react";
+import { CsvImportDialog } from "@/components/reception/CsvImportDialog";
+import type { ImportReport } from "@/lib/receptionImport";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -188,6 +190,7 @@ function SuppliersTab() {
   const canCreateRow = canCreate("reception_settings");
   const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [form, setForm] = useState<any>({ code: "", nom: "", region: "", wilaya: "", contact: "", telephone: "", adresse: "", notes: "", agree: true, actif: true });
 
@@ -233,9 +236,34 @@ function SuppliersTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Fournisseurs</CardTitle>
-        {canCreateRow && (<Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nouveau fournisseur</Button>)}
+        <div className="flex items-center gap-2">
+          {canCreateRow && (<Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4 mr-2" />Importer CSV</Button>)}
+          {canCreateRow && (<Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nouveau fournisseur</Button>)}
+        </div>
       </CardHeader>
       <CardContent>
+        <CsvImportDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          title="Importer des fournisseurs"
+          description="Fichier CSV — les doublons (même code) sont mis à jour."
+          fields={[
+            { key: "code", label: "Code fournisseur", required: true, aliases: ["codef", "code_fournisseur"] },
+            { key: "nom", label: "Nom", required: true, aliases: ["fournisseur", "raisonsociale"] },
+            { key: "region", label: "Région", required: true },
+            { key: "wilaya", label: "Wilaya", required: true },
+            { key: "contact", label: "Contact" },
+            { key: "telephone", label: "Téléphone", aliases: ["tel", "phone"] },
+            { key: "adresse", label: "Adresse" },
+          ]}
+          onImport={async (rows): Promise<ImportReport> => {
+            const { data, error } = await supabase.rpc("import_reception_suppliers" as any, { p_rows: rows as any });
+            if (error) throw error;
+            const r = (data ?? {}) as any;
+            return { total: r.total ?? rows.length, success: r.success ?? 0, failed: r.failed ?? 0, extra: { créés: r.created ?? 0, mis_a_jour: r.updated ?? 0 }, errors: r.errors ?? [] };
+          }}
+          onSuccess={() => qc.invalidateQueries({ queryKey: ["reception_suppliers"] })}
+        />
         <Table>
           <TableHeader><TableRow>
             <TableHead>Code</TableHead><TableHead>Nom</TableHead><TableHead>Wilaya</TableHead>

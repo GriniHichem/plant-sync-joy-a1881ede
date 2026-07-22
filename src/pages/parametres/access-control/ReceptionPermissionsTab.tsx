@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Info, Save, Truck } from "lucide-react";
 import { toast } from "sonner";
+import { useAllRoles } from "@/hooks/useAllRoles";
 
 const SUBMODULES: { key: string; label: string; hint?: string }[] = [
   { key: "reception_qualitative", label: "Réception qualitative", hint: "Saisie du ticket, photos et clôture" },

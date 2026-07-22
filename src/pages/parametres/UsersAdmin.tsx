@@ -32,6 +32,9 @@ const ROLE_LABELS: Record<string, string> = {
   controleur_qualite: "Contrôleur Qualité",
   responsable_controle_qualite: "Resp. Contrôle Qualité",
   directeur_qualite: "Directeur Qualité",
+  responsable_inventaire: "Resp. Inventaire",
+  agent_inventaire: "Agent Inventaire",
+  agreeur: "Agréeur",
 };
 
 export default function UsersAdmin() {

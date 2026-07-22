@@ -229,11 +229,11 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticke
           {!preview && !error && (() => {
             const g = photoSlotGuidance(slot);
             return (
-              <div className="flex items-start gap-2 px-3 py-2 bg-amber-500/15 text-amber-100 border-b border-amber-500/30 text-sm">
+              <div className="flex items-start gap-2 px-3 py-2 bg-amber-400 text-black border-b border-amber-600 text-sm">
                 <Info className="h-4 w-4 mt-0.5 shrink-0" />
                 <div>
                   <div className="font-semibold">{g.title}</div>
-                  <div className="text-amber-50/90">{g.hint}</div>
+                  <div className="text-black/80">{g.hint}</div>
                 </div>
               </div>
             );

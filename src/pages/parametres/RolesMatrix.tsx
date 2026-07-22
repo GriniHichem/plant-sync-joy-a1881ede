@@ -144,7 +144,7 @@ const ROLES = [
   { key: "agent_inventaire", label: "Agent Inventaire", color: "bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300", group: "Logistique" },
 ];
 
-const ROLE_GROUPS = ["Direction", "Maintenance", "Production", "Qualité", "Logistique"];
+const ROLE_GROUPS = ["Direction", "Maintenance", "Production", "Qualité", "Logistique", "Personnalisés"];
 
 const ACTIONS = [
   { key: "can_view" as const, label: "Voir", short: "V", icon: Eye, activeClass: "bg-blue-500/15 text-blue-700 border-blue-300 dark:text-blue-300 dark:border-blue-700" },

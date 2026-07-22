@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ShieldCheck, Users, FileText, Package, ClipboardCheck, CheckSquare, Activity, ToggleLeft, Download, LayoutGrid } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Users, FileText, Package, ClipboardCheck, CheckSquare, Activity, ToggleLeft, Download, LayoutGrid, Truck } from "lucide-react";
 import RolesTab from "./access-control/RolesTab";
 import QualityPermissionsTab from "./access-control/QualityPermissionsTab";
+import ReceptionPermissionsTab from "./access-control/ReceptionPermissionsTab";
 import AuditControlTab from "./access-control/AuditControlTab";
 import ControlSwitchesTab from "./access-control/ControlSwitchesTab";
 import PortabilityTab from "./access-control/PortabilityTab";
@@ -21,6 +22,7 @@ const TABS = [
   { value: "documents", label: "Documents", icon: FileText },
   { value: "pdr", label: "PDR & Stock", icon: Package },
   { value: "quality", label: "Qualité", icon: ClipboardCheck },
+  { value: "reception", label: "Réception", icon: Truck },
   { value: "validations", label: "Workflows", icon: CheckSquare },
   { value: "audit", label: "Audit & Contrôle", icon: Activity },
   { value: "control", label: "Système", icon: ToggleLeft },
@@ -29,7 +31,19 @@ const TABS = [
 
 export default function AccessControlHub() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initial = searchParams.get("tab") ?? "overview";
+  const [tab, setTab] = useState(TABS.some((t) => t.value === initial) ? initial : "overview");
+
+  useEffect(() => {
+    const current = searchParams.get("tab");
+    if (current !== tab) {
+      const next = new URLSearchParams(searchParams);
+      next.set("tab", tab);
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   return (
     <div className="space-y-4">

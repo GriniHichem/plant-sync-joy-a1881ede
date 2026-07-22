@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Clock, Lock, Truck, XCircle } from "lucide-react";
+import { Clock, Lock, Truck, XCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { TicketDetailDialog } from "./TicketDetailDialog";
@@ -30,6 +30,7 @@ export default function ReceptionQualitative() {
 
 
   const [ticketId, setTicketId] = useState<string | undefined>();
+  const [supplierSearch, setSupplierSearch] = useState("");
   const [form, setForm] = useState({
     numero: "",
     campaign_id: "",
@@ -72,6 +73,14 @@ export default function ReceptionQualitative() {
       return (data ?? []) as any[];
     },
   });
+
+  const filteredSuppliers = useMemo(() => {
+    const q = supplierSearch.trim().toLowerCase();
+    if (!q) return suppliers;
+    return suppliers.filter((s: any) =>
+      (s.nom ?? "").toLowerCase().includes(q) || (s.code ?? "").toLowerCase().includes(q)
+    );
+  }, [suppliers, supplierSearch]);
 
   useEffect(() => {
     if (!form.campaign_id && defaultCampaign?.id) {
@@ -369,11 +378,28 @@ export default function ReceptionQualitative() {
               <Select value={form.supplier_id} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
                 <SelectTrigger className="h-11"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                 <SelectContent>
-                  {suppliers.map((s: any) => (
+                  <div className="sticky top-0 z-10 bg-popover p-2 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        autoFocus
+                        placeholder="Rechercher par nom ou code…"
+                        className="h-9 pl-8"
+                        value={supplierSearch}
+                        onChange={(e) => setSupplierSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+                  {filteredSuppliers.map((s: any) => (
                     <SelectItem key={s.id} value={s.id}>
                       <span className="font-mono text-xs mr-2">{s.code}</span>{s.nom}
                     </SelectItem>
                   ))}
+                  {filteredSuppliers.length === 0 && (
+                    <div className="px-3 py-4 text-center text-xs text-muted-foreground">Aucun fournisseur</div>
+                  )}
                 </SelectContent>
               </Select>
             </div>

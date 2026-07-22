@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Camera } from "lucide-react";
+import { photoSlotCaption } from "@/lib/reception";
 
 export function PhotoLightbox({ ticketId }: { ticketId: string }) {
-  const [urls, setUrls] = useState<string[]>([]);
-  const [open, setOpen] = useState<string | null>(null);
+  const [items, setItems] = useState<Array<{ url: string; slot: number }>>([]);
+  const [open, setOpen] = useState<{ url: string; slot: number } | null>(null);
 
   useEffect(() => {
     let cancel = false;
@@ -15,17 +16,25 @@ export function PhotoLightbox({ ticketId }: { ticketId: string }) {
         .select("storage_path, slot")
         .eq("ticket_id", ticketId)
         .order("slot");
-      const paths = ((rows ?? []) as any[]).map((r) => r.storage_path);
-      if (paths.length === 0) return setUrls([]);
-      const { data } = await supabase.storage.from("reception-photos").createSignedUrls(paths, 3600);
-      if (!cancel) setUrls((data ?? []).map((s) => s.signedUrl).filter(Boolean) as string[]);
+      const list = (rows ?? []) as any[];
+      if (list.length === 0) return setItems([]);
+      const { data } = await supabase.storage
+        .from("reception-photos")
+        .createSignedUrls(list.map((r) => r.storage_path), 3600);
+      if (!cancel) {
+        setItems(
+          (data ?? [])
+            .map((s, i) => ({ url: s.signedUrl as string, slot: list[i].slot as number }))
+            .filter((it) => !!it.url),
+        );
+      }
     })();
     return () => {
       cancel = true;
     };
   }, [ticketId]);
 
-  if (urls.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Camera className="h-3 w-3" /> Aucune photo disponible
@@ -36,15 +45,22 @@ export function PhotoLightbox({ ticketId }: { ticketId: string }) {
   return (
     <>
       <div className="grid grid-cols-3 gap-2">
-        {urls.map((u, i) => (
-          <button key={i} type="button" onClick={() => setOpen(u)} className="block">
-            <img src={u} alt={`Photo ${i + 1}`} className="w-full h-24 object-cover rounded border" />
+        {items.map((it, i) => (
+          <button key={i} type="button" onClick={() => setOpen(it)} className="block">
+            <img src={it.url} alt={`Photo ${it.slot}`} className="w-full h-24 object-cover rounded border" />
           </button>
         ))}
       </div>
       <Dialog open={!!open} onOpenChange={(v) => !v && setOpen(null)}>
-        <DialogContent className="max-w-3xl p-2">
-          {open && <img src={open} alt="Photo" className="w-full h-auto rounded" />}
+        <DialogContent className="max-w-3xl p-2 bg-black/95">
+          {open && (
+            <>
+              <img src={open.url} alt={`Photo ${open.slot}`} className="w-full h-auto max-h-[80vh] object-contain rounded" />
+              <div className="mt-2 rounded-md bg-white/10 text-white text-sm px-3 py-2 text-center">
+                {photoSlotCaption(open.slot)}
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>

@@ -76,11 +76,11 @@ export default function ReceptionPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setMatrixOpen(true)}
-            title="Paramètres avancés — matrice des accès"
+            onClick={() => navigate("/parametres/access-control?tab=reception")}
+            title="Gérer les accès dans Sécurité & Accès"
           >
-            <Settings2 className="h-4 w-4 md:mr-2" />
-            <span className="hidden md:inline">Paramètres avancés</span>
+            <ShieldCheck className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Gérer les accès</span>
           </Button>
         )}
       </div>

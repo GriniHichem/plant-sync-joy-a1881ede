@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, Calendar, Clock, ImageOff, Loader2, MapPin, User, Package, Truck, ZoomIn } from "lucide-react";
+import { AlertTriangle, Calendar, Clock, Download, ImageOff, Loader2, MapPin, User, Package, Truck, ZoomIn } from "lucide-react";
+import { toast } from "sonner";
 import { formatDuration, formatHm, formatKgInt, formatTonnesInt, isOverdue } from "@/lib/reception";
 
 interface Props {

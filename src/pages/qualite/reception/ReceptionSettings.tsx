@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Star, StarOff } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type Product = { id: string; code: string; designation: string; description: string | null; normes: string[]; calibres: string[]; varietes: string[]; code_prefix: string | null; code_digits: number | null; actif: boolean };
 type Supplier = { id: string; code: string; nom: string; region: string | null; wilaya: string | null; contact: string | null; telephone: string | null; adresse: string | null; agree: boolean; actif: boolean };

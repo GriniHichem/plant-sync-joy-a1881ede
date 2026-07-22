@@ -42,6 +42,12 @@ export default function UsersAdmin() {
   const navigate = useNavigate();
   const { hasRole, user } = useAuth();
   const { toast } = useToast();
+  const { roles: allRolesEntries } = useAllRoles();
+  const roleOptions = allRolesEntries.map((r) => r.code);
+  const dynLabels: Record<string, string> = Object.fromEntries(
+    allRolesEntries.map((r) => [r.code, r.label]),
+  );
+  const getRoleLabel = (code: string) => dynLabels[code] ?? ROLE_LABELS[code] ?? code;
   const [profiles, setProfiles] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
   const [entityImages, setEntityImages] = useState<any[]>([]);

@@ -81,6 +81,9 @@ export function TicketPhotosDialog({ open, onOpenChange, ticketId, ticketNumero 
                     <ImageOff className="h-6 w-6" />
                   </div>
                 )}
+                <div className="px-2 py-1 text-[11px] text-muted-foreground bg-muted/30 border-t">
+                  {photoSlotCaption(p.slot)}
+                </div>
               </div>
             ))}
           </div>

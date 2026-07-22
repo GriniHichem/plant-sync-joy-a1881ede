@@ -190,6 +190,7 @@ function SuppliersTab() {
   const canCreateRow = canCreate("reception_settings");
   const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [form, setForm] = useState<any>({ code: "", nom: "", region: "", wilaya: "", contact: "", telephone: "", adresse: "", notes: "", agree: true, actif: true });
 

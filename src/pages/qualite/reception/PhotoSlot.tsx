@@ -124,6 +124,7 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
         onOpenChange={setCameraOpen}
         slot={slot}
         ticketNumero={ticketNumero}
+        supplierName={supplierName}
         onCapture={(file) => handleFile(file)}
       />
     </div>

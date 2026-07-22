@@ -226,6 +226,19 @@ export function CameraCaptureDialog({ open, onOpenChange, onCapture, slot, ticke
             </div>
           </div>
 
+          {!preview && !error && (() => {
+            const g = photoSlotGuidance(slot);
+            return (
+              <div className="flex items-start gap-2 px-3 py-2 bg-amber-500/15 text-amber-100 border-b border-amber-500/30 text-sm">
+                <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                <div>
+                  <div className="font-semibold">{g.title}</div>
+                  <div className="text-amber-50/90">{g.hint}</div>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="relative aspect-[4/3] bg-black flex items-center justify-center">
             {error ? (
               <div className="text-center text-white p-6 space-y-2">

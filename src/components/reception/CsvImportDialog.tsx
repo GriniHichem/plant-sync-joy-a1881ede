@@ -101,7 +101,7 @@ export function CsvImportDialog({ open, onOpenChange, title, description, fields
 
             <div>
               <Label className="mb-2 block">Correspondance des colonnes</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {fields.map((f) => (
                   <div key={f.key} className="space-y-1">
                     <Label className="text-xs">

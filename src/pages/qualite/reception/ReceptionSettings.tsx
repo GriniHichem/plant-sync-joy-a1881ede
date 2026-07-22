@@ -233,7 +233,7 @@ function SuppliersTab() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Fournisseurs</CardTitle>
-        <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nouveau fournisseur</Button>
+        {canCreateRow && (<Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nouveau fournisseur</Button>)}
       </CardHeader>
       <CardContent>
         <Table>

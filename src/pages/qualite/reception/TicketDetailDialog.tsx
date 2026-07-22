@@ -158,7 +158,7 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
                         <div className="relative group">
                           <button
                             type="button"
-                            onClick={() => setLightbox(p.url)}
+                            onClick={() => setLightbox({ url: p.url!, slot: p.slot })}
                             className="block w-full"
                           >
                             <img src={p.url} alt={`Photo ${p.slot}`} className="w-full aspect-[4/3] object-cover" />

@@ -390,9 +390,9 @@ function CampaignsTab() {
                 <TableCell>
                   {c.is_default
                     ? <Badge className="gap-1"><Star className="h-3 w-3" />Défaut</Badge>
-                    : <Button size="sm" variant="ghost" onClick={() => setDefault.mutate(c.id)}><StarOff className="h-4 w-4 mr-1" />Définir</Button>}
+                    : canEditRow ? <Button size="sm" variant="ghost" onClick={() => setDefault.mutate(c.id)}><StarOff className="h-4 w-4 mr-1" />Définir</Button> : <span className="text-muted-foreground text-xs">—</span>}
                 </TableCell>
-                <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button></TableCell>
+                <TableCell className="text-right">{canEditRow && (<Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>)}</TableCell>
               </TableRow>
             ))}
             {data.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucune campagne</TableCell></TableRow>}

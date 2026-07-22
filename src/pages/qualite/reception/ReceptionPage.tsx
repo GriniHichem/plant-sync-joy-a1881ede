@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSearchParams, useBlocker } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Truck } from "lucide-react";
 import ReceptionSettings from "./ReceptionSettings";
@@ -27,10 +27,9 @@ export default function ReceptionPage() {
     setParams({ tab: v }, { replace: true });
   };
 
-  // Bloque toute navigation React Router hors de la page tant qu'un ticket est ouvert.
-  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
-    hasActive && currentLocation.pathname !== nextLocation.pathname,
-  );
+  // Note: navigation blocking via useBlocker requires a data router.
+  // On s'appuie sur la confirmation onglet + beforeunload pour éviter les pertes.
+
 
   // Avertissement natif du navigateur à la fermeture / rechargement.
   useEffect(() => {
@@ -68,21 +67,6 @@ export default function ReceptionPage() {
         <TabsContent value="settings" className="mt-4"><ReceptionSettings /></TabsContent>
       </Tabs>
 
-      <AlertDialog open={blocker.state === "blocked"} onOpenChange={(o) => { if (!o) blocker.reset?.(); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ticket de réception en cours</AlertDialogTitle>
-            <AlertDialogDescription>
-              Un ticket qualitative est ouvert et non clôturé. Votre saisie est sauvegardée localement,
-              mais quitter la page peut retarder la clôture. Continuer&nbsp;?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => blocker.reset?.()}>Rester sur la page</AlertDialogCancel>
-            <AlertDialogAction onClick={() => blocker.proceed?.()}>Quitter quand même</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

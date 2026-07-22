@@ -288,6 +288,16 @@ export default function ReceptionQualitative() {
             </div>
           </div>
 
+          {!ticketId && (
+            <Button
+              className="w-full h-12"
+              disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
+              onClick={() => createTicket.mutate()}
+            >
+              Ouvrir le ticket
+            </Button>
+          )}
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-semibold">Photos obligatoires (3)</Label>
@@ -295,7 +305,7 @@ export default function ReceptionQualitative() {
             </div>
             {!ticketId && (
               <p className="text-xs text-muted-foreground">
-                Renseignez le n° de ticket puis cliquez sur <b>Ouvrir le ticket</b> pour activer la prise de photos.
+                Les 3 photos sont obligatoires avant clôture. Ouvrez d'abord le ticket pour activer la prise de photos.
               </p>
             )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

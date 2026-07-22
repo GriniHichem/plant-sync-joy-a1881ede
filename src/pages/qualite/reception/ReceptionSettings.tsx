@@ -295,6 +295,9 @@ function SuppliersTab() {
 /* ------------------- Campaigns ------------------- */
 function CampaignsTab() {
   const qc = useQueryClient();
+  const { canCreate, canEdit } = usePermissions();
+  const canCreateRow = canCreate("reception_settings");
+  const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Campaign | null>(null);
   const [form, setForm] = useState<any>({ code: "", libelle: "", product_id: "", date_debut: format(new Date(), "yyyy-MM-dd"), date_fin: format(new Date(), "yyyy-MM-dd"), objectif_kg: "", actif: true, is_default: false });

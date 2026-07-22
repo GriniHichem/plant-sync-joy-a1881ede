@@ -250,7 +250,7 @@ function SuppliersTab() {
                 <TableCell>{s.contact ?? "—"} {s.telephone ? `· ${s.telephone}` : ""}</TableCell>
                 <TableCell>{s.agree ? <Badge>Agréé</Badge> : <Badge variant="secondary">Non</Badge>}</TableCell>
                 <TableCell>{s.actif ? <Badge>Actif</Badge> : <Badge variant="secondary">Inactif</Badge>}</TableCell>
-                <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button></TableCell>
+                <TableCell className="text-right">{canEditRow && (<Button size="sm" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>)}</TableCell>
               </TableRow>
             ))}
             {data.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucun fournisseur</TableCell></TableRow>}

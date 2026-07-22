@@ -11,6 +11,7 @@ import { CameraCaptureDialog } from "./CameraCaptureDialog";
 interface Props {
   ticketId?: string; // undefined tant que le ticket n'existe pas
   ticketNumero?: string;
+  supplierName?: string;
   slot: 1 | 2 | 3;
   disabled?: boolean;
   storagePath?: string | null;
@@ -18,7 +19,7 @@ interface Props {
   onDeleted: () => void;
 }
 
-export function PhotoSlot({ ticketId, ticketNumero, slot, disabled, storagePath, onUploaded, onDeleted }: Props) {
+export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled, storagePath, onUploaded, onDeleted }: Props) {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -123,6 +124,7 @@ export function PhotoSlot({ ticketId, ticketNumero, slot, disabled, storagePath,
         onOpenChange={setCameraOpen}
         slot={slot}
         ticketNumero={ticketNumero}
+        supplierName={supplierName}
         onCapture={(file) => handleFile(file)}
       />
     </div>

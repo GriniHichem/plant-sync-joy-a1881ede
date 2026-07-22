@@ -404,7 +404,9 @@ export default function ReceptionQualitative() {
               {[1, 2, 3].map((s) => {
                 const p = photoBySlot(s);
                 return (
-                  <PhotoSlot key={s} ticketId={ticketId} ticketNumero={form.numero} slot={s as 1 | 2 | 3}
+                  <PhotoSlot key={s} ticketId={ticketId} ticketNumero={form.numero}
+                    supplierName={(selectedSupplier as any)?.nom ?? (selectedSupplier as any)?.name}
+                    slot={s as 1 | 2 | 3}
                     disabled={!ticketId}
                     storagePath={p?.storage_path}
                     onUploaded={(path) => addPhoto.mutate({ slot: s, path })}

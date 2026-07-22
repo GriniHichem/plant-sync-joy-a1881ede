@@ -168,13 +168,15 @@ export default function ReceptionQualitative() {
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("reception_tickets" as any)
-        .select("id, numero, date_ticket, statut, taux_abattement, reception_suppliers(nom), reception_products(designation)")
+      const { data, error } = await supabase.from("v_reception_global")
+        .select("*")
         .eq("statut", "cloture").order("cloture_at", { ascending: false }).limit(10);
       if (error) throw error;
       return (data ?? []) as any[];
     },
   });
+
+  const [detailRow, setDetailRow] = useState<any | null>(null);
 
   // Rafraîchissement live des photos & derniers tickets même si le socket saute.
   useShiftRealtime(

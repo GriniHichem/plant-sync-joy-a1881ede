@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -282,9 +283,24 @@ export default function ReceptionQualitative() {
                 value={form.taux_abattement}
                 onChange={(e) => setForm({ ...form, taux_abattement: e.target.value })} />
             </div>
-            <div className="md:col-span-2">
-              <Label>Commentaire</Label>
-              <Textarea value={form.commentaire} onChange={(e) => setForm({ ...form, commentaire: e.target.value })} />
+            <div className="md:col-span-2 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <Checkbox
+                  checked={form.commentaire !== null && form.commentaire !== undefined && (form.commentaire.length > 0 || (form as any)._commentOpen === true)}
+                  onCheckedChange={(v) => {
+                    if (v) setForm({ ...form, ...( { _commentOpen: true } as any) });
+                    else setForm({ ...form, commentaire: "", ...( { _commentOpen: false } as any) });
+                  }}
+                />
+                <span className="text-sm">Ajouter un commentaire</span>
+              </label>
+              {((form as any)._commentOpen || form.commentaire) && (
+                <Textarea
+                  placeholder="Commentaire…"
+                  value={form.commentaire}
+                  onChange={(e) => setForm({ ...form, commentaire: e.target.value })}
+                />
+              )}
             </div>
           </div>
 

@@ -361,19 +361,9 @@ export default function ReceptionQualitative() {
         </CardHeader>
       </Card>
 
-      {/* Action principale toujours accessible */}
-      <div className="xl:col-span-3">
-        {!ticketId ? (
-          <StickyActionBar>
-            <Button
-              className="w-full h-12"
-              disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
-              onClick={() => createTicket.mutate()}
-            >
-              Ouvrir le ticket
-            </Button>
-          </StickyActionBar>
-        ) : (
+      {/* Action de clôture toujours accessible */}
+      {ticketId && (
+        <div className="xl:col-span-3">
           <StickyActionBar>
             {selectedSupplier && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2 px-1">
@@ -403,8 +393,8 @@ export default function ReceptionQualitative() {
               </AlertDialogContent>
             </AlertDialog>
           </StickyActionBar>
-        )}
-      </div>
+        </div>
+      )}
 
       <TicketDetailDialog open={!!detailRow} onOpenChange={(o) => !o && setDetailRow(null)} row={detailRow} />
     </div>

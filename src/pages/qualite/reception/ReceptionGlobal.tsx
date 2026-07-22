@@ -431,15 +431,16 @@ export default function ReceptionGlobal() {
         title="Importer des tickets de pesée"
         description="Statut appliqué : pesé importé. Ces tickets ne pourront pas être modifiés via le formulaire qualitatif."
         fields={[
-          { key: "numero", label: "N° ticket", required: true, aliases: ["n", "num", "numero_ticket"] },
-          { key: "date_ticket", label: "Date", required: true, aliases: ["date", "date_pesee"] },
-          { key: "fournisseur", label: "Fournisseur", required: true, aliases: ["supplier", "code_fournisseur"] },
-          { key: "produit", label: "Produit", required: true, aliases: ["product", "code_produit"] },
-          { key: "taux_abattement", label: "Abattement %", required: true, aliases: ["abat", "abattement"] },
-          { key: "poids_brut_kg", label: "Poids brut (kg)", required: true, aliases: ["brut", "poids_brut"] },
-          { key: "heure_debut", label: "Heure début", aliases: ["debut", "hdebut"] },
-          { key: "heure_fin", label: "Heure fin", aliases: ["fin", "hfin"] },
-          { key: "commentaire", label: "Commentaire", aliases: ["notes", "remarque"] },
+          { key: "numero", label: "N° ticket", required: true, aliases: ["n", "num", "n_tick", "n_ticket", "num_ticket", "numero_ticket"] },
+          { key: "date", label: "Date", required: true, aliases: ["date_ticket", "date_pesee", "date_pesée", "date_pesee_1", "date_pesée_1", "date_pesee_2"] },
+          { key: "fournisseur", label: "Fournisseur", required: true, aliases: ["supplier", "code_fournisseur", "raison_cli", "raison_sociale", "client"] },
+          { key: "produit", label: "Produit", required: true, aliases: ["product", "code_produit", "designation_produit"] },
+          { key: "taux_abattement", label: "Abattement %", required: true, aliases: ["abat", "abattement", "taux", "%abat"] },
+          { key: "poids_brut", label: "Poids brut (kg)", aliases: ["brut", "poids_brut_kg", "pesee_2", "pesée_2", "pesee2"] },
+          { key: "poids_net", label: "Poids net (kg) — alt.", aliases: ["net", "pesée_net", "pesee_net"] },
+          { key: "heure_debut", label: "Heure début", aliases: ["debut", "hdebut", "heure_pesee_1", "heure_pesée_1"] },
+          { key: "heure_fin", label: "Heure fin", aliases: ["fin", "hfin", "heure_pesee_2", "heure_pesée_2"] },
+          { key: "commentaire", label: "Commentaire", aliases: ["notes", "remarque", "raison_collecteur"] },
         ]}
         options={
           <div className="space-y-1">

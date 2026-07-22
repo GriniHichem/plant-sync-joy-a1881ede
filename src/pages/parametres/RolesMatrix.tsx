@@ -136,6 +136,7 @@ const ROLES = [
   { key: "responsable_controle_qualite", label: "Resp. Contrôle Qualité", color: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300", group: "Qualité" },
   { key: "controleur_qualite", label: "Contrôleur Qualité", color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300", group: "Qualité" },
   { key: "agent_pont_bascule", label: "Agent Pont Bascule", color: "bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-300", group: "Qualité" },
+  { key: "agreeur", label: "Agréeur", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300", group: "Qualité" },
 
   { key: "gestionnaire_magasin", label: "Gest. Magasin", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300", group: "Logistique" },
   { key: "responsable_magasin", label: "Resp. Magasin", color: "bg-purple-200 text-purple-900 dark:bg-purple-900/40 dark:text-purple-200", group: "Logistique" },

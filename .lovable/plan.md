@@ -1,66 +1,59 @@
-## Objectif
+# Intégration complète des rôles (système + personnalisés) dans la sécurité
 
-Transformer le dialogue **Orientations récentes** (bouton ampoule à côté du taux) d'une liste plate d'avis vers une vue **par ticket** : chaque carte = un ticket du même contexte (campagne/produit), avec ses photos et tous les avis affichés comme **tags cliquables**. On liste les **30 derniers tickets ayant au moins une orientation**.
+## Constat
 
-## Nouveau concept UX
+Deux problèmes distincts se cumulent :
 
-Vue **carte par ticket** dans `OrientationsAdvisorDialog.tsx` :
+### 1. Rôles système incomplets
+Trois rôles déclarés dans `RolesMatrix`/DB mais absents ailleurs :
+- `agreeur`, `responsable_inventaire`, `agent_inventaire` — manquent dans `ROLES` (ruleCatalog), `AppRole` (AuthContext, seul `agreeur`), `ROLE_LABELS` (UsersAdmin), `SYSTEM_ROLE_LABELS` (RolesTab).
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│ #10023 · Tomate · 22/07 08:15   [Moy. 6.5%] [3 avis]    │
-│ ┌────┐ ┌────┐ ┌────┐                                    │
-│ │img1│ │img2│ │img3│  ← miniatures cliquables (lightbox)│
-│ └────┘ └────┘ └────┘                                    │
-│ Taux appliqué : 7 %                                     │
-│ Orientations : [5% — Karim]  [7% — Sara]  [8% — Ali]    │
-│   ↳ clic tag → popover (explication + date)             │
-└─────────────────────────────────────────────────────────┘
-```
+### 2. Rôles personnalisés non pris en compte
+La table `custom_roles` existe (créable via `RolesTab`), mais aucun consommateur ne les intègre :
+- `RolesMatrix.tsx` : liste `ROLES` figée en dur → un rôle custom n'apparaît jamais dans la matrice modules × actions.
+- `UsersAdmin.tsx` : dialogue d'attribution basé sur `ROLE_LABELS` figé → impossible d'assigner un rôle custom à un utilisateur.
+- `ReceptionPermissionsTab`, `QualityPermissionsTab`, `AuditControlTab` : listes de rôles figées.
+- `ruleCatalog.ROLES` : utilisé par les éditeurs de règles (validation/notification).
 
-- **En-tête** : n° ticket, produit, date/heure, moyenne des taux recommandés, nombre d'avis, taux d'abattement réellement appliqué (si dispo) pour comparaison rapide.
-- **Photos** : 3 miniatures via URLs signées (bucket `reception-photos`), clic → lightbox plein écran (réutilise le pattern existant de `TicketDetailDialog`).
-- **Tags orientations** : `Badge` compact avec `taux % — auteur`. Clic → `Popover` avec explication complète + horodatage.
-- Tri : plus récent d'abord. Toggle d'inversion conservé.
-- Filtrage contextuel : même campagne (et même produit si défini sur le ticket courant), inchangé.
+## Modifications
 
-## Implémentation technique
+### A. Ajouts rôles système manquants (rapide)
 
-### 1. Backend — nouvelle vue agrégée
+1. `src/lib/ruleCatalog.ts` — ajouter à `ROLES` : `agreeur`, `responsable_inventaire`, `agent_inventaire`.
+2. `src/contexts/AuthContext.tsx` — ajouter `"agreeur"` au type `AppRole`.
+3. `src/pages/parametres/UsersAdmin.tsx` — ajouter les 3 libellés dans `ROLE_LABELS`.
+4. `src/pages/parametres/access-control/RolesTab.tsx` — ajouter les 3 libellés dans `SYSTEM_ROLE_LABELS`.
 
-Migration : créer `v_reception_ticket_orientations_summary` (une ligne par ticket) :
-- `ticket_id`, `ticket_numero`, `ticket_date`, `heure_debut`
-- `product_id`, `produit_nom`, `campaign_id`, `campagne_nom`
-- `taux_abattement` (appliqué), `poids_net_kg`
-- `orientations_count`, `taux_moyen`
-- `orientations` : agrégat `jsonb` `[{id, taux_recommande, explication, author_name, created_at}, ...]`
-- `last_orientation_at` (pour tri)
+### B. Intégration des rôles personnalisés
 
-Filtres RLS hérités via la vue existante `v_reception_orientations` (jointure). GRANT SELECT à `authenticated`.
+5. **Hook central `useAllRoles`** (nouveau, `src/hooks/useAllRoles.ts`) qui retourne :
+   - Rôles système (issus de `ROLES` de `ruleCatalog`) avec libellé et flag `isCustom: false`.
+   - Rôles personnalisés actifs (issus de `custom_roles` via `useCustomRoles`), avec `label`, `color`, `inherits_from`, `isCustom: true`.
+   - Un dictionnaire `labelsMap` pour remplacer les `ROLE_LABELS` locaux.
 
-### 2. Frontend — refonte du dialogue
+6. **`RolesMatrix.tsx`** :
+   - Fusionner la liste `ROLES` interne avec les rôles custom (groupe "Personnalisés").
+   - Pour un rôle custom sans lignes en DB : générer les presets à partir de `ROLE_DEFAULTS[inherits_from]` (fallback : `NONE`), pour affichage immédiat éditable.
+   - La sauvegarde upsert dans `role_permissions` fonctionne déjà par rôle+module → aucun changement backend.
 
-Fichier : `src/components/reception/OrientationsAdvisorDialog.tsx` (réécriture)
-- Query sur la nouvelle vue, limit 30, tri `last_orientation_at desc`.
-- Hook local pour récupérer les 3 photos par ticket à la demande (batch : 1 requête `reception_ticket_photos` groupée par `ticket_id IN (...)` + `createSignedUrls` en batch).
-- Composant carte `TicketOrientationCard` avec :
-  - Section photos (grille 3 col, aspect 4/3, clic → état `lightbox`)
-  - Section tags (`Badge` + `Popover` de shadcn)
-- Lightbox interne (Dialog imbriqué) identique au pattern de `TicketDetailDialog`.
+7. **`UsersAdmin.tsx`** :
+   - Remplacer `ROLE_LABELS` par le map issu de `useAllRoles`.
+   - La liste de sélection dans le dialogue "Attribuer un rôle" affiche système + custom (avec pastille couleur pour les custom).
 
-### 3. Aucun changement fonctionnel ailleurs
+8. **`ReceptionPermissionsTab.tsx`, `QualityPermissionsTab.tsx`, `AuditControlTab.tsx`** :
+   - Remplacer les listes locales par la liste unifiée de `useAllRoles`.
 
-- `TicketOrientations.tsx` (saisie côté détail ticket) : inchangé.
-- Table `reception_ticket_orientations` : inchangée.
-- Bouton "Voir les orientations" dans `ReceptionQualitative.tsx` : inchangé (mêmes props).
+9. **`ruleCatalog.ts`** :
+   - Garder `ROLES` (constante système utilisée par le typage), mais exposer un helper `getAllRoleKeys()` (lecture DB) pour les composants dynamiques qui doivent inclure les customs (éditeurs de règles). Alternative si trop invasif : n'exposer les customs que dans l'UI, pas dans le catalogue de règles — à trancher.
 
-## Fichiers touchés
+## Question de scope
 
-- **Migration** : nouvelle vue `v_reception_ticket_orientations_summary` + GRANT.
-- **Modifié** : `src/components/reception/OrientationsAdvisorDialog.tsx` (refonte complète : cartes ticket + photos + tags popover + lightbox).
+Souhaitez-vous que les rôles personnalisés soient aussi utilisables dans :
+- (a) uniquement la matrice + attribution utilisateur (scope minimum, ~4 fichiers touchés) ?
+- (b) toutes les surfaces incluant règles de validation / notification / permissions Qualité/Réception/Audit (scope complet, ~8 fichiers) ?
 
-## Règles conservées
+Sans réponse, je pars sur **(b)** pour être cohérent avec la demande "tous les systèmes de sécurité et gestion d'accès".
 
-- Purement informatif, aucun impact sur le ticket courant.
-- Filtrage par campagne + produit du ticket ouvert.
-- Limite 30 tickets, tri récent → ancien.
+## Hors périmètre
+- Pas de modification du schéma DB : `custom_roles`, `role_permissions`, enum `app_role` restent inchangés (les rôles custom sont stockés en `text`, pas dans l'enum).
+- Pas de mécanisme d'héritage runtime : `usePermissions` fonctionne déjà via `role_permissions` en DB. L'héritage `inherits_from` sert uniquement à pré-remplir les presets initiaux dans la matrice.

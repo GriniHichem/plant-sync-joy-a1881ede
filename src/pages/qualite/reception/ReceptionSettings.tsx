@@ -100,7 +100,7 @@ function ProductsTab() {
                 <TableCell>{p.varietes?.join(", ")}</TableCell>
                 <TableCell>{p.calibres?.join(", ")}</TableCell>
                 <TableCell>{p.actif ? <Badge>Actif</Badge> : <Badge variant="secondary">Inactif</Badge>}</TableCell>
-                <TableCell className="text-right"><Button size="sm" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button></TableCell>
+                <TableCell className="text-right">{canEditRow && (<Button size="sm" variant="ghost" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>)}</TableCell>
               </TableRow>
             ))}
             {data.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucun produit configuré</TableCell></TableRow>}

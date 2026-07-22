@@ -1,68 +1,76 @@
 
-# Client Supabase à URL dynamique (self-hosting)
+# Améliorations Module Réception Fruits & Légumes
 
-Objectif : rendre l’URL de l’API Supabase et la clé anon résolubles **au runtime** côté navigateur, pour que la même image applicative fonctionne :
-- en LAN via `http://192.168.9.222:8081` (Nginx local),
-- en public via `https://prodintime.conserverieamour.com` (tunnel Cloudflare),
-- et en dev/preview Lovable Cloud (comportement inchangé).
+Toutes les évolutions sans toucher à la logique métier existante (calcul net, RLS, workflow clôture/pesée).
 
-Aucun changement de logique métier, aucun changement de schéma. Frontend et fichiers d’infra uniquement.
+## 1. Historique cliquable + téléchargement photos (Réception qualitative)
 
-## Ordre de résolution de l’URL/clé (priorité décroissante)
+- Dans `ReceptionQualitative.tsx`, rendre chaque ligne du tableau « 10 derniers tickets clôturés » cliquable (row entière + `cursor-pointer` + `hover:bg-muted`).
+- Réutiliser `TicketDetailDialog.tsx` (déjà utilisé par Consultation globale) pour afficher la fiche complète en modale.
+- Étendre `TicketDetailDialog.tsx` : ajouter à côté de chaque miniature Photo 1/2/3 un bouton icône **Download**. Téléchargement via `fetch(signedUrl)` → `Blob` → `URL.createObjectURL` + `<a download="ticket-{numero}-photo-{slot}.jpg">` pour forcer le save local (attribut `download` seul ne fonctionne pas sur cross-origin signed URLs).
 
-1. `window.__RUNTIME_CONFIG__.SUPABASE_URL` / `SUPABASE_ANON_KEY` — injecté par un fichier `/config.js` servi par Nginx (modifiable sans rebuild).
-2. `import.meta.env.VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` — build-time (utilisé par le preview Lovable).
-3. Fallback : `window.location.origin` pour l’URL (Nginx proxifie `/rest/v1`, `/auth/v1`, `/storage/v1`, `/realtime/v1`). Si aucune clé anon n’est trouvée, on log une erreur claire au boot au lieu d’un `Failed to fetch` opaque.
+## 2. Refonte UX/UI tactile (Réception qualitative)
 
-Le Realtime (WebSocket) utilise la même base : `supabase-js` dérive automatiquement `ws(s)://` depuis l’URL fournie, donc pas de config séparée à faire — on évite ainsi tout Mixed Content.
+Réorganisation de la grille du formulaire :
 
-## Changements fichiers
+- Ligne 1 compacte pleine largeur (4 colonnes sur ≥ md) : **Date auto | N° ticket | Heure début | Heure fin**. Sur mobile : 2 colonnes.
+- Retrait des boutons « Maintenant » redondants (ou compactés en icône seule dans le champ heure).
+- **Taux d'abattement** et **Commentaire** en pleine largeur (`col-span-full`).
+- Campagne / Produit / Fournisseur restent groupés en 2 colonnes.
+- **Bouton « Enregistrer & clôturer »** reste dans `StickyActionBar` (déjà sticky) — s'assurer qu'il est bien visible en bas sur mobile (padding-bottom du container).
 
-1. **`src/integrations/supabase/client.ts`** (exception faite à la règle « auto-généré » car self-hosting explicitement demandé) :
-   - Résolveur `resolveSupabaseConfig()` appliquant l’ordre ci-dessus.
-   - `createClient(url, key, { auth: { storage: localStorage, persistSession: true, autoRefreshToken: true, storageKey: 'sb-prodintime-auth' }, global: { headers: { 'X-Client-Info': 'prodintime-web' } }, realtime: { params: { eventsPerSecond: 10 } } })`.
-   - Export additionnel `SUPABASE_BASE_URL` (utile pour storage.getPublicUrl côté proxy).
-   - Guard : si `url` finit par se résoudre à `window.location.origin` mais qu’on est en dev Vite (`import.meta.env.DEV`), on garde le comportement env pour ne pas casser le preview.
+Compacité des listes (Consultation globale + historique) :
 
-2. **`index.html`** :
-   - Ajout d’un `<script src="/config.js"></script>` **avant** le bundle app, non-bloquant sur 404 (Lovable Cloud n’a pas ce fichier, l’absence retombe sur l’env var).
+- Dans `ReceptionGlobal.tsx` (vue liste) et le tableau historique : réduire les paddings (`py-1.5`), passer en `text-xs`, `whitespace-nowrap` sur les colonnes clés, garantir affichage sur une seule ligne avec `truncate` pour Fournisseur/Produit long.
 
-3. **`public/config.example.js`** (nouveau, documentation) :
-   ```js
-   window.__RUNTIME_CONFIG__ = {
-     SUPABASE_URL: "", // vide => même origine (proxy Nginx)
-     SUPABASE_ANON_KEY: "<anon key du serveur self-host>"
-   };
-   ```
-   Le fichier réel `/config.js` est déposé côté serveur (hors repo) et servi par Nginx.
+## 3. Pied de page fournisseur (Réception qualitative)
 
-4. **`docs/self-hosting-nginx.md`** (nouveau) : extrait Nginx type avec `location /rest/`, `/auth/`, `/storage/`, `/realtime/` (upgrade WebSocket) proxifiés vers le Supabase local, plus la note Cloudflare (WebSocket activé, `no-cache` sur `/config.js`).
+- Dans `StickyActionBar`, au-dessus du bouton, ajouter un mini-bloc info affichant **Code + Nom** du fournisseur sélectionné (récupéré via `suppliers.find(s => s.id === form.supplier_id)`). Style : `text-xs text-muted-foreground`, icône Truck, discret mais toujours visible.
 
-## Sécurité & garde-fous
+## 4. Génération automatique du code ticket (Paramétrage produit + Pont-bascule)
 
-- Aucune clé service_role dans le client (inchangé).
-- Headers `Authorization` gérés par `supabase-js` uniquement — on ne les surcharge pas.
-- Si `SUPABASE_ANON_KEY` est manquante au boot, on affiche un toast bloquant + `console.error` explicite ("Configuration Supabase absente — vérifier /config.js").
-- Le `storageKey` est fixé (`sb-prodintime-auth`) pour que le fallback dynamique ne change pas la clé localStorage entre déploiements et évite les déconnexions silencieuses.
+### 4a. Schéma (migration SQL)
 
-## Impact
+Ajouter à `reception_products` :
 
-- Preview Lovable : identique (les env vars gagnent avant le fallback origin).
-- LAN et public self-host : plus besoin de rebuilder pour changer d’URL, un `/config.js` suffit.
-- Bascule Cloudflare ⇄ LAN : plus de Mixed Content car tout est relatif à l’origine visitée.
+- `code_prefix text` (nullable, ex. `T`)
+- `code_digits smallint DEFAULT 5 CHECK (code_digits BETWEEN 1 AND 12)`
+
+Mettre à jour `supabase/reception/reception_module.sql` (ALTER TABLE IF NOT EXISTS pattern pour rester idempotent en self-hosting).
+
+Ajouter à `reception_weighings` :
+
+- `code_saisi text` (nullable) : le nombre brut saisi par l'agent, pour audit.
+- Contrainte : `UNIQUE (code_pesee)` déjà existante suffit.
+
+### 4b. Paramétrage produit
+
+Dans `ReceptionSettings.tsx` (form produit) : ajouter deux inputs **Préfixe** (text, uppercase) et **Nombre de chiffres** (number, 1-12, défaut 5). Persistance dans `reception_products`.
+
+### 4c. Réception quantitative
+
+Dans `ReceptionQuantitative.tsx` :
+
+- Charger `code_prefix` / `code_digits` du produit du ticket sélectionné (déjà joint via `v_reception_global` — sinon ajouter au SELECT du view ou requête complémentaire).
+- Ajouter au-dessus du champ « Poids brut » : un champ **Numéro ticket** (input number, autofocus) + une preview live du **Code système** calculé : `prefix + String(n).padStart(digits, "0")`.
+- À la validation de pesée : passer `code_pesee = codeCalculé` et `code_saisi = numéroSaisi` dans l'insert `reception_weighings`.
+- Fallback : si le produit n'a pas de préfixe configuré, garder le comportement actuel (`next_reception_weighing_no()`).
+- Validation client : refuser si le nombre saisi dépasse `10^digits - 1`. Toast d'erreur clair en cas de collision unique.
+
+## Récap fichiers modifiés
+
+```text
+src/pages/qualite/reception/ReceptionQualitative.tsx   (grille + row click + footer fournisseur)
+src/pages/qualite/reception/TicketDetailDialog.tsx     (bouton download par photo)
+src/pages/qualite/reception/ReceptionGlobal.tsx        (liste compacte)
+src/pages/qualite/reception/ReceptionSettings.tsx      (champs préfixe/digits produit)
+src/pages/qualite/reception/ReceptionQuantitative.tsx  (saisie n° + code calculé)
+supabase/reception/reception_module.sql                (ALTER TABLE + view update)
+```
 
 ## Détails techniques
 
-```ts
-// resolveSupabaseConfig (extrait)
-const runtime = (globalThis as any).__RUNTIME_CONFIG__ ?? {};
-const url =
-  runtime.SUPABASE_URL?.trim() ||
-  import.meta.env.VITE_SUPABASE_URL ||
-  (typeof window !== 'undefined' ? window.location.origin : '');
-const anon =
-  runtime.SUPABASE_ANON_KEY?.trim() ||
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
-```
-
-Est-ce que je pars sur ce plan tel quel, ou tu veux aussi que j’ajoute un petit écran de diagnostic `/parametres/diagnostic-reseau` qui affiche l’URL résolue + ping `/rest/v1/` pour t’aider à déboguer les bascules réseau ?
+- Téléchargement cross-origin : `fetch(url).then(r => r.blob())` puis `a.download` (indispensable car les signed URLs Supabase Storage n'honorent pas `Content-Disposition` par défaut).
+- La modale de détail affiche déjà les photos ; le bouton Download est ajouté en overlay sur chaque miniature (`absolute top-2 left-2`) à côté du `ZoomIn`.
+- Aucune modification des RPC `close_reception_ticket` ni des triggers de calcul.
+- Migration idempotente : `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` pour compatibilité self-hosting.

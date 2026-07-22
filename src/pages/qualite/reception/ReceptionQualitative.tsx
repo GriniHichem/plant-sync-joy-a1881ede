@@ -306,8 +306,15 @@ export default function ReceptionQualitative() {
 
   const photoBySlot = (slot: number) => photos.find((p) => p.slot === slot);
   const nPhotos = photos.length;
-  const canClose = !!ticketId && !!form.supplier_id && !!form.heure_debut && !!form.heure_fin && nPhotos === 3;
+  const missingSlots = [1, 2, 3].filter((s) => !photoBySlot(s));
+  const missingReasons: string[] = [];
+  if (!form.supplier_id) missingReasons.push("Fournisseur");
+  if (!form.heure_debut) missingReasons.push("Heure de début");
+  if (!form.heure_fin) missingReasons.push("Heure de fin");
+  if (missingSlots.length > 0) missingReasons.push(`Photo${missingSlots.length > 1 ? "s" : ""} ${missingSlots.join(", ")}`);
+  const canClose = !!ticketId && missingReasons.length === 0;
   const selectedSupplier = suppliers.find((s: any) => s.id === form.supplier_id);
+
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 pb-28 md:pb-4">

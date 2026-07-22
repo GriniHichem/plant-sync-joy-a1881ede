@@ -7288,6 +7288,7 @@ export type Database = {
         | "agent_inventaire"
         | "responsable_magasin"
         | "agent_pont_bascule"
+        | "agreeur"
       approvisionnement_type: "local" | "importation" | "mixte"
       arret_type:
         | "panne"
@@ -7651,6 +7652,7 @@ export const Constants = {
         "agent_inventaire",
         "responsable_magasin",
         "agent_pont_bascule",
+        "agreeur",
       ],
       approvisionnement_type: ["local", "importation", "mixte"],
       arret_type: [

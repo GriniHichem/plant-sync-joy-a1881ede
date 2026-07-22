@@ -299,8 +299,9 @@ SELECT t.id, t.numero, t.date_ticket, t.heure_debut, t.heure_fin,
        (kp.first_name || ' ' || kp.last_name) AS cloture_by_name,
        c.id AS campaign_id, c.libelle AS campagne, c.objectif_kg,
        p.id AS product_id, p.designation AS produit, p.code AS produit_code,
-       s.id AS supplier_id, s.nom AS fournisseur, s.region, s.wilaya,
-       w.id AS weighing_id, w.code_pesee, w.poids_brut_kg, w.poids_abattement_kg, w.poids_net_kg, w.weighed_at,
+       p.code_prefix, p.code_digits,
+       s.id AS supplier_id, s.nom AS fournisseur, s.code AS supplier_code, s.region, s.wilaya,
+       w.id AS weighing_id, w.code_pesee, w.code_saisi, w.poids_brut_kg, w.poids_abattement_kg, w.poids_net_kg, w.weighed_at,
        (CASE
          WHEN t.heure_debut IS NULL OR t.heure_fin IS NULL THEN NULL
          WHEN t.heure_fin >= t.heure_debut THEN EXTRACT(EPOCH FROM (t.heure_fin - t.heure_debut))/60

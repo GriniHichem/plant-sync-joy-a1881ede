@@ -328,8 +328,8 @@ export default function UsersAdmin() {
                   <Select value={newRole} onValueChange={setNewRole}>
                     <SelectTrigger className="h-12"><SelectValue placeholder="Aucun (à attribuer plus tard)" /></SelectTrigger>
                     <SelectContent>
-                      {Constants.public.Enums.app_role.map((r) => (
-                        <SelectItem key={r} value={r}>{ROLE_LABELS[r] || r}</SelectItem>
+                      {roleOptions.map((r) => (
+                        <SelectItem key={r} value={r}>{getRoleLabel(r)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -367,8 +367,8 @@ export default function UsersAdmin() {
                   <Select value={selRole} onValueChange={setSelRole}>
                     <SelectTrigger className="h-12"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                     <SelectContent>
-                      {Constants.public.Enums.app_role.map((r) => (
-                        <SelectItem key={r} value={r}>{ROLE_LABELS[r] || r}</SelectItem>
+                      {roleOptions.map((r) => (
+                        <SelectItem key={r} value={r}>{getRoleLabel(r)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -420,7 +420,7 @@ export default function UsersAdmin() {
                         {userRoles.length === 0 && <span className="text-xs text-muted-foreground">Aucun rôle</span>}
                         {userRoles.map((r: any) => (
                           <Badge key={r.id} variant="secondary" className="gap-1 pr-1">
-                            {ROLE_LABELS[r.role] || r.role}
+                            {getRoleLabel(r.role)}
                             <button onClick={() => handleRemoveRole(r.id)} className="ml-1 hover:text-destructive">
                               <Trash2 className="h-3 w-3" />
                             </button>

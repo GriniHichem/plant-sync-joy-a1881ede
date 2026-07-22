@@ -8,6 +8,7 @@ import { useState } from "react";
 
 export default function AuditControlTab() {
   const { settings, loading, upsert } = useAuditRoleSettings();
+  const { roles: ALL_ROLES } = useAllRoles();
   const [group, setGroup] = useState("Maintenance");
 
   function isEnabled(role: string, module: string) {

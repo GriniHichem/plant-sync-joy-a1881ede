@@ -74,6 +74,14 @@ export default function ReceptionQualitative() {
     },
   });
 
+  const filteredSuppliers = useMemo(() => {
+    const q = supplierSearch.trim().toLowerCase();
+    if (!q) return suppliers;
+    return suppliers.filter((s: any) =>
+      (s.nom ?? "").toLowerCase().includes(q) || (s.code ?? "").toLowerCase().includes(q)
+    );
+  }, [suppliers, supplierSearch]);
+
   useEffect(() => {
     if (!form.campaign_id && defaultCampaign?.id) {
       setForm((f) => ({ ...f, campaign_id: defaultCampaign.id }));

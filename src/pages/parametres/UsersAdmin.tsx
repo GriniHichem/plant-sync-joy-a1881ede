@@ -16,6 +16,7 @@ import { Constants } from "@/integrations/supabase/types";
 import { EntityThumbnail } from "@/components/images/EntityThumbnail";
 import { useEntityImages } from "@/hooks/useEntityImages";
 import { EntityImageUploader } from "@/components/images/EntityImageUploader";
+import { useAllRoles } from "@/hooks/useAllRoles";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrateur",

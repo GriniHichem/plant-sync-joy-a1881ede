@@ -6762,7 +6762,9 @@ export type Database = {
           cloture_at: string | null
           cloture_by: string | null
           cloture_by_name: string | null
+          code_digits: number | null
           code_pesee: string | null
+          code_prefix: string | null
           code_saisi: string | null
           commentaire: string | null
           created_at: string | null
@@ -6772,7 +6774,6 @@ export type Database = {
           duree_minutes: number | null
           etat_pesee: string | null
           fournisseur: string | null
-          fournisseur_code: string | null
           heure_debut: string | null
           heure_fin: string | null
           id: string | null
@@ -6785,10 +6786,9 @@ export type Database = {
           product_id: string | null
           produit: string | null
           produit_code: string | null
-          produit_code_digits: number | null
-          produit_code_prefix: string | null
           region: string | null
           statut: string | null
+          supplier_code: string | null
           supplier_id: string | null
           taux_abattement: number | null
           weighed_at: string | null

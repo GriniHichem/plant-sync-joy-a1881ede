@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Clock, Lock, Truck, XCircle, Search } from "lucide-react";
+import { Clock, Lock, Truck, XCircle, Search, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { TicketDetailDialog } from "./TicketDetailDialog";
@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDraftStore";
+import { OrientationsAdvisorDialog } from "@/components/reception/OrientationsAdvisorDialog";
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();

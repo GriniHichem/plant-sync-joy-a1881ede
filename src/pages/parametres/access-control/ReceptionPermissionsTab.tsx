@@ -136,7 +136,7 @@ export default function ReceptionPermissionsTab() {
             </SelectTrigger>
             <SelectContent>
               {ROLES.map((r) => (
-                <SelectItem key={r.code} value={r.code}>{r.label}</SelectItem>
+                <SelectItem key={r.code} value={r.code}>{r.label}{r.isCustom && " •"}</SelectItem>
               ))}
             </SelectContent>
           </Select>

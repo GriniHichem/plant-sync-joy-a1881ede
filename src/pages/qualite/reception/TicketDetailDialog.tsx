@@ -195,9 +195,6 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
         <Dialog open={!!lightbox} onOpenChange={() => setLightbox(null)}>
           <DialogContent className="max-w-6xl p-2 bg-black/95">
             <img src={lightbox.url} alt="Photo agrandie" className="w-full h-auto max-h-[80vh] object-contain" />
-            <div className="mt-2 rounded-md bg-white/10 text-white text-sm px-3 py-2 text-center">
-              {photoSlotCaption(lightbox.slot)}
-            </div>
           </DialogContent>
         </Dialog>
       )}

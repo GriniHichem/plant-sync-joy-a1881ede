@@ -173,6 +173,25 @@ export default function ReceptionQualitative() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [cancelMotif, setCancelMotif] = useState("");
+  const cancelTicket = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("cancel_reception_ticket" as any, { _ticket_id: ticketId!, _motif: cancelMotif });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Ticket annulé — page réinitialisée");
+      setTicketId(undefined);
+      setCancelMotif("");
+      setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+      qc.invalidateQueries({ queryKey: ["reception_photos", ticketId] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
+
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent"],
     queryFn: async () => {

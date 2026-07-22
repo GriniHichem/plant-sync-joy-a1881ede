@@ -198,6 +198,7 @@ export default function SecurityHub() {
               {active === "documents" && <DocumentPermissionsAdmin />}
               {active === "pdr" && <PdrStockPermissionsAdmin />}
               {active === "quality" && <QualityPermissionsTab />}
+              {active === "reception" && <ReceptionPermissionsTab />}
               {active === "validations" && (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">Configuration des règles de validation et de notification.</p>

@@ -197,7 +197,7 @@ export default function ReceptionQuantitative() {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => { setSelected(t); setPoidsBrut(""); }}
+                onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}
                 className="w-full text-left rounded-lg border p-3 flex items-center gap-3 active:bg-muted/60"
               >
                 <div className="min-w-0 flex-1">
@@ -242,7 +242,7 @@ export default function ReceptionQuantitative() {
                           : <Badge>À peser</Badge>}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); }}>
+                        <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}>
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -278,7 +278,7 @@ export default function ReceptionQuantitative() {
       {isMobile !== undefined && (
         <ResponsiveDialog
           open={!!selected && (typeof window === "undefined" || window.innerWidth < 1024)}
-          onOpenChange={(o) => { if (!o) { setSelected(null); setPoidsBrut(""); } }}
+          onOpenChange={(o) => { if (!o) { setSelected(null); setPoidsBrut(""); setCodeSaisi(""); } }}
           title={selected ? `Ticket ${selected.numero}` : ""}
           description={selected?.produit}
           className="max-w-lg"

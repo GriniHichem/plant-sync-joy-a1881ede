@@ -1,15 +1,47 @@
-import { useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useSearchParams, useBlocker } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Truck } from "lucide-react";
 import ReceptionSettings from "./ReceptionSettings";
 import ReceptionQualitative from "./ReceptionQualitative";
 import ReceptionQuantitative from "./ReceptionQuantitative";
 import ReceptionGlobal from "./ReceptionGlobal";
+import { useHasActiveReceptionTicket } from "./receptionDraftStore";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ReceptionPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") ?? "qualitative";
-  const setTab = (v: string) => setParams({ tab: v }, { replace: true });
+  const hasActive = useHasActiveReceptionTicket();
+
+  const setTab = (v: string) => {
+    if (hasActive && tab === "qualitative" && v !== "qualitative") {
+      const ok = window.confirm(
+        "Un ticket de réception qualitative est en cours. Le brouillon est conservé mais vous risquez de manquer la clôture. Quitter cet onglet ?",
+      );
+      if (!ok) return;
+    }
+    setParams({ tab: v }, { replace: true });
+  };
+
+  // Bloque toute navigation React Router hors de la page tant qu'un ticket est ouvert.
+  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
+    hasActive && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  // Avertissement natif du navigateur à la fermeture / rechargement.
+  useEffect(() => {
+    if (!hasActive) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasActive]);
 
   return (
     <div className="space-y-3 md:space-y-4">
@@ -35,6 +67,22 @@ export default function ReceptionPage() {
         <TabsContent value="global" className="mt-4"><ReceptionGlobal /></TabsContent>
         <TabsContent value="settings" className="mt-4"><ReceptionSettings /></TabsContent>
       </Tabs>
+
+      <AlertDialog open={blocker.state === "blocked"} onOpenChange={(o) => { if (!o) blocker.reset?.(); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ticket de réception en cours</AlertDialogTitle>
+            <AlertDialogDescription>
+              Un ticket qualitative est ouvert et non clôturé. Votre saisie est sauvegardée localement,
+              mais quitter la page peut retarder la clôture. Continuer&nbsp;?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>Rester sur la page</AlertDialogCancel>
+            <AlertDialogAction onClick={() => blocker.proceed?.()}>Quitter quand même</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

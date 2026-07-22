@@ -28,6 +28,7 @@ const ACTIONS = [
 type Row = Record<string, unknown> & { role: string };
 
 export default function QualityPermissionsTab() {
+  const { roles: allRoles, loading: rolesLoading } = useAllRoles();
   const [rows, setRows] = useState<Row[]>([]);
   const [dirty, setDirty] = useState<Record<string, Row>>({});
   const [loading, setLoading] = useState(true);
@@ -36,11 +37,11 @@ export default function QualityPermissionsTab() {
     setLoading(true);
     const { data } = await supabase.from("quality_permissions" as any).select("*");
     const map = new Map<string, Row>((((data ?? []) as unknown) as Row[]).map((r) => [r.role, r]));
-    const all: Row[] = ROLES.map((r) => map.get(r) ?? Object.assign({ role: r }, ...ACTIONS.map((a) => ({ [a.key]: false }))));
+    const all: Row[] = allRoles.map((r) => map.get(r.code) ?? Object.assign({ role: r.code }, ...ACTIONS.map((a) => ({ [a.key]: false }))));
     setRows(all);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (!rolesLoading) load(); }, [rolesLoading, allRoles.length]);
 
   function toggle(role: string, key: string, value: boolean) {
     setRows((rs) => rs.map((r) => r.role === role ? { ...r, [key]: value } : r));

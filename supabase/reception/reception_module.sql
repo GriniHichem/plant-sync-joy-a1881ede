@@ -149,6 +149,7 @@ CREATE TABLE IF NOT EXISTS public.reception_weighings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ticket_id uuid NOT NULL UNIQUE REFERENCES public.reception_tickets(id) ON DELETE RESTRICT,
   code_pesee text NOT NULL UNIQUE DEFAULT public.next_reception_weighing_no(),
+  code_saisi text,
   poids_brut_kg numeric(12,2) NOT NULL CHECK (poids_brut_kg > 0),
   taux_abattement_snapshot numeric(5,2) NOT NULL,
   poids_abattement_kg numeric(14,4) GENERATED ALWAYS AS (poids_brut_kg * taux_abattement_snapshot / 100) STORED,

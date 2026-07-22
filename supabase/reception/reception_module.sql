@@ -159,6 +159,7 @@ CREATE TABLE IF NOT EXISTS public.reception_weighings (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE public.reception_weighings ADD COLUMN IF NOT EXISTS code_saisi text;
 
 -- 5) GRANT Data API ------------------------------------------------------------
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.reception_products       TO authenticated;

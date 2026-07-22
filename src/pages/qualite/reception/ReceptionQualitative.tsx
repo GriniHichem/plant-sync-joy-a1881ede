@@ -466,11 +466,6 @@ export default function ReceptionQualitative() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold">Photos obligatoires (3)</Label>
-              <Badge variant={nPhotos === 3 ? "default" : "outline"}>{nPhotos}/3</Badge>
-            </div>
           <div className={`space-y-2 rounded-lg p-3 border-2 ${missingSlots.length > 0 && ticketId ? "border-destructive/60 bg-destructive/5" : "border-transparent"}`}>
             <div className="flex items-center justify-between">
               <Label className="text-sm font-semibold">
@@ -503,11 +498,13 @@ export default function ReceptionQualitative() {
               })}
             </div>
           </div>
-
+        </CardContent>
+      </Card>
 
       <Card className="xl:col-span-1">
         <CardHeader className="pb-2">
           <Accordion type="single" collapsible defaultValue="recent" className="xl:pointer-events-none">
+
             <AccordionItem value="recent" className="border-b-0">
               <AccordionTrigger className="py-0 hover:no-underline xl:[&>svg]:hidden">
                 <CardTitle className="text-base">10 derniers tickets clôturés</CardTitle>

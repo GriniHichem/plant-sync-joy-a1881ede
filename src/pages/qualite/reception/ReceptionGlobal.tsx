@@ -22,7 +22,7 @@ import { CsvImportDialog } from "@/components/reception/CsvImportDialog";
 import type { ImportReport } from "@/lib/receptionImport";
 import { usePermissions } from "@/hooks/usePermissions";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label as _UnusedLabel } from "@/components/ui/label";
+
 
 type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";
 const COL_LS_KEY = "reception-global-cols";

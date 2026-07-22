@@ -34,6 +34,7 @@ const EMPTY_MATRIX: Matrix = Object.fromEntries(
 ) as Matrix;
 
 export default function ReceptionPermissionsTab() {
+  const { roles: ROLES } = useAllRoles();
   const [role, setRole] = useState<string>("controleur_qualite");
   const [matrix, setMatrix] = useState<Matrix>(EMPTY_MATRIX);
   const [loading, setLoading] = useState(false);

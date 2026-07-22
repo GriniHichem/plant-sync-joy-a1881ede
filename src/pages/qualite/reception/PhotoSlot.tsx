@@ -132,12 +132,7 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
       <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
         <DialogContent className="max-w-4xl p-2 bg-black/95">
           {preview && (
-            <>
-              <img src={preview} alt={`Photo ${slot}`} className="w-full h-auto max-h-[80vh] object-contain rounded" />
-              <div className="mt-2 rounded-md bg-white/10 text-white text-sm px-3 py-2 text-center">
-                {photoSlotCaption(slot)}
-              </div>
-            </>
+            <img src={preview} alt={`Photo ${slot}`} className="w-full h-auto max-h-[80vh] object-contain rounded" />
           )}
         </DialogContent>
       </Dialog>

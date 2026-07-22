@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   ShieldCheck, Users, FileText, Package, ClipboardCheck, CheckSquare,
-  Activity, ToggleLeft, Download, LayoutGrid, Search, ChevronRight, Lock,
+  Activity, ToggleLeft, Download, LayoutGrid, Search, ChevronRight, Lock, Truck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 

@@ -24,6 +24,10 @@ import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDra
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();
+  const { canCreate, canEdit } = usePermissions();
+  const canCreateTicket = canCreate("reception_qualitative");
+  const canCloseTicket = canCreate("reception_qualitative") || canEdit("reception_qualitative");
+
 
   const [ticketId, setTicketId] = useState<string | undefined>();
   const [form, setForm] = useState({

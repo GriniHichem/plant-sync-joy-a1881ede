@@ -5416,6 +5416,8 @@ export type Database = {
       }
       reception_tickets: {
         Row: {
+          annule_at: string | null
+          annule_by: string | null
           campaign_id: string
           cloture_at: string | null
           cloture_by: string | null
@@ -5426,6 +5428,7 @@ export type Database = {
           heure_debut: string | null
           heure_fin: string | null
           id: string
+          motif_annulation: string | null
           numero: string
           product_id: string
           statut: string
@@ -5434,6 +5437,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          annule_at?: string | null
+          annule_by?: string | null
           campaign_id: string
           cloture_at?: string | null
           cloture_by?: string | null
@@ -5444,6 +5449,7 @@ export type Database = {
           heure_debut?: string | null
           heure_fin?: string | null
           id?: string
+          motif_annulation?: string | null
           numero?: string
           product_id: string
           statut?: string
@@ -5452,6 +5458,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          annule_at?: string | null
+          annule_by?: string | null
           campaign_id?: string
           cloture_at?: string | null
           cloture_by?: string | null
@@ -5462,6 +5470,7 @@ export type Database = {
           heure_debut?: string | null
           heure_fin?: string | null
           id?: string
+          motif_annulation?: string | null
           numero?: string
           product_id?: string
           statut?: string
@@ -6887,6 +6896,10 @@ export type Database = {
         Args: { p_motif?: string; p_request_id: string }
         Returns: undefined
       }
+      cancel_reception_ticket: {
+        Args: { _motif: string; _ticket_id: string }
+        Returns: undefined
+      }
       check_document_permission: {
         Args: { _action: string; _entity_type: string; _user_id: string }
         Returns: boolean
@@ -6902,6 +6915,8 @@ export type Database = {
       close_reception_ticket: {
         Args: { _ticket_id: string }
         Returns: {
+          annule_at: string | null
+          annule_by: string | null
           campaign_id: string
           cloture_at: string | null
           cloture_by: string | null
@@ -6912,6 +6927,7 @@ export type Database = {
           heure_debut: string | null
           heure_fin: string | null
           id: string
+          motif_annulation: string | null
           numero: string
           product_id: string
           statut: string

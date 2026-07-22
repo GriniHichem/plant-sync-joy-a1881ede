@@ -82,6 +82,7 @@ export default function AccessControlHub() {
         <TabsContent value="documents"><DocumentPermissionsAdmin /></TabsContent>
         <TabsContent value="pdr"><PdrStockPermissionsAdmin /></TabsContent>
         <TabsContent value="quality"><QualityPermissionsTab /></TabsContent>
+        <TabsContent value="reception"><ReceptionPermissionsTab /></TabsContent>
         <TabsContent value="validations">
           <Card>
             <CardHeader><CardTitle>Workflows & Validations</CardTitle></CardHeader>

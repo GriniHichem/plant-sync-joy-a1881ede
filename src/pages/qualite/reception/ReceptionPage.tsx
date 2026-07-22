@@ -27,10 +27,9 @@ export default function ReceptionPage() {
     setParams({ tab: v }, { replace: true });
   };
 
-  // Bloque toute navigation React Router hors de la page tant qu'un ticket est ouvert.
-  const blocker = useBlocker(({ currentLocation, nextLocation }) =>
-    hasActive && currentLocation.pathname !== nextLocation.pathname,
-  );
+  // Note: navigation blocking via useBlocker requires a data router.
+  // On s'appuie sur la confirmation onglet + beforeunload pour éviter les pertes.
+
 
   // Avertissement natif du navigateur à la fermeture / rechargement.
   useEffect(() => {

@@ -184,6 +184,9 @@ function ProductDialog({ open, onOpenChange, editing, onSave, saving }: any) {
 /* ------------------- Suppliers ------------------- */
 function SuppliersTab() {
   const qc = useQueryClient();
+  const { canCreate, canEdit } = usePermissions();
+  const canCreateRow = canCreate("reception_settings");
+  const canEditRow = canEdit("reception_settings");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [form, setForm] = useState<any>({ code: "", nom: "", region: "", wilaya: "", contact: "", telephone: "", adresse: "", notes: "", agree: true, actif: true });

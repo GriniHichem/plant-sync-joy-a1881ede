@@ -147,11 +147,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try { await logAuthEvent("logout", { email: user?.email ?? undefined }); } catch { /* ignore */ }
-    await supabase.auth.signOut();
+    // Local scope: clears session in this browser without needing the auth server
+    // to respond (critical for self-hosting when /logout is slow/unreachable).
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (e) {
+      // Fallback: purge storage manually so the UI never stays stuck logged in.
+      try {
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith("sb-") || k === "sb-prodintime-auth")
+          .forEach((k) => localStorage.removeItem(k));
+      } catch { /* ignore */ }
+    }
     setUser(null);
     setSession(null);
     setRealProfile(null);
     setRealRoles([]);
+    // Force a clean reload to /auth so any stale in-memory state is dropped.
+    try {
+      if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
+        window.location.assign("/auth");
+      }
+    } catch { /* ignore */ }
   };
 
   return (

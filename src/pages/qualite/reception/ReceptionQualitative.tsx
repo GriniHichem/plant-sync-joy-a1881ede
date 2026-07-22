@@ -162,6 +162,7 @@ export default function ReceptionQualitative() {
       toast.success("Ticket clôturé");
       setTicketId(undefined);
       setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
     },
     onError: (e: any) => toast.error(e.message),

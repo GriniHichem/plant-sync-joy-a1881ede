@@ -6991,6 +6991,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_delete_reception_ticket: {
+        Args: { p_reason?: string; p_ticket_id: string }
+        Returns: undefined
+      }
       apply_maintenance_shift_schedules: { Args: never; Returns: string[] }
       attach_quality_risk_to_ticket: {
         Args: {

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, formatKgInt, formatTonnesInt, formatHm, kgToTonnes, isOverdue } from "@/lib/reception";
@@ -21,7 +21,12 @@ import { ScrollTable } from "@/components/responsive/ScrollTable";
 import { CsvImportDialog } from "@/components/reception/CsvImportDialog";
 import type { ImportReport } from "@/lib/receptionImport";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 
 
 type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";
@@ -35,13 +40,20 @@ export default function ReceptionGlobal() {
   const qc = useQueryClient();
   const isMobile = useIsMobile();
   const { canEdit, canDelete } = usePermissions();
+  const { hasRole } = useAuth();
+  const { toast } = useToast();
+  const isAdmin = hasRole("admin");
   const canImport = canEdit("reception_global") || canDelete("reception_global");
   const [importOpen, setImportOpen] = useState(false);
   const [importMode, setImportMode] = useState<"ignore" | "replace">("ignore");
+  const [toDelete, setToDelete] = useState<any | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [f, setF] = useState({
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
   });
+
   const [cols, setCols] = useState<Record<ColKey, boolean>>(() => {
     try {
       const s = localStorage.getItem(COL_LS_KEY);
@@ -79,6 +91,25 @@ export default function ReceptionGlobal() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["v_reception_global"] });
   useShiftRealtime("reception-global-tickets", "reception_tickets", invalidate);
   useShiftRealtime("reception-global-weighings", "reception_weighings", invalidate);
+
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.rpc("admin_delete_reception_ticket" as any, {
+      p_ticket_id: toDelete.id,
+      p_reason: deleteReason.trim() || null,
+    });
+    setDeleting(false);
+    if (error) {
+      toast({ title: "Suppression impossible", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Ticket supprimé", description: `N° ${toDelete.numero}` });
+    setToDelete(null);
+    setDeleteReason("");
+    invalidate();
+  };
+
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ["reception_campaigns", "all"],
@@ -319,49 +350,64 @@ export default function ReceptionGlobal() {
                   ? "border-l-success"
                   : "border-l-warning";
                 return (
-                  <button
-                    type="button"
+                  <div
                     key={r.id}
-                    onClick={() => setSelected(r)}
-                    className={`text-left rounded-lg border border-l-[3px] ${borderColor} p-3 space-y-2 bg-card hover:bg-accent/40 transition-colors focus:outline-none focus:ring-2 focus:ring-ring`}
+                    className={`relative rounded-lg border border-l-[3px] ${borderColor} bg-card hover:bg-accent/40 transition-colors`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="font-mono text-[11px] text-muted-foreground">#{r.numero}</div>
-                        <div className="font-semibold truncate">{r.produit ?? "—"}</div>
-                        <div className="text-xs text-muted-foreground truncate">{r.fournisseur ?? "—"}</div>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        title="Supprimer (admin)"
+                        onClick={(e) => { e.stopPropagation(); setToDelete(r); }}
+                        className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelected(r)}
+                      className="text-left w-full p-3 space-y-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-mono text-[11px] text-muted-foreground">#{r.numero}</div>
+                          <div className="font-semibold truncate">{r.produit ?? "—"}</div>
+                          <div className="text-xs text-muted-foreground truncate">{r.fournisseur ?? "—"}</div>
+                        </div>
+                        <div className={`flex flex-col items-end gap-1 shrink-0 ${isAdmin ? "mr-7" : ""}`}>
+                          {pese
+                            ? <Badge variant="secondary">Pesé</Badge>
+                            : <Badge>En attente</Badge>}
+                          {r.statut === "pese_importe" && <Badge variant="outline" className="text-[10px]">Importé</Badge>}
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        {pese
-                          ? <Badge variant="secondary">Pesé</Badge>
-                          : <Badge>En attente</Badge>}
-                        {r.statut === "pese_importe" && <Badge variant="outline" className="text-[10px]">Importé</Badge>}
+
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                        <span className="tabular-nums">{r.date_ticket}</span>
+                        <span>·</span>
+                        <span className="tabular-nums">{formatHm(r.heure_debut)} → {formatHm(r.heure_fin)}</span>
+                        <span>·</span>
+                        <span className="tabular-nums">{formatDuration(r.duree_minutes)}</span>
+                        {overdue && (
+                          <Badge variant="destructive" className="h-5"><AlertTriangle className="h-3 w-3 mr-1" />Hors délai</Badge>
+                        )}
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                      <span className="tabular-nums">{r.date_ticket}</span>
-                      <span>·</span>
-                      <span className="tabular-nums">{formatHm(r.heure_debut)} → {formatHm(r.heure_fin)}</span>
-                      <span>·</span>
-                      <span className="tabular-nums">{formatDuration(r.duree_minutes)}</span>
-                      {overdue && (
-                        <Badge variant="destructive" className="h-5"><AlertTriangle className="h-3 w-3 mr-1" />Hors délai</Badge>
-                      )}
-                    </div>
+                      <div className="grid grid-cols-3 gap-1 pt-2 border-t">
+                        <WeightCell label="Brut" kg={r.poids_brut_kg} />
+                        <WeightCell label="Abat." kg={r.poids_abattement_kg} />
+                        <WeightCell label="Net" kg={r.poids_net_kg} emphasize />
+                      </div>
 
-                    <div className="grid grid-cols-3 gap-1 pt-2 border-t">
-                      <WeightCell label="Brut" kg={r.poids_brut_kg} />
-                      <WeightCell label="Abat." kg={r.poids_abattement_kg} />
-                      <WeightCell label="Net" kg={r.poids_net_kg} emphasize />
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
-                      <ImageIcon className="h-3.5 w-3.5" />
-                      <span>{Number(r.nb_photos ?? 0)}/3 photos</span>
-                    </div>
-                  </button>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        <span>{Number(r.nb_photos ?? 0)}/3 photos</span>
+                      </div>
+                    </button>
+                  </div>
                 );
+
               })}
               {filtered.length === 0 && (
                 <div className="col-span-full text-center text-muted-foreground py-8">Aucun ticket</div>
@@ -380,6 +426,7 @@ export default function ReceptionGlobal() {
                   {cols.created_by && <TableHead>Créé par</TableHead>}
                   {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
                   {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
+                  {isAdmin && <TableHead className="w-[52px]"></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {filtered.map((r: any) => (
@@ -419,9 +466,23 @@ export default function ReceptionGlobal() {
                       {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
                       {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
                       {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
+                      {isAdmin && (
+                        <TableCell className="p-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            title="Supprimer (admin)"
+                            onClick={(e) => { e.stopPropagation(); setToDelete(r); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
-                  {filtered.length === 0 && <TableRow><TableCell colSpan={11 + Object.values(cols).filter(Boolean).length} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
+                  {filtered.length === 0 && <TableRow><TableCell colSpan={11 + Object.values(cols).filter(Boolean).length + (isAdmin ? 1 : 0)} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
+
                 </TableBody>
               </Table>
             </ScrollTable>
@@ -469,9 +530,42 @@ export default function ReceptionGlobal() {
         }}
         onSuccess={invalidate}
       />
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setDeleteReason(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le ticket ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Action irréversible. Le ticket <span className="font-mono font-semibold">#{toDelete?.numero}</span>
+              {toDelete?.fournisseur ? <> — {toDelete.fournisseur}</> : null}, sa pesée, ses photos et ses orientations seront supprimés.
+              L'opération est tracée dans le journal d'audit.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Motif (recommandé)</Label>
+            <Textarea
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value.slice(0, 500))}
+              placeholder="Ex. doublon, saisie erronée, camion refusé…"
+              className="min-h-[70px]"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Suppression…" : "Supprimer définitivement"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
 function WeightCell({ label, kg, emphasize }: { label: string; kg?: number | null; emphasize?: boolean }) {
   return (

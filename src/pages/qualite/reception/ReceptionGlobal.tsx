@@ -426,6 +426,7 @@ export default function ReceptionGlobal() {
                   {cols.created_by && <TableHead>Créé par</TableHead>}
                   {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
                   {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
+                  {isAdmin && <TableHead className="w-[52px]"></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {filtered.map((r: any) => (
@@ -465,9 +466,23 @@ export default function ReceptionGlobal() {
                       {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
                       {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
                       {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
+                      {isAdmin && (
+                        <TableCell className="p-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            title="Supprimer (admin)"
+                            onClick={(e) => { e.stopPropagation(); setToDelete(r); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
-                  {filtered.length === 0 && <TableRow><TableCell colSpan={11 + Object.values(cols).filter(Boolean).length} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
+                  {filtered.length === 0 && <TableRow><TableCell colSpan={11 + Object.values(cols).filter(Boolean).length + (isAdmin ? 1 : 0)} className="text-center text-muted-foreground py-8">Aucun ticket</TableCell></TableRow>}
+
                 </TableBody>
               </Table>
             </ScrollTable>

@@ -88,6 +88,25 @@ export function usePermissions() {
             });
           }
         }
+        // Reception visibility rule: the "reception" umbrella must be visible
+        // as soon as the user has ANY right (view/create/edit/delete) on ANY
+        // reception sub-module. This unlocks the menu entry even when the
+        // umbrella row itself has can_view = false in DB.
+        const receptionChildren = UMBRELLAS.reception ?? [];
+        const hasAnyReceptionRight = receptionChildren.some((child) => {
+          const c = merged.get(child);
+          return !!(c && (c.can_view || c.can_create || c.can_edit || c.can_delete));
+        });
+        if (hasAnyReceptionRight) {
+          const existing = merged.get("reception");
+          merged.set("reception", {
+            module: "reception",
+            can_view: true,
+            can_create: existing?.can_create ?? false,
+            can_edit: existing?.can_edit ?? false,
+            can_delete: existing?.can_delete ?? false,
+          });
+        }
         if (cancelled) return;
         setPermissions(Array.from(merged.values()));
       }

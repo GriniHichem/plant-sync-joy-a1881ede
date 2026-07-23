@@ -530,9 +530,42 @@ export default function ReceptionGlobal() {
         }}
         onSuccess={invalidate}
       />
+
+      <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setDeleteReason(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer le ticket ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Action irréversible. Le ticket <span className="font-mono font-semibold">#{toDelete?.numero}</span>
+              {toDelete?.fournisseur ? <> — {toDelete.fournisseur}</> : null}, sa pesée, ses photos et ses orientations seront supprimés.
+              L'opération est tracée dans le journal d'audit.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Motif (recommandé)</Label>
+            <Textarea
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value.slice(0, 500))}
+              placeholder="Ex. doublon, saisie erronée, camion refusé…"
+              className="min-h-[70px]"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Suppression…" : "Supprimer définitivement"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
 function WeightCell({ label, kg, emphasize }: { label: string; kg?: number | null; emphasize?: boolean }) {
   return (

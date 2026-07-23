@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, formatKgInt, formatTonnesInt, formatHm, kgToTonnes, isOverdue } from "@/lib/reception";
@@ -21,7 +21,12 @@ import { ScrollTable } from "@/components/responsive/ScrollTable";
 import { CsvImportDialog } from "@/components/reception/CsvImportDialog";
 import type { ImportReport } from "@/lib/receptionImport";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 
 
 type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";

@@ -92,6 +92,25 @@ export default function ReceptionGlobal() {
   useShiftRealtime("reception-global-tickets", "reception_tickets", invalidate);
   useShiftRealtime("reception-global-weighings", "reception_weighings", invalidate);
 
+  const handleDelete = async () => {
+    if (!toDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.rpc("admin_delete_reception_ticket" as any, {
+      p_ticket_id: toDelete.id,
+      p_reason: deleteReason.trim() || null,
+    });
+    setDeleting(false);
+    if (error) {
+      toast({ title: "Suppression impossible", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Ticket supprimé", description: `N° ${toDelete.numero}` });
+    setToDelete(null);
+    setDeleteReason("");
+    invalidate();
+  };
+
+
   const { data: campaigns = [] } = useQuery({
     queryKey: ["reception_campaigns", "all"],
     queryFn: async () => {
